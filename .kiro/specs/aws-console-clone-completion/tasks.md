@@ -148,7 +148,7 @@ This plan implements 43 missing API routes, replaces 42+ stub service pages, add
     - All 11 files compile with no TypeScript errors
     - `bedrock` GET returns `{ modelSummaries }`; `sagemaker` GET returns `{ notebookInstances, endpoints }`
 
-- [-] 11. Replace stub pages — Batch 1 Networking (8 pages)
+- [x] 11. Replace stub pages — Batch 1 Networking (8 pages)
   - Depends on: #5
   - Replace content (do NOT rename files) of:
     - `src/app/servicediscovery/page.tsx` — namespaces table, create namespace modal (name field), delete action; fetch from `/api/servicediscovery`
@@ -166,7 +166,7 @@ This plan implements 43 missing API routes, replaces 42+ stub service pages, add
     - Each page renders a Cloudscape `Table` with at least 2 column definitions
     - Error state renders `<Alert type="error">`
 
-- [-] 12. Replace stub pages — Batch 2 Compute (4 pages)
+- [x] 12. Replace stub pages — Batch 2 Compute (4 pages)
   - Depends on: #6, #4
   - Replace content of:
     - `src/app/ecs-cluster/page.tsx` — clusters table (ClusterName, Status, RunningTasksCount), create cluster modal; fetch from `/api/ecs`; nested services tab via `listServices` action
@@ -178,7 +178,7 @@ This plan implements 43 missing API routes, replaces 42+ stub service pages, add
     - All 4 pages compile with no TypeScript errors
     - `ecs-service` page passes the selected cluster name as `cluster` field to `createService` action body (Property 9 / Requirement 3.3)
 
-- [-] 13. Replace stub pages — Batch 3 Storage (4 pages)
+- [x] 13. Replace stub pages — Batch 3 Storage (4 pages)
   - Depends on: #7
   - Replace content of:
     - `src/app/efs/page.tsx` — file systems table (FileSystemId, LifeCycleState, SizeInBytes), create modal; fetch from `/api/efs`
@@ -190,7 +190,7 @@ This plan implements 43 missing API routes, replaces 42+ stub service pages, add
     - All 4 pages compile with no TypeScript errors
     - `s3-files` page uses `encodeURIComponent` for both `bucket` and `key` params
 
-- [-] 14. Replace stub pages — Batch 4 Database & Analytics (8 pages)
+- [x] 14. Replace stub pages — Batch 4 Database & Analytics (8 pages)
   - Depends on: #8
   - Replace content of:
     - `src/app/opensearch/page.tsx` — domain names table, create domain modal (DomainName, EngineVersion); fetch from `/api/opensearch`
@@ -205,7 +205,7 @@ This plan implements 43 missing API routes, replaces 42+ stub service pages, add
   - **Acceptance criteria:**
     - All 8 pages compile with no TypeScript errors
 
-- [-] 15. Replace stub pages — Batch 5 Security & Developer Tools (8 pages)
+- [x] 15. Replace stub pages — Batch 5 Security & Developer Tools (8 pages)
   - Depends on: #9
   - Replace content of:
     - `src/app/cognito/page.tsx` — user pools table, create pool modal, list users inline panel; fetch from `/api/cognito`
@@ -221,7 +221,7 @@ This plan implements 43 missing API routes, replaces 42+ stub service pages, add
     - All 8 pages compile with no TypeScript errors
     - `cognito` page passes `UserPoolId` when creating a user (Requirement 3.3)
 
-- [~] 16. Replace stub pages — Batch 6 AI/ML, IoT & Management (11 pages)
+- [-] 16. Replace stub pages — Batch 6 AI/ML, IoT & Management (11 pages)
   - Depends on: #10
   - Replace content of:
     - `src/app/bedrock-agent/page.tsx` — agents table, create agent modal (agentName, foundationModel); fetch from `/api/bedrock-agent`
@@ -253,7 +253,7 @@ This plan implements 43 missing API routes, replaces 42+ stub service pages, add
     - `WidgetContainer.tsx` compiles with no TypeScript errors
     - `draggedId` state resets to `null` after drop
 
-- [~] 18. Implement widget resize and visibility toggle
+- [-] 18. Implement widget resize and visibility toggle
   - Depends on: #17
   - Modify `src/components/widgets/Widget.tsx`:
     - Add resize toggle button: clicking cycles `size` between `"regular"` (colspan 6) and `"extended"` (colspan 12); on change call `PUT /api/widgets { widgetId, updates: { width: 2 | 1 } }`

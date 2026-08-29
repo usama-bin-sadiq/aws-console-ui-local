@@ -8,13 +8,15 @@ import SpaceBetween from "@cloudscape-design/components/space-between";
 import ProgressBar from "@cloudscape-design/components/progress-bar";
 
 export default function CostUsageWidget({
+  widgetId = "cost-usage",
+  isCustomizing,
   onResize,
   onRemove,
-  size = "regular",
 }: {
-  onResize?: (size: "regular" | "extended") => void;
-  onRemove?: () => void;
-  size?: "regular" | "extended";
+  widgetId?: string;
+  isCustomizing?: boolean;
+  onResize?: (widgetId: string, newSize: "regular" | "extended") => void;
+  onRemove?: (widgetId: string) => void;
 }) {
   // Mock cost data
   const totalCost = 127.43;

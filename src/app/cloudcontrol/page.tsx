@@ -1,18 +1,86 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Header from "@cloudscape-design/components/header";
-import Container from "@cloudscape-design/components/container";
+import Table from "@cloudscape-design/components/table";
+import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
-export default function Page() {
+import Container from "@cloudscape-design/components/container";
+import Alert from "@cloudscape-design/components/alert";
+import FormField from "@cloudscape-design/components/form-field";
+import Input from "@cloudscape-design/components/input";
+
+interface CloudControlResource {
+  Identifier: string;
+  Properties?: string;
+}
+
+export default function CloudControlPage() {
+  const [typeName, setTypeName] = useState("AWS::S3::Bucket");
+  const [resources, setResources] = useState<CloudControlResource[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const listResources = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/cloudcontrol?typeName=${encodeURIComponent(typeName)}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setResources(data.resources || []);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
-        <Header variant="h1">AWS Service</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
-          <Box><StatusIndicator type="success">Service Available</StatusIndicator></Box>
-          <Box>This service is emulated by Ministack / LocalStack.</Box>
+        <Header variant="h1">Cloud Control API</Header>
+        {error && <Alert type="error" header="Error">{error}</Alert>}
+        <Container
+          header={
+            <Header variant="h2">Resource type selector</Header>
+          }
+        >
+          <SpaceBetween size="m">
+            <FormField label="Resource type name">
+              <Input
+                value={typeName}
+                onChange={(e) => setTypeName(e.detail.value)}
+                placeholder="AWS::S3::Bucket"
+              />
+            </FormField>
+            <Button variant="primary" onClick={listResources} loading={loading}>
+              List resources
+            </Button>
+          </SpaceBetween>
+        </Container>
+
+        <Container>
+          <Table
+            header={<Header variant="h2">Resources ({resources.length})</Header>}
+            items={resources}
+            loading={loading}
+            columnDefinitions={[
+              { header: "Identifier", cell: (item) => item.Identifier },
+              {
+                header: "Properties",
+                cell: (item) =>
+                  item.Properties
+                    ? <Box variant="code">{item.Properties.slice(0, 120)}{item.Properties.length > 120 ? "…" : ""}</Box>
+                    : "—",
+              },
+            ]}
+            empty={
+              <Box textAlign="center">
+                Enter a resource type and click &quot;List resources&quot; to browse resources.
+              </Box>
+            }
+          />
         </Container>
       </SpaceBetween>
     </div>

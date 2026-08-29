@@ -17,13 +17,15 @@ interface HealthData {
 }
 
 export default function AwsHealthWidget({
+  widgetId = "aws-health",
+  isCustomizing,
   onResize,
   onRemove,
-  size = "regular",
 }: {
-  onResize?: (size: "regular" | "extended") => void;
-  onRemove?: () => void;
-  size?: "regular" | "extended";
+  widgetId?: string;
+  isCustomizing?: boolean;
+  onResize?: (widgetId: string, newSize: "regular" | "extended") => void;
+  onRemove?: (widgetId: string) => void;
 }) {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,8 +71,9 @@ export default function AwsHealthWidget({
   return (
     <Widget
       id="aws-health"
+      widgetId={widgetId}
       title="AWS Health"
-      size={size}
+      isCustomizing={isCustomizing}
       onResize={onResize}
       onRemove={onRemove}
       actions={

@@ -5,29 +5,53 @@ import Container from "@cloudscape-design/components/container";
 import Header from "@cloudscape-design/components/header";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
+import SpaceBetween from "@cloudscape-design/components/space-between";
+import Box from "@cloudscape-design/components/box";
 
 export interface WidgetProps {
   id: string;
+  widgetId: string;
   title: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
-  size?: "regular" | "extended";
-  onResize?: (size: "regular" | "extended") => void;
-  onRemove?: () => void;
   variant?: "default" | "stacked";
+  isCustomizing?: boolean;
+  onResize?: (widgetId: string, newSize: "regular" | "extended") => void;
+  onRemove?: (widgetId: string) => void;
 }
 
 export default function Widget({
   id,
+  widgetId,
   title,
   children,
   actions,
-  size = "regular",
+  variant = "default",
+  isCustomizing = false,
   onResize,
   onRemove,
-  variant = "default",
 }: WidgetProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  const [size, setSize] = useState<"regular" | "extended">("regular");
+
+  function handleResize() {
+    const newSize = size === "regular" ? "extended" : "regular";
+    setSize(newSize);
+    onResize?.(widgetId, newSize);
+    fetch("/api/widgets", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ widgetId, updates: { width: newSize === "extended" ? 2 : 1 } }),
+    }).catch(() => {});
+  }
+
+  function handleRemove() {
+    onRemove?.(widgetId);
+    fetch("/api/widgets", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ widgetId, updates: { visible: 0 } }),
+    }).catch(() => {});
+  }
 
   return (
     <div
@@ -35,8 +59,6 @@ export default function Widget({
         height: "100%",
         minHeight: size === "extended" ? "400px" : "300px",
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <Container
         header={
@@ -45,43 +67,21 @@ export default function Widget({
             actions={
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 {actions}
-                {(onResize || onRemove) && (
-                  <ButtonDropdown
-                    items={[
-                      ...(onResize
-                        ? [
-                            {
-                              id: "regular",
-                              text: "Regular view",
-                              disabled: size === "regular",
-                            },
-                            {
-                              id: "extended",
-                              text: "Extended view",
-                              disabled: size === "extended",
-                            },
-                            { id: "divider-1", itemType: "divider" as const },
-                          ]
-                        : []),
-                      ...(onRemove
-                        ? [
-                            {
-                              id: "remove",
-                              text: "Remove from view",
-                            },
-                          ]
-                        : []),
-                    ]}
-                    onItemClick={(e) => {
-                      if (e.detail.id === "regular" || e.detail.id === "extended") {
-                        onResize?.(e.detail.id as "regular" | "extended");
-                      } else if (e.detail.id === "remove") {
-                        onRemove?.();
-                      }
-                    }}
-                    variant="icon"
-                    ariaLabel="Widget settings"
-                  />
+                {isCustomizing && (
+                  <SpaceBetween direction="horizontal" size="xs">
+                    <Button
+                      variant="icon"
+                      iconName={size === "extended" ? "shrink" : "expand"}
+                      ariaLabel={size === "extended" ? "Shrink widget" : "Expand widget"}
+                      onClick={handleResize}
+                    />
+                    <Button
+                      variant="icon"
+                      iconName="close"
+                      ariaLabel="Remove widget"
+                      onClick={handleRemove}
+                    />
+                  </SpaceBetween>
                 )}
               </div>
             }

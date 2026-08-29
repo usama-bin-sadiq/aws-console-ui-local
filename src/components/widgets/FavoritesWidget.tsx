@@ -10,13 +10,15 @@ import Button from "@cloudscape-design/components/button";
 import { Favorite } from "@/lib/db";
 
 export default function FavoritesWidget({
+  widgetId = "favorites",
+  isCustomizing,
   onResize,
   onRemove,
-  size = "regular",
 }: {
-  onResize?: (size: "regular" | "extended") => void;
-  onRemove?: () => void;
-  size?: "regular" | "extended";
+  widgetId?: string;
+  isCustomizing?: boolean;
+  onResize?: (widgetId: string, newSize: "regular" | "extended") => void;
+  onRemove?: (widgetId: string) => void;
 }) {
   const router = useRouter();
   const [favorites, setFavorites] = useState<Favorite[]>([]);
@@ -45,8 +47,9 @@ export default function FavoritesWidget({
   return (
     <Widget
       id="favorites"
+      widgetId={widgetId}
       title="Favorites"
-      size={size}
+      isCustomizing={isCustomizing}
       onResize={onResize}
       onRemove={onRemove}
       actions={
@@ -79,7 +82,7 @@ export default function FavoritesWidget({
         </Box>
       ) : (
         <SpaceBetween size="xs">
-          {favorites.slice(0, size === "extended" ? 10 : 6).map((fav) => (
+          {favorites.slice(0, 10).map((fav) => (
             <div
               key={fav.id}
               onClick={() => handleServiceClick(fav.service_href)}
