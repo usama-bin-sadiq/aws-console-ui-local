@@ -1,24 +1,153 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
-import Container from "@cloudscape-design/components/container";
+import Table from "@cloudscape-design/components/table";
+import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Container from "@cloudscape-design/components/container";
+import Alert from "@cloudscape-design/components/alert";
+import Modal from "@cloudscape-design/components/modal";
+import FormField from "@cloudscape-design/components/form-field";
+import Input from "@cloudscape-design/components/input";
+import Select from "@cloudscape-design/components/select";
 
-export default function Page() {
+interface SSMParameter {
+  Name: string;
+  Type: string;
+  LastModifiedDate?: string;
+}
+
+const TYPE_OPTIONS = [
+  { label: "String", value: "String" },
+  { label: "SecureString", value: "SecureString" },
+  { label: "StringList", value: "StringList" },
+];
+
+export default function SSMParameterStorePage() {
+  const [parameters, setParameters] = useState<SSMParameter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [createModal, setCreateModal] = useState(false);
+  const [paramName, setParamName] = useState("");
+  const [paramValue, setParamValue] = useState("");
+  const [paramType, setParamType] = useState(TYPE_OPTIONS[0]);
+
+  const fetchParameters = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/ssm");
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setParameters(data.parameters || []);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchParameters();
+  }, []);
+
+  const putParameter = async () => {
+    try {
+      await fetch("/api/ssm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "put",
+          name: paramName,
+          value: paramValue,
+          type: paramType.value,
+        }),
+      });
+    } finally {
+      setCreateModal(false);
+      setParamName("");
+      setParamValue("");
+      setParamType(TYPE_OPTIONS[0]);
+      fetchParameters();
+    }
+  };
+
+  const deleteParameter = async (name: string) => {
+    await fetch(`/api/ssm?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+    fetchParameters();
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Systems Manager Parameter Store</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
-          <Box>
-            <StatusIndicator type="info">
-              Systems Manager Parameter Store — coming soon
-            </StatusIndicator>
-          </Box>
-          <Box>This service is emulated by LocalStack / Ministack.</Box>
+        <Header variant="h1">Systems Manager — Parameter Store</Header>
+        {error && <Alert type="error" header="Error">{error}</Alert>}
+        <Container>
+          <Table
+            header={
+              <Header
+                variant="h2"
+                actions={<Button onClick={() => setCreateModal(true)}>Create parameter</Button>}
+              >
+                Parameters ({parameters.length})
+              </Header>
+            }
+            items={parameters}
+            loading={loading}
+            columnDefinitions={[
+              { header: "Name", cell: (item) => item.Name },
+              { header: "Type", cell: (item) => item.Type },
+              { header: "Last modified", cell: (item) => item.LastModifiedDate ?? "—" },
+              {
+                header: "Actions",
+                cell: (item) => (
+                  <Button onClick={() => deleteParameter(item.Name)} formAction="none">
+                    Delete
+                  </Button>
+                ),
+              },
+            ]}
+            empty={<Box textAlign="center">No parameters found.</Box>}
+          />
         </Container>
+
+        <Modal
+          visible={createModal}
+          onDismiss={() => setCreateModal(false)}
+          header="Create parameter"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
+              <Button variant="primary" onClick={putParameter}>Create</Button>
+            </SpaceBetween>
+          }
+        >
+          <SpaceBetween size="m">
+            <FormField label="Name">
+              <Input
+                value={paramName}
+                onChange={(e) => setParamName(e.detail.value)}
+                placeholder="/my-app/config/key"
+              />
+            </FormField>
+            <FormField label="Value">
+              <Input
+                value={paramValue}
+                onChange={(e) => setParamValue(e.detail.value)}
+                placeholder="parameter value"
+              />
+            </FormField>
+            <FormField label="Type">
+              <Select
+                selectedOption={paramType}
+                onChange={(e) => setParamType(e.detail.selectedOption as typeof TYPE_OPTIONS[0])}
+                options={TYPE_OPTIONS}
+              />
+            </FormField>
+          </SpaceBetween>
+        </Modal>
       </SpaceBetween>
     </div>
   );
