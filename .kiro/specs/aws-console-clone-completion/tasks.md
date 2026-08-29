@@ -221,7 +221,7 @@ This plan implements 43 missing API routes, replaces 42+ stub service pages, add
     - All 8 pages compile with no TypeScript errors
     - `cognito` page passes `UserPoolId` when creating a user (Requirement 3.3)
 
-- [-] 16. Replace stub pages — Batch 6 AI/ML, IoT & Management (11 pages)
+- [x] 16. Replace stub pages — Batch 6 AI/ML, IoT & Management (11 pages)
   - Depends on: #10
   - Replace content of:
     - `src/app/bedrock-agent/page.tsx` — agents table, create agent modal (agentName, foundationModel); fetch from `/api/bedrock-agent`
@@ -253,7 +253,7 @@ This plan implements 43 missing API routes, replaces 42+ stub service pages, add
     - `WidgetContainer.tsx` compiles with no TypeScript errors
     - `draggedId` state resets to `null` after drop
 
-- [-] 18. Implement widget resize and visibility toggle
+- [x] 18. Implement widget resize and visibility toggle
   - Depends on: #17
   - Modify `src/components/widgets/Widget.tsx`:
     - Add resize toggle button: clicking cycles `size` between `"regular"` (colspan 6) and `"extended"` (colspan 12); on change call `PUT /api/widgets { widgetId, updates: { width: 2 | 1 } }`

@@ -1,20 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Grid from "@cloudscape-design/components/grid";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Button from "@cloudscape-design/components/button";
 import Box from "@cloudscape-design/components/box";
-import Alert from "@cloudscape-design/components/alert";
+import Header from "@cloudscape-design/components/header";
 
 export interface WidgetItem {
   id: string;
   node: React.ReactNode;
-}
-
-interface HiddenWidget {
-  widget_id: string;
-  title?: string;
 }
 
 export interface WidgetContainerProps {
@@ -29,22 +24,7 @@ export default function WidgetContainer({
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [order, setOrder] = useState<string[]>(() => widgets.map((w) => w.id));
-  const [hiddenWidgets, setHiddenWidgets] = useState<HiddenWidget[]>([]);
   const [widgetSizes, setWidgetSizes] = useState<Record<string, "regular" | "extended">>({});
-
-  // Fetch hidden widgets when entering customization mode
-  useEffect(() => {
-    if (!isCustomizing) return;
-    fetch("/api/widgets")
-      .then((res) => res.json())
-      .then((data) => {
-        const allWidgets: Array<{ widget_id: string; visible: number; title?: string }> =
-          data.widgets ?? [];
-        const hidden = allWidgets.filter((w) => w.visible === 0);
-        setHiddenWidgets(hidden);
-      })
-      .catch(() => {});
-  }, [isCustomizing]);
 
   function handleDrop(targetId: string) {
     if (!draggedId || draggedId === targetId) {
@@ -84,7 +64,14 @@ export default function WidgetContainer({
   }
 
   function handleRemove(widgetId: string) {
+    // Optimistically remove from order
     setOrder((prev) => prev.filter((id) => id !== widgetId));
+    // Persist to API
+    fetch("/api/widgets", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ widgetId, updates: { visible: 0 } }),
+    }).catch(() => {});
   }
 
   function handleResize(widgetId: string, newSize: "regular" | "extended") {
@@ -92,14 +79,12 @@ export default function WidgetContainer({
   }
 
   function handleRestore(widgetId: string) {
+    setOrder((prev) => (prev.includes(widgetId) ? prev : [...prev, widgetId]));
     fetch("/api/widgets", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ widgetId, updates: { visible: 1 } }),
     }).catch(() => {});
-    setHiddenWidgets((prev) => prev.filter((w) => w.widget_id !== widgetId));
-    // Add back to order if not already present
-    setOrder((prev) => (prev.includes(widgetId) ? prev : [...prev, widgetId]));
   }
 
   // Build a map for quick lookup
@@ -110,14 +95,16 @@ export default function WidgetContainer({
   // Ordered widget IDs filtered to only those present in the current widgets prop
   const orderedIds = order.filter((id) => widgetMap.has(id));
 
-  // Clone each widget node to inject isCustomizing, widgetId, onResize, onRemove props
+  // Widgets known but not currently in order (i.e., hidden/removed)
+  const hiddenWidgetIds = widgets.map((w) => w.id).filter((id) => !order.includes(id));
+
+  // Clone each widget node to inject isCustomizing, widgetId, onResize props
   function injectWidgetProps(widgetId: string, node: React.ReactNode): React.ReactNode {
     if (!React.isValidElement(node)) return node;
     return React.cloneElement(node as React.ReactElement<Record<string, unknown>>, {
       isCustomizing,
       widgetId,
       onResize: handleResize,
-      onRemove: handleRemove,
     });
   }
 
@@ -166,32 +153,6 @@ export default function WidgetContainer({
         </div>
       </Box>
 
-      {/* Restore hidden widgets panel */}
-      {isCustomizing && hiddenWidgets.length > 0 && (
-        <Box padding={{ horizontal: "l" }}>
-          <SpaceBetween size="s">
-            <Alert type="info" header="Hidden widgets">
-              <SpaceBetween size="xs">
-                {hiddenWidgets.map((hw) => (
-                  <div
-                    key={hw.widget_id}
-                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                  >
-                    <span>{hw.title ?? hw.widget_id}</span>
-                    <Button
-                      variant="link"
-                      onClick={() => handleRestore(hw.widget_id)}
-                    >
-                      Restore
-                    </Button>
-                  </div>
-                ))}
-              </SpaceBetween>
-            </Alert>
-          </SpaceBetween>
-        </Box>
-      )}
-
       <Box padding={{ horizontal: "l", bottom: "l" }}>
         <Grid
           gridDefinition={orderedIds.map((widgetId) => ({
@@ -216,12 +177,54 @@ export default function WidgetContainer({
                 opacity: draggedId === widgetId ? 0.5 : 1,
                 cursor: isCustomizing ? "grab" : "default",
                 height: "100%",
+                position: "relative",
               }}
             >
+              {isCustomizing && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    zIndex: 10,
+                    display: "flex",
+                    gap: "4px",
+                  }}
+                >
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemove(widgetId);
+                    }}
+                    iconName="remove"
+                    variant="icon"
+                    ariaLabel="Remove widget"
+                    formAction="none"
+                  />
+                </div>
+              )}
               {injectWidgetProps(widgetId, widgetMap.get(widgetId))}
             </div>
           ))}
         </Grid>
+
+        {/* Restore hidden widgets panel */}
+        {isCustomizing && hiddenWidgetIds.length > 0 && (
+          <Box padding={{ top: "m" }}>
+            <Header variant="h3">Hidden widgets</Header>
+            <SpaceBetween direction="horizontal" size="xs">
+              {hiddenWidgetIds.map((id) => (
+                <Button
+                  key={id}
+                  onClick={() => handleRestore(id)}
+                  formAction="none"
+                >
+                  Restore: {id}
+                </Button>
+              ))}
+            </SpaceBetween>
+          </Box>
+        )}
       </Box>
     </SpaceBetween>
   );
