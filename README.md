@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AWS Console - Local Stack
 
-## Getting Started
+Local AWS Console clone built with Next.js 15, Cloudscape Design System, and all major AWS services.
 
-First, run the development server:
+## Quick Start
 
 ```bash
+# 1. Start local AWS services (Ministack)
+make start
+
+# 2. Start the web UI
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# 3. Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Docker Compose
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Ministack (default, 60+ services, free)
+docker compose up -d ministack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# LocalStack (120+ services, requires license for some features)
+docker compose --profile localstack up -d localstack
+```
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+- **Frontend**: Next.js 15 + Cloudscape Design System
+- **Backend**: Next.js API Routes (AWS SDK v3)
+- **Provider**: Ministack / LocalStack on port 4566
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Services Supported
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+S3 | DynamoDB | Lambda | SQS | SNS | IAM | EC2 | RDS | ElastiCache | CloudWatch | CloudFormation | KMS | Secrets Manager | Route 53 | ECS | API Gateway | System Manager
 
-## Deploy on Vercel
+## Plan
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Full plan at `/Users/usamakhan/.local/share/opencode/plans/PLAN.md`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Build Status
+
+✅ Build passes (`npm run build`)
+✅ TypeScript strict mode
+✅ All routes compile (dashboard + 15 service pages + 12 API routes)
