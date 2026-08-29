@@ -34,9 +34,6 @@ docker compose --profile localstack up -d localstack
 
 S3 | DynamoDB | Lambda | SQS | SNS | IAM | EC2 | RDS | ElastiCache | CloudWatch | CloudFormation | KMS | Secrets Manager | Route 53 | ECS | API Gateway | System Manager
 
-## Plan
-
-Full plan at `/Users/usamakhan/.local/share/opencode/plans/PLAN.md`
 
 ## Build Status
 

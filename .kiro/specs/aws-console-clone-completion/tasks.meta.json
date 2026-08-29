@@ -1,0 +1,383 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Add `terminal_history` table to SQLite persistence layer and configure vitest": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294212
+      },
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031303247
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519405
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031530226
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032094054
+      }
+    ],
+    "2. Implement `/api/terminal` route": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294245
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519444
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032100343
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032724085
+      }
+    ],
+    "3. Build `IamPolicyEditor.tsx` component": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294274
+      },
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031303957
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519484
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031530605
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032094336
+      }
+    ],
+    "4. Integrate `IamPolicyEditor` into IAM service pages": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294348
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519505
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032101300
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032724737
+      }
+    ],
+    "5. Implement Batch 1 — Networking API routes (8 routes)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294375
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519534
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032101591
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032725470
+      }
+    ],
+    "6. Implement Batch 2 — Compute API routes (4 routes)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294396
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519555
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032103108
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032726131
+      }
+    ],
+    "7. Implement Batch 3 — Storage API routes (4 routes)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294426
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519578
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032103326
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032726830
+      }
+    ],
+    "8. Implement Batch 4 — Database & Analytics API routes (8 routes)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294454
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519602
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032732699
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788033953180
+      }
+    ],
+    "9. Implement Batch 5 — Security & Developer Tools API routes (8 routes)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294479
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519686
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032733336
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788033953682
+      }
+    ],
+    "10. Implement Batch 6 — AI/ML, IoT & Management API routes (11 routes)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294506
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519708
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032733865
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788033954592
+      }
+    ],
+    "11. Replace stub pages — Batch 1 Networking (8 pages)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294525
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519728
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788033962458
+      }
+    ],
+    "12. Replace stub pages — Batch 2 Compute (4 pages)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294544
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519747
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788033961663
+      }
+    ],
+    "13. Replace stub pages — Batch 3 Storage (4 pages)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294567
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519765
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788033959531
+      }
+    ],
+    "14. Replace stub pages — Batch 4 Database & Analytics (8 pages)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294591
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519782
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788033960382
+      }
+    ],
+    "15. Replace stub pages — Batch 5 Security & Developer Tools (8 pages)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294610
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519800
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788033961016
+      }
+    ],
+    "16. Replace stub pages — Batch 6 AI/ML, IoT & Management (11 pages)": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294634
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519820
+      }
+    ],
+    "17. Implement widget drag-and-drop in `WidgetContainer.tsx`": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294654
+      },
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031304621
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519837
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031531331
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788032094881
+      }
+    ],
+    "18. Implement widget resize and visibility toggle": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294681
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519856
+      }
+    ],
+    "20. Build verification and final TypeScript check": [
+      {
+        "executionId": "afb68237-4d2a-444b-ae31-0053dfa6755d",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031294708
+      },
+      {
+        "executionId": "25b96736-523a-43a1-9a6f-9cac254f3565",
+        "chatSessionId": "sess_7f9a3e4b-85ae-41d2-8832-1b254067cbc2",
+        "timestamp": 1788031519875
+      }
+    ]
+  }
+}

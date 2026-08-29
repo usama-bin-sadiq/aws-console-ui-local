@@ -201,7 +201,7 @@ function ResourceTableInner<T extends object>({
       }
       setInternalCurrentPage(1);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     [serviceKey, allColumnIds, isPrefsControlled, externalOnPreferencesChange]
   );
 

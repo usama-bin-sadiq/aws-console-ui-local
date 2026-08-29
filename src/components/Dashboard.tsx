@@ -14,127 +14,61 @@ import Link from "@cloudscape-design/components/link";
 import Icon from "@cloudscape-design/components/icon";
 import { useRouter } from "next/navigation";
 
-const categories = [
-  {
-    label: "Storage",
-    services: [
-      {
-        name: "Amazon S3",
-        desc: "Scalable object storage",
-        href: "/s3",
-        status: "available",
-      },
-      {
-        name: "Amazon EBS",
-        desc: "Block storage volumes",
-        href: "/volume",
-        status: "available",
-      },
-    ],
-  },
-  {
-    label: "Compute",
-    services: [
-      {
-        name: "Amazon EC2",
-        desc: "Virtual servers in the cloud",
-        href: "/ec2",
-        status: "available",
-      },
-      {
-        name: "AWS Lambda",
-        desc: "Run code without servers",
-        href: "/lambda",
-        status: "available",
-      },
-      {
-        name: "Amazon ECS",
-        desc: "Container orchestration",
-        href: "/ecs-cluster",
-        status: "available",
-      },
-    ],
-  },
-  {
-    label: "Database",
-    services: [
-      {
-        name: "Amazon DynamoDB",
-        desc: "NoSQL key-value database",
-        href: "/dynamodb",
-        status: "available",
-      },
-      {
-        name: "Amazon RDS",
-        desc: "Managed relational databases",
-        href: "/rds",
-        status: "available",
-      },
-      {
-        name: "Amazon ElastiCache",
-        desc: "In-memory caching",
-        href: "/elasticache",
-        status: "available",
-      },
-    ],
-  },
-  {
-    label: "Networking",
-    services: [
-      {
-        name: "Amazon VPC",
-        desc: "Virtual private cloud",
-        href: "/vpc",
-        status: "available",
-      },
-      {
-        name: "Route 53",
-        desc: "DNS and domain names",
-        href: "/route53",
-        status: "available",
-      },
-    ],
-  },
-  {
-    label: "Security",
-    services: [
-      {
-        name: "AWS IAM",
-        desc: "Identity and access management",
-        href: "/iam",
-        status: "available",
-      },
-      {
-        name: "AWS KMS",
-        desc: "Key management service",
-        href: "/kms",
-        status: "available",
-      },
-      {
-        name: "Secrets Manager",
-        desc: "Secrets rotation and storage",
-        href: "/secrets-manager",
-        status: "available",
-      },
-    ],
-  },
+interface Service {
+  name: string;
+  description: string;
+  href: string;
+  icon: string;
+  category: string;
+}
+
+const ALL_SERVICES: Service[] = [
+  { name: "Amazon S3", description: "Scalable object storage", href: "/s3", icon: "folder", category: "Storage" },
+  { name: "EBS Volumes", description: "Block storage volumes", href: "/volume", icon: "folder", category: "Storage" },
+  { name: "EBS Snapshots", description: "Volume snapshots", href: "/snapshot", icon: "folder", category: "Storage" },
+  { name: "EFS", description: "Elastic file system", href: "/efs", icon: "folder", category: "Storage" },
+  { name: "Backup", description: "Centralized backup", href: "/backup", icon: "folder", category: "Storage" },
+  
+  { name: "Amazon EC2", description: "Virtual servers", href: "/ec2", icon: "status-positive", category: "Compute" },
+  { name: "AWS Lambda", description: "Serverless compute", href: "/lambda", icon: "status-positive", category: "Compute" },
+  { name: "ECS Clusters", description: "Container orchestration", href: "/ecs-cluster", icon: "status-positive", category: "Compute" },
+  { name: "EKS Clusters", description: "Kubernetes service", href: "/eks-cluster", icon: "status-positive", category: "Compute" },
+  
+  { name: "Amazon DynamoDB", description: "NoSQL database", href: "/dynamodb", icon: "status-info", category: "Database" },
+  { name: "Amazon RDS", description: "Relational database", href: "/rds", icon: "status-info", category: "Database" },
+  { name: "ElastiCache", description: "In-memory caching", href: "/elasticache", icon: "status-info", category: "Database" },
+  
+  { name: "Amazon VPC", description: "Virtual private cloud", href: "/vpc", icon: "status-positive", category: "Networking" },
+  { name: "Route 53", description: "DNS and domain names", href: "/route53", icon: "status-positive", category: "Networking" },
+  { name: "CloudFront", description: "Content delivery network", href: "/cloudfront", icon: "status-positive", category: "Networking" },
+  
+  { name: "AWS IAM", description: "Identity & access", href: "/iam", icon: "user-profile", category: "Security" },
+  { name: "AWS KMS", description: "Key management service", href: "/kms", icon: "unlocked", category: "Security" },
+  { name: "Secrets Manager", description: "Secrets rotation", href: "/secrets-manager", icon: "unlocked", category: "Security" },
+  { name: "ACM", description: "SSL/TLS certificates", href: "/acm", icon: "unlocked", category: "Security" },
+  
+  { name: "Amazon CloudWatch", description: "Monitoring", href: "/cloudwatch", icon: "status-info", category: "Monitoring" },
+  { name: "CloudWatch Logs", description: "Log management", href: "/cloudwatch-logs", icon: "status-info", category: "Monitoring" },
+  { name: "X-Ray", description: "Distributed tracing", href: "/x-ray", icon: "status-info", category: "Monitoring" },
+  
+  { name: "Amazon SQS", description: "Message queuing", href: "/sqs", icon: "envelope", category: "Application Integration" },
+  { name: "Amazon SNS", description: "Pub/sub messaging", href: "/sns", icon: "envelope", category: "Application Integration" },
+  { name: "Step Functions", description: "Workflow orchestration", href: "/step-functions", icon: "envelope", category: "Application Integration" },
 ];
 
-export default function DashboardPage() {
+export default function Dashboard() {
   const router = useRouter();
-  const [provider, setProvider] = useState("checking...");
-  const [region, setRegion] = useState("us-east-1");
+  const [provider, setProvider] = useState<string>("checking...");
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [recentlyVisited, setRecentlyVisited] = useState<any[]>([]);
+  const [recentlyVisited, setRecentlyVisited] = useState<Service[]>([]);
 
   useEffect(() => {
-    // Load favorites and recently visited from localStorage
     const savedFavorites = localStorage.getItem("aws_favorites");
     if (savedFavorites) {
       try {
         setFavorites(JSON.parse(savedFavorites));
-      } catch (e) {
-        console.error("Failed to parse favorites", e);
+      } catch {
+        // Ignore errors
       }
     }
 
@@ -142,17 +76,14 @@ export default function DashboardPage() {
     if (savedRecent) {
       try {
         setRecentlyVisited(JSON.parse(savedRecent));
-      } catch (e) {
-        console.error("Failed to parse recently visited", e);
+      } catch {
+        // Ignore errors
       }
     }
 
-    // Check provider health
     fetch("/api/health")
       .then((r) => r.json())
-      .then((d) => {
-        setProvider(d.provider || "unknown");
-      })
+      .then((d) => setProvider(d.provider || "unknown"))
       .catch(() => setProvider("unreachable"));
   }, []);
 
@@ -164,78 +95,64 @@ export default function DashboardPage() {
     localStorage.setItem("aws_favorites", JSON.stringify(newFavorites));
   };
 
-  const favoriteServices = categories
-    .flatMap((cat) => cat.services)
-    .filter((svc) => favorites.includes(svc.href));
+  const favoriteServices = ALL_SERVICES.filter((s) => favorites.includes(s.href));
+  const categories = ["Compute", "Storage", "Database", "Networking", "Security", "Monitoring", "Application Integration"];
 
   return (
     <SpaceBetween size="l">
-      <Header
-        variant="h1"
-        description="Manage your AWS resources from a unified console"
-      >
+      <Header variant="h1" description="Welcome to your AWS Management Console">
         AWS Management Console
       </Header>
 
-      {/* Provider status banner */}
       <Container>
-        <Grid gridDefinition={[{ colspan: 8 }, { colspan: 4 }]}>
+        <Grid gridDefinition={[{ colspan: 6 }, { colspan: 6 }]}>
           <SpaceBetween size="s">
-            <Box variant="h2">Service Health</Box>
-            <SpaceBetween direction="horizontal" size="m">
-              <StatusIndicator
-                type={
-                  provider === "ministack" || provider === "localstack"
-                    ? "success"
-                    : "error"
-                }
-              >
-                {provider}
-              </StatusIndicator>
-              <Badge color="blue">Local Development</Badge>
-            </SpaceBetween>
+            <Box variant="h3">Service Health</Box>
+            <StatusIndicator
+              type={
+                provider === "ministack" || provider === "localstack"
+                  ? "success"
+                  : "error"
+              }
+            >
+              {provider}
+            </StatusIndicator>
           </SpaceBetween>
           <SpaceBetween size="s">
-            <Box variant="h2">Quick Links</Box>
+            <Box variant="h3">Quick Links</Box>
             <SpaceBetween direction="horizontal" size="xs">
-              <Link href="/support">Support</Link>
               <Link href="/billing">Billing</Link>
+              <Link href="/support">Support</Link>
               <Link href="/account">Account</Link>
             </SpaceBetween>
           </SpaceBetween>
         </Grid>
       </Container>
 
-      {/* Favorites section */}
       {favoriteServices.length > 0 && (
         <Container header={<Header variant="h2">Favorites</Header>}>
           <Cards
             cardDefinition={{
               header: (item) => (
-                <SpaceBetween direction="horizontal" size="xs" alignItems="center">
-                  <Link href={item.href} fontSize="heading-m">
-                    {item.name}
-                  </Link>
-                  <Button
-                    iconName="star-filled"
-                    variant="icon"
-                    onClick={() => toggleFavorite(item.href)}
-                  />
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Icon name={item.icon as any} />
+                  <Link href={item.href}>{item.name}</Link>
                 </SpaceBetween>
               ),
               sections: [
                 {
                   id: "description",
-                  content: (item) => item.desc,
+                  content: (item) => item.description,
                 },
                 {
-                  id: "status",
+                  id: "actions",
                   content: (item) => (
-                    <StatusIndicator
-                      type={item.status === "available" ? "success" : "pending"}
-                    >
-                      {item.status === "available" ? "Available" : "Pending"}
-                    </StatusIndicator>
+                    <Button
+                      iconName="star-filled"
+                      variant="icon"
+                      onClick={() => toggleFavorite(item.href)}
+                      ariaLabel="Remove from favorites"
+                    />
                   ),
                 },
               ],
@@ -244,26 +161,23 @@ export default function DashboardPage() {
             cardsPerRow={[
               { cards: 1 },
               { minWidth: 500, cards: 2 },
-              { minWidth: 800, cards: 4 },
+              { minWidth: 900, cards: 4 },
             ]}
           />
         </Container>
       )}
 
-      {/* Recently visited */}
       {recentlyVisited.length > 0 && (
         <Container header={<Header variant="h2">Recently visited</Header>}>
           <Cards
             cardDefinition={{
               header: (item) => (
-                <Link href={item.href} fontSize="heading-m">
-                  {item.name}
-                </Link>
+                <Link href={item.href}>{item.name}</Link>
               ),
               sections: [
                 {
                   id: "description",
-                  content: (item) => item.desc,
+                  content: (item) => item.description,
                 },
               ],
             }}
@@ -271,55 +185,54 @@ export default function DashboardPage() {
             cardsPerRow={[
               { cards: 1 },
               { minWidth: 500, cards: 2 },
-              { minWidth: 800, cards: 4 },
+              { minWidth: 900, cards: 5 },
             ]}
           />
         </Container>
       )}
 
-      {/* All services by category */}
-      {categories.map((cat) => (
-        <Container key={cat.label} header={<Header variant="h2">{cat.label}</Header>}>
-          <Cards
-            cardDefinition={{
-              header: (item) => (
-                <SpaceBetween direction="horizontal" size="xs" alignItems="center">
-                  <Link href={item.href} fontSize="heading-m">
-                    {item.name}
-                  </Link>
-                  <Button
-                    iconName={favorites.includes(item.href) ? "star-filled" : "star"}
-                    variant="icon"
-                    onClick={() => toggleFavorite(item.href)}
-                  />
-                </SpaceBetween>
-              ),
-              sections: [
-                {
-                  id: "description",
-                  content: (item) => item.desc,
-                },
-                {
-                  id: "status",
-                  content: (item) => (
-                    <StatusIndicator
-                      type={item.status === "available" ? "success" : "pending"}
-                    >
-                      {item.status === "available" ? "Available" : "Pending"}
-                    </StatusIndicator>
-                  ),
-                },
-              ],
-            }}
-            items={cat.services}
-            cardsPerRow={[
-              { cards: 1 },
-              { minWidth: 500, cards: 2 },
-              { minWidth: 800, cards: 3 },
-            ]}
-          />
-        </Container>
-      ))}
+      {categories.map((category) => {
+        const categoryServices = ALL_SERVICES.filter((s) => s.category === category);
+        if (categoryServices.length === 0) return null;
+        
+        return (
+          <Container key={category} header={<Header variant="h2">{category}</Header>}>
+            <Cards
+              cardDefinition={{
+                header: (item) => (
+                  <SpaceBetween direction="horizontal" size="xs">
+                    <Icon name={item.icon as any} />
+                    <Link href={item.href}>{item.name}</Link>
+                  </SpaceBetween>
+                ),
+                sections: [
+                  {
+                    id: "description",
+                    content: (item) => item.description,
+                  },
+                  {
+                    id: "actions",
+                    content: (item) => (
+                      <Button
+                        iconName={favorites.includes(item.href) ? "star-filled" : "star"}
+                        variant="icon"
+                        onClick={() => toggleFavorite(item.href)}
+                        ariaLabel="Add to favorites"
+                      />
+                    ),
+                  },
+                ],
+              }}
+              items={categoryServices}
+              cardsPerRow={[
+                { cards: 1 },
+                { minWidth: 500, cards: 2 },
+                { minWidth: 900, cards: 3 },
+              ]}
+            />
+          </Container>
+        );
+      })}
     </SpaceBetween>
   );
 }

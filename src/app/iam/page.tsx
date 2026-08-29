@@ -11,6 +11,7 @@ import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Tabs from "@cloudscape-design/components/tabs";
 import FormField from "@cloudscape-design/components/form-field";
+import IamPolicyEditor from "@/components/IamPolicyEditor";
 
 export default function IAMPage() {
   const [data, setData] = useState({ users: [], roles: [], policies: [] });
@@ -19,6 +20,9 @@ export default function IAMPage() {
   const [createRoleModal, setCreateRoleModal] = useState(false);
   const [newUserName, setNewUserName] = useState("");
   const [newRoleName, setNewRoleName] = useState("");
+  const [policyDoc, setPolicyDoc] = useState(
+    JSON.stringify({ Version: "2012-10-17", Statement: [] }, null, 2)
+  );
 
   const fetchData = async () => {
     setLoading(true);
@@ -50,14 +54,12 @@ export default function IAMPage() {
       body: JSON.stringify({
         action: "createRole",
         roleName: newRoleName,
-        assumeRolePolicyDocument: JSON.stringify({
-          Version: "2012-10-17",
-          Statement: [{ Effect: "Allow", Principal: { Service: "lambda.amazonaws.com" }, Action: "sts:AssumeRole" }],
-        }),
+        assumeRolePolicyDocument: policyDoc,
       }),
     });
     setCreateRoleModal(false);
     setNewRoleName("");
+    setPolicyDoc(JSON.stringify({ Version: "2012-10-17", Statement: [] }, null, 2));
     fetchData();
   };
 
@@ -153,6 +155,11 @@ export default function IAMPage() {
         <Modal visible={createRoleModal} onDismiss={() => setCreateRoleModal(false)} header="Create IAM Role"
           footer={<SpaceBetween direction="horizontal" size="xs"><Button onClick={() => setCreateRoleModal(false)}>Cancel</Button><Button variant="primary" onClick={createRole}>Create</Button></SpaceBetween>}>
           <FormField label="Role Name"><Input value={newRoleName} onChange={(e) => setNewRoleName(e.detail.value)} /></FormField>
+          <IamPolicyEditor
+            label="Permissions Policy"
+            value={policyDoc}
+            onChange={setPolicyDoc}
+          />
         </Modal>
       </SpaceBetween>
     </div>

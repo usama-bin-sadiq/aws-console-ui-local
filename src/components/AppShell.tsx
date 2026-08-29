@@ -7,12 +7,14 @@ import TopNavigation from "@cloudscape-design/components/top-navigation";
 import BreadcrumbGroup from "@cloudscape-design/components/breadcrumb-group";
 import Input from "@cloudscape-design/components/input";
 import SplitPanel from "@cloudscape-design/components/split-panel";
+import Box from "@cloudscape-design/components/box";
+import Icon from "@cloudscape-design/components/icon";
 import { Mode, applyMode } from "@cloudscape-design/global-styles";
 import { usePathname, useRouter } from "next/navigation";
 import { useSettingsStore } from "@/stores/settings";
 import { AWS_REGIONS } from "@/constants/regions";
-import { NAVIGATION_ITEMS, ALL_SERVICES } from "@/constants/navigation";
-import { getProviderBadgeColor } from "@/utils/theme";
+import { NAVIGATION_ITEMS } from "@/constants/navigation";
+import { useGlobalSearch, groupByCategory } from "@/hooks/useGlobalSearch";
 import type { Terminal } from "xterm";
 import type { FitAddon } from "@xterm/addon-fit";
 
@@ -20,11 +22,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { region, setRegion, theme, setTheme, provider, setProvider } = useSettingsStore();
-  const [searchValue, setSearchValue] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [showSearch, setShowSearch] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [groupedResults, setGroupedResults] = useState<Record<string, any[]>>({});
+  const { searchValue, setSearchValue, searchResults, showDropdown, setShowDropdown, selectedIndex, navigateToService } = useGlobalSearch();
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -50,37 +48,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       });
   }, [setProvider]);
 
-  // Search handling with grouping by category
-  useEffect(() => {
-    if (searchValue.length >= 3) {
-      const results = ALL_SERVICES.filter((service: any) =>
-        service.text?.toLowerCase().includes(searchValue.toLowerCase())
-      );
-      
-      // Group results by category
-      const grouped: Record<string, any[]> = {};
-      NAVIGATION_ITEMS.forEach((item: any) => {
-        if (item.type === "expandable-link-group" && item.items) {
-          const matchingServices = item.items.filter((svc: any) =>
-            results.some((r: any) => r.href === svc.href)
-          );
-          if (matchingServices.length > 0) {
-            grouped[item.text] = matchingServices;
-          }
-        }
-      });
-      
-      setGroupedResults(grouped);
-      setSearchResults(results.slice(0, 10));
-      setShowSearch(true);
-      setSelectedIndex(0);
-    } else {
-      setShowSearch(false);
-      setSearchResults([]);
-      setGroupedResults({});
-    }
-  }, [searchValue]);
-
   // Load expanded categories from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("nav_expanded");
@@ -100,39 +67,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     localStorage.setItem("nav_expanded", JSON.stringify(newExpanded));
   };
 
-  // Keyboard navigation for search
-  useEffect(() => {
-    if (!showSearch) return;
-    
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          setSelectedIndex(prev => Math.min(prev + 1, searchResults.length - 1));
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setSelectedIndex(prev => Math.max(prev - 1, 0));
-          break;
-        case 'Enter':
-          e.preventDefault();
-          if (searchResults[selectedIndex]) {
-            router.push(searchResults[selectedIndex].href);
-            setShowSearch(false);
-            setSearchValue("");
-          }
-          break;
-        case 'Escape':
-          setShowSearch(false);
-          setSearchValue("");
-          break;
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showSearch, selectedIndex, searchResults, router]);
-
   // Load xterm CSS dynamically
   useEffect(() => {
     if (terminalOpen && typeof window !== "undefined") {
@@ -151,9 +85,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         import("@xterm/addon-fit").then(({ FitAddon }) => {
           const term = new Terminal({
             cursorBlink: true,
+            fontSize: 14,
+            fontFamily: 'Menlo, Monaco, "Courier New", monospace',
             theme: {
               background: theme === "dark" ? "#000000" : "#ffffff",
               foreground: theme === "dark" ? "#ffffff" : "#000000",
+              cursor: theme === "dark" ? "#ffffff" : "#000000",
+              // selection: "rgba(255, 255, 255, 0.3)",
             },
           });
           
@@ -164,8 +102,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           fit.fit();
           
           term.writeln("AWS Console Terminal");
-          term.writeln("Connected to local environment");
+          term.writeln("LocalStack/MiniStack Shell");
+          term.writeln("");
           term.write("$ ");
+
+          // Handle input
+          let currentLine = "";
+          term.onData((data) => {
+            if (data === "\r") {
+              // Enter key
+              term.write("\r\n");
+              executeCommand(currentLine, term);
+              currentLine = "";
+              term.write("$ ");
+            } else if (data === "\u007F") {
+              // Backspace
+              if (currentLine.length > 0) {
+                currentLine = currentLine.slice(0, -1);
+                term.write("\b \b");
+              }
+            } else {
+              currentLine += data;
+              term.write(data);
+            }
+          });
 
           terminalInstance.current = term;
 
@@ -186,6 +146,37 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       });
     }
   }, [terminalOpen, theme]);
+
+  const executeCommand = (cmd: string, term: Terminal) => {
+    const trimmed = cmd.trim();
+    
+    if (trimmed === "help") {
+      term.writeln("Available commands:");
+      term.writeln("  aws s3 ls             - List S3 buckets");
+      term.writeln("  aws ec2 describe-instances - List EC2 instances");
+      term.writeln("  clear                 - Clear terminal");
+      term.writeln("  help                  - Show this help");
+    } else if (trimmed === "clear") {
+      term.clear();
+    } else if (trimmed.startsWith("aws")) {
+      term.writeln(`Executing: ${trimmed}`);
+      // Execute AWS CLI command via API
+      fetch("/api/terminal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: trimmed }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          term.writeln(data.output || "");
+        })
+        .catch(() => {
+          term.writeln("Error executing command");
+        });
+    } else if (trimmed) {
+      term.writeln(`Command not found: ${trimmed}`);
+    }
+  };
 
   // Load terminal state from localStorage
   useEffect(() => {
@@ -229,7 +220,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   const selectedRegion = AWS_REGIONS.find((r) => r.value === region) || AWS_REGIONS[0];
-  const providerBadgeColor = getProviderBadgeColor(provider);
+  const groupedSearchResults = groupByCategory(searchResults);
 
   return (
     <>
@@ -240,52 +231,58 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           logo: { src: "/aws-logo.svg", alt: "AWS" },
         }}
         search={
-          <div style={{ position: "relative", width: 300 }}>
+          <div style={{ position: "relative", width: 400 }}>
             <Input
               type="search"
-              placeholder="Search services..."
+              placeholder="Search AWS services (e.g., S3, EC2, Lambda)"
               value={searchValue}
               onChange={(e) => setSearchValue(e.detail.value)}
-              onBlur={() => setTimeout(() => setShowSearch(false), 200)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+              ariaLabel="Search services"
             />
-            {showSearch && Object.keys(groupedResults).length > 0 && (
-              <div
+            {showDropdown && searchResults.length > 0 && (
+              <Box
+                padding="none"
+                variant="div"
+          
                 style={{
                   position: "absolute",
-                  top: "100%",
+                  top: "calc(100% + 4px)",
                   left: 0,
                   right: 0,
                   backgroundColor: "var(--awsui-color-background-dropdown-item-default)",
                   border: "1px solid var(--awsui-color-border-dropdown-container)",
-                  borderRadius: "var(--awsui-border-radius-dropdown)",
-                  marginTop: 4,
+                  borderRadius: "8px",
                   zIndex: 9999,
-                  maxHeight: 400,
+                  maxHeight: 500,
                   overflow: "auto",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
                 }}
               >
-                {Object.entries(groupedResults).map(([category, services]) => (
+                {Object.entries(groupedSearchResults).map(([category, services]) => (
                   <div key={category}>
-                    <div
+                    <Box
+                      padding="xs"
+                      variant="div"
                       style={{
-                        padding: "8px 12px",
+                        padding: "8px 16px",
                         fontSize: "12px",
-                        fontWeight: 600,
+                        fontWeight: 700,
                         color: "var(--awsui-color-text-label)",
                         borderBottom: "1px solid var(--awsui-color-border-divider-default)",
                         backgroundColor: "var(--awsui-color-background-container-header)",
                       }}
                     >
                       {category}
-                    </div>
-                    {services.map((service: any, idx: number) => {
-                      const globalIndex = searchResults.findIndex((r: any) => r.href === service.href);
+                    </Box>
+                    {services.map((service, idx) => {
+                      const globalIndex = searchResults.findIndex((r) => r.href === service.href);
                       return (
                         <div
-                          key={service.href}
+                          key={`${category}-${idx}`}
+                          onClick={() => navigateToService(service)}
                           style={{
-                            padding: "10px 12px",
+                            padding: "12px 16px",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
@@ -294,18 +291,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                               globalIndex === selectedIndex
                                 ? "var(--awsui-color-background-dropdown-item-hover)"
                                 : "transparent",
-                            color: "var(--awsui-color-text-body-default)",
+                            borderBottom: "1px solid var(--awsui-color-border-divider-default)",
                           }}
-                          onMouseEnter={() => setSelectedIndex(globalIndex)}
-                          onClick={() => {
-                            router.push(service.href);
-                            setSearchValue("");
-                            setShowSearch(false);
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "var(--awsui-color-background-dropdown-item-hover)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              globalIndex === selectedIndex
+                                ? "var(--awsui-color-background-dropdown-item-hover)"
+                                : "transparent";
                           }}
                         >
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: "14px" }}>
-                              Go to {service.text}
+                          <Icon name="search" />
+                          <div style={{ flex: 1 }}>
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                color: "var(--awsui-color-text-body-default)",
+                                marginBottom: "4px",
+                              }}
+                            >
+                              {service.text}
                             </div>
                             <div
                               style={{
@@ -313,15 +320,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 color: "var(--awsui-color-text-body-secondary)",
                               }}
                             >
-                              {category}
+                              {service.description}
                             </div>
                           </div>
+                          <Icon name="angle-right-double" size="small" />
                         </div>
                       );
                     })}
                   </div>
                 ))}
-              </div>
+              </Box>
             )}
           </div>
         }
@@ -347,13 +355,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           },
           {
             type: "button",
-            text: provider,
-            iconName: provider === "unknown" ? "status-warning" : "status-positive",
+            text: provider.toUpperCase(),
+            ariaLabel: `Provider: ${provider}`,
           },
           {
             type: "button",
-            iconName: theme === "dark" ? "view-full" : "view-horizontal",
-            text: "",
+            text: theme === "dark" ? "☀️ Light" : "🌙 Dark",
+            ariaLabel: `Switch to ${theme === "dark" ? "light" : "dark"} mode`,
             onClick: toggleTheme,
           },
           {
