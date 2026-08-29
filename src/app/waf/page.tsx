@@ -4,20 +4,17 @@ import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Link from "@cloudscape-design/components/link";
 
-export default function Page() {
+export default function WAFPage() {
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS WAF</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
+        <Container>
           <Box>
-            <StatusIndicator type="info">
-              AWS WAF &mdash; coming soon
-            </StatusIndicator>
+            AWS WAF Classic is deprecated. Use <Link href="/wafv2">WAF v2</Link> for new web ACLs.
           </Box>
-          <Box>This service is emulated by LocalStack / Ministack.</Box>
         </Container>
       </SpaceBetween>
     </div>

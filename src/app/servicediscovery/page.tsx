@@ -1,19 +1,118 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
-import Container from "@cloudscape-design/components/container";
+import Table from "@cloudscape-design/components/table";
+import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
-export default function Page() {
+import Container from "@cloudscape-design/components/container";
+import Alert from "@cloudscape-design/components/alert";
+import Modal from "@cloudscape-design/components/modal";
+import FormField from "@cloudscape-design/components/form-field";
+import Input from "@cloudscape-design/components/input";
+
+interface ServiceDiscoveryNamespace {
+  Id: string;
+  Name: string;
+  Type: string;
+}
+
+export default function ServiceDiscoveryPage() {
+  const [namespaces, setNamespaces] = useState<ServiceDiscoveryNamespace[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [createModal, setCreateModal] = useState(false);
+  const [namespaceName, setNamespaceName] = useState("");
+
+  const fetchNamespaces = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/servicediscovery");
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setNamespaces(data.namespaces || []);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNamespaces();
+  }, []);
+
+  const createNamespace = async () => {
+    await fetch("/api/servicediscovery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "createNamespace", name: namespaceName }),
+    });
+    setCreateModal(false);
+    setNamespaceName("");
+    fetchNamespaces();
+  };
+
+  const deleteNamespace = async (id: string) => {
+    await fetch(`/api/servicediscovery?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    fetchNamespaces();
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
-        <Header variant="h1">AWS Service</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
-          <Box><StatusIndicator type="success">Service Available</StatusIndicator></Box>
-          <Box>This service is emulated by Ministack / LocalStack.</Box>
+        <Header variant="h1">Service Discovery</Header>
+        {error && <Alert type="error" header="Error">{error}</Alert>}
+        <Container>
+          <Table
+            header={
+              <Header
+                variant="h2"
+                actions={<Button onClick={() => setCreateModal(true)}>Create namespace</Button>}
+              >
+                Namespaces ({namespaces.length})
+              </Header>
+            }
+            items={namespaces}
+            loading={loading}
+            columnDefinitions={[
+              { header: "Name", cell: (item) => item.Name },
+              { header: "ID", cell: (item) => item.Id },
+              { header: "Type", cell: (item) => item.Type },
+              {
+                header: "Actions",
+                cell: (item) => (
+                  <Button onClick={() => deleteNamespace(item.Id)} formAction="none">
+                    Delete
+                  </Button>
+                ),
+              },
+            ]}
+            empty={<Box textAlign="center">No namespaces found.</Box>}
+          />
         </Container>
+        <Modal
+          visible={createModal}
+          onDismiss={() => setCreateModal(false)}
+          header="Create namespace"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
+              <Button variant="primary" onClick={createNamespace}>
+                Create
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          <FormField label="Name">
+            <Input
+              value={namespaceName}
+              onChange={(e) => setNamespaceName(e.detail.value)}
+              placeholder="my-namespace"
+            />
+          </FormField>
+        </Modal>
       </SpaceBetween>
     </div>
   );
