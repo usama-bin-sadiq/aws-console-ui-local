@@ -23,6 +23,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [searchValue, setSearchValue] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [groupedResults, setGroupedResults] = useState<Record<string, any[]>>({});
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -48,17 +50,34 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       });
   }, [setProvider]);
 
-  // Search handling
+  // Search handling with grouping by category
   useEffect(() => {
     if (searchValue.length >= 3) {
       const results = ALL_SERVICES.filter((service: any) =>
         service.text?.toLowerCase().includes(searchValue.toLowerCase())
       );
+      
+      // Group results by category
+      const grouped: Record<string, any[]> = {};
+      NAVIGATION_ITEMS.forEach((item: any) => {
+        if (item.type === "expandable-link-group" && item.items) {
+          const matchingServices = item.items.filter((svc: any) =>
+            results.some((r: any) => r.href === svc.href)
+          );
+          if (matchingServices.length > 0) {
+            grouped[item.text] = matchingServices;
+          }
+        }
+      });
+      
+      setGroupedResults(grouped);
       setSearchResults(results.slice(0, 10));
       setShowSearch(true);
+      setSelectedIndex(0);
     } else {
       setShowSearch(false);
       setSearchResults([]);
+      setGroupedResults({});
     }
   }, [searchValue]);
 
@@ -80,6 +99,39 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     setExpandedCategories(newExpanded);
     localStorage.setItem("nav_expanded", JSON.stringify(newExpanded));
   };
+
+  // Keyboard navigation for search
+  useEffect(() => {
+    if (!showSearch) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex(prev => Math.min(prev + 1, searchResults.length - 1));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex(prev => Math.max(prev - 1, 0));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (searchResults[selectedIndex]) {
+            router.push(searchResults[selectedIndex].href);
+            setShowSearch(false);
+            setSearchValue("");
+          }
+          break;
+        case 'Escape':
+          setShowSearch(false);
+          setSearchValue("");
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSearch, selectedIndex, searchResults, router]);
 
   // Load xterm CSS dynamically
   useEffect(() => {
@@ -196,7 +248,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               onChange={(e) => setSearchValue(e.detail.value)}
               onBlur={() => setTimeout(() => setShowSearch(false), 200)}
             />
-            {showSearch && searchResults.length > 0 && (
+            {showSearch && Object.keys(groupedResults).length > 0 && (
               <div
                 style={{
                   position: "absolute",
@@ -207,34 +259,66 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   border: "1px solid var(--awsui-color-border-dropdown-container)",
                   borderRadius: "var(--awsui-border-radius-dropdown)",
                   marginTop: 4,
-                  zIndex: 1000,
-                  maxHeight: 300,
+                  zIndex: 9999,
+                  maxHeight: 400,
                   overflow: "auto",
-                  boxShadow: "var(--awsui-shadow-dropdown)",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
                 }}
               >
-                {searchResults.map((service: any, index: number) => (
-                  <div
-                    key={index}
-                    style={{
-                      padding: "8px 12px",
-                      cursor: "pointer",
-                      borderBottom: "1px solid var(--awsui-color-border-divider-default)",
-                      color: "var(--awsui-color-text-body-default)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "var(--awsui-color-background-dropdown-item-hover)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                    onClick={() => {
-                      router.push(service.href);
-                      setSearchValue("");
-                      setShowSearch(false);
-                    }}
-                  >
-                    {service.text}
+                {Object.entries(groupedResults).map(([category, services]) => (
+                  <div key={category}>
+                    <div
+                      style={{
+                        padding: "8px 12px",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        color: "var(--awsui-color-text-label)",
+                        borderBottom: "1px solid var(--awsui-color-border-divider-default)",
+                        backgroundColor: "var(--awsui-color-background-container-header)",
+                      }}
+                    >
+                      {category}
+                    </div>
+                    {services.map((service: any, idx: number) => {
+                      const globalIndex = searchResults.findIndex((r: any) => r.href === service.href);
+                      return (
+                        <div
+                          key={service.href}
+                          style={{
+                            padding: "10px 12px",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            backgroundColor:
+                              globalIndex === selectedIndex
+                                ? "var(--awsui-color-background-dropdown-item-hover)"
+                                : "transparent",
+                            color: "var(--awsui-color-text-body-default)",
+                          }}
+                          onMouseEnter={() => setSelectedIndex(globalIndex)}
+                          onClick={() => {
+                            router.push(service.href);
+                            setSearchValue("");
+                            setShowSearch(false);
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: "14px" }}>
+                              Go to {service.text}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "12px",
+                                color: "var(--awsui-color-text-body-secondary)",
+                              }}
+                            >
+                              {category}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ))}
               </div>
