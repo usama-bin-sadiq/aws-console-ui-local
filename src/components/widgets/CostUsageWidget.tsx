@@ -33,8 +33,9 @@ export default function CostUsageWidget({
   return (
     <Widget
       id="cost-usage"
+      widgetId={widgetId}
       title="Cost and usage"
-      size={size}
+      isCustomizing={isCustomizing}
       onResize={onResize}
       onRemove={onRemove}
       actions={
@@ -75,7 +76,7 @@ export default function CostUsageWidget({
           <ProgressBar
             value={percentUsed}
             additionalInfo={`${percentUsed.toFixed(1)}% of $${budget.toFixed(2)} budget`}
-            variant={percentUsed > 80 ? "error" : "success"}
+            status={percentUsed > 80 ? "error" : "success"}
           />
         </Box>
 
@@ -120,7 +121,6 @@ export default function CostUsageWidget({
                 </div>
                 <ProgressBar
                   value={service.percentage}
-                  variant="success"
                   additionalInfo=""
                 />
               </div>

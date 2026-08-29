@@ -264,7 +264,7 @@ This plan implements 43 missing API routes, replaces 42+ stub service pages, add
     - `Widget.tsx` and `WidgetContainer.tsx` compile with no TypeScript errors
     - Resize button is only visible when a widget is rendered; remove button only in customize mode
 
-- [ ] 19. Write core API route tests (vitest)
+- [x] 19. Write core API route tests (vitest)
   - Depends on: #1, #5, #6, #7, #8, #9, #10
   - Create test files covering 6 representative services — one from each batch:
     - `src/app/api/ses/__tests__/route.test.ts` (Batch 1): mock `ses` client; test GET happy path returns `{ identities }`, GET error returns `{ error }` with status 500, POST `verify` action happy path
@@ -298,7 +298,7 @@ This plan implements 43 missing API routes, replaces 42+ stub service pages, add
     - Each test file has at minimum 3 test cases (GET happy, GET error, POST action)
     - `db.test.ts` verifies both widget and terminal persistence round-trips
 
-- [~] 20. Build verification and final TypeScript check
+- [x] 20. Build verification and final TypeScript check
   - Depends on: #2, #4, #11, #12, #13, #14, #15, #16, #17, #18, #19
   - Run `npx tsc --noEmit` — fix any remaining type errors surfaced across all new files
   - Run `npx next build` — resolve any import or module-resolution errors that only manifest at build time

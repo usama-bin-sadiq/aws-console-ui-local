@@ -242,10 +242,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             />
             {showDropdown && searchResults.length > 0 && (
               <Box
-                padding="none"
+                padding="n"
                 variant="div"
-          
-                style={{
+              >
+                <div
+                  style={{
                   position: "absolute",
                   top: "calc(100% + 4px)",
                   left: 0,
@@ -258,13 +259,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   overflow: "auto",
                   boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
                 }}
-              >
+                >
                 {Object.entries(groupedSearchResults).map(([category, services]) => (
                   <div key={category}>
                     <Box
                       padding="xs"
                       variant="div"
-                      style={{
+                    >
+                      <div
+                        style={{
                         padding: "8px 16px",
                         fontSize: "12px",
                         fontWeight: 700,
@@ -272,8 +275,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         borderBottom: "1px solid var(--awsui-color-border-divider-default)",
                         backgroundColor: "var(--awsui-color-background-container-header)",
                       }}
-                    >
+                      >
                       {category}
+                      </div>
                     </Box>
                     {services.map((service, idx) => {
                       const globalIndex = searchResults.findIndex((r) => r.href === service.href);
@@ -329,6 +333,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     })}
                   </div>
                 ))}
+                </div>
               </Box>
             )}
           </div>

@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       source: body.source || { type: "NO_SOURCE" },
       artifacts: body.artifacts || { type: "NO_ARTIFACTS" },
       environment: body.environment || { type: "LINUX_CONTAINER", image: "aws/codebuild/standard:7.0", computeType: "BUILD_GENERAL1_SMALL" },
+      serviceRole: body.serviceRole || "arn:aws:iam::000000000000:role/codebuild-role",
     }));
     return NextResponse.json({ project: res.project });
   } catch (error: unknown) {
