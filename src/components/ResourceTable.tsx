@@ -160,6 +160,7 @@ function ResourceTableInner<T extends object>({
   const [internalVisibleColumns, setInternalVisibleColumns] =
     useState<string[]>(allColumnIds);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [internalCurrentPage, setInternalCurrentPage] = useState(1);
 
   useEffect(() => {
     const saved = loadPrefs(serviceKey, allColumnIds);
@@ -227,8 +228,6 @@ function ResourceTableInner<T extends object>({
   const [sortingDescending, setSortingDescending] = useState(false);
 
   // ── Internal pagination state ──────────────────────────────────────────────
-  const [internalCurrentPage, setInternalCurrentPage] = useState(1);
-
   // Reset to page 1 on filter change
   useEffect(() => {
     setInternalCurrentPage(1);
@@ -307,7 +306,7 @@ function ResourceTableInner<T extends object>({
         setInternalCurrentPage(page);
       }
     },
-    [isPaginationControlled, externalOnPageChange]
+    [isPaginationControlled, externalOnPageChange, setInternalCurrentPage]
   );
 
   // ── Visible column definitions ─────────────────────────────────────────────

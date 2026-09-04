@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import {
 import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
+import {
   ListEventBusesCommand,
   CreateEventBusCommand,
   DeleteEventBusCommand,

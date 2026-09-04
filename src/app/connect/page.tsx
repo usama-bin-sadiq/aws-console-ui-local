@@ -29,7 +29,7 @@ export default function connectPage() {
           {loading ? (
             <Box>Loading instances from adapter SDK...</Box>
           ) : error ? (
-            <Alert type="error" dismissible onDismiss={() => setError("")>{error}</Alert>
+            <Alert type="error" dismissible onDismiss={() => setError("")}>{error}</Alert>
           ) : (
             <Box variant="p" padding={{ top: "m" }}>
               Showing <strong>{data.length}</strong> instances fetched via adapter SDK (<StatusIndicator type="success">LocalStack / MiniStack</StatusIndicator> mode).

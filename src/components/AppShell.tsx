@@ -196,7 +196,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [terminalOpen, theme]);
 
-  const executeCommand = (cmd: string, term: Terminal) => {
+  function executeCommand(cmd: string, term: Terminal): void {
     const trimmed = cmd.trim();
 
     if (trimmed === "help") {
@@ -225,7 +225,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     } else if (trimmed) {
       term.writeln(`Command not found: ${trimmed}`);
     }
-  };
+  }
 
   // Load terminal state from localStorage
   useEffect(() => {

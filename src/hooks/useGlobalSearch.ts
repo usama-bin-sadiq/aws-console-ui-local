@@ -307,7 +307,7 @@ export function useGlobalSearch(
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showDropdown, selectedIndex, searchResults]);
 
-  const navigateToService = (result: SearchResult) => {
+  function navigateToService(result: SearchResult): void {
     const updated = [result.text, ...recentSearches.filter(s => s !== result.text)].slice(0, 10);
     setRecentSearches(updated);
     localStorage.setItem("aws_recent_searches", JSON.stringify(updated));
@@ -315,7 +315,7 @@ export function useGlobalSearch(
     router.push(result.href);
     setShowDropdown(false);
     setSearchValue("");
-  };
+  }
 
   return {
     searchValue,

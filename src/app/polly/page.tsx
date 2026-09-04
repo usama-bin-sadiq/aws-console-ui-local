@@ -29,7 +29,7 @@ export default function pollyPage() {
           {loading ? (
             <Box>Loading voices from adapter SDK...</Box>
           ) : error ? (
-            <Alert type="error" dismissible onDismiss={() => setError("")>{error}</Alert>
+            <Alert type="error" dismissible onDismiss={() => setError("")}>{error}</Alert>
           ) : (
             <Box variant="p" padding={{ top: "m" }}>
               Showing <strong>{data.length}</strong> voices fetched via adapter SDK (<StatusIndicator type="success">LocalStack / MiniStack</StatusIndicator> mode).

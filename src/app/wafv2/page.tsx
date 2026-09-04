@@ -22,7 +22,7 @@ interface WAFv2WebACL {
 interface WAFv2Rule {
   Name?: string;
   Priority?: number;
-  Action?: { Allow?: {}; Block?: {} };
+  Action?: { Allow?: Record<string, never>; Block?: Record<string, never> };
   Statement?: Record<string, unknown>;
 }
 
