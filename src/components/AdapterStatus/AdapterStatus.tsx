@@ -28,12 +28,17 @@ export function AdapterStatus({ status = 'checking', endpointUrl }: AdapterStatu
       .catch(() => setCurrentStatus('disconnected'));
   }, [endpointUrl]);
 
-  const statusType = currentStatus === 'connected' ? 'success' : currentStatus === 'disconnected' ? 'error' : 'loading';
+  const statusType = currentStatus === 'connected' ? 'success' : currentStatus === 'disconnected' ? 'warning' : 'loading';
+  const statusText = currentStatus === 'connected' ? 'Adapter Connected' : currentStatus === 'disconnected' ? 'Adapter Unreachable — start docker-compose' : 'Checking adapter...';
 
   return (
-    <div className="adapter-status-container" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <StatusIndicator type={statusType}>{currentStatus}</StatusIndicator>
-      {endpointUrl ? <span style={{ fontSize: '12px', color: '#666' }}>{endpointUrl}</span> : null}
+    <div className="adapter-status-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+      <StatusIndicator type={statusType}>{statusText}</StatusIndicator>
+      {endpointUrl ? (
+        <span style={{ fontSize: '12px', color: '#666' }}>
+          {endpointUrl} | Mode: {currentStatus === 'connected' ? 'localstack/ministack' : currentStatus === 'disconnected' ? 'unreachable' : 'checking'}
+        </span>
+      ) : null}
     </div>
   );
 }

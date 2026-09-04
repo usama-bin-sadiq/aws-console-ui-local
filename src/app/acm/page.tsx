@@ -7,10 +7,12 @@ import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
-import Alert from "@cloudscape-design/components/alert";
+import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
+import Alert from "@cloudscape-design/components/alert";
+import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 
 interface Certificate {
   CertificateArn: string;
@@ -81,39 +83,58 @@ export default function AcmPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
-      <SpaceBetween size="l">
-        <Header variant="h1">AWS Certificate Manager</Header>
-
+    <ServiceLayout
+      serviceName="AWS Certificate Manager"
+      serviceCategory="Security"
+      breadcrumbs={[{ text: "Services", href: "/" }, { text: "Security", href: "#" }, { text: "Certificate Manager", href: "#" }]}
+      headerActions={
+        <SpaceBetween direction="horizontal" size="xs">
+          <Button iconName="refresh" onClick={fetchCertificates} ariaLabel="Refresh certificates" />
+          <Button variant="primary" onClick={() => setCreateModal(true)} ariaLabel="Request certificate">
+            Request certificate
+          </Button>
+        </SpaceBetween>
+      }
+    >
+      <SpaceBetween size="m" direction="vertical">
         {error && (
-          <Alert type="error" onDismiss={() => setError("")}>
+          <Alert type="error" dismissible onDismiss={() => setError("")}>
             {error}
           </Alert>
         )}
 
-        <Container>
+        <Container header={<Header variant="h2">Certificates ({certificates.length})</Header>}>
           <Table
             header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Request certificate
-                  </Button>
-                }
-              >
-                Certificates ({certificates.length})
-              </Header>
+              <Header variant="h2">Certificates</Header>
             }
             items={certificates}
             columnDefinitions={[
-              { header: "Domain name", cell: (item) => item.DomainName || "—" },
-              { header: "Status", cell: (item) => item.Status || "—" },
-              { header: "Certificate ARN", cell: (item) => item.CertificateArn },
               {
+                id: "domain",
+                header: "Domain name",
+                cell: (item) => item.DomainName || "—",
+                isRowHeader: true,
+              },
+              {
+                id: "status",
+                header: "Status",
+                cell: (item) => (
+                  <StatusIndicator type={item.Status === "ISSUED" ? "success" : item.Status === "PENDING_VALIDATION" ? "warning" : "info"}>
+                    {item.Status || "—"}
+                  </StatusIndicator>
+                ),
+              },
+              {
+                id: "arn",
+                header: "Certificate ARN",
+                cell: (item) => item.CertificateArn || "—",
+              },
+              {
+                id: "actions",
                 header: "Actions",
                 cell: (item) => (
-                  <Button onClick={() => deleteCertificate(item.CertificateArn)} formAction="none">
+                  <Button onClick={() => deleteCertificate(item.CertificateArn)} formAction="none" ariaLabel={`Delete certificate ${item.CertificateArn}`}>
                     Delete
                   </Button>
                 ),
@@ -130,10 +151,8 @@ export default function AcmPage() {
           header="Request certificate"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createCertificate} loading={creating}>
-                Request
-              </Button>
+              <Button onClick={() => setCreateModal(false)} formAction="none">Cancel</Button>
+              <Button variant="primary" onClick={createCertificate} loading={creating}>Request</Button>
             </SpaceBetween>
           }
         >
@@ -142,10 +161,11 @@ export default function AcmPage() {
               value={domainName}
               onChange={(e) => setDomainName(e.detail.value)}
               placeholder="example.com"
+              ariaLabel="Domain name"
             />
           </FormField>
         </Modal>
       </SpaceBetween>
-    </div>
+    </ServiceLayout>
   );
 }

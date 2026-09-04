@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ALL_SERVICES } from "@/constants/navigation";
+import { SERVICE_REGISTRY } from "@/constants/service-compatibility";
 
 interface SearchResult {
   text: string;
@@ -240,6 +241,21 @@ export function useGlobalSearch() {
             category: SERVICE_CATEGORY_MAP[service.href] || "Other",
             description: SERVICE_DESCRIPTIONS[service.text] || "",
           });
+        }
+      });
+
+      // Also search SERVICE_REGISTRY for broader coverage
+      SERVICE_REGISTRY.forEach((svc) => {
+        if (svc.serviceName.toLowerCase().includes(searchValue.toLowerCase())) {
+          const existing = results.find((r) => r.text === svc.serviceName);
+          if (!existing) {
+            results.push({
+              text: svc.serviceName,
+              href: `/${svc.routeDir}`,
+              category: SERVICE_CATEGORY_MAP[`/${svc.routeDir}`] || "Service",
+              description: svc.commonDifferentNote || svc.serviceName,
+            });
+          }
         }
       });
 

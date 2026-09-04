@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { DescribeSnapshotsCommand, CreateSnapshotCommand, DeleteSnapshotCommand } from "@aws-sdk/client-ec2";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 import { ec2 } from "@/lib/aws-clients";
 
 export async function GET() {

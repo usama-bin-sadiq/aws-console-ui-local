@@ -8,16 +8,31 @@ import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
+import Tabs from "@cloudscape-design/components/tabs";
+import StatusIndicator from "@cloudscape-design/components/status-indicator";
 
 interface Detector {
   DetectorId: string;
 }
 
+interface Finding {
+  Id?: string;
+  Title?: string;
+  Severity?: number;
+  Type?: string;
+  Resource?: { Type?: string; Id?: string };
+  CreatedAt?: string;
+  UpdatedAt?: string;
+}
+
 export default function GuardDutyPage() {
   const [detectors, setDetectors] = useState<Detector[]>([]);
+  const [findings, setFindings] = useState<Finding[]>([]);
   const [loading, setLoading] = useState(true);
+  const [findingsLoading, setFindingsLoading] = useState(false);
   const [error, setError] = useState("");
   const [enabling, setEnabling] = useState(false);
+  const [activeTab, setActiveTab] = useState("findings");
 
   const fetchDetectors = async () => {
     setLoading(true);
@@ -34,8 +49,24 @@ export default function GuardDutyPage() {
     }
   };
 
+  const fetchFindings = async () => {
+    setFindingsLoading(true);
+    try {
+      const res = await fetch("/api/guardduty?action=listFindings");
+      const data = await res.json();
+      if (res.ok) {
+        setFindings(data.findings || []);
+      }
+    } catch {
+      setFindings([]);
+    } finally {
+      setFindingsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchDetectors();
+    fetchFindings();
   }, []);
 
   const enableGuardDuty = async () => {
@@ -67,47 +98,108 @@ export default function GuardDutyPage() {
     }
   };
 
+  const archiveFinding = async (findingId: string) => {
+    try {
+      await fetch("/api/guardduty", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "archiveFinding", findingId }),
+      });
+      fetchFindings();
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon GuardDuty</Header>
-
         {error && (
           <Alert type="error" onDismiss={() => setError("")}>
             {error}
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={enableGuardDuty} loading={enabling}>
-                    Enable GuardDuty
-                  </Button>
-                }
-              >
-                Detectors ({detectors.length})
-              </Header>
-            }
-            items={detectors}
-            columnDefinitions={[
-              { header: "Detector ID", cell: (item) => item.DetectorId },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button onClick={() => deleteDetector(item.DetectorId)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">GuardDuty is not enabled.</Box>}
-          />
-        </Container>
+        <Tabs
+          tabs={[
+            {
+              label: "Findings",
+              id: "findings",
+              content: (
+                <Container>
+                  <Table
+                    header={
+                      <Header variant="h2" actions={<Button onClick={fetchFindings}>Refresh</Button>}>
+                        Findings ({findings.length})
+                      </Header>
+                    }
+                    items={findings}
+                    loading={findingsLoading}
+                    columnDefinitions={[
+                      { header: "Title", cell: (item) => item.Title || "—" },
+                      { header: "Type", cell: (item) => item.Type || "—" },
+                      { header: "Severity", cell: (item) => {
+                        const severity = item.Severity || 0;
+                        const label = severity > 7 ? "High" : severity > 4 ? "Medium" : "Low";
+                        const type = severity > 7 ? "error" : severity > 4 ? "warning" : "info";
+                        return <StatusIndicator type={type as any}>{label}</StatusIndicator>;
+                      }},
+                      { header: "Resource Type", cell: (item) => item.Resource?.Type || "—" },
+                      { header: "Resource ID", cell: (item) => item.Resource?.Id || "—" },
+                      { header: "Created", cell: (item) => item.CreatedAt || "—" },
+                      {
+                        header: "Actions",
+                        cell: (item: Finding) => (
+                          <Button onClick={() => archiveFinding(item.Id!)} formAction="none">Archive</Button>
+                        ),
+                      },
+                    ]}
+                    empty={<Box textAlign="center">No findings.</Box>}
+                  />
+                </Container>
+              ),
+            },
+            {
+              label: "Detectors",
+              id: "detectors",
+              content: (
+                <Container>
+                  <Table
+                    header={
+                      <Header
+                        variant="h2"
+                        actions={
+                          <Button variant="primary" onClick={enableGuardDuty} loading={enabling}>
+                            Enable GuardDuty
+                          </Button>
+                        }
+                      >
+                        Detectors ({detectors.length})
+                      </Header>
+                    }
+                    items={detectors}
+                    columnDefinitions={[
+                      { header: "Detector ID", cell: (item) => item.DetectorId },
+                      {
+                        header: "Actions",
+                        cell: (item) => (
+                          <Button onClick={() => deleteDetector(item.DetectorId)} formAction="none">
+                            Delete
+                          </Button>
+                        ),
+                      },
+                    ]}
+                    loading={loading}
+                    empty={<Box textAlign="center">GuardDuty is not enabled.</Box>}
+                  />
+                </Container>
+              ),
+            },
+          ]}
+          activeTabId={activeTab}
+          onChange={({ detail }) => setActiveTab(detail.activeTabId)}
+        />
       </SpaceBetween>
     </div>
   );

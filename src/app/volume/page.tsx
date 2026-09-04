@@ -1,178 +1,311 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
+import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
-import Alert from "@cloudscape-design/components/alert";
+import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
-
-interface Volume {
-  VolumeId: string;
-  Size: number;
-  State?: string;
-  VolumeType?: string;
-  AvailabilityZone?: string;
-}
+import Select from "@cloudscape-design/components/select";
+import Alert from "@cloudscape-design/components/alert";
+import TextFilter from "@cloudscape-design/components/text-filter";
+import Pagination from "@cloudscape-design/components/pagination";
+import { EC2Volume } from "@/types/ec2";
+import { EC2_VOLUME_TYPES } from "@/constants/ec2-constants";
 
 export default function VolumePage() {
-  const [volumes, setVolumes] = useState<Volume[]>([]);
+  const [volumes, setVolumes] = useState<EC2Volume[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [selectedItems, setSelectedItems] = useState<EC2Volume[]>([]);
+  const [filteringText, setFilteringText] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [createModal, setCreateModal] = useState(false);
-  const [size, setSize] = useState("20");
-  const [volumeType, setVolumeType] = useState("gp3");
-  const [az, setAz] = useState("us-east-1a");
-  const [creating, setCreating] = useState(false);
+  const [modifyModal, setModifyModal] = useState(false);
+  const [attachModal, setAttachModal] = useState(false);
+  const [formSize, setFormSize] = useState("20");
+  const [formType, setFormType] = useState("gp3");
+  const [formAZ, setFormAZ] = useState("us-east-1a");
+  const [attachInstance, setAttachInstance] = useState("");
+  const [attachDevice, setAttachDevice] = useState("/dev/xvdf");
+  const [runningInstances, setRunningInstances] = useState<Array<{ InstanceId?: string; Name?: string }>>([]);
 
-  const fetchVolumes = async () => {
+  const fetchVolumes = useCallback(async () => {
     setLoading(true);
-    setError("");
+    setError(null);
     try {
       const res = await fetch("/api/volume");
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to fetch volumes");
-      setVolumes(data.volumes || []);
-    } catch (err) {
+      if (data.error) throw new Error(data.error);
+      setVolumes((data.volumes || []).map((v: any) => ({
+        ...v,
+        Size: v.Size || 0,
+        VolumeType: v.VolumeType || "gp3",
+      })));
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to fetch volumes");
-    } finally {
-      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchVolumes();
+    setLoading(false);
   }, []);
 
-  const createVolume = async () => {
-    setCreating(true);
+  const fetchRunningInstances = useCallback(async () => {
     try {
       const res = await fetch("/api/volume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ size: parseInt(size, 10) || 20, volumeType, az }),
+        body: JSON.stringify({ action: "listInstances" }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create volume");
-      }
-      setCreateModal(false);
-      setSize("20");
-      setVolumeType("gp3");
-      setAz("us-east-1a");
-      fetchVolumes();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create volume");
-    } finally {
-      setCreating(false);
+      const data = await res.json();
+      setRunningInstances(data.instances || []);
+    } catch {
+      setRunningInstances([]);
     }
-  };
+  }, []);
 
-  const deleteVolume = async (volumeId: string) => {
+  useEffect(() => {
+    fetchVolumes();
+    fetchRunningInstances();
+  }, [fetchVolumes, fetchRunningInstances]);
+
+  const handleCreate = useCallback(async () => {
     try {
-      const res = await fetch(`/api/volume?volumeId=${encodeURIComponent(volumeId)}`, {
-        method: "DELETE",
+      const res = await fetch("/api/volume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          size: parseInt(formSize, 10) || 20,
+          volumeType: formType,
+          availabilityZone: formAZ,
+        }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to delete volume");
-      }
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Failed to create volume");
+      setCreateModal(false);
+      setFormSize("20");
+      setFormType("gp3");
       fetchVolumes();
-    } catch (err) {
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create volume");
+    }
+  }, [formSize, formType, formAZ, fetchVolumes]);
+
+  const handleDelete = useCallback(async () => {
+    const ids = selectedItems.map((v) => v.VolumeId).filter(Boolean) as string[];
+    if (ids.length === 0) return;
+    try {
+      for (const id of ids) {
+        await fetch(`/api/volume`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete", volumeId: id }),
+        });
+      }
+      setSelectedItems([]);
+      fetchVolumes();
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to delete volume");
     }
-  };
+  }, [selectedItems, fetchVolumes]);
+
+  const handleAttach = useCallback(async () => {
+    const id = selectedItems[0]?.VolumeId;
+    if (!id || !attachInstance) return;
+    try {
+      const res = await fetch("/api/volume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "attach",
+          volumeId: id,
+          instanceId: attachInstance,
+          device: attachDevice,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Failed to attach volume");
+      setAttachModal(false);
+      setAttachInstance("");
+      fetchVolumes();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to attach volume");
+    }
+  }, [selectedItems, attachInstance, attachDevice, fetchVolumes]);
+
+  const handleDetach = useCallback(async () => {
+    const id = selectedItems[0]?.VolumeId;
+    if (!id) return;
+    try {
+      const res = await fetch("/api/volume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "detach", volumeId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Failed to detach volume");
+      fetchVolumes();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to detach volume");
+    }
+  }, [selectedItems, fetchVolumes]);
+
+  const filteredItems = volumes.filter((v) => {
+    if (!filteringText.trim()) return true;
+    return v.VolumeId?.toLowerCase().includes(filteringText.toLowerCase());
+  });
+
+  const pageSize = 25;
+  const pagedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const selectedIds = selectedItems.map((v) => v.VolumeId).filter(Boolean) as string[];
 
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
-        <Header variant="h1">EBS Volumes</Header>
+        <Header
+          variant="h1"
+          counter={`(${volumes.length})`}
+          actions={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button iconName="refresh" onClick={fetchVolumes} ariaLabel="Refresh" />
+              <ButtonDropdown
+                items={[
+                  { text: "Attach", id: "attach", disabled: selectedIds.length !== 1 || selectedItems.some((v) => v.State === "in-use") },
+                  { text: "Detach", id: "detach", disabled: selectedIds.length !== 1 || selectedItems.some((v) => v.State !== "in-use") },
+                  { text: "Modify", id: "modify", disabled: selectedIds.length !== 1 },
+                  { text: "Delete", id: "delete", disabled: selectedIds.length === 0 },
+                ]}
+                onItemClick={({ detail }) => {
+                  if (detail.id === "attach") setAttachModal(true);
+                  else if (detail.id === "detach") handleDetach();
+                  else if (detail.id === "modify") setModifyModal(true);
+                  else if (detail.id === "delete") handleDelete();
+                }}
+                disabled={selectedIds.length === 0 && selectedIds.length !== 1}
+                ariaLabel="Volume actions"
+              >
+                Actions
+              </ButtonDropdown>
+              <Button variant="primary" onClick={() => setCreateModal(true)}>
+                Create volume
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          EBS Volumes
+        </Header>
 
         {error && (
-          <Alert type="error" onDismiss={() => setError("")}>
+          <Alert type="error" dismissible onDismiss={() => setError(null)}>
             {error}
           </Alert>
         )}
 
         <Container>
           <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Create volume
-                  </Button>
-                }
-              >
-                Volumes ({volumes.length})
-              </Header>
-            }
-            items={volumes}
             columnDefinitions={[
-              { header: "Volume ID", cell: (item) => item.VolumeId },
-              { header: "Size (GB)", cell: (item) => item.Size },
-              { header: "Volume type", cell: (item) => item.VolumeType || "-" },
-              { header: "State", cell: (item) => item.State || "-" },
-              { header: "Availability Zone", cell: (item) => item.AvailabilityZone || "-" },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button onClick={() => deleteVolume(item.VolumeId)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
+              { id: "volumeId", header: "Volume ID", cell: (item) => item.VolumeId, sortingField: "VolumeId" },
+              { id: "size", header: "Size", cell: (item) => `${item.Size || 0} GiB`, sortingField: "Size" },
+              { id: "type", header: "Volume Type", cell: (item) => item.VolumeType || "gp3" },
+              { id: "state", header: "State", cell: (item) => <StatusIndicator type={item.State === "available" ? "success" : item.State === "in-use" ? "info" : "warning"}>{item.State || "—"}</StatusIndicator> },
+              { id: "az", header: "Availability Zone", cell: (item) => item.AvailabilityZone || "—" },
+              { id: "iops", header: "IOPS", cell: (item) => item.Iops ? String(item.Iops) : "—" },
+              { id: "attachments", header: "Attachments", cell: (item) => (item.Attachments && item.Attachments.length > 0 ? item.Attachments.map((a) => a.InstanceId).join(", ") : "—") },
             ]}
+            items={pagedItems}
             loading={loading}
-            empty={<Box textAlign="center">No volumes found.</Box>}
+            loadingText="Loading volumes..."
+            selectionType="multi"
+            selectedItems={selectedItems}
+            onSelectionChange={({ detail }) => setSelectedItems(detail.selectedItems as EC2Volume[])}
+            trackBy="VolumeId"
+            filter={
+              <TextFilter
+                filteringText={filteringText}
+                filteringPlaceholder="Filter volumes"
+                filteringAriaLabel="Filter volumes"
+                onChange={({ detail }) => {
+                  setFilteringText(detail.filteringText);
+                  setCurrentPage(1);
+                }}
+              />
+            }
+            pagination={
+              <Pagination
+                currentPageIndex={currentPage}
+                pagesCount={Math.ceil(filteredItems.length / pageSize)}
+                onChange={({ detail }) => setCurrentPage(detail.currentPageIndex)}
+              />
+            }
+            empty={
+              <Box textAlign="center" color="inherit">
+                <Box variant="strong" textAlign="center" color="inherit">No volumes found</Box>
+                <Box variant="p" padding={{ bottom: "s" }} color="inherit">
+                  Create a new EBS volume to attach to your instances.
+                </Box>
+                <Button onClick={() => setCreateModal(true)}>Create volume</Button>
+              </Box>
+            }
           />
         </Container>
-
-        <Modal
-          visible={createModal}
-          onDismiss={() => setCreateModal(false)}
-          header="Create volume"
-          footer={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createVolume} loading={creating}>
-                Create
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          <SpaceBetween size="m">
-            <FormField label="Size (GiB)" constraintText="Required">
-              <Input
-                value={size}
-                onChange={(e) => setSize(e.detail.value)}
-                type="number"
-                placeholder="20"
-              />
-            </FormField>
-            <FormField label="Volume type">
-              <Input
-                value={volumeType}
-                onChange={(e) => setVolumeType(e.detail.value)}
-                placeholder="gp3"
-              />
-            </FormField>
-            <FormField label="Availability Zone">
-              <Input
-                value={az}
-                onChange={(e) => setAz(e.detail.value)}
-                placeholder="us-east-1a"
-              />
-            </FormField>
-          </SpaceBetween>
-        </Modal>
       </SpaceBetween>
+
+      <Modal
+        visible={createModal}
+        onDismiss={() => setCreateModal(false)}
+        header="Create volume"
+        footer={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={() => setCreateModal(false)} formAction="none">Cancel</Button>
+            <Button variant="primary" onClick={handleCreate}>Create</Button>
+          </SpaceBetween>
+        }
+      >
+        <SpaceBetween size="m">
+          <FormField label="Size (GiB)">
+            <Input value={formSize} onChange={({ detail }) => setFormSize(detail.value)} type="number" placeholder="20" />
+          </FormField>
+          <FormField label="Volume Type">
+            <Select
+              selectedOption={{ value: formType, label: EC2_VOLUME_TYPES.find((t) => t.value === formType)?.label || formType }}
+              options={EC2_VOLUME_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+              onChange={({ detail }) => setFormType(detail.selectedOption.value || "gp3")}
+            />
+          </FormField>
+          <FormField label="Availability Zone">
+            <Input value={formAZ} onChange={({ detail }) => setFormAZ(detail.value)} placeholder="us-east-1a" />
+          </FormField>
+        </SpaceBetween>
+      </Modal>
+
+      <Modal
+        visible={attachModal}
+        onDismiss={() => setAttachModal(false)}
+        header="Attach Volume"
+        footer={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={() => setAttachModal(false)} formAction="none">Cancel</Button>
+            <Button variant="primary" onClick={handleAttach} disabled={!attachInstance}>Attach</Button>
+          </SpaceBetween>
+        }
+      >
+        <SpaceBetween size="m">
+          <Box variant="small" color="text-label">Select running instance</Box>
+          <Select
+            selectedOption={{ value: attachInstance, label: runningInstances.find((i) => i.InstanceId === attachInstance)?.Name || attachInstance || "Select instance" }}
+            options={[{ value: "", label: "Select instance" }, ...runningInstances.map((i) => ({ value: i.InstanceId || "", label: `${i.Name || i.InstanceId} (${i.InstanceId})` }))]}
+            onChange={({ detail }) => setAttachInstance(detail.selectedOption.value || "")}
+          />
+          <FormField label="Device name">
+            <Input value={attachDevice} onChange={({ detail }) => setAttachDevice(detail.value)} placeholder="/dev/xvdf" />
+          </FormField>
+        </SpaceBetween>
+      </Modal>
     </div>
   );
 }

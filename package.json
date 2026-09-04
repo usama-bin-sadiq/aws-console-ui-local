@@ -11,6 +11,10 @@
     "lint": "eslint",
     "test": "vitest --run",
     "test:coverage": "vitest --run --coverage",
+    "a11y:axe": "echo 'axe-core scan requires @axe-core/react or axe-playwright. See docs/verification-gate-phase22-accessibility.md' && npm list axe-core || echo 'axe-core not installed; add \"axe-core\": \"^4.9.0\" to devDependencies for automated scans.'",
+    "test:e2e": "playwright test tests/e2e",
+    "test:vrt": "playwright test tests/vrt",
+    "test:vrt:baseline": "playwright test tests/vrt --update-snapshots",
     "dev:minstack": "docker-compose -f docker-compose.minstack.yml up -d ministack-health aws-console && ADAPTER_MODE=minstack MINSTACK_HOSTNAME=localhost MINSTACK_EDGE_PORT=4566 next dev",
     "dev:localstack": "docker-compose -f docker-compose.localstack.yml up -d localstack-health aws-console && ADAPTER_MODE=localstack LOCALSTACK_HOSTNAME=localhost LOCALSTACK_EDGE_PORT=4566 next dev",
     "dev:both": "docker-compose -f docker-compose.yml up -d localstack ministack aws-console",
@@ -140,7 +144,8 @@
     "tailwindcss": "^4",
     "typescript": "^7.0.2",
     "vitest": "^1.6.0",
-    "@vitest/coverage-v8": "^1.6.0"
+    "@vitest/coverage-v8": "^1.6.0",
+    "@playwright/test": "^1.48.0"
   },
   "allowScripts": {
     "unrs-resolver@1.12.2": true

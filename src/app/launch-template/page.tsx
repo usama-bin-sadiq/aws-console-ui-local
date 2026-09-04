@@ -89,48 +89,47 @@ export default function LaunchTemplatePage() {
 
   return (
     <div style={{ padding: "16px" }}>
-      <SpaceBetween size="l">
-        <Header variant="h1">EC2 Launch Templates</Header>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div>
+          <Header variant="h1">EC2 Launch Templates</Header>
+        </div>
 
         {error && (
-          <Alert type="error" onDismiss={() => setError("")}>
-            {error}
-          </Alert>
+          <div>
+            <Alert type="error" onDismiss={() => setError("")}>
+              {error}
+            </Alert>
+          </div>
         )}
 
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Create launch template
-                  </Button>
-                }
-              >
-                Launch templates ({templates.length})
-              </Header>
-            }
-            items={templates}
-            columnDefinitions={[
-              { header: "Name", cell: (item) => item.LaunchTemplateName || "-" },
-              { header: "Template ID", cell: (item) => item.LaunchTemplateId },
-              { header: "Default version", cell: (item) => item.DefaultVersionNumber ?? "-" },
-              { header: "Latest version", cell: (item) => item.LatestVersionNumber ?? "-" },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button onClick={() => deleteTemplate(item.LaunchTemplateId)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No launch templates found.</Box>}
-          />
-        </Container>
+        <div>
+          <Container>
+            <Table
+              header={
+                <Header variant="h2" actions={<Button variant="primary" onClick={() => setCreateModal(true)}>Create launch template</Button>}>
+                  Launch templates ({templates.length})
+                </Header>
+              }
+              items={templates}
+              columnDefinitions={[
+                { id: "name", header: "Name", cell: (item: LaunchTemplate) => item.LaunchTemplateName || "-" },
+                { id: "templateId", header: "Template ID", cell: (item: LaunchTemplate) => item.LaunchTemplateId },
+                { id: "defaultVersion", header: "Default version", cell: (item: LaunchTemplate) => item.DefaultVersionNumber ?? "-" },
+                { id: "latestVersion", header: "Latest version", cell: (item: LaunchTemplate) => item.LatestVersionNumber ?? "-" },
+                {
+                  id: "actions",
+                  header: "Actions",
+                  cell: (item: LaunchTemplate) => (
+                    <Button onClick={() => deleteTemplate(item.LaunchTemplateId)} formAction="none">Delete</Button>
+                  ),
+                },
+              ]}
+              loading={loading}
+              trackBy="LaunchTemplateId"
+              empty={<Box textAlign="center">No launch templates found.</Box>}
+            />
+          </Container>
+        </div>
 
         <Modal
           visible={createModal}
@@ -139,37 +138,23 @@ export default function LaunchTemplatePage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createTemplate} loading={creating}>
-                Create
-              </Button>
+              <Button variant="primary" onClick={createTemplate} loading={creating}>Create</Button>
             </SpaceBetween>
           }
         >
           <SpaceBetween size="m">
             <FormField label="Template name" constraintText="Required">
-              <Input
-                value={name}
-                onChange={(e) => setName(e.detail.value)}
-                placeholder="my-launch-template"
-              />
+              <Input value={name} onChange={(e: any) => setName(e.detail.value)} placeholder="my-launch-template" />
             </FormField>
             <FormField label="AMI ID">
-              <Input
-                value={imageId}
-                onChange={(e) => setImageId(e.detail.value)}
-                placeholder="ami-12345678"
-              />
+              <Input value={imageId} onChange={(e: any) => setImageId(e.detail.value)} placeholder="ami-12345678" />
             </FormField>
             <FormField label="Instance type">
-              <Input
-                value={instanceType}
-                onChange={(e) => setInstanceType(e.detail.value)}
-                placeholder="t3.micro"
-              />
+              <Input value={instanceType} onChange={(e: any) => setInstanceType(e.detail.value)} placeholder="t3.micro" />
             </FormField>
           </SpaceBetween>
         </Modal>
-      </SpaceBetween>
+      </div>
     </div>
   );
 }

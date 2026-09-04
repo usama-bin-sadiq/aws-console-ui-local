@@ -1,0 +1,13 @@
+/* Responsive fixes for AWS Console Emulator */
+@media (max-width: 768px) {
+  .skip-nav-link { font-size: 14px; }
+  #awsui-top-navigation { padding: 0 8px !important; }
+  .search-dropdown { max-width: calc(100vw - 32px) !important; min-width: unset !important; }
+  footer { flex-direction: column; gap: 8px; text-align: center; padding: 12px 8px !important; }
+  .service-table { overflow-x: auto; }
+  .table-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+}
+
+@media (min-width: 769px) {
+  footer { display: flex; justify-content: space-between; align-items: center; }
+}

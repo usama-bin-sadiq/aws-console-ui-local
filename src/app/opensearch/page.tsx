@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
+import Tabs from "@cloudscape-design/components/tabs";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -14,10 +15,18 @@ import Input from "@cloudscape-design/components/input";
 
 interface OpenSearchDomain {
   DomainName: string;
+  EngineVersion?: string;
+}
+
+interface PipelineInfo {
+  PipelineName?: string;
+  PipelineStatus?: string;
+  Description?: string;
 }
 
 export default function OpenSearchPage() {
   const [domains, setDomains] = useState<OpenSearchDomain[]>([]);
+  const [pipelines, setPipelines] = useState<PipelineInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [createModal, setCreateModal] = useState(false);
@@ -25,23 +34,24 @@ export default function OpenSearchPage() {
   const [engineVersion, setEngineVersion] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const fetchDomains = async () => {
+  const fetchData = async () => {
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/opensearch");
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to fetch domains");
+      if (!res.ok) throw new Error(data.error || "Failed to fetch OpenSearch data");
       setDomains(data.domains || []);
+      setPipelines(data.pipelines || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch domains");
+      setError(err instanceof Error ? err.message : "Failed to fetch OpenSearch data");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDomains();
+    fetchData();
   }, []);
 
   const createDomain = async () => {
@@ -59,7 +69,7 @@ export default function OpenSearchPage() {
       setCreateModal(false);
       setDomainName("");
       setEngineVersion("");
-      fetchDomains();
+      fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create domain");
     } finally {
@@ -76,7 +86,7 @@ export default function OpenSearchPage() {
         const data = await res.json();
         throw new Error(data.error || "Failed to delete domain");
       }
-      fetchDomains();
+      fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete domain");
     }
@@ -94,46 +104,85 @@ export default function OpenSearchPage() {
         )}
 
         <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Create domain
-                  </Button>
-                }
-              >
-                Domains ({domains.length})
-              </Header>
-            }
-            items={domains}
-            columnDefinitions={[
-              { header: "Domain name", cell: (item) => item.DomainName },
+          <Tabs
+            tabs={[
               {
-                header: "Actions",
-                cell: (item) => (
-                  <Button
-                    onClick={() => deleteDomain(item.DomainName)}
-                    formAction="none"
-                  >
-                    Delete
-                  </Button>
+                label: "Domains",
+                id: "domains",
+                content: (
+                  <Table
+                    header={
+                      <Header
+                        variant="h2"
+                        actions={
+                          <Button variant="primary" onClick={() => setCreateModal(true)}>
+                            Create domain
+                          </Button>
+                        }
+                      >
+                        Domains ({domains.length})
+                      </Header>
+                    }
+                    items={domains}
+                    columnDefinitions={[
+                      { header: "Domain name", cell: (item: OpenSearchDomain) => item.DomainName },
+                      { header: "Engine version", cell: (item: OpenSearchDomain) => item.EngineVersion || "—" },
+                      {
+                        header: "Actions",
+                        cell: (item: OpenSearchDomain) => (
+                          <Button onClick={() => deleteDomain(item.DomainName)} formAction="none">
+                            Delete
+                          </Button>
+                        ),
+                      },
+                    ]}
+                    loading={loading}
+                    empty={<Box textAlign="center">No domains found.</Box>}
+                  />
+                ),
+              },
+              {
+                label: "Pipelines",
+                id: "pipelines",
+                content: (
+                  <Table
+                    header={
+                      <Header variant="h2">Pipelines ({pipelines.length})</Header>
+                    }
+                    items={pipelines}
+                    columnDefinitions={[
+                      { header: "Pipeline name", cell: (item: PipelineInfo) => item.PipelineName || "—" },
+                      { header: "Status", cell: (item: PipelineInfo) => item.PipelineStatus || "—" },
+                      { header: "Description", cell: (item: PipelineInfo) => item.Description || "—" },
+                    ]}
+                    loading={loading}
+                    empty={<Box textAlign="center">No pipelines found.</Box>}
+                  />
                 ),
               },
             ]}
-            loading={loading}
-            empty={<Box textAlign="center">No domains found.</Box>}
           />
         </Container>
 
         <Modal
           visible={createModal}
-          onDismiss={() => setCreateModal(false)}
+          onDismiss={() => {
+            setCreateModal(false);
+            setDomainName("");
+            setEngineVersion("");
+          }}
           header="Create OpenSearch domain"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setCreateModal(false);
+                  setDomainName("");
+                  setEngineVersion("");
+                }}
+              >
+                Cancel
+              </Button>
               <Button variant="primary" onClick={createDomain} loading={creating}>
                 Create
               </Button>

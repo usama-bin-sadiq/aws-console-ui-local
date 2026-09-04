@@ -2,12 +2,26 @@ import { NextResponse } from "next/server";
 import { ListPipelinesCommand, CreatePipelineCommand, DeletePipelineCommand, StartPipelineExecutionCommand, ListPipelineExecutionsCommand } from "@aws-sdk/client-codepipeline";
 import { codepipeline } from "@/lib/aws-clients";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get("action");
+    const pipelineName = searchParams.get("pipelineName");
+
+    if (action === "listExecutions" && pipelineName) {
+      const res = await codepipeline.send(
+        new ListPipelineExecutionsCommand({ pipelineName })
+      );
+      return NextResponse.json({ executions: res.pipelineExecutionSummaries || [] });
+    }
+
     const res = await codepipeline.send(new ListPipelinesCommand({}));
     return NextResponse.json({ pipelines: res.pipelines || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
   }
 }
 

@@ -60,6 +60,50 @@ export default function ConfirmModal({
     onDismiss();
   };
 
+  // Focus management: save previous focus and restore on close
+  useEffect(() => {
+    if (visible) {
+      const prevActive = document.activeElement as HTMLElement | null;
+      (window as any).__prevConfirmFocus = prevActive;
+      // Move focus into modal after a brief delay
+      const timer = setTimeout(() => {
+        const firstInput = document.querySelector('input[type="text"]') as HTMLElement | null;
+        if (firstInput) firstInput.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      const prev = (window as any).__prevConfirmFocus;
+      if (prev && typeof prev.focus === "function") {
+        const timer = setTimeout(() => prev.focus(), 50);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [visible]);
+
+  // Focus trap: keep Tab inside modal
+  useEffect(() => {
+    if (!visible) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const modalEl = document.querySelector('[role="dialog"]') as HTMLElement | null;
+      if (!modalEl) return;
+      const focusable = Array.from(
+        modalEl.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      ) as HTMLElement[];
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [visible]);
+
   const handleConfirm = () => {
     if (!isConfirmed || loading) return;
     onConfirm();

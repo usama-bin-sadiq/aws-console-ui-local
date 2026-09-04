@@ -11,21 +11,28 @@ import Box from "@cloudscape-design/components/box";
 import Icon from "@cloudscape-design/components/icon";
 import { Mode, applyMode } from "@cloudscape-design/global-styles";
 import { usePathname, useRouter } from "next/navigation";
-import { useSettingsStore } from "@/stores/settings";
+import { useSettingsStore, FavoriteItem } from "@/stores/settings";
 import { AWS_REGIONS } from "@/constants/regions";
 import { NAVIGATION_ITEMS } from "@/constants/navigation";
 import { getRecentlyVisited } from "@/lib/sqlite-adapter";
 import { useGlobalSearch, groupByCategory } from "@/hooks/useGlobalSearch";
 import type { Terminal } from "xterm";
 import type { FitAddon } from "@xterm/addon-fit";
+import { Container } from "@cloudscape-design/components";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { region, setRegion, theme, setTheme, provider, setProvider } = useSettingsStore();
+  const { region, setRegion, theme, setTheme, provider, setProvider, favorites, addFavorite, removeFavorite, reorderFavorites } = useSettingsStore();
   const { searchValue, setSearchValue, searchResults, showDropdown, setShowDropdown, selectedIndex, navigateToService } = useGlobalSearch();
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [mounted, setMounted] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { id: "n1", type: "info" as const, header: "Welcome to AWS Console Emulator", content: "Connected to LocalStack adapter (F-002)", dismissible: true },
+    { id: "n2", type: "success" as const, header: "Service Health", content: "All monitored services operational (F-028)", dismissible: false },
+  ]);
   const terminalRef = useRef<HTMLDivElement>(null);
   const terminalInstance = useRef<Terminal | null>(null);
   const fitAddon = useRef<FitAddon | null>(null);
@@ -34,6 +41,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyMode(theme as Mode);
   }, [theme]);
+
+  // Mount tracking for hydration fix
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Health check on mount
   useEffect(() => {
@@ -49,23 +61,35 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       });
   }, [setProvider]);
 
-  // Load expanded categories from localStorage
+  // Keyboard shortcuts: Ctrl+K opens search, Esc closes dropdown
   useEffect(() => {
-    const saved = localStorage.getItem("nav_expanded");
-    if (saved) {
-      try {
-        setExpandedCategories(JSON.parse(saved));
-      } catch (e) {
-        // Ignore parse errors
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+          setShowDropdown(true);
+        }
       }
-    }
-  }, []);
+      if (e.key === "Escape") {
+        setShowDropdown(false);
+        setNotificationsOpen(false);
+        if (terminalOpen) {
+          setTerminalOpen(false);
+          localStorage.setItem("terminal_open", "false");
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [terminalOpen, setShowDropdown]);
 
-  // Save expanded categories to localStorage
+  // Expanded categories are kept open by default for consistent SSR/hydration
+  // (localStorage persistence removed to avoid server/client mismatch)
+
   const handleCategoryToggle = (categoryText: string, expanded: boolean) => {
-    const newExpanded = { ...expandedCategories, [categoryText]: expanded };
-    setExpandedCategories(newExpanded);
-    localStorage.setItem("nav_expanded", JSON.stringify(newExpanded));
+    setExpandedCategories({ ...expandedCategories, [categoryText]: expanded });
   };
 
   // Load xterm CSS dynamically
@@ -225,6 +249,40 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <a
+        href="#main-content"
+        className="skip-nav-link"
+        aria-label="Skip to main content"
+        style={{
+          position: "absolute",
+          top: "-40px",
+          left: 0,
+          zIndex: 10000,
+          padding: "8px 16px",
+          background: "#005ea2",
+          color: "#fff",
+          textDecoration: "none",
+          fontWeight: 600,
+          borderBottomRightRadius: "4px",
+          transition: "top 0.2s ease",
+        }}
+        onFocus={(e) => {
+          (e.currentTarget as HTMLAnchorElement).style.top = "0";
+        }}
+        onBlur={(e) => {
+          (e.currentTarget as HTMLAnchorElement).style.top = "-40px";
+        }}
+      >
+        Skip to main content
+      </a>
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        aria-label="Status announcements"
+        id="a11y-announcements"
+        style={{ position: "absolute", left: "-10000px", width: "1px", height: "1px", overflow: "hidden" }}
+      />
+      <div style={{ position: "sticky", top: 0, zIndex: 1001 }}>
       <TopNavigation
         identity={{
           href: "/",
@@ -232,7 +290,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           logo: { src: "/aws-logo.svg", alt: "AWS" },
         }}
         search={
-          <div style={{ position: "relative", width: 400 }}>
+          <div style={{ position: "relative", width: "100%", maxWidth: 420 }}>
             <Input
               type="search"
               placeholder="Search AWS services (e.g., S3, EC2, Lambda)"
@@ -241,105 +299,89 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
               ariaLabel="Search services"
             />
+            {/* Reference: Cloudscape Design System — Dropdown container per docs/components/dropdown/ */}
             {showDropdown && searchResults.length > 0 && (
-              <Box
-                padding="n"
-                variant="div"
-              >
-                <div
-                  style={{
-                  position: "absolute",
-                  top: "calc(100% + 4px)",
-                  left: 0,
-                  right: 0,
-                  backgroundColor: "var(--awsui-color-background-dropdown-item-default)",
-                  border: "1px solid var(--awsui-color-border-dropdown-container)",
-                  borderRadius: "8px",
-                  zIndex: 9999,
-                  maxHeight: 500,
-                  overflow: "auto",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-                }}
-                >
-                {Object.entries(groupedSearchResults).map(([category, services]) => (
-                  <div key={category}>
-                    <Box
-                      padding="xs"
-                      variant="div"
-                    >
-                      <div
-                        style={{
-                        padding: "8px 16px",
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: "var(--awsui-color-text-label)",
-                        borderBottom: "1px solid var(--awsui-color-border-divider-default)",
-                        backgroundColor: "var(--awsui-color-background-container-header)",
-                      }}
-                      >
-                      {category}
-                      </div>
-                    </Box>
-                    {services.map((service, idx) => {
-                      const globalIndex = searchResults.findIndex((r) => r.href === service.href);
-                      return (
-                        <div
-                          key={`${category}-${idx}`}
-                          onClick={() => navigateToService(service)}
-                          style={{
-                            padding: "12px 16px",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "12px",
-                            backgroundColor:
-                              globalIndex === selectedIndex
-                                ? "var(--awsui-color-background-dropdown-item-hover)"
-                                : "transparent",
-                            borderBottom: "1px solid var(--awsui-color-border-divider-default)",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "var(--awsui-color-background-dropdown-item-hover)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              globalIndex === selectedIndex
-                                ? "var(--awsui-color-background-dropdown-item-hover)"
-                                : "transparent";
-                          }}
-                        >
-                          <Icon name="search" />
-                          <div style={{ flex: 1 }}>
-                            <div
-                              style={{
-                                fontWeight: 600,
-                                color: "var(--awsui-color-text-body-default)",
-                                marginBottom: "4px",
-                              }}
-                            >
-                              {service.text}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "var(--awsui-color-text-body-secondary)",
-                              }}
-                            >
-                              {service.description}
-                            </div>
-                          </div>
-                          <Icon name="angle-right-double" size="small" />
-                        </div>
-                      );
-                    })}
+              <Container
+                variant="embedded"
+                header={
+                  <div
+                    style={{
+                      padding: "8px 16px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      color: "var(--awsui-color-text-label)",
+                      borderBottom: "1px solid var(--awsui-color-border-divider-default)",
+                      backgroundColor: "var(--awsui-color-background-container-header)",
+                      borderTopLeftRadius: "24px",
+                      borderTopRightRadius: "24px",
+                    }}
+                  >
+                    Search Results
                   </div>
-                ))}
+                }
+                {...{ style: { borderRadius: "24px", overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.15)" } } as any}
+              >
+                <div style={{ padding: "8px 4px" }}>
+                  {Object.entries(groupedSearchResults).map(([category, services]) => (
+                    <div key={category}>
+                      <Box padding="xs" variant="div">
+                        <div style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 700, color: "var(--awsui-color-text-label)", borderBottom: "1px solid var(--awsui-color-border-divider-default)", backgroundColor: "var(--awsui-color-background-container-header)", borderRadius: 4 }}>
+                          {category}
+                        </div>
+                      </Box>
+                      {services.map((service, idx) => {
+                        const globalIndex = searchResults.findIndex((r) => r.href === service.href);
+                        return (
+                          <a
+                            key={`${category}-${idx}`}
+                            href={service.href}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigateToService(service);
+                            }}
+                            style={{
+                              display: "flex", alignItems: "center", gap: "12px",
+                              padding: "12px 16px", textDecoration: "none",
+                              color: "var(--awsui-color-text-body-default)",
+                              backgroundColor: globalIndex === selectedIndex ? "var(--awsui-color-background-dropdown-item-hover)" : "transparent",
+                              borderBottom: "1px solid var(--awsui-color-border-divider-default)",
+                              cursor: "pointer",
+                            }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--awsui-color-background-dropdown-item-hover)"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = globalIndex === selectedIndex ? "var(--awsui-color-background-dropdown-item-hover)" : "transparent"; }}
+                          >
+                            <Icon name="search" size="small" />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 600, marginBottom: "4px" }}>{service.text}</div>
+                              <div style={{ fontSize: "12px", color: "var(--awsui-color-text-body-secondary)" }}>{service.description}</div>
+                            </div>
+                            <Icon name="angle-right-double" size="small" />
+                          </a>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
-              </Box>
+              </Container>
             )}
           </div>
         }
         utilities={[
+          {
+            type: "button",
+            text: "Docs",
+            iconName: "file",
+            href: "https://docs.aws.amazon.com/",
+            external: true,
+            ariaLabel: "AWS Documentation",
+          },
+          {
+            type: "button",
+            text: "Support",
+            iconName: "support",
+            href: "/support",
+            ariaLabel: "AWS Support Center",
+          },
           {
             type: "button",
             text: "Terminal",
@@ -382,60 +424,170 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           },
           {
             type: "menu-dropdown",
+            text: "Notifications",
+            iconName: "notification",
+            items: notifications.map((n) => ({
+              id: n.id,
+              text: n.header,
+              description: n.content,
+            })),
+            onItemClick: () => setNotificationsOpen(!notificationsOpen),
+          },
+          {
+            type: "menu-dropdown",
             text: "Account",
             iconName: "user-profile",
             items: [
-              { id: "profile", text: "Profile" },
-              { id: "settings", text: "Settings" },
-              { id: "signout", text: "Sign out" },
+              { id: "profile", text: "Account", href: "/account" },
+              { id: "org", text: "Organization", href: "/organizations" },
+              { id: "security", text: "Security Credentials", href: "/iam-virtual-mfa" },
+              { id: "billing", text: "Billing Dashboard", href: "/billing" },
+              { id: "quotas", text: "Service Quotas", href: "/servicequotas/home" },
+              { id: "settings", text: "Console Settings", href: "/console/account/v2/home#settings" },
+              { id: "signout", text: "Sign Out", href: "/signout" },
             ],
           },
         ]}
       />
+      </div>
       <AppLayout
         headerSelector="#awsui-top-navigation"
+        navigationWidth={280}
+        navigationCollapsedWidth={54}
         breadcrumbs={<BreadcrumbGroup items={breadcrumbs} />}
         navigation={
-          <SideNavigation
-            activeHref={pathname}
-            items={NAVIGATION_ITEMS.map((item: any) => {
-              if (item.type === "divider") return { type: "divider" };
-              if (item.type === "expandable-link-group") {
-                return {
-                  type: "expandable-link-group",
-                  text: item.text,
-                  defaultExpanded: expandedCategories[item.text] !== false,
-                  items: item.items,
-                };
-              }
-              return item;
-            })}
+          <div style={{
+            backgroundColor: theme === "dark" ? "#232f3e" : "#f2f3f3",
+            height: "100vh",
+            borderRight: theme === "dark" ? "1px solid #34495e" : "1px solid #d5dbdb",
+            display: "flex",
+            flexDirection: "column",
+          }}>
+            {/* Sticky header */}
+            <div style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 10,
+              backgroundColor: theme === "dark" ? "#232f3e" : "#f2f3f3",
+              padding: "8px 16px",
+              borderBottom: theme === "dark" ? "1px solid #34495e" : "1px solid #d5dbdb",
+              flexShrink: 0,
+            }}>
+              <a
+                href="/"
+                style={{
+                  color: theme === "dark" ? "#d5dbdb" : "#232f3e",
+                  textDecoration: "none",
+                  fontWeight: 700,
+                  fontSize: "22px",
+                  letterSpacing: "0.5px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+                aria-label="AWS Services Home"
+              >
+                <img src={theme === "dark" ? "/icons/Architecture-Group/AWS-Cloud-logo_32_Dark.svg" : "/icons/Architecture-Group/AWS-Cloud-logo_32.svg"} alt="AWS" style={{ width: 28, height: 28 }} />
+                <span>AWS Services</span>
+              </a>
+            </div>
+
+            {/* Scrollable services */}
+            <div style={{
+              overflowY: "auto",
+              overflowX: "hidden",
+              flex: 1,
+              padding: "8px 4px",
+            }}>
+              <SideNavigation
+                activeHref={pathname}
+                header={undefined}
+                style={{ color: theme === "dark" ? "#d5dbdb" : "#232f3e", fontSize: "13px", border: "none" }}
+                items={[
+              // Favorites section (persisted via Zustand store)
+              ...(mounted && favorites.length > 0 ? [
+                {
+                  type: "expandable-link-group" as const,
+                  text: "Favorites",
+                  defaultExpanded: true,
+                  items: favorites.map((fav) => ({
+                    type: "link" as const,
+                    text: fav.serviceName,
+                    href: fav.serviceHref,
+                  })),
+                } as any,
+              ] : []),
+              ...NAVIGATION_ITEMS.map((item: any) => {
+                if (item.type === "divider") return { type: "divider" };
+                if (item.type === "expandable-link-group") {
+                  return {
+                    type: "expandable-link-group" as const,
+                    text: item.text,
+                    defaultExpanded: expandedCategories[item.text] !== false,
+                    items: item.items,
+                  };
+                }
+                return item;
+              }),
+            ]}
             onFollow={(event) => {
               if (!event.detail.external) {
                 event.preventDefault();
                 router.push(event.detail.href);
               }
             }}
-          />
+           />
+          </div>
+          </div>
         }
-        content={children}
-        splitPanel={
-          terminalOpen ? (
+        content={
+          <div style={{ display: "flex", flexDirection: "column", minHeight: "calc(100vh - 60px)", paddingTop: 64 }}>
+            <div id="main-content" aria-label="Main content" role="main" tabIndex={-1} style={{ outline: "none", flex: 1 }}>{children}</div>
+          </div>
+        }
+        splitPanel={terminalOpen ? (
             <SplitPanel header="Terminal">
               <div
                 ref={terminalRef}
                 style={{ height: "100%", padding: 10 }}
               />
             </SplitPanel>
-          ) : undefined
-        }
-        splitPanelOpen={terminalOpen}
-        onSplitPanelToggle={({ detail }) => {
-          setTerminalOpen(detail.open);
-          localStorage.setItem("terminal_open", String(detail.open));
+          ) : undefined}
+        splitPanelOpen={terminalOpen || false}
+        onSplitPanelToggle={(event: any) => {
+          if (event && event.detail) {
+            setTerminalOpen(event.detail.open);
+            localStorage.setItem("terminal_open", String(event.detail.open));
+          }
         }}
         toolsHide={true}
       />
+
+      {/* Global Footer */}
+      <footer
+        style={{
+          padding: "16px 24px",
+          backgroundColor: "var(--awsui-color-background-container-header)",
+          borderTop: "1px solid var(--awsui-color-border-divider-default)",
+          fontSize: "12px",
+          color: "var(--awsui-color-text-body-secondary)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+        aria-label="Footer"
+      >
+        <div>
+          © 2008-2026 Amazon Web Services, Inc. or its affiliates. All rights reserved.
+          <span style={{ marginLeft: 16 }}>|</span>
+          <a href="/privacy" style={{ marginLeft: 16, color: "var(--awsui-color-text-link-default)", textDecoration: "none" }}>Privacy</a>
+          <a href="/legal" style={{ marginLeft: 8, color: "var(--awsui-color-text-link-default)", textDecoration: "none" }}>Legal</a>
+          <a href="/communications" style={{ marginLeft: 8, color: "var(--awsui-color-text-link-default)", textDecoration: "none" }}>Communications Preferences</a>
+        </div>
+        <div>
+          Console v2.45.1 | Build 2026.09.01 | Active Backend: {provider.toUpperCase()}
+        </div>
+      </footer>
     </>
   );
 }

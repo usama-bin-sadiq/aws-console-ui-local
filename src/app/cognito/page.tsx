@@ -10,6 +10,7 @@ import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
+import Tabs from "@cloudscape-design/components/tabs";
 
 interface UserPool {
   Id: string;
@@ -23,10 +24,18 @@ interface CognitoUser {
   UserCreateDate?: string;
 }
 
+interface UserPoolClient {
+  ClientId?: string;
+  ClientName?: string;
+  UserPoolId?: string;
+  ClientSecret?: string;
+}
+
 export default function CognitoPage() {
   const [pools, setPools] = useState<UserPool[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("pools");
 
   // Create pool modal
   const [createModal, setCreateModal] = useState(false);
@@ -37,6 +46,19 @@ export default function CognitoPage() {
   const [selectedPool, setSelectedPool] = useState<UserPool | null>(null);
   const [users, setUsers] = useState<CognitoUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+
+  // Clients
+  const [clients, setClients] = useState<UserPoolClient[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const [clientsModal, setClientsModal] = useState(false);
+  const [clientsPoolId, setClientsPoolId] = useState<string>("");
+  const [clientsPoolName, setClientsPoolName] = useState<string>("");
+
+  // Client create/edit
+  const [clientModal, setClientModal] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [clientPoolId, setClientPoolId] = useState<string>("");
 
   const fetchPools = async () => {
     setLoading(true);
@@ -54,8 +76,8 @@ export default function CognitoPage() {
   };
 
   useEffect(() => {
-    fetchPools();
-  }, []);
+    if (activeTab === "pools") fetchPools();
+  }, [activeTab]);
 
   const createPool = async () => {
     try {
@@ -95,44 +117,123 @@ export default function CognitoPage() {
     }
   };
 
+  // Clients
+  const openClients = async (pool: UserPool) => {
+    setClientsPoolId(pool.Id);
+    setClientsPoolName(pool.Name);
+    setClientsModal(true);
+    setClientsLoading(true);
+    try {
+      const res = await fetch("/api/cognito", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "listClients", poolId: pool.Id }),
+      });
+      const data = await res.json();
+      setClients(data.clients || []);
+    } catch {
+      setClients([]);
+    } finally {
+      setClientsLoading(false);
+    }
+  };
+
+  const createClient = async () => {
+    try {
+      await fetch("/api/cognito", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "createClient", poolId: clientsPoolId, clientName }),
+      });
+      openClients({ Id: clientsPoolId, Name: clientsPoolName });
+    } finally {
+      setClientModal(false);
+      setClientName("");
+    }
+  };
+
+  const deleteClient = async (clientId: string) => {
+    await fetch("/api/cognito", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "deleteClient", poolId: clientsPoolId, clientId }),
+    });
+    openClients({ Id: clientsPoolId, Name: clientsPoolName });
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Cognito — User Pools</Header>
+        <Header variant="h1">Amazon Cognito</Header>
         {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={<Button onClick={() => setCreateModal(true)}>Create user pool</Button>}
-              >
-                User Pools ({pools.length})
-              </Header>
-            }
-            items={pools}
-            loading={loading}
-            columnDefinitions={[
-              { header: "Name", cell: (item) => item.Name },
-              { header: "ID", cell: (item) => item.Id },
-              { header: "Created", cell: (item) => item.CreationDate ?? "—" },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button onClick={() => openListUsers(item)} formAction="none">
-                      List users
-                    </Button>
-                    <Button onClick={() => deletePool(item.Id)} formAction="none">
-                      Delete
-                    </Button>
-                  </SpaceBetween>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No user pools found.</Box>}
-          />
-        </Container>
+
+        <Tabs
+          tabs={[
+            {
+              label: "User Pools",
+              id: "pools",
+              content: (
+                <Container>
+                  <Table
+                    header={
+                      <Header variant="h2" actions={<Button onClick={() => setCreateModal(true)}>Create user pool</Button>}>
+                        User Pools ({pools.length})
+                      </Header>
+                    }
+                    items={pools}
+                    loading={loading}
+                    columnDefinitions={[
+                      { header: "Name", cell: (item) => item.Name },
+                      { header: "Pool ID", cell: (item) => item.Id },
+                      { header: "Created", cell: (item) => item.CreationDate ?? "—" },
+                      {
+                        header: "Actions",
+                        cell: (item: UserPool) => (
+                          <SpaceBetween direction="horizontal" size="xs">
+                            <Button onClick={() => openListUsers(item)} formAction="none">Users</Button>
+                            <Button onClick={() => openClients(item)} formAction="none">Clients</Button>
+                            <Button onClick={() => deletePool(item.Id)} formAction="none">Delete</Button>
+                          </SpaceBetween>
+                        ),
+                      },
+                    ]}
+                    empty={<Box textAlign="center">No user pools found.</Box>}
+                  />
+                </Container>
+              ),
+            },
+            {
+              label: "App Clients",
+              id: "clients",
+              content: (
+                <Container>
+                  <Alert type="info">Select a user pool to manage app clients.</Alert>
+                  <Table
+                    header={<Header variant="h2">App Clients ({clients.length})</Header>}
+                    items={clients}
+                    loading={clientsLoading}
+                    columnDefinitions={[
+                      { header: "Client Name", cell: (item) => item.ClientName || "—" },
+                      { header: "Client ID", cell: (item) => item.ClientId || "—" },
+                      { header: "Pool ID", cell: (item) => item.UserPoolId || clientsPoolId || "—" },
+                      {
+                        header: "Actions",
+                        cell: (item: UserPoolClient) => (
+                          <SpaceBetween direction="horizontal" size="xs">
+                            <Button onClick={() => deleteClient(item.ClientId!)} formAction="none">Delete</Button>
+                          </SpaceBetween>
+                        ),
+                      },
+                    ]}
+                    empty={<Box textAlign="center">No clients found for this pool.</Box>}
+                  />
+                </Container>
+              ),
+            },
+          ]}
+          activeTabId={activeTab}
+          onChange={({ detail }) => setActiveTab(detail.activeTabId)}
+        />
 
         {/* Create pool modal */}
         <Modal
@@ -147,11 +248,7 @@ export default function CognitoPage() {
           }
         >
           <FormField label="Pool name">
-            <Input
-              value={poolName}
-              onChange={(e) => setPoolName(e.detail.value)}
-              placeholder="my-user-pool"
-            />
+            <Input value={poolName} onChange={(e) => setPoolName(e.detail.value)} placeholder="my-user-pool" />
           </FormField>
         </Modal>
 
@@ -172,6 +269,53 @@ export default function CognitoPage() {
             ]}
             empty={<Box textAlign="center">No users found.</Box>}
           />
+        </Modal>
+
+        {/* Clients modal */}
+        <Modal
+          visible={clientsModal}
+          onDismiss={() => { setClientsModal(false); setClients([]); }}
+          header={`App Clients — ${clientsPoolName || clientsPoolId}`}
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => { setClientModal(true); setClientPoolId(clientsPoolId); setClientName(""); }}>Add client</Button>
+              <Button onClick={() => { setClientsModal(false); setClients([]); }}>Close</Button>
+            </SpaceBetween>
+          }
+        >
+          <Table
+            items={clients}
+            loading={clientsLoading}
+            columnDefinitions={[
+              { header: "Client Name", cell: (item) => item.ClientName || "—" },
+              { header: "Client ID", cell: (item) => item.ClientId || "—" },
+              { header: "Pool ID", cell: (item) => item.UserPoolId || clientsPoolId || "—" },
+              {
+                header: "Actions",
+                cell: (item: UserPoolClient) => (
+                  <Button onClick={() => deleteClient(item.ClientId!)} formAction="none">Delete</Button>
+                ),
+              },
+            ]}
+            empty={<Box textAlign="center">No clients found.</Box>}
+          />
+        </Modal>
+
+        {/* Client create/edit modal */}
+        <Modal
+          visible={clientModal}
+          onDismiss={() => { setClientModal(false); setClientName(""); }}
+          header="Add app client"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => { setClientModal(false); setClientName(""); }}>Cancel</Button>
+              <Button variant="primary" onClick={createClient}>Create</Button>
+            </SpaceBetween>
+          }
+        >
+          <FormField label="Client name">
+            <Input value={clientName} onChange={(e) => setClientName(e.detail.value)} placeholder="my-app-client" />
+          </FormField>
         </Modal>
       </SpaceBetween>
     </div>

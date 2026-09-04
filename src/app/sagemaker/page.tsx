@@ -47,6 +47,22 @@ export default function SageMakerPage() {
     setCreateModal(false); setNbName(""); fetchData();
   };
 
+  const startNotebook = async (name: string) => {
+    await fetch("/api/sagemaker", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "startNotebook", name }),
+    });
+    fetchData();
+  };
+
+  const stopNotebook = async (name: string) => {
+    await fetch("/api/sagemaker", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "stopNotebook", name }),
+    });
+    fetchData();
+  };
+
   const deleteNotebook = async (name: string) => {
     await fetch(`/api/sagemaker?type=notebook&name=${encodeURIComponent(name)}`, { method: "DELETE" });
     fetchData();
@@ -69,7 +85,17 @@ export default function SageMakerPage() {
                     { header: "Name", cell: (i) => i.NotebookInstanceName },
                     { header: "Instance type", cell: (i) => i.InstanceType },
                     { header: "Status", cell: (i) => i.NotebookInstanceStatus },
-                    { header: "Actions", cell: (i) => <Button onClick={() => deleteNotebook(i.NotebookInstanceName)} formAction="none">Delete</Button> },
+                    { header: "Actions", cell: (i) => (
+                      <SpaceBetween direction="horizontal" size="xs">
+                        {i.NotebookInstanceStatus === "InService" && (
+                          <Button onClick={() => stopNotebook(i.NotebookInstanceName)} formAction="none">Stop</Button>
+                        )}
+                        {i.NotebookInstanceStatus === "Stopped" && (
+                          <Button onClick={() => startNotebook(i.NotebookInstanceName)} formAction="none">Start</Button>
+                        )}
+                        <Button onClick={() => deleteNotebook(i.NotebookInstanceName)} formAction="none">Delete</Button>
+                      </SpaceBetween>
+                    ) },
                   ]}
                   empty={<Box textAlign="center">No notebook instances.</Box>}
                 />

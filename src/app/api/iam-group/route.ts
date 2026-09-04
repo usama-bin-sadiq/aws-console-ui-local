@@ -1,9 +1,45 @@
 import { NextResponse } from "next/server";
-import { ListGroupsCommand, CreateGroupCommand, DeleteGroupCommand } from "@aws-sdk/client-iam";
+import {
+  ListGroupsCommand,
+  CreateGroupCommand,
+  DeleteGroupCommand,
+  GetGroupCommand,
+  ListAttachedGroupPoliciesCommand,
+  AttachGroupPolicyCommand,
+  DetachGroupPolicyCommand,
+  ListUsersCommand,
+} from "@aws-sdk/client-iam";
 import { iam } from "@/lib/aws-clients";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get("action");
+    const groupName = searchParams.get("groupName");
+
+    if (action === "getGroup" && groupName) {
+      const groupRes = await iam.send(new GetGroupCommand({ GroupName: groupName }));
+      const policiesRes = await iam.send(new ListAttachedGroupPoliciesCommand({ GroupName: groupName }));
+      // Fetch members
+      let members: any[] = [];
+      try {
+        const usersRes = await iam.send(new ListUsersCommand({}));
+        const allUsers = usersRes.Users || [];
+        // Filter users whose group membership includes this group (if SDK includes Groups)
+        members = allUsers.filter((u: any) => {
+          const userGroups = u?.Groups || [];
+          return userGroups.some((g: any) => g.GroupName === groupName);
+        }).map((u: any) => ({ UserName: u.UserName, UserId: u.UserId, Arn: u.Arn }));
+      } catch {}
+      return NextResponse.json({
+        group: {
+          ...groupRes.Group,
+          AttachedPolicies: policiesRes.AttachedPolicies || [],
+          Users: members,
+        },
+      });
+    }
+
     const res = await iam.send(new ListGroupsCommand({}));
     return NextResponse.json({ groups: res.Groups || [] });
   } catch (error: unknown) {
@@ -14,7 +50,20 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const res = await iam.send(new CreateGroupCommand({ GroupName: body.groupName }));
+    const action = body.action;
+
+    if (action === "attachPolicy") {
+      await iam.send(new AttachGroupPolicyCommand({ GroupName: body.groupName, PolicyArn: body.policyArn }));
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "detachPolicy") {
+      await iam.send(new DetachGroupPolicyCommand({ GroupName: body.groupName, PolicyArn: body.policyArn }));
+      return NextResponse.json({ success: true });
+    }
+
+    // Default: create group
+    const res = await iam.send(new CreateGroupCommand({ GroupName: body.groupName, Path: body.path || "/" }));
     return NextResponse.json({ group: res.Group });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

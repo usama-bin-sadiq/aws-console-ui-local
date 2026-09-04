@@ -36,7 +36,7 @@ export function NotificationCenter({
 }: NotificationCenterProps): React.ReactElement {
   const adapterNotification: NotificationItem = {
     id: 'adapter-status',
-    type: adapterStatus === 'connected' ? 'success' : adapterStatus === 'disconnected' ? 'error' : 'warning',
+    type: adapterStatus === 'connected' ? 'success' : adapterStatus === 'disconnected' ? 'warning' : 'loading',
     header: adapterStatus === 'connected' ? 'Adapter Connected' : adapterStatus === 'disconnected' ? 'Adapter Disconnected' : 'Adapter Checking',
     content: adapterStatus === 'connected'
       ? 'LocalStack adapter is connected. Endpoint: localhost:4566 (F-001)'

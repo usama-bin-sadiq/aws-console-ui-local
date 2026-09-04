@@ -110,7 +110,7 @@ export default function Dashboard() {
             <Box variant="h3">Service Health</Box>
             <StatusIndicator
               type={
-                provider === "ministack" || provider === "localstack"
+                provider === "minstack" || provider === "localstack"
                   ? "success"
                   : "error"
               }

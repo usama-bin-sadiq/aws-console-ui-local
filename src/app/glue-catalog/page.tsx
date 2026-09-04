@@ -18,6 +18,18 @@ interface GlueDatabase {
   Description?: string;
 }
 
+interface GlueTable {
+  Name?: string;
+  DatabaseName?: string;
+  CreateTime?: string;
+}
+
+interface GlueCrawler {
+  Name?: string;
+  State?: string;
+  DatabaseName?: string;
+}
+
 interface GlueJob {
   Name: string;
   JobRunState?: string;
@@ -25,6 +37,8 @@ interface GlueJob {
 
 export default function GlueCatalogPage() {
   const [databases, setDatabases] = useState<GlueDatabase[]>([]);
+  const [tables, setTables] = useState<GlueTable[]>([]);
+  const [crawlers, setCrawlers] = useState<GlueCrawler[]>([]);
   const [jobs, setJobs] = useState<GlueJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,6 +46,11 @@ export default function GlueCatalogPage() {
   const [createDbModal, setCreateDbModal] = useState(false);
   const [dbName, setDbName] = useState("");
   const [creatingDb, setCreatingDb] = useState(false);
+
+  const [createCrawlerModal, setCreateCrawlerModal] = useState(false);
+  const [crawlerName, setCrawlerName] = useState("");
+  const [crawlerRole, setCrawlerRole] = useState("");
+  const [creatingCrawler, setCreatingCrawler] = useState(false);
 
   const [createJobModal, setCreateJobModal] = useState(false);
   const [jobName, setJobName] = useState("");
@@ -46,6 +65,15 @@ export default function GlueCatalogPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch Glue data");
       setDatabases(data.databases || []);
+      setTables(data.tables || []);
+      const crawlerList = data.crawlers || [];
+      setCrawlers(
+        Array.isArray(crawlerList)
+          ? crawlerList.map((c: string | { Name?: string; State?: string }) =>
+              typeof c === "string" ? { Name: c, State: "READY" } : c
+            )
+          : []
+      );
       setJobs(data.jobs || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch Glue data");
@@ -77,6 +105,29 @@ export default function GlueCatalogPage() {
       setError(err instanceof Error ? err.message : "Failed to create database");
     } finally {
       setCreatingDb(false);
+    }
+  };
+
+  const createCrawler = async () => {
+    setCreatingCrawler(true);
+    try {
+      const res = await fetch("/api/glue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "createCrawler", name: crawlerName, role: crawlerRole || "arn:aws:iam::000000000000:role/glue-crawler-role" }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to create crawler");
+      }
+      setCreateCrawlerModal(false);
+      setCrawlerName("");
+      setCrawlerRole("");
+      fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create crawler");
+    } finally {
+      setCreatingCrawler(false);
     }
   };
 
@@ -136,11 +187,58 @@ export default function GlueCatalogPage() {
                     }
                     items={databases}
                     columnDefinitions={[
-                      { header: "Name", cell: (item) => item.Name },
-                      { header: "Description", cell: (item) => item.Description || "—" },
+                      { header: "Name", cell: (item: GlueDatabase) => item.Name },
+                      { header: "Description", cell: (item: GlueDatabase) => item.Description || "—" },
                     ]}
                     loading={loading}
                     empty={<Box textAlign="center">No databases found.</Box>}
+                  />
+                ),
+              },
+              {
+                label: "Tables",
+                id: "tables",
+                content: (
+                  <Table
+                    header={
+                      <Header variant="h2">Tables ({tables.length})</Header>
+                    }
+                    items={tables}
+                    columnDefinitions={[
+                      { header: "Name", cell: (item: GlueTable) => item.Name || "—" },
+                      { header: "Database", cell: (item: GlueTable) => item.DatabaseName || "—" },
+                      { header: "Created", cell: (item: GlueTable) => item.CreateTime || "—" },
+                    ]}
+                    loading={loading}
+                    empty={<Box textAlign="center">No tables found.</Box>}
+                  />
+                ),
+              },
+              {
+                label: "Crawlers",
+                id: "crawlers",
+                content: (
+                  <Table
+                    header={
+                      <Header
+                        variant="h2"
+                        actions={
+                          <Button variant="primary" onClick={() => setCreateCrawlerModal(true)}>
+                            Create crawler
+                          </Button>
+                        }
+                      >
+                        Crawlers ({crawlers.length})
+                      </Header>
+                    }
+                    items={crawlers}
+                    columnDefinitions={[
+                      { header: "Name", cell: (item: GlueCrawler) => item.Name || "—" },
+                      { header: "State", cell: (item: GlueCrawler) => item.State || "—" },
+                      { header: "Database", cell: (item: GlueCrawler) => item.DatabaseName || "—" },
+                    ]}
+                    loading={loading}
+                    empty={<Box textAlign="center">No crawlers found.</Box>}
                   />
                 ),
               },
@@ -163,8 +261,8 @@ export default function GlueCatalogPage() {
                     }
                     items={jobs}
                     columnDefinitions={[
-                      { header: "Name", cell: (item) => item.Name },
-                      { header: "Last run state", cell: (item) => item.JobRunState || "—" },
+                      { header: "Name", cell: (item: GlueJob) => item.Name },
+                      { header: "Last run state", cell: (item: GlueJob) => item.JobRunState || "—" },
                     ]}
                     loading={loading}
                     empty={<Box textAlign="center">No jobs found.</Box>}
@@ -190,22 +288,70 @@ export default function GlueCatalogPage() {
           }
         >
           <FormField label="Database name" constraintText="Required">
-            <Input
-              value={dbName}
-              onChange={(e) => setDbName(e.detail.value)}
-              placeholder="my-database"
-            />
+            <Input value={dbName} onChange={(e) => setDbName(e.detail.value)} placeholder="my-database" />
           </FormField>
+        </Modal>
+
+        {/* Create Crawler Modal */}
+        <Modal
+          visible={createCrawlerModal}
+          onDismiss={() => {
+            setCreateCrawlerModal(false);
+            setCrawlerName("");
+            setCrawlerRole("");
+          }}
+          header="Create crawler"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button
+                onClick={() => {
+                  setCreateCrawlerModal(false);
+                  setCrawlerName("");
+                  setCrawlerRole("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={createCrawler} loading={creatingCrawler}>
+                Create
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          <SpaceBetween size="m">
+            <FormField label="Crawler name" constraintText="Required">
+              <Input value={crawlerName} onChange={(e) => setCrawlerName(e.detail.value)} placeholder="my-crawler" />
+            </FormField>
+            <FormField label="IAM role">
+              <Input
+                value={crawlerRole}
+                onChange={(e) => setCrawlerRole(e.detail.value)}
+                placeholder="arn:aws:iam::123456789012:role/GlueCrawlerRole"
+              />
+            </FormField>
+          </SpaceBetween>
         </Modal>
 
         {/* Create Job Modal */}
         <Modal
           visible={createJobModal}
-          onDismiss={() => setCreateJobModal(false)}
+          onDismiss={() => {
+            setCreateJobModal(false);
+            setJobName("");
+            setJobRole("");
+          }}
           header="Create Glue job"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreateJobModal(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setCreateJobModal(false);
+                  setJobName("");
+                  setJobRole("");
+                }}
+              >
+                Cancel
+              </Button>
               <Button variant="primary" onClick={createJob} loading={creatingJob}>
                 Create
               </Button>
@@ -214,11 +360,7 @@ export default function GlueCatalogPage() {
         >
           <SpaceBetween size="m">
             <FormField label="Job name" constraintText="Required">
-              <Input
-                value={jobName}
-                onChange={(e) => setJobName(e.detail.value)}
-                placeholder="my-job"
-              />
+              <Input value={jobName} onChange={(e) => setJobName(e.detail.value)} placeholder="my-job" />
             </FormField>
             <FormField label="IAM role" constraintText="Required">
               <Input

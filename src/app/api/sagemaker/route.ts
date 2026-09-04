@@ -6,6 +6,8 @@ import {
   CreateEndpointCommand,
   DeleteNotebookInstanceCommand,
   DeleteEndpointCommand,
+  StartNotebookInstanceCommand,
+  StopNotebookInstanceCommand,
 } from "@aws-sdk/client-sagemaker";
 import { sagemaker } from "@/lib/aws-clients";
 
@@ -27,6 +29,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    if (body.action === "startNotebook") {
+      await sagemaker.send(new StartNotebookInstanceCommand({ NotebookInstanceName: body.name }));
+      return NextResponse.json({ success: true });
+    }
+    if (body.action === "stopNotebook") {
+      await sagemaker.send(new StopNotebookInstanceCommand({ NotebookInstanceName: body.name }));
+      return NextResponse.json({ success: true });
+    }
     if (body.action === "createEndpoint") {
       await sagemaker.send(new CreateEndpointCommand({
         EndpointName: body.endpointName,

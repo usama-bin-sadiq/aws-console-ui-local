@@ -34,6 +34,12 @@ export default function ConfigPage() {
   const [sourceIdentifier, setSourceIdentifier] = useState("");
   const [creating, setCreating] = useState(false);
 
+  // Recorder management
+  const [recorderModal, setRecorderModal] = useState(false);
+  const [recorderName, setRecorderName] = useState("");
+  const [recorderRoleARN, setRecorderRoleARN] = useState("");
+  const [creatingRecorder, setCreatingRecorder] = useState(false);
+
   const fetchConfig = async () => {
     setLoading(true);
     setError("");
@@ -90,6 +96,29 @@ export default function ConfigPage() {
     }
   };
 
+  const createRecorder = async () => {
+    setCreatingRecorder(true);
+    try {
+      const res = await fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "createRecorder", recorderName: recorderName, roleARN: recorderRoleARN }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to create recorder");
+      }
+      setRecorderModal(false);
+      setRecorderName("");
+      setRecorderRoleARN("");
+      fetchConfig();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create recorder");
+    } finally {
+      setCreatingRecorder(false);
+    }
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
@@ -109,11 +138,31 @@ export default function ConfigPage() {
                 id: "recorders",
                 content: (
                   <Table
-                    header={<Header variant="h2">Configuration recorders ({recorders.length})</Header>}
+                    header={
+                      <Header
+                        variant="h2"
+                        actions={
+                          <Button variant="primary" onClick={() => setRecorderModal(true)}>
+                            Create recorder
+                          </Button>
+                        }
+                      >
+                        Configuration recorders ({recorders.length})
+                      </Header>
+                    }
                     items={recorders}
                     columnDefinitions={[
                       { header: "Name", cell: (item) => item.name || "—" },
                       { header: "Role ARN", cell: (item) => item.roleARN || "—" },
+                      {
+                        header: "Actions",
+                        cell: (item: ConfigurationRecorder) => (
+                          <Button onClick={() => {
+                            const name = item.name || "default";
+                            fetch(`/api/config?action=deleteRecorder&recorderName=${encodeURIComponent(name)}`, { method: "DELETE" }).then(() => fetchConfig());
+                          }} formAction="none">Delete</Button>
+                        ),
+                      },
                     ]}
                     loading={loading}
                     empty={<Box textAlign="center">No recorders found.</Box>}
@@ -159,6 +208,27 @@ export default function ConfigPage() {
             ]}
           />
         </Container>
+
+        <Modal
+          visible={recorderModal}
+          onDismiss={() => { setRecorderModal(false); setRecorderName(""); setRecorderRoleARN(""); }}
+          header="Create configuration recorder"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => { setRecorderModal(false); setRecorderName(""); setRecorderRoleARN(""); }}>Cancel</Button>
+              <Button variant="primary" onClick={createRecorder} loading={creatingRecorder}>Create</Button>
+            </SpaceBetween>
+          }
+        >
+          <SpaceBetween size="m">
+            <FormField label="Recorder name" constraintText="Required">
+              <Input value={recorderName} onChange={(e) => setRecorderName(e.detail.value)} placeholder="default" />
+            </FormField>
+            <FormField label="Role ARN">
+              <Input value={recorderRoleARN} onChange={(e) => setRecorderRoleARN(e.detail.value)} placeholder="arn:aws:iam::123456789012:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig" />
+            </FormField>
+          </SpaceBetween>
+        </Modal>
 
         <Modal
           visible={createModal}

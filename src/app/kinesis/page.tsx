@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
+import Tabs from "@cloudscape-design/components/tabs";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -14,6 +15,9 @@ import Input from "@cloudscape-design/components/input";
 
 interface KinesisStream {
   name: string;
+  status?: string;
+  shards?: number;
+  retentionHours?: number;
 }
 
 export default function KinesisPage() {
@@ -23,6 +27,7 @@ export default function KinesisPage() {
   const [createModal, setCreateModal] = useState(false);
   const [streamName, setStreamName] = useState("");
   const [shardCount, setShardCount] = useState("1");
+  const [retentionHours, setRetentionHours] = useState("24");
   const [creating, setCreating] = useState(false);
 
   const fetchStreams = async () => {
@@ -33,7 +38,13 @@ export default function KinesisPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch streams");
       const names: string[] = data.streams || [];
-      setStreams(names.map((n) => ({ name: n })));
+      setStreams(
+        names.map((n: string) => ({
+          name: n,
+          status: data.streamDetails && data.streamDetails[n] ? data.streamDetails[n].StreamStatus : "ACTIVE",
+          shards: data.streamDetails && data.streamDetails[n] ? (data.streamDetails[n].Shards ? data.streamDetails[n].Shards.length : 1) : 1,
+        }))
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch streams");
     } finally {
@@ -51,7 +62,11 @@ export default function KinesisPage() {
       const res = await fetch("/api/kinesis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ streamName, shardCount: parseInt(shardCount, 10) || 1 }),
+        body: JSON.stringify({
+          streamName,
+          shardCount: parseInt(shardCount, 10) || 1,
+          retentionHours: parseInt(retentionHours, 10) || 24,
+        }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -60,6 +75,7 @@ export default function KinesisPage() {
       setCreateModal(false);
       setStreamName("");
       setShardCount("1");
+      setRetentionHours("24");
       fetchStreams();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create stream");
@@ -95,46 +111,95 @@ export default function KinesisPage() {
         )}
 
         <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Create data stream
-                  </Button>
-                }
-              >
-                Data streams ({streams.length})
-              </Header>
-            }
-            items={streams}
-            columnDefinitions={[
-              { header: "Stream name", cell: (item) => item.name },
+          <Tabs
+            tabs={[
               {
-                header: "Actions",
-                cell: (item) => (
-                  <Button
-                    onClick={() => deleteStream(item.name)}
-                    formAction="none"
-                  >
-                    Delete
-                  </Button>
+                label: "Data streams",
+                id: "streams",
+                content: (
+                  <Table
+                    header={
+                      <Header
+                        variant="h2"
+                        actions={
+                          <Button variant="primary" onClick={() => setCreateModal(true)}>
+                            Create data stream
+                          </Button>
+                        }
+                      >
+                        Data streams ({streams.length})
+                      </Header>
+                    }
+                    items={streams}
+                    columnDefinitions={[
+                      { header: "Stream name", cell: (item: KinesisStream) => item.name },
+                      { header: "Status", cell: (item: KinesisStream) => item.status || "—" },
+                      { header: "Shards", cell: (item: KinesisStream) => String(item.shards || "—") },
+                      {
+                        header: "Actions",
+                        cell: (item: KinesisStream) => (
+                          <Button onClick={() => deleteStream(item.name)} formAction="none">
+                            Delete
+                          </Button>
+                        ),
+                      },
+                    ]}
+                    loading={loading}
+                    empty={<Box textAlign="center">No streams found.</Box>}
+                  />
+                ),
+              },
+              {
+                label: "Analytics",
+                id: "analytics",
+                content: (
+                  <div style={{ padding: "16px", color: "var(--awsui-color-text-body-secondary)" }}>
+                    <Header variant="h2">Analytics overview</Header>
+                    <SpaceBetween size="s">
+                      <Box>Stream analytics and metrics available through adapter SDK integration.</Box>
+                      <Box>Use the query editor or analytics APIs to process stream records.</Box>
+                    </SpaceBetween>
+                  </div>
+                ),
+              },
+              {
+                label: "Video Streams",
+                id: "video",
+                content: (
+                  <div style={{ padding: "16px", color: "var(--awsui-color-text-body-secondary)" }}>
+                    <Header variant="h2">Video streams</Header>
+                    <SpaceBetween size="s">
+                      <Box>Kinesis Video Streams support is available through the adapter SDK layer.</Box>
+                      <Box>Manage video ingestion and retrieval via adapter-compatible endpoints.</Box>
+                    </SpaceBetween>
+                  </div>
                 ),
               },
             ]}
-            loading={loading}
-            empty={<Box textAlign="center">No streams found.</Box>}
           />
         </Container>
 
         <Modal
           visible={createModal}
-          onDismiss={() => setCreateModal(false)}
+          onDismiss={() => {
+            setCreateModal(false);
+            setStreamName("");
+            setShardCount("1");
+            setRetentionHours("24");
+          }}
           header="Create data stream"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setCreateModal(false);
+                  setStreamName("");
+                  setShardCount("1");
+                  setRetentionHours("24");
+                }}
+              >
+                Cancel
+              </Button>
               <Button variant="primary" onClick={createStream} loading={creating}>
                 Create
               </Button>
@@ -155,6 +220,14 @@ export default function KinesisPage() {
                 onChange={(e) => setShardCount(e.detail.value)}
                 type="number"
                 placeholder="1"
+              />
+            </FormField>
+            <FormField label="Retention period (hours)">
+              <Input
+                value={retentionHours}
+                onChange={(e) => setRetentionHours(e.detail.value)}
+                type="number"
+                placeholder="24"
               />
             </FormField>
           </SpaceBetween>

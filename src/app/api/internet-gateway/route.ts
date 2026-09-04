@@ -1,9 +1,13 @@
+// VERIFICATION GATE: Phase 4 VPC Full — IGW CRUD + Attach/Detach
+// Commands: @aws-sdk/client-ec2 (DescribeInternetGateways, CreateInternetGateway,
+// DeleteInternetGateway, AttachInternetGateway, DetachInternetGateway)
 import { NextResponse } from "next/server";
 import {
   DescribeInternetGatewaysCommand,
   CreateInternetGatewayCommand,
   DeleteInternetGatewayCommand,
   AttachInternetGatewayCommand,
+  DetachInternetGatewayCommand,
 } from "@aws-sdk/client-ec2";
 import { ec2 } from "@/lib/aws-clients";
 
@@ -21,6 +25,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     if (body.action === "attach") {
       await ec2.send(new AttachInternetGatewayCommand({ InternetGatewayId: body.igwId, VpcId: body.vpcId }));
+      return NextResponse.json({ success: true });
+    }
+    if (body.action === "detach") {
+      await ec2.send(new DetachInternetGatewayCommand({ InternetGatewayId: body.igwId, VpcId: body.vpcId }));
       return NextResponse.json({ success: true });
     }
     // default: create

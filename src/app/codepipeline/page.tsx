@@ -14,7 +14,14 @@ import Textarea from "@cloudscape-design/components/textarea";
 interface Pipeline {
   name: string;
   version: number;
-  created: string;
+  created?: string;
+}
+
+interface PipelineExecution {
+  pipelineExecutionId?: string;
+  status?: string;
+  startTime?: string;
+  pipelineName?: string;
 }
 
 export default function CodePipelinePage() {
@@ -37,6 +44,11 @@ export default function CodePipelinePage() {
       2
     )
   );
+
+  const [selectedPipeline, setSelectedPipeline] = useState<string | null>(null);
+  const [executions, setExecutions] = useState<PipelineExecution[]>([]);
+  const [execLoading, setExecLoading] = useState(false);
+  const [execError, setExecError] = useState<string | null>(null);
 
   const fetchPipelines = async () => {
     setLoading(true);
@@ -71,16 +83,39 @@ export default function CodePipelinePage() {
   };
 
   const startExecution = async (name: string) => {
-    await fetch("/api/codepipeline", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "startExecution", name }),
-    });
+    try {
+      await fetch("/api/codepipeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "startExecution", name }),
+      });
+      fetchExecutions(name);
+    } catch (err: unknown) {
+      setExecError(err instanceof Error ? err.message : "Failed to start execution");
+    }
   };
 
   const deletePipeline = async (name: string) => {
     await fetch(`/api/codepipeline?name=${encodeURIComponent(name)}`, { method: "DELETE" });
     fetchPipelines();
+  };
+
+  const fetchExecutions = async (pipelineName: string) => {
+    setExecLoading(true);
+    setExecError(null);
+    setSelectedPipeline(pipelineName);
+    try {
+      const res = await fetch(
+        `/api/codepipeline?action=listExecutions&pipelineName=${encodeURIComponent(pipelineName)}`
+      );
+      const data = await res.json();
+      setExecutions(data.executions || []);
+    } catch (err: unknown) {
+      setExecError(err instanceof Error ? err.message : "Failed to load executions");
+      setExecutions([]);
+    } finally {
+      setExecLoading(false);
+    }
   };
 
   return (
@@ -103,13 +138,16 @@ export default function CodePipelinePage() {
             columnDefinitions={[
               { header: "Name", cell: (item) => item.name },
               { header: "Version", cell: (item) => String(item.version) },
-              { header: "Created", cell: (item) => item.created },
+              { header: "Created", cell: (item) => item.created || "—" },
               {
                 header: "Actions",
                 cell: (item) => (
                   <SpaceBetween direction="horizontal" size="xs">
                     <Button onClick={() => startExecution(item.name)} formAction="none">
                       Start execution
+                    </Button>
+                    <Button onClick={() => fetchExecutions(item.name)} formAction="none">
+                      View executions
                     </Button>
                     <Button onClick={() => deletePipeline(item.name)} formAction="none">
                       Delete
@@ -121,6 +159,25 @@ export default function CodePipelinePage() {
             empty={<Box textAlign="center">No pipelines found.</Box>}
           />
         </Container>
+
+        {selectedPipeline && (
+          <Container>
+            <SpaceBetween size="m">
+              <Header variant="h2">Executions for {selectedPipeline}</Header>
+              {execError && <Alert type="error" header="Error">{execError}</Alert>}
+              <Table
+                items={executions}
+                loading={execLoading}
+                columnDefinitions={[
+                  { header: "Execution ID", cell: (item) => item.pipelineExecutionId || "—" },
+                  { header: "Status", cell: (item) => item.status || "—" },
+                  { header: "Started", cell: (item) => item.startTime || "—" },
+                ]}
+                empty={<Box textAlign="center">No executions found.</Box>}
+              />
+            </SpaceBetween>
+          </Container>
+        )}
 
         <Modal
           visible={createModal}

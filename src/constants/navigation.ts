@@ -1,9 +1,6 @@
 import { NavigationItem } from "@/types/common";
 
 export const NAVIGATION_ITEMS: NavigationItem[] = [
-  { type: "link", text: "Dashboard", href: "/" },
-  { type: "divider" },
-  
   // Compute
   { type: "expandable-link-group", text: "Compute", items: [
     { type: "link", text: "EC2", href: "/ec2" },
@@ -35,7 +32,6 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     { type: "link", text: "RDS", href: "/rds" },
     { type: "link", text: "RDS Data", href: "/rds-data" },
     { type: "link", text: "ElastiCache", href: "/elasticache" },
-    { type: "link", text: "OpenSearch", href: "/opensearch" },
     { type: "link", text: "DSQL", href: "/dsql" },
   ]},
   
@@ -161,8 +157,6 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     { type: "link", text: "Amazon Connect", href: "/connect" },
     { type: "link", text: "Pinpoint", href: "/pinpoint" },
     { type: "link", text: "SES", href: "/ses" },
-    { type: "link", text: "SNS", href: "/sns" },
-    { type: "link", text: "SQS", href: "/sqs" },
   ]},
 
   // Monitoring & Observability

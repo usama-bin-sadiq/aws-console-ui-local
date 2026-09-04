@@ -4,6 +4,11 @@ import {
   DescribeClusterCommand,
   CreateClusterCommand,
   DeleteClusterCommand,
+  ListNodegroupsCommand,
+  DescribeNodegroupCommand,
+  CreateNodegroupCommand,
+  DeleteNodegroupCommand,
+  UpdateNodegroupConfigCommand,
 } from "@aws-sdk/client-eks";
 import { eks } from "@/lib/aws-clients";
 
@@ -24,6 +29,45 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+
+    if (body.action === "createNodegroup") {
+      const res = await eks.send(new CreateNodegroupCommand({
+        clusterName: body.clusterName,
+        nodegroupName: body.nodegroupName,
+        scalingConfig: body.scalingConfig || { minSize: 1, maxSize: 2, desiredSize: 1 },
+        instanceTypes: body.instanceTypes || ["t3.medium"],
+        subnets: body.subnets || [],
+        nodeRole: body.nodeRole || "arn:aws:iam::000000000000:role/eks-node-role",
+      }));
+      return NextResponse.json({ nodegroup: res.nodegroup });
+    }
+    if (body.action === "deleteNodegroup") {
+      await eks.send(new DeleteNodegroupCommand({
+        clusterName: body.clusterName,
+        nodegroupName: body.nodegroupName,
+      }));
+      return NextResponse.json({ success: true });
+    }
+    if (body.action === "updateNodegroupConfig") {
+      const res = await eks.send(new UpdateNodegroupConfigCommand({
+        clusterName: body.clusterName,
+        nodegroupName: body.nodegroupName,
+        scalingConfig: body.scalingConfig,
+      }));
+      return NextResponse.json({ update: res.update });
+    }
+    if (body.action === "listNodegroups") {
+      const res = await eks.send(new ListNodegroupsCommand({ clusterName: body.clusterName }));
+      return NextResponse.json({ nodegroups: res.nodegroups || [] });
+    }
+    if (body.action === "describeNodegroup") {
+      const res = await eks.send(new DescribeNodegroupCommand({
+        clusterName: body.clusterName,
+        nodegroupName: body.nodegroupName,
+      }));
+      return NextResponse.json({ nodegroup: res.nodegroup });
+    }
+
     const res = await eks.send(new CreateClusterCommand({
       name: body.name,
       version: body.version || "1.29",

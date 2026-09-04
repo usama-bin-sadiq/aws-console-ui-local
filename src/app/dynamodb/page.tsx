@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -14,6 +15,7 @@ import FormField from "@cloudscape-design/components/form-field";
 interface DynamoTable { TableName?: string; TableStatus?: string; ItemCount?: number; }
 
 export default function DynamoDBPage() {
+  const router = useRouter();
   const [tables, setTables] = useState<DynamoTable[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModal, setCreateModal] = useState(false);
@@ -58,7 +60,7 @@ export default function DynamoDBPage() {
         <Header
           variant="h1"
           actions={
-            <Button variant="primary" onClick={() => setCreateModal(true)}>
+            <Button variant="primary" onClick={() => setCreateModal(true)} ariaLabel="Create DynamoDB table">
               Create Table
             </Button>
           }
@@ -71,15 +73,20 @@ export default function DynamoDBPage() {
             header={<Header variant="h2">Tables ({tables.length})</Header>}
             items={tables}
             columnDefinitions={[
-              { header: "Name", cell: (item) => item.TableName },
+              { header: "Name", cell: (item) => (
+                <a href={`/dynamodb/${encodeURIComponent(item.TableName || "")}`} style={{ color: "var(--awsui-color-text-interactive-default)", textDecoration: "underline" }}>
+                  {item.TableName}
+                </a>
+              ) },
               { header: "Status", cell: (item) => item.TableStatus },
               { header: "Items", cell: (item) => item.ItemCount || 0 },
               {
                 header: "Actions",
                 cell: (item) => (
-                  <Button onClick={() => deleteTable(item.TableName!)} formAction="none">
-                    Delete
-                  </Button>
+                  <SpaceBetween direction="horizontal" size="xs">
+                    <Button onClick={() => router.push(`/dynamodb/${encodeURIComponent(item.TableName!)}`)} formAction="none" ariaLabel={`View DynamoDB table ${item.TableName}`}>View</Button>
+                    <Button onClick={() => deleteTable(item.TableName!)} formAction="none" ariaLabel={`Delete DynamoDB table ${item.TableName}`}>Delete</Button>
+                  </SpaceBetween>
                 ),
               },
             ]}

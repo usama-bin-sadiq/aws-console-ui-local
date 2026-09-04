@@ -1,27 +1,77 @@
 import { NextResponse } from "next/server";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 import {
   ListWebACLsCommand,
   CreateWebACLCommand,
   DeleteWebACLCommand,
+  GetWebACLCommand,
+  UpdateWebACLCommand,
+  ListIPSetsCommand,
+  GetIPSetCommand,
 } from "@aws-sdk/client-wafv2";
 import { wafv2 } from "@/lib/aws-clients";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get("action");
+
+    if (action === "getWebAcl") {
+      const res = await wafv2.send(new GetWebACLCommand({
+        Name: searchParams.get("name")!,
+        Scope: "REGIONAL",
+        Id: searchParams.get("id") || undefined,
+      }));
+      return NextResponse.json({ webAcl: res.WebACL || {} });
+    }
+
+    if (action === "listIPSets") {
+      const res = await wafv2.send(new ListIPSetsCommand({ Scope: "REGIONAL", Limit: 100 }));
+      return NextResponse.json({ ipSets: res.IPSets || [] });
+    }
+
     const res = await wafv2.send(new ListWebACLsCommand({ Scope: "REGIONAL", Limit: 100 }));
     return NextResponse.json({ webAcls: res.WebACLs || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const res = await wafv2.send(new CreateWebACLCommand({ Name: body.name, Scope: "REGIONAL", DefaultAction: body.defaultAction || { Allow: {} }, VisibilityConfig: body.visibilityConfig || { SampledRequestsEnabled: true, CloudWatchMetricsEnabled: true, MetricName: body.name } }));
+    if (body.action === "create") {
+      const res = await wafv2.send(new CreateWebACLCommand({
+        Name: body.name,
+        Scope: "REGIONAL",
+        DefaultAction: body.defaultAction || { Allow: {} },
+        VisibilityConfig: body.visibilityConfig || { SampledRequestsEnabled: true, CloudWatchMetricsEnabled: true, MetricName: body.name },
+      }));
+      return NextResponse.json({ webAcl: res.Summary });
+    }
+    if (body.action === "updateWebAcl") {
+      const res = await wafv2.send(new UpdateWebACLCommand({
+        Name: body.name,
+        Scope: "REGIONAL",
+        Id: body.id,
+        DefaultAction: body.defaultAction || { Allow: {} },
+        Rules: body.rules || [],
+        VisibilityConfig: body.visibilityConfig || { SampledRequestsEnabled: true, CloudWatchMetricsEnabled: true, MetricName: body.name },
+        LockToken: body.lockToken || "dummy",
+      }));
+      return NextResponse.json({ success: true, nextLockToken: res.NextLockToken });
+    }
+    const res = await wafv2.send(new CreateWebACLCommand({
+      Name: body.name,
+      Scope: "REGIONAL",
+      DefaultAction: body.defaultAction || { Allow: {} },
+      VisibilityConfig: body.visibilityConfig || { SampledRequestsEnabled: true, CloudWatchMetricsEnabled: true, MetricName: body.name },
+    }));
     return NextResponse.json({ webAcl: res.Summary });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -34,6 +84,7 @@ export async function DELETE(request: Request) {
     await wafv2.send(new DeleteWebACLCommand({ Name: name, Scope: "REGIONAL", Id: id, LockToken: lockToken }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

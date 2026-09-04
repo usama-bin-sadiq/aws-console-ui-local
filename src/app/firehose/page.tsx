@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
+import Tabs from "@cloudscape-design/components/tabs";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -14,6 +15,9 @@ import Input from "@cloudscape-design/components/input";
 
 interface FirehoseStream {
   name: string;
+  status?: string;
+  deliveryStreamType?: string;
+  destinations?: number;
 }
 
 export default function FirehosePage() {
@@ -22,6 +26,7 @@ export default function FirehosePage() {
   const [error, setError] = useState("");
   const [createModal, setCreateModal] = useState(false);
   const [streamName, setStreamName] = useState("");
+  const [deliveryType, setDeliveryType] = useState("DirectPut");
   const [creating, setCreating] = useState(false);
 
   const fetchStreams = async () => {
@@ -32,7 +37,15 @@ export default function FirehosePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch delivery streams");
       const names: string[] = data.deliveryStreamNames || [];
-      setStreams(names.map((n) => ({ name: n })));
+      const details = data.streamDetails || {};
+      setStreams(
+        names.map((n: string) => ({
+          name: n,
+          status: details[n]?.DeliveryStreamStatus || "ACTIVE",
+          deliveryStreamType: details[n]?.DeliveryStreamType || "DirectPut",
+          destinations: details[n]?.Destinations ? details[n].Destinations.length : 0,
+        }))
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch delivery streams");
     } finally {
@@ -50,7 +63,7 @@ export default function FirehosePage() {
       const res = await fetch("/api/firehose", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deliveryStreamName: streamName }),
+        body: JSON.stringify({ deliveryStreamName: streamName, deliveryStreamType: deliveryType }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -58,6 +71,7 @@ export default function FirehosePage() {
       }
       setCreateModal(false);
       setStreamName("");
+      setDeliveryType("DirectPut");
       fetchStreams();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create delivery stream");
@@ -93,46 +107,81 @@ export default function FirehosePage() {
         )}
 
         <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Create delivery stream
-                  </Button>
-                }
-              >
-                Delivery streams ({streams.length})
-              </Header>
-            }
-            items={streams}
-            columnDefinitions={[
-              { header: "Delivery stream name", cell: (item) => item.name },
+          <Tabs
+            tabs={[
               {
-                header: "Actions",
-                cell: (item) => (
-                  <Button
-                    onClick={() => deleteStream(item.name)}
-                    formAction="none"
-                  >
-                    Delete
-                  </Button>
+                label: "Delivery streams",
+                id: "delivery-streams",
+                content: (
+                  <Table
+                    header={
+                      <Header
+                        variant="h2"
+                        actions={
+                          <Button variant="primary" onClick={() => setCreateModal(true)}>
+                            Create delivery stream
+                          </Button>
+                        }
+                      >
+                        Delivery streams ({streams.length})
+                      </Header>
+                    }
+                    items={streams}
+                    columnDefinitions={[
+                      { header: "Delivery stream name", cell: (item: FirehoseStream) => item.name },
+                      { header: "Status", cell: (item: FirehoseStream) => item.status || "—" },
+                      { header: "Type", cell: (item: FirehoseStream) => item.deliveryStreamType || "—" },
+                      { header: "Destinations", cell: (item: FirehoseStream) => String(item.destinations || 0) },
+                      {
+                        header: "Actions",
+                        cell: (item: FirehoseStream) => (
+                          <Button onClick={() => deleteStream(item.name)} formAction="none">
+                            Delete
+                          </Button>
+                        ),
+                      },
+                    ]}
+                    loading={loading}
+                    empty={<Box textAlign="center">No delivery streams found.</Box>}
+                  />
+                ),
+              },
+              {
+                label: "Configuration",
+                id: "config",
+                content: (
+                  <div style={{ padding: "16px", color: "var(--awsui-color-text-body-secondary)" }}>
+                    <Header variant="h2">Firehose configuration</Header>
+                    <SpaceBetween size="s">
+                      <Box>Configure delivery streams for S3, Redshift, OpenSearch, or custom destinations.</Box>
+                      <Box>Adapter SDK handles endpoint routing and authentication automatically.</Box>
+                    </SpaceBetween>
+                  </div>
                 ),
               },
             ]}
-            loading={loading}
-            empty={<Box textAlign="center">No delivery streams found.</Box>}
           />
         </Container>
 
         <Modal
           visible={createModal}
-          onDismiss={() => setCreateModal(false)}
+          onDismiss={() => {
+            setCreateModal(false);
+            setStreamName("");
+            setDeliveryType("DirectPut");
+          }}
           header="Create delivery stream"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setCreateModal(false);
+                  setStreamName("");
+                  setDeliveryType("DirectPut");
+                }}
+              >
+                Cancel
+              </Button>
               <Button variant="primary" onClick={createStream} loading={creating}>
                 Create
               </Button>
@@ -145,6 +194,13 @@ export default function FirehosePage() {
                 value={streamName}
                 onChange={(e) => setStreamName(e.detail.value)}
                 placeholder="my-delivery-stream"
+              />
+            </FormField>
+            <FormField label="Delivery stream type">
+              <Input
+                value={deliveryType}
+                onChange={(e) => setDeliveryType(e.detail.value)}
+                placeholder="DirectPut"
               />
             </FormField>
           </SpaceBetween>

@@ -1,23 +1,9 @@
 import React from 'react';
-import AppLayout from '@cloudscape-design/components/app-layout';
-import SideNavigation from '@cloudscape-design/components/side-navigation';
-import TopNavigation from '@cloudscape-design/components/top-navigation';
-import BreadcrumbGroup from '@cloudscape-design/components/breadcrumb-group';
-import Container from '@cloudscape-design/components/container';
-import Header from '@cloudscape-design/components/header';
-import Tabs from '@cloudscape-design/components/tabs';
 import SpaceBetween from '@cloudscape-design/components/space-between';
-import ContentLayout from '@cloudscape-design/components/content-layout';
-import SplitPanel from '@cloudscape-design/components/split-panel';
+import Header from '@cloudscape-design/components/header';
+import Container from '@cloudscape-design/components/container';
+import Tabs from '@cloudscape-design/components/tabs';
 
-/**
- * ServiceLayout — Standard service console layout per PRD Section 9
- * Matches AWS Console structure exactly:
- * - Sidebar navigation (service-level)
- * - Top header with breadcrumbs, title, actions
- * - Main content area with tabs (Overview, Details, Monitoring, Tags, etc.)
- * - Action bar with primary/secondary actions
- */
 export interface ServiceLayoutProps {
   readonly serviceName: string;
   readonly serviceCategory?: string;
@@ -29,35 +15,30 @@ export interface ServiceLayoutProps {
   readonly splitPanel?: React.ReactElement;
 }
 
+/**
+ * ServiceLayout — Standard service console layout per PRD Section 9
+ * Matches AWS Console structure exactly:
+ * - Works INSIDE AppShell (no nested AppLayout)
+ * - Header with breadcrumbs (provided by AppShell), title, actions
+ * - Main content area with tabs (Overview, Details, Monitoring, Tags, etc.)
+ */
 export const ServiceLayout: React.FC<ServiceLayoutProps> = ({
   serviceName,
-  breadcrumbs,
-  children,
   headerActions,
   tabs,
-  splitPanel,
+  children,
 }) => {
   return (
-    <AppLayout
-      headerSelector="#awsui-top-navigation"
-      breadcrumbs={breadcrumbs ? <BreadcrumbGroup items={breadcrumbs} /> : undefined}
-      content={
-        <ContentLayout header={
-          <Header variant="h1" actions={headerActions ? <SpaceBetween size="s">{headerActions}</SpaceBetween> : undefined}>
-            {serviceName}
-          </Header>
-        }>
-          <Container>
-            {tabs ? <Tabs tabs={tabs as any} /> : null}
-            <div style={{ padding: 'var(--awsui-spacing-m)' }}>
-              {children}
-            </div>
-          </Container>
-        </ContentLayout>
-      }
-      splitPanel={splitPanel ? <SplitPanel header="Details">{splitPanel}</SplitPanel> : undefined}
-      splitPanelOpen={!!splitPanel}
-      splitPanelSize={400}
-    />
+    <SpaceBetween size="l" direction="vertical">
+      <Header variant="h1" actions={headerActions ? <SpaceBetween size="s" direction="horizontal">{headerActions}</SpaceBetween> : undefined}>
+        {serviceName}
+      </Header>
+      <Container>
+        {tabs ? <Tabs tabs={tabs as any} /> : null}
+        <div style={{ padding: 'var(--awsui-spacing-m)' }}>
+          {children}
+        </div>
+      </Container>
+    </SpaceBetween>
   );
 };

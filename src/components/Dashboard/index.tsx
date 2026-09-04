@@ -17,24 +17,32 @@ import { SERVICE_REGISTRY } from "@/constants/service-compatibility";
 export default function Dashboard() {
   const [adapterStatus, setAdapterStatus] = useState<"connected" | "disconnected" | "checking">("checking");
   const [serviceHealth, setServiceHealth] = useState<Record<string, boolean>>({});
+  const [adapterServices, setAdapterServices] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    // Check adapter health via health endpoint
+    // Check adapter health via health endpoint and extract service status
     fetch("/api/health")
       .then((res) => res.json())
       .then((data) => {
         setAdapterStatus(data.status === "healthy" ? "connected" : "disconnected");
+        if (data.services) {
+          setAdapterServices(data.services);
+        }
+        // Build health map from adapter services or registry status
+        const health: Record<string, boolean> = {};
+        SERVICE_REGISTRY.forEach((svc) => {
+          health[svc.serviceName] = data.services?.[svc.serviceName] === true || svc.adapterStatusLocalStack === "full";
+        });
+        setServiceHealth(health);
       })
-      .catch(() => setAdapterStatus("disconnected"));
-  }, []);
-
-  useEffect(() => {
-    // Load service health from adapter config / registry
-    const health: Record<string, boolean> = {};
-    SERVICE_REGISTRY.forEach((svc) => {
-      health[svc.serviceName] = svc.adapterStatusLocalStack === "full";
-    });
-    setServiceHealth(health);
+      .catch(() => {
+        setAdapterStatus("disconnected");
+        const health: Record<string, boolean> = {};
+        SERVICE_REGISTRY.forEach((svc) => {
+          health[svc.serviceName] = svc.adapterStatusLocalStack === "full";
+        });
+        setServiceHealth(health);
+      });
   }, []);
 
   const dashboardCards = [
@@ -88,8 +96,8 @@ export default function Dashboard() {
         <Container header={<Header variant="h2">Service Health Overview</Header>}>
           <SpaceBetween size="m" direction="horizontal">
             <AdapterStatus status={adapterStatus} endpointUrl={process.env.NEXT_PUBLIC_LOCALSTACK_ENDPOINT || "http://localhost:4566"} />
-            <StatusIndicator type={adapterStatus === "connected" ? "success" : adapterStatus === "disconnected" ? "error" : "loading"}>
-              {adapterStatus === "connected" ? "Connected to emulator" : adapterStatus === "disconnected" ? "Disconnection detected" : "Checking..."}
+            <StatusIndicator type={adapterStatus === "connected" ? "success" : adapterStatus === "disconnected" ? "warning" : "loading"}>
+              {adapterStatus === "connected" ? "Connected to adapter (LocalStack / MiniStack)" : adapterStatus === "disconnected" ? "Adapter endpoint unreachable — ensure docker-compose is running at localhost:4566" : "Checking adapter health..."}
             </StatusIndicator>
           </SpaceBetween>
         </Container>
@@ -104,12 +112,12 @@ export default function Dashboard() {
               ],
             }}
             items={[
-              { name: "Compute (EC2)", content: serviceHealth["Amazon EC2"] ? "FULL" : "Partial", icon: "/icons/ec2-instance-contents_32.svg" },
-              { name: "Storage (S3)", content: serviceHealth["Amazon S3"] ? "FULL" : "Partial", icon: "/icons/aws-s3_32.svg" },
-              { name: "Identity (IAM)", content: serviceHealth["AWS Identity and Access Management (IAM)"] ? "FULL" : "Partial", icon: "/icons/aws-iam_32.svg" },
-              { name: "Database (RDS)", content: serviceHealth["Amazon RDS"] ? "FULL" : "Partial", icon: "/icons/aws-rds_32.svg" },
-              { name: "Serverless (Lambda)", content: serviceHealth["AWS Lambda"] ? "FULL" : "Partial", icon: "/icons/aws-lambda_32.svg" },
-              { name: "Networking (VPC)", content: serviceHealth["Amazon VPC"] ? "FULL" : "Partial", icon: "/icons/aws-vpc_32.svg" },
+              { name: "Compute (EC2)", content: adapterServices["Amazon EC2"] !== false ? (serviceHealth["Amazon EC2"] ? "FULL" : adapterServices["Amazon EC2"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/ec2-instance-contents_32.svg" },
+              { name: "Storage (S3)", content: adapterServices["Amazon S3"] !== false ? (serviceHealth["Amazon S3"] ? "FULL" : adapterServices["Amazon S3"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/aws-s3_32.svg" },
+              { name: "Identity (IAM)", content: adapterServices["AWS Identity and Access Management (IAM)"] !== false ? (serviceHealth["AWS Identity and Access Management (IAM)"] ? "FULL" : adapterServices["AWS Identity and Access Management (IAM)"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/aws-iam_32.svg" },
+              { name: "Database (RDS)", content: adapterServices["Amazon RDS"] !== false ? (serviceHealth["Amazon RDS"] ? "FULL" : adapterServices["Amazon RDS"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/aws-rds_32.svg" },
+              { name: "Serverless (Lambda)", content: adapterServices["AWS Lambda"] !== false ? (serviceHealth["AWS Lambda"] ? "FULL" : adapterServices["AWS Lambda"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/aws-lambda_32.svg" },
+              { name: "Networking (VPC)", content: adapterServices["Amazon VPC"] !== false ? (serviceHealth["Amazon VPC"] ? "FULL" : adapterServices["Amazon VPC"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/aws-vpc_32.svg" },
             ] as any}
             loadingText="Loading services..."
             empty={<div>No services configured.</div>}
