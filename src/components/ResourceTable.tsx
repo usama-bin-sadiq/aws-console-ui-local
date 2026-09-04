@@ -179,7 +179,7 @@ function ResourceTableInner<T extends object>({
     : internalPageSize;
 
   const visibleColumns = isPrefsControlled
-    ? ((externalPreferences?.visibleContent as string[] | undefined) ??
+    ? ((externalPreferences?.contentDisplay as string[] | undefined) ??
       allColumnIds)
     : internalVisibleColumns;
 
@@ -187,7 +187,7 @@ function ResourceTableInner<T extends object>({
     ({ detail }: { detail: CollectionPreferencesProps.Preferences }) => {
       const newPageSize = detail.pageSize ?? DEFAULT_PAGE_SIZE;
       const newVisible =
-        (detail.visibleContent as string[] | undefined) ?? allColumnIds;
+        (detail.contentDisplay as string[] | undefined) ?? allColumnIds;
 
       if (isPrefsControlled && externalOnPreferencesChange) {
         externalOnPreferencesChange(detail);
@@ -201,7 +201,7 @@ function ResourceTableInner<T extends object>({
       }
       setInternalCurrentPage(1);
     },
-     
+
     [serviceKey, allColumnIds, isPrefsControlled, externalOnPreferencesChange]
   );
 
@@ -315,8 +315,8 @@ function ResourceTableInner<T extends object>({
     () =>
       prefsLoaded || isPrefsControlled
         ? columnDefinitions.filter(
-            (c) => c.id === undefined || visibleColumns.includes(c.id)
-          )
+          (c) => c.id === undefined || visibleColumns.includes(c.id)
+        )
         : columnDefinitions,
     [columnDefinitions, visibleColumns, prefsLoaded, isPrefsControlled]
   );
@@ -324,7 +324,7 @@ function ResourceTableInner<T extends object>({
   // ── CollectionPreferences shape ────────────────────────────────────────────
   const preferences: CollectionPreferencesProps.Preferences = {
     pageSize,
-    visibleContent: visibleColumns,
+    contentDisplay: visibleColumns,
   };
 
   // ── Generated header (used when caller does not supply `header`) ───────────
@@ -434,7 +434,7 @@ function ResourceTableInner<T extends object>({
               { value: 100, label: "100 resources" },
             ],
           }}
-          visibleContentPreference={{
+          contentDisplayPreference={{
             title: "Select visible columns",
             options: [
               {

@@ -1,7 +1,7 @@
 /**
  * E2E: EC2 Instance Launch & Management (Playwright)
  * Per PRD §15.1 (EC2 Launch Workflow) and §10.1–10.3 (Resource Management).
- * Feature ID: F-006 | Service Category: Compute | Adapter Mode: localstack/minstack
+ * Feature ID: F-006 | Service Category: Compute | Adapter Mode: localstack/ministack
  */
 
 import { test, expect } from '@playwright/test';

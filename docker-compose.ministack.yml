@@ -1,0 +1,60 @@
+# Docker Compose — MinStack Mode Only
+# Adapter: ACTIVE_BACKEND=ministack (port 4566)
+# Usage: docker-compose -f docker-compose.ministack.yml up -d
+
+services:
+  ministack:
+    image: ministackorg/ministack:latest
+    container_name: aws-console-ministack
+    ports:
+      - "4566:4566"
+    environment:
+      - PERSIST_STATE=1
+      - S3_PERSIST=1
+      - LOG_LEVEL=INFO
+      - LAMBDA_EXECUTOR=docker
+      - DOCKER_NETWORK=aws-console_default
+    volumes:
+      - ./data/ministack/state:/tmp/ministack-state
+      - ./data/ministack/s3:/tmp/ministack-data/s3
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4566/_ministack/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  ministack-health:
+    image: alpine/curl
+    container_name: aws-console-ministack-health
+    depends_on:
+      - ministack
+    command: ["/bin/sh", "-c", "while ! curl -f http://ministack:4566/_ministack/health; do sleep 1; done"]
+    restart: unless-stopped
+
+  aws-console:
+    build: .
+    container_name: aws-console-app-ministack
+    ports:
+      - "3000:3000"
+    environment:
+      - ACTIVE_BACKEND=ministack
+      - MINSTACK_HOSTNAME=ministack
+      - MINSTACK_EDGE_PORT=4566
+      - MINSTACK_ENDPOINT=http://ministack:4566
+      - MINSTACK_SSL_ENABLED=false
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+    depends_on:
+      - ministack
+      - ministack-health
+    volumes:
+      - .:/app
+    command: ["npm", "run", "start"]
+
+volumes:
+  ministack-state:
+  ministack-s3:

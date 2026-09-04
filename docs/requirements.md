@@ -14,7 +14,7 @@
 - **This file (`docs/requirements.md`):** Defines what must be built (150 services, adapter, full feature parity, zero stubs). Read this first to understand scope.
 - **`docs/design.md`:** Defines how it is built (architecture, adapter design, component hierarchy, data flow, tech stack, deployment, security). Read this second to understand system design.
 - **`docs/plan.md`:** Defines when and in what order it is built (7 phases, tasks, sub-tasks, dependencies, milestones, quality gates). Read this third to implement in phases.
-- **`docs/minstack-localstack-common-different.md`:** Reference list of all 150 services showing common (`FULL` both) vs different (`PARTIAL` / `NOT_SUPPORTED` for MinStack) service names for adapter endpoint switching.
+- **`docs/ministack-localstack-common-different.md`:** Reference list of all 150 services showing common (`FULL` both) vs different (`PARTIAL` / `NOT_SUPPORTED` for MinStack) service names for adapter endpoint switching.
 - **`src/constants/service-compatibility.ts`:** Source code registry of all 150 services with adapter status, SDK client references, and route verification.
 - **`AGENTS.md`:** Agent rules enforcing DRY, separate files (`types/`, `constants/`), strict TypeScript, no stubs, reusable hooks/services.
 - **`docs/REFERENCE.md`:** Quick reference linking all docs, adapter files, and service registry.

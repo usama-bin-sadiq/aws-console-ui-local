@@ -55,7 +55,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div style={{ padding: "24px", minHeight: "calc(100vh - 80px)", backgroundColor: "var(--awsui-color-background-main)" }}>
+    <div style={{ padding: "24px", minHeight: "calc(100vh - 80px)", backgroundColor: "var(--awsui-color-background-main)", overflowX: "hidden" }}>
       <SpaceBetween size="xl" direction="vertical">
         <Header variant="h1" description="Universal adapter connecting all AWS SDK v3 clients to LocalStack / MinStack emulators">AWS Management Console</Header>
 
@@ -112,13 +112,13 @@ export default function Dashboard() {
               ],
             }}
             items={[
-              { name: "Compute (EC2)", content: adapterServices["Amazon EC2"] !== false ? (serviceHealth["Amazon EC2"] ? "FULL" : adapterServices["Amazon EC2"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/ec2-instance-contents_32.svg" },
-              { name: "Storage (S3)", content: adapterServices["Amazon S3"] !== false ? (serviceHealth["Amazon S3"] ? "FULL" : adapterServices["Amazon S3"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/aws-s3_32.svg" },
-              { name: "Identity (IAM)", content: adapterServices["AWS Identity and Access Management (IAM)"] !== false ? (serviceHealth["AWS Identity and Access Management (IAM)"] ? "FULL" : adapterServices["AWS Identity and Access Management (IAM)"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/aws-iam_32.svg" },
-              { name: "Database (RDS)", content: adapterServices["Amazon RDS"] !== false ? (serviceHealth["Amazon RDS"] ? "FULL" : adapterServices["Amazon RDS"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/aws-rds_32.svg" },
-              { name: "Serverless (Lambda)", content: adapterServices["AWS Lambda"] !== false ? (serviceHealth["AWS Lambda"] ? "FULL" : adapterServices["AWS Lambda"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/aws-lambda_32.svg" },
-              { name: "Networking (VPC)", content: adapterServices["Amazon VPC"] !== false ? (serviceHealth["Amazon VPC"] ? "FULL" : adapterServices["Amazon VPC"] ? "AVAILABLE" : "Partial") : "Not Supported", icon: "/icons/aws-vpc_32.svg" },
-            ] as any}
+              { name: "Compute (EC2)", key: "Amazon EC2", content: adapterServices["Amazon EC2"] ? "FULL" : "Not Supported", icon: "/icons/ec2-instance-contents_32.svg" },
+              { name: "Storage (S3)", key: "Amazon S3", content: adapterServices["Amazon S3"] ? "FULL" : "Not Supported", icon: "/icons/aws-s3_32.svg" },
+              { name: "Identity (IAM)", key: "AWS Identity and Access Management (IAM)", content: adapterServices["AWS Identity and Access Management (IAM)"] ? "FULL" : "Not Supported", icon: "/icons/aws-iam_32.svg" },
+              { name: "Database (RDS)", key: "Amazon RDS", content: adapterServices["Amazon RDS"] ? "FULL" : "Not Supported", icon: "/icons/aws-rds_32.svg" },
+              { name: "Serverless (Lambda)", key: "AWS Lambda", content: adapterServices["AWS Lambda"] ? "FULL" : "Not Supported", icon: "/icons/aws-lambda_32.svg" },
+              { name: "Networking (VPC)", key: "Amazon VPC", content: adapterServices["Amazon VPC"] ? "FULL" : "Not Supported", icon: "/icons/aws-vpc_32.svg" },
+            ].filter((item: any) => adapterServices[item.key] === true) as any}
             loadingText="Loading services..."
             empty={<div>No services configured.</div>}
           />

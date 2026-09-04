@@ -1,7 +1,7 @@
 # AWS Console Clone — Universal Adapter + Full Feature Parity
 # Make commands for development, production, and adapter modes.
 
-.PHONY: dev test build clean start stop start-localstack start-minstack start-both
+.PHONY: dev test build clean start stop start-localstack start-ministack start-both
 
 # Default adapter mode
 ADAPTER_MODE ?= localstack
@@ -10,45 +10,31 @@ LOCALSTACK_EDGE_PORT ?= 4566
 MINSTACK_HOSTNAME ?= localhost
 MINSTACK_EDGE_PORT ?= 4566
 
-# Development server (default localstack with docker-compose)
-dev:
-	docker-compose -f docker-compose.localstack.yml up -d localstack-health && ADAPTER_MODE=localstack LOCALSTACK_HOSTNAME=localstack LOCALSTACK_EDGE_PORT=4566 MINSTACK_HOSTNAME=localhost MINSTACK_EDGE_PORT=4566 npm run dev
 
 # Development with ministack mode (docker-compose)
-dev-minstack:
-	docker-compose -f docker-compose.minstack.yml up -d ministack-health && ADAPTER_MODE=minstack MINSTACK_HOSTNAME=localhost MINSTACK_EDGE_PORT=4566 npm run dev
+dev-ministack:
+	docker-compose -f docker-compose.ministack.yml up -d ministack-health && ADAPTER_MODE=ministack MINSTACK_HOSTNAME=localhost MINSTACK_EDGE_PORT=4566 npm run dev
 
 # Development with localstack mode (docker-compose)
 dev-localstack:
 	docker-compose -f docker-compose.localstack.yml up -d localstack-health && ADAPTER_MODE=localstack LOCALSTACK_HOSTNAME=localhost LOCALSTACK_EDGE_PORT=4566 npm run dev
 
-# Development with both emulators (docker-compose)
-dev-both:
-	docker-compose -f docker-compose.yml up -d localstack ministack aws-console
 
-# Production start (default localstack with docker-compose)
-start:
-	docker-compose -f docker-compose.localstack.yml up -d localstack-health && NODE_ENV=production ADAPTER_MODE=localstack LOCALSTACK_HOSTNAME=localstack LOCALSTACK_EDGE_PORT=4566 MINSTACK_HOSTNAME=localhost MINSTACK_EDGE_PORT=4566 npm run start
 
-# Production start (minstack mode with docker-compose)
-start-minstack:
-	docker-compose -f docker-compose.minstack.yml up -d ministack-health && NODE_ENV=production ADAPTER_MODE=minstack MINSTACK_HOSTNAME=localhost MINSTACK_EDGE_PORT=4566 npm run start
+# Production start (ministack mode with docker-compose)
+start-ministack:
+	docker-compose -f docker-compose.ministack.yml up -d ministack-health && NODE_ENV=production ADAPTER_MODE=ministack MINSTACK_HOSTNAME=localhost MINSTACK_EDGE_PORT=4566 npm run start
 
 # Production start (localstack mode explicitly with docker-compose)
 start-localstack:
 	docker-compose -f docker-compose.localstack.yml up -d localstack-health && NODE_ENV=production ADAPTER_MODE=localstack LOCALSTACK_HOSTNAME=localhost LOCALSTACK_EDGE_PORT=4566 npm run start
 
-# Stop all docker-compose services
-stop:
-	docker-compose -f docker-compose.yml stop
-
 # Stop ministack only
-stop-minstack:
-	docker-compose -f docker-compose.yml stop ministack aws-console
-
+stop-ministack:
+	docker-compose -f docker-compose.ministack.yml stop
 # Stop localstack only
 stop-localstack:
-	docker-compose -f docker-compose.yml stop localstack aws-console
+	docker-compose -f docker-compose.localstack.yml stop
 
 # Build production image
 build:

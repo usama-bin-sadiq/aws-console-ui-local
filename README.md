@@ -10,16 +10,16 @@ A 100% feature-identical clone of the Amazon Web Services (AWS) Management Conso
 # Install dependencies
 npm install
 
-# Configure adapter mode (localstack / minstack / real)
+# Configure adapter mode (localstack / ministack / real)
 cp .env.local .env
-# Edit .env.local: ADAPTER_MODE=localstack (default) or minstack
+# Edit .env.local: ADAPTER_MODE=localstack (default) or ministack
 
 # Start both emulators + app (recommended)
 npm run dev:both
 
 # Or start individually
 npm run dev:localstack   # Full feature emulator (port 4566)
-npm run dev:minstack      # Lightweight emulator (port 4566)
+npm run dev:ministack      # Lightweight emulator (port 4566)
 
 # Stop all services
 npm run stop:both
@@ -48,7 +48,7 @@ No exceptions — adapter middleware applies uniformly to all 98 SDK clients reg
 ## Adapter Modes
 
 - `localstack` (default): `LOCALSTACK_HOSTNAME=localhost`, `LOCALSTACK_EDGE_PORT=4566`
-- `minstack`: `MINSTACK_HOSTNAME=localhost`, `MINSTACK_EDGE_PORT=4566`
+- `ministack`: `MINSTACK_HOSTNAME=localhost`, `MINSTACK_EDGE_PORT=4566`
 - `real`: Passes through user-provided `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`; no endpoint rewrite.
 
 Switch modes by setting `ADAPTER_MODE` in `.env.local` or runtime environment.
@@ -62,7 +62,7 @@ npm run start        # Production server
 npm run test         # Vitest adapter/component/service tests
 npm run dev          # Development server (default localstack mode)
 npm run dev:localstack
-npm run dev:minstack
+npm run dev:ministack
 npm run dev:both     # docker-compose both emulators + app
 npm run stop:both
 ```
@@ -85,7 +85,7 @@ Production build (`Dockerfile`): `docker build .` produces multi-stage image (`b
 
 ## Security
 
-- Adapter uses dummy credentials (`AWS_ACCESS_KEY_ID=test`, `AWS_SECRET_ACCESS_KEY=test`) for `localstack` / `minstack` mode.
+- Adapter uses dummy credentials (`AWS_ACCESS_KEY_ID=test`, `AWS_SECRET_ACCESS_KEY=test`) for `localstack` / `ministack` mode.
 - No real AWS credentials stored in browser storage unless user selects `real` mode.
 - Endpoint URL configurable per service (`.env.local` / adapter store settings).
 - CORS configured (`Access-Control-Allow-Origin` configurable via adapter middleware).
@@ -99,7 +99,7 @@ Production build (`Dockerfile`): `docker build .` produces multi-stage image (`b
 - `docs/requirements.md`: Full production-grade requirements (150 services, adapter, full feature parity, zero stubs, performance <1.5s, availability 99.9%, bundle <2MB).
 - `docs/design.md`: System architecture (presentation/state/service/adapter/data layers), tech stack (`Cloudscape`, AWS SDK v3, Vitest, PostCSS, Tailwind`), adapter middleware design (`request-mapper`, `response-normalizer`, `auth-injector`, `endpoint-resolver`), component hierarchy (`AppLayout` + `SideNavigation` + `ContentLayout`), security/auth, deployment (`docker-compose.yml`, multi-stage `Dockerfile`).
 - `docs/plan.md`: 7-phase implementation plan (`Phase 1` adapter/foundation, `Phase 2` EC2 full lifecycle, `Phase 3` S3/Lambda/ECR/EFS, `Phase 4` RDS/DynamoDB/IAM/KMS/Secrets, `Phase 5` VPC/CloudFront/Route53/CloudWatch/CloudTrail/Config, `Phase 6` EventBridge/CloudFormation/SSM/AppSync/Cognito, `Phase 7` global search/notifications/dashboard customization/performance/Docker/E2E) with milestones and quality gates (`TypeScript strict`, `DRY`, `unit tests >85%`, `Cloudscape exact`, `adapter integration`, `no stubs`).
-- `docs/minstack-localstack-common-different.md`: Reference showing common (`FULL` both) vs different (`PARTIAL`/`NOT_SUPPORTED` MinStack) services per adapter endpoint switching.
+- `docs/ministack-localstack-common-different.md`: Reference showing common (`FULL` both) vs different (`PARTIAL`/`NOT_SUPPORTED` MinStack) services per adapter endpoint switching.
 - `docs/phase7-notes.md`: Performance rules, production Docker rules, adapter rules, documentation update rules.
 - `docs/REFERENCE.md`: Quick reference linking all docs, adapter files (`localstack-adapter/`), service registry (`service-compatibility.ts`), environment (`.env.local`), and deployment (`docker-compose.yml`).
 

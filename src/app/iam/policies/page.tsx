@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
+import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import Modal from "@cloudscape-design/components/modal";
 import Input from "@cloudscape-design/components/input";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -41,7 +42,7 @@ export default function IAMPoliciesPage() {
         Path: p.Path || "/",
         CreateDate: p.CreateDate || "",
       })));
-    } catch {}
+    } catch { }
     setLoading(false);
   }, []);
 
@@ -65,7 +66,7 @@ export default function IAMPoliciesPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <Box padding="m" className="service-content">
       <SpaceBetween size="l">
         <Header variant="h1">IAM Policies</Header>
         <Container
@@ -87,8 +88,16 @@ export default function IAMPoliciesPage() {
                 header: "Actions",
                 cell: (item: PolicyItem) => (
                   <SpaceBetween direction="horizontal" size="xs">
-                    <Button onClick={() => setSelectedPolicy(item.PolicyArn)} formAction="none">View</Button>
-                    <Button onClick={() => deletePolicy(item.Arn || item.PolicyArn)} formAction="none">Delete</Button>
+                    <ButtonDropdown
+                      items={[{ id: "view", text: "View policy" }, { id: "delete", text: "Delete policy" }]}
+                      ariaLabel={`Actions for policy ${item.PolicyName}`}
+                      onItemClick={({ detail }) => {
+                        if (detail.id === "view") setSelectedPolicy(item.PolicyArn);
+                        if (detail.id === "delete") deletePolicy(item.Arn || item.PolicyArn);
+                      }}
+                    >
+                      Actions
+                    </ButtonDropdown>
                   </SpaceBetween>
                 ),
               },
@@ -121,6 +130,6 @@ export default function IAMPoliciesPage() {
           </SpaceBetween>
         </Modal>
       </SpaceBetween>
-    </div>
+    </Box>
   );
 }

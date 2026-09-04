@@ -13,8 +13,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="aws-console">
-      <body suppressHydrationWarning>
-        {/* suppressHydrationWarning required: browser extensions (e.g., shortcut managers) inject attributes like cz-shortcut-listen before React hydrates */}
+      <body>
         <NotificationProvider>
           <AppShell>{children}</AppShell>
         </NotificationProvider>

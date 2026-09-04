@@ -8,12 +8,12 @@
 
 ## 1. Adapter Layer Implementation Status
 
-The adapter layer (`src/lib/localstack-adapter/`) provides universal SDK request rewriting and response normalization for all three backends (`localstack`, `minstack`, `real`).
+The adapter layer (`src/lib/localstack-adapter/`) provides universal SDK request rewriting and response normalization for all three backends (`localstack`, `ministack`, `real`).
 
 | Component | File | Status | Coverage Target | Notes |
 |---|---|---|---|---|
 | Adapter Factory | `src/lib/localstack-adapter/index.ts` | **Implemented** | >85% (tests in `index.test.ts`) | Exports `createAdapter()` with endpoint, auth, service, adapterActive, adapterVersion |
-| Endpoint Resolver | `src/lib/localstack-adapter/endpoint-resolver.ts` | **Implemented** | >85% | Resolves `localstack` (`localhost:4566`), `minstack` (`localhost:4566`), `real` (`https://amazonaws.com`) |
+| Endpoint Resolver | `src/lib/localstack-adapter/endpoint-resolver.ts` | **Implemented** | >85% | Resolves `localstack` (`localhost:4566`), `ministack` (`localhost:4566`), `real` (`https://amazonaws.com`) |
 | Auth Injector | `src/lib/localstack-adapter/auth-injector.ts` | **Implemented** | >85% | Injects dummy `test`/`test` for emulators; real credentials from `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` for `real` mode |
 | Request Mapper | `src/lib/localstack-adapter/request-mapper.ts` | **Implemented** | >85% | Rewrites `protocol`, `hostname`, `port`, `path`, `url`, merges `x-adapter-mode` / `x-adapter-service` headers, builds `Authorization: AWS4-HMAC-SHA256` |
 | Response Normalizer | `src/lib/localstack-adapter/response-normalizer.ts` | **Implemented** | >85% | Normalizes `status` → `statusCode`, `data` → `body`, defaults `headers` to `content-type: application/json`, defaults missing `status` to 200 |
@@ -32,7 +32,7 @@ These services have full adapter wiring — every SDK call goes through `mapRequ
 
 | Service | SDK Client | Adapter Status (LocalStack) | Adapter Status (MiniStack) | Adapter Status (Real AWS) | Commands Implemented (Sample) | Stubbed / Unsupported Commands |
 |---|---|---|---|---|---|---|
-| EC2 | `@aws-sdk/client-ec2` | FULL | FULL | FULL (per IAM) | `RunInstances`, `DescribeInstances`, `TerminateInstances`, `CreateVolume`, `CreateTags`, `DescribeImages` | `CreateDedicatedHost` (stubbed for `minstack` only) |
+| EC2 | `@aws-sdk/client-ec2` | FULL | FULL | FULL (per IAM) | `RunInstances`, `DescribeInstances`, `TerminateInstances`, `CreateVolume`, `CreateTags`, `DescribeImages` | `CreateDedicatedHost` (stubbed for `ministack` only) |
 | Lambda | `@aws-sdk/client-lambda` | FULL | FULL | FULL | `CreateFunction`, `UpdateFunctionCode`, `Invoke`, `ListFunctions`, `GetFunction` | None for core; `CreateAlias` partial on MiniStack |
 | S3 | `@aws-sdk/client-s3` | FULL | FULL | FULL | `CreateBucket`, `PutObject`, `GetObject`, `ListBuckets`, `DeleteBucket` | `PutBucketVersioning` partial on MiniStack |
 | DynamoDB | `@aws-sdk/client-dynamodb` | FULL | FULL | FULL | `CreateTable`, `PutItem`, `GetItem`, `Query`, `Scan`, `DescribeTable` | `EnableKinesisStreamingDestination` unsupported on MiniStack |
@@ -77,7 +77,7 @@ Per `src/constants/service-compatibility.ts`, these services have different adap
 For every command listed as FULL above, the adapter performs:
 
 1. `mapRequest()` reads `originalRequest` (protocol/hostname/port/path/body/method/headers).
-2. `resolveEndpoint(adapterMode)` selects `localstack` (`localhost:4566`), `minstack` (`localhost:4566` with per-service port mapping if configured), or `real` (`https://amazonaws.com`).
+2. `resolveEndpoint(adapterMode)` selects `localstack` (`localhost:4566`), `ministack` (`localhost:4566` with per-service port mapping if configured), or `real` (`https://amazonaws.com`).
 3. `injectAuth(adapterMode)` provides credentials.
 4. `mapRequest()` rewrites `protocol`, `hostname`, `port`, `path`, `url`, and injects adapter headers (`x-adapter-mode`, `x-adapter-service`).
 5. SDK sends the rewritten HTTP request to the backend endpoint.
@@ -123,7 +123,7 @@ Per PRD Appendix D §D.5 and §4.2 (Safety Rules):
 
 | Guardrail | Adapter Enforcement | Implementation File |
 |---|---|---|
-| Persistent target indicator | Adapter mode visible in UI header (badge with `localstack` / `minstack` / `real`) | `src/lib/localstack-adapter/` + frontend header component |
+| Persistent target indicator | Adapter mode visible in UI header (badge with `localstack` / `ministack` / `real`) | `src/lib/localstack-adapter/` + frontend header component |
 | Structural block on destructive actions when `ACTIVE_BACKEND=aws` | Adapter `mapRequest()` must not rewrite destructive endpoint URLs unless `ALLOW_REAL_AWS_TARGET=true`; server-side middleware must reject reset/seed actions against `real` target | `src/lib/localstack-adapter/index.ts` + backend guard middleware |
 | Typed confirmation for destructive resource actions on real AWS | Adapter does not enforce typed confirmation (this is a frontend/confirmation-modal requirement); adapter ensures the endpoint reaches real AWS, not a stubbed endpoint | Frontend wizard + adapter endpoint resolution |
 | Rate limiting / backoff for real AWS | Adapter must pass `maxAttempts` (default 3) to SDK clients; SDK handles backoff; adapter does not suppress real throttling errors | `src/lib/sdk-adapter-middleware.ts` |
@@ -135,7 +135,7 @@ Per PRD Appendix D §D.5 and §4.2 (Safety Rules):
 
 Every service must pass the following adapter-level verification before being marked `PASS` in the audit:
 
-- [ ] Adapter factory (`createAdapter`) creates a valid adapter instance for `localstack`, `minstack`, and `real`.
+- [ ] Adapter factory (`createAdapter`) creates a valid adapter instance for `localstack`, `ministack`, and `real`.
 - [ ] Endpoint resolver (`resolveEndpoint`) returns the correct endpoint for the active mode.
 - [ ] Auth injector (`injectAuth`) provides correct dummy (`test`/`test`) for emulators and reads real env vars for `real`.
 - [ ] Request mapper (`mapRequest`) rewrites all SDK HTTP requests correctly (endpoint, headers, authorization format).

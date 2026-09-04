@@ -10,7 +10,7 @@ export default defineConfig({
   fullyParallel: false,
   retries: 0,
   workers: 1,
-  reporter: [['list'], ['html', { outputFolder: 'tests/reports/vrt' }],
+  reporter: [['list'], ['html', { outputFolder: 'tests/reports/vrt' }]],
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
     viewport: { width: 1440, height: 900 },

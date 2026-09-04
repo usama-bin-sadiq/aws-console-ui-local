@@ -8,7 +8,7 @@ import { resolveEndpoint } from './localstack-adapter/endpoint-resolver';
 import { injectAuth } from './localstack-adapter/auth-injector';
 
 export interface MiddlewareOptions {
-  readonly adapterMode?: 'localstack' | 'minstack' | 'real';
+  readonly adapterMode?: 'localstack' | 'ministack' | 'real';
   readonly disableAdapter?: boolean;
 }
 

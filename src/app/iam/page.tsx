@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
+import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import Modal from "@cloudscape-design/components/modal";
 import Input from "@cloudscape-design/components/input";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -220,14 +221,26 @@ export default function IAMPage() {
                         { header: "ARN", cell: (item: any) => item.Arn },
                         { header: "Path", cell: (item: any) => item.Path || "/" },
                         {
+                          id: "actions",
                           header: "Actions",
                           cell: (item: any) => (
-                            <SpaceBetween direction="horizontal" size="xs">
-                              <Button onClick={() => fetchUserDetail(item.UserName)} formAction="none" ariaLabel={`View user ${item.UserName}`}>View</Button>
-                              <Button onClick={() => openAttachPolicy("user", item.UserName)} formAction="none" ariaLabel={`Attach policy to user ${item.UserName}`}>Attach Policy</Button>
-                              <Button onClick={() => deleteUser(item.UserName)} formAction="none" ariaLabel={`Delete user ${item.UserName}`}>Delete</Button>
-                            </SpaceBetween>
+                            <ButtonDropdown
+                              items={[
+                                { text: "View", id: "view", disabled: false },
+                                { text: "Attach Policy", id: "attach", disabled: false },
+                                { text: "Delete", id: "delete", disabled: false },
+                              ]}
+                              onItemClick={({ detail }) => {
+                                if (detail.id === "view") fetchUserDetail(item.UserName);
+                                else if (detail.id === "attach") openAttachPolicy("user", item.UserName);
+                                else if (detail.id === "delete") deleteUser(item.UserName);
+                              }}
+                              ariaLabel={`Actions for user ${item.UserName}`}
+                            >
+                              Actions
+                            </ButtonDropdown>
                           ),
+                          sortingField: undefined,
                         },
                       ]}
                       loading={loading}

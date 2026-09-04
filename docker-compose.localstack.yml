@@ -9,9 +9,10 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=ec2,s3,lambda,iam,rds,dynamodb,vpc,cloudwatch,cloudtrail,config,cloudformation,route53,cloudfront,secretsmanager,kms,eventbridge,ecs,eks,ssm,lambda,logs
+      # - SERVICES=ec2,s3,lambda,iam,rds,dynamodb,vpc,cloudwatch,cloudtrail,config,cloudformation,route53,cloudfront,secretsmanager,kms,eventbridge,ecs,eks,ssm,lambda,logs
       - DEBUG=0
       - PERSISTENCE=1
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:-ls-RoDuRoyO-hUdu-1864-3445-guducuYO7b88}
       - LambdFlags=-p 4566
     volumes:
       - ./data/localstack/state:/var/lib/localstack

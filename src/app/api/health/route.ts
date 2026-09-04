@@ -3,14 +3,20 @@ import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export async function GET() {
   const mode = ADAPTER_CONFIG.adapterMode;
-  const endpointUrl =
-    mode === "minstack"
-      ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
+  const endpointUrl = mode === "ministack"
+    ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
+    : mode === "real"
+      ? ADAPTER_CONFIG.endpointConfig.realEndpointUrl
       : ADAPTER_CONFIG.endpointConfig.localstackEndpoint;
 
-  const healthCheckUrl =
-    mode === "minstack"
-      ? `${endpointUrl}/_ministack/health`
+  if (!endpointUrl) {
+    return NextResponse.json({ status: "unreachable", provider: mode, error: "No endpoint configured" }, { status: 503 });
+  }
+
+  const healthCheckUrl = mode === "ministack"
+    ? `${endpointUrl}/_ministack/health`
+    : mode === "real"
+      ? `${endpointUrl}/health`
       : `${endpointUrl}/_localstack/health`;
 
   try {

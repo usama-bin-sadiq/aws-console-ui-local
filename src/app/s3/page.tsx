@@ -134,24 +134,11 @@ export default function S3BucketsPage() {
                 ],
               }}
               items={buckets}
-              itemsPerPagePreference={{
-                title: "Buckets per page",
-                options: [
-                  { value: 3, label: "3 buckets" },
-                  { value: 6, label: "6 buckets" },
-                  { value: 9, label: "9 buckets" },
-                ],
-              }}
               selectionType="multi"
               visibleSections={["region", "date"]}
               ariaLabels={{
                 selectionGroupLabel: "Selected buckets",
-                itemSelectionLabel: (data: any, item?: any) => `Select ${item?.Name || "bucket"}`,
-              }}
-              cardProps={{
-                ariaLabels: {
-                  cardHeader: (item?: S3BucketItem) => item ? `Bucket: ${item.Name}` : "S3 Bucket",
-                },
+                itemSelectionLabel: (_selection, item) => `Select ${item.Name || "bucket"}`,
               }}
             />
           )}
@@ -173,7 +160,7 @@ export default function S3BucketsPage() {
       >
         <Box>
           <Alert type="warning">
-            Deleting bucket <Box as="strong">{deleteModal}</Box> will permanently remove it and all its objects.
+            Deleting bucket <Box variant="strong">{deleteModal}</Box> will permanently remove it and all its objects.
           </Alert>
         </Box>
       </Modal>

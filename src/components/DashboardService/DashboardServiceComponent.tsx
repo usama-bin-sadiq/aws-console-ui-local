@@ -9,7 +9,6 @@ import Header from '@cloudscape-design/components/header';
 import Container from '@cloudscape-design/components/container';
 import StatusIndicator from '@cloudscape-design/components/status-indicator';
 import { AWACS_DESIGN_TOKENS } from '@/constants/design-tokens';
-import { FeatureReference } from '@/types/adapter';
 
 export interface WidgetItem {
   readonly name: string;
@@ -89,7 +88,7 @@ export function DashboardServiceComponent({
             sections: [
               {
                 id: 'value',
-                header: item => item.title,
+                header: 'Current value',
                 content: (item: WidgetItem) => (
                   <SpaceBetween size="xs" direction="vertical">
                     <div style={{ fontSize: AWACS_DESIGN_TOKENS.typography.fontSizeXxl, fontWeight: 600 }}>

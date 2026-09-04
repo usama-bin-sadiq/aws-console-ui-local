@@ -9,12 +9,14 @@ import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
+import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import Modal from "@cloudscape-design/components/modal";
 import Input from "@cloudscape-design/components/input";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
+import Select from "@cloudscape-design/components/select";
 
 interface Topic { TopicArn?: string; }
 
@@ -44,7 +46,7 @@ export default function SNSPage() {
       const res = await fetch("/api/sns");
       const data = await res.json();
       setTopics(data.topics || []);
-    } catch {}
+    } catch { }
     setLoading(false);
   };
 
@@ -63,7 +65,7 @@ export default function SNSPage() {
 
   const publishMessage = async () => {
     let attrs: Record<string, any> = {};
-    try { attrs = JSON.parse(messageAttributesText); } catch {}
+    try { attrs = JSON.parse(messageAttributesText); } catch { }
     await fetch("/api/sns", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -105,7 +107,7 @@ export default function SNSPage() {
       const res = await fetch(`/api/sns?action=listSubscriptions&topicArn=${encodeURIComponent(selectedTopic)}`);
       const data = await res.json();
       setSubscriptions(data.subscriptions || []);
-    } catch {}
+    } catch { }
     setSubLoading(false);
   };
 
@@ -132,20 +134,24 @@ export default function SNSPage() {
               {
                 header: "Actions",
                 cell: (item: Topic) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button onClick={() => { setSelectedTopic(item.TopicArn!); setPublishModal(true); }} formAction="none" ariaLabel={`Publish to ${item.TopicArn}`}>
-                      Publish
-                    </Button>
-                    <Button onClick={() => { setSelectedTopic(item.TopicArn!); setSubscribeModal(true); }} formAction="none" ariaLabel={`Subscribe to ${item.TopicArn}`}>
-                      Subscribe
-                    </Button>
-                    <Button onClick={() => { setSelectedTopic(item.TopicArn!); loadSubscriptions(); }} formAction="none" ariaLabel={`View subscriptions for ${item.TopicArn}`}>
-                      Subscriptions
-                    </Button>
-                    <Button onClick={() => deleteTopic(item.TopicArn!)} formAction="none" ariaLabel={`Delete ${item.TopicArn}`}>
-                      Delete
-                    </Button>
-                  </SpaceBetween>
+                  <ButtonDropdown
+                    items={[
+                      { id: "publish", text: "Publish" },
+                      { id: "subscribe", text: "Subscribe" },
+                      { id: "subscriptions", text: "View subscriptions" },
+                      { id: "delete", text: "Delete topic" },
+                    ]}
+                    ariaLabel={`Actions for topic ${item.TopicArn}`}
+                    onItemClick={({ detail }) => {
+                      setSelectedTopic(item.TopicArn || "");
+                      if (detail.id === "publish") setPublishModal(true);
+                      if (detail.id === "subscribe") setSubscribeModal(true);
+                      if (detail.id === "subscriptions") loadSubscriptions();
+                      if (detail.id === "delete") deleteTopic(item.TopicArn!);
+                    }}
+                  >
+                    Actions
+                  </ButtonDropdown>
                 ),
               },
             ]}
@@ -228,17 +234,12 @@ export default function SNSPage() {
           }
         >
           <FormField label="Protocol">
-            <select
-              value={subscribeProtocol}
-              onChange={(e) => setSubscribeProtocol(e.target.value)}
-              aria-label="Subscribe protocol"
-              style={{ padding: "8px", width: "100%" }}
-            >
-              <option value="email">email</option>
-              <option value="lambda">lambda</option>
-              <option value="https">https</option>
-              <option value="sqs">sqs</option>
-            </select>
+            <Select
+              selectedOption={{ value: subscribeProtocol, label: subscribeProtocol }}
+              options={["email", "lambda", "https", "sqs"].map((value) => ({ value, label: value }))}
+              onChange={({ detail }) => setSubscribeProtocol(detail.selectedOption.value || "https")}
+              ariaLabel="Subscribe protocol"
+            />
           </FormField>
           <FormField label="Endpoint">
             <Input value={subscribeEndpoint} onChange={(e: any) => setSubscribeEndpoint(e.detail.value)} ariaLabel="Subscribe endpoint input" />

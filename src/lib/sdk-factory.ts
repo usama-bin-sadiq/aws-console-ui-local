@@ -22,7 +22,7 @@ export function createSDKClientConfig(
   const endpointUrl =
     mode === 'real'
       ? ADAPTER_CONFIG.endpointConfig.realEndpointUrl || 'https://amazonaws.com'
-      : mode === 'minstack'
+      : mode === 'ministack'
         ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
         : ADAPTER_CONFIG.endpointConfig.localstackEndpoint;
 

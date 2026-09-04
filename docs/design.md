@@ -3,7 +3,7 @@
 **Version:** 1.0.0  
 **Status:** Production Architecture (No Stubs / No Deferred Implementation)  
 **Author:** Senior Solution Architect / Software Architect  
-**Reference:** `docs/requirements.md`, `docs/plan.md`, `docs/prd-aws-management-console.md`, `AGENTS.md`, `.opencode/rules.md`, `.claude/CLAUDE.md`, `opencode.json`, `https://opencode.ai/docs/rules/`, `src/constants/service-compatibility.ts`, `docs/minstack-localstack-common-different.md`
+**Reference:** `docs/requirements.md`, `docs/plan.md`, `docs/prd-aws-management-console.md`, `AGENTS.md`, `.opencode/rules.md`, `.claude/CLAUDE.md`, `opencode.json`, `https://opencode.ai/docs/rules/`, `src/constants/service-compatibility.ts`, `docs/ministack-localstack-common-different.md`
 
 ---
 
@@ -12,7 +12,7 @@
 - `docs/requirements.md`: Defines WHAT must exist (150 services, adapter, full feature parity, zero stubs). Read requirements first.
 - This file (`docs/design.md`): Defines HOW it works (architecture, adapter design, component hierarchy, data flow, security, deployment). Read design second.
 - `docs/plan.md`: Defines WHEN / IN WHAT ORDER to build (phases, tasks, sub-tasks, dependencies, milestones). Read plan third.
-- `docs/minstack-localstack-common-different.md`: Reference of all 150 services showing common (`FULL` both) vs different (`PARTIAL` / `NOT_SUPPORTED` for MinStack) adapter status.
+- `docs/ministack-localstack-common-different.md`: Reference of all 150 services showing common (`FULL` both) vs different (`PARTIAL` / `NOT_SUPPORTED` for MinStack) adapter status.
 - `src/constants/service-compatibility.ts`: Code-level registry of all 150 services with adapter status and SDK clients.
 - `AGENTS.md`: Mandatory agent rules (DRY, separate files, strict TS, no stubs). Every edit must comply.
 
@@ -190,7 +190,7 @@ export const ADAPTER_CONFIG = {
   AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || 'us-east-1',
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || 'test',
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || 'test',
-  ADAPTER_MODE: process.env.ADAPTER_MODE || 'localstack', // 'localstack' | 'minstack' | 'real'
+  ADAPTER_MODE: process.env.ADAPTER_MODE || 'localstack', // 'localstack' | 'ministack' | 'real'
 };
 ```
 
@@ -260,7 +260,7 @@ interface AdapterStore {
     hostname: string;
     port: number;
     sslEnabled: boolean;
-    adapterMode: 'localstack' | 'minstack' | 'real';
+    adapterMode: 'localstack' | 'ministack' | 'real';
   };
   userPreferences: {
     theme: 'system' | 'light' | 'dark';
@@ -399,7 +399,7 @@ volumes:
 ### 5.3 Adapter Middleware Design (`src/lib/sdk-adapter-middleware.ts`)
 - Pattern: Wraps SDK `HttpHandler` via `createAdapterMiddleware({ adapterMode })`.
 - Endpoint rewrite: `resolveEndpoint(adapterMode)` resolves `hostname:port:protocol` from `.env.local` / `ADAPTER_CONFIG`.
-- Auth injection: `injectAuth(adapterMode)` provides `test/test` for local/minstack, user-configured for `real`.
+- Auth injection: `injectAuth(adapterMode)` provides `test/test` for local/ministack, user-configured for `real`.
 - Headers: `Host`, `x-adapter-mode`, `x-adapter-service` (`aws-console-emulator`), `Authorization` (AWS4-HMAC-SHA256).
 - Disabled state: `isAdapterDisabled()` returns `true` for `ADAPTER_MODE=real`, passing `nextRequest` through to `nextHandler` unmodified.
 - All 98 SDK clients receive middleware when instantiated via adapter-aware factory.

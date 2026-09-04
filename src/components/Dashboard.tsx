@@ -13,6 +13,7 @@ import Badge from "@cloudscape-design/components/badge";
 import Link from "@cloudscape-design/components/link";
 import Icon from "@cloudscape-design/components/icon";
 import { useRouter } from "next/navigation";
+import { AdapterMode, EmulatorHealthStatus, findServiceCompatibility, getServiceAvailability } from "@/constants/service-compatibility";
 
 interface Service {
   name: string;
@@ -28,29 +29,29 @@ const ALL_SERVICES: Service[] = [
   { name: "EBS Snapshots", description: "Volume snapshots", href: "/snapshot", icon: "folder", category: "Storage" },
   { name: "EFS", description: "Elastic file system", href: "/efs", icon: "folder", category: "Storage" },
   { name: "Backup", description: "Centralized backup", href: "/backup", icon: "folder", category: "Storage" },
-  
+
   { name: "Amazon EC2", description: "Virtual servers", href: "/ec2", icon: "status-positive", category: "Compute" },
   { name: "AWS Lambda", description: "Serverless compute", href: "/lambda", icon: "status-positive", category: "Compute" },
   { name: "ECS Clusters", description: "Container orchestration", href: "/ecs-cluster", icon: "status-positive", category: "Compute" },
   { name: "EKS Clusters", description: "Kubernetes service", href: "/eks-cluster", icon: "status-positive", category: "Compute" },
-  
+
   { name: "Amazon DynamoDB", description: "NoSQL database", href: "/dynamodb", icon: "status-info", category: "Database" },
   { name: "Amazon RDS", description: "Relational database", href: "/rds", icon: "status-info", category: "Database" },
   { name: "ElastiCache", description: "In-memory caching", href: "/elasticache", icon: "status-info", category: "Database" },
-  
+
   { name: "Amazon VPC", description: "Virtual private cloud", href: "/vpc", icon: "status-positive", category: "Networking" },
   { name: "Route 53", description: "DNS and domain names", href: "/route53", icon: "status-positive", category: "Networking" },
   { name: "CloudFront", description: "Content delivery network", href: "/cloudfront", icon: "status-positive", category: "Networking" },
-  
+
   { name: "AWS IAM", description: "Identity & access", href: "/iam", icon: "user-profile", category: "Security" },
   { name: "AWS KMS", description: "Key management service", href: "/kms", icon: "unlocked", category: "Security" },
   { name: "Secrets Manager", description: "Secrets rotation", href: "/secrets-manager", icon: "unlocked", category: "Security" },
   { name: "ACM", description: "SSL/TLS certificates", href: "/acm", icon: "unlocked", category: "Security" },
-  
+
   { name: "Amazon CloudWatch", description: "Monitoring", href: "/cloudwatch", icon: "status-info", category: "Monitoring" },
   { name: "CloudWatch Logs", description: "Log management", href: "/cloudwatch-logs", icon: "status-info", category: "Monitoring" },
   { name: "X-Ray", description: "Distributed tracing", href: "/x-ray", icon: "status-info", category: "Monitoring" },
-  
+
   { name: "Amazon SQS", description: "Message queuing", href: "/sqs", icon: "envelope", category: "Application Integration" },
   { name: "Amazon SNS", description: "Pub/sub messaging", href: "/sns", icon: "envelope", category: "Application Integration" },
   { name: "Step Functions", description: "Workflow orchestration", href: "/step-functions", icon: "envelope", category: "Application Integration" },
@@ -59,6 +60,8 @@ const ALL_SERVICES: Service[] = [
 export default function Dashboard() {
   const router = useRouter();
   const [provider, setProvider] = useState<string>("checking...");
+  const [healthStatus, setHealthStatus] = useState<EmulatorHealthStatus>("checking");
+  const [healthServices, setHealthServices] = useState<Record<string, unknown>>({});
   const [favorites, setFavorites] = useState<string[]>([]);
   const [recentlyVisited, setRecentlyVisited] = useState<Service[]>([]);
 
@@ -83,8 +86,15 @@ export default function Dashboard() {
 
     fetch("/api/health")
       .then((r) => r.json())
-      .then((d) => setProvider(d.provider || "unknown"))
-      .catch(() => setProvider("unreachable"));
+      .then((d) => {
+        setProvider(d.provider || "unknown");
+        setHealthStatus(d.status === "healthy" ? "healthy" : "unreachable");
+        setHealthServices(d.services || {});
+      })
+      .catch(() => {
+        setProvider("unreachable");
+        setHealthStatus("unreachable");
+      });
   }, []);
 
   const toggleFavorite = (serviceHref: string) => {
@@ -95,7 +105,12 @@ export default function Dashboard() {
     localStorage.setItem("aws_favorites", JSON.stringify(newFavorites));
   };
 
-  const favoriteServices = ALL_SERVICES.filter((s) => favorites.includes(s.href));
+  const activeMode = provider === AdapterMode.MINSTACK ? AdapterMode.MINSTACK : AdapterMode.LOCALSTACK;
+  const availableServices = ALL_SERVICES.filter((service) => {
+    const compatibility = findServiceCompatibility(service.href);
+    return compatibility !== undefined && getServiceAvailability(compatibility, activeMode, healthStatus, healthServices).enabled;
+  });
+  const favoriteServices = availableServices.filter((s) => favorites.includes(s.href));
   const categories = ["Compute", "Storage", "Database", "Networking", "Security", "Monitoring", "Application Integration", "Machine Learning", "Mobile & IoT", "Customer Engagement", "Analytics", "Developer Tools", "Migration & Transfer", "Management & Governance", "Cost Management", "Business Applications", "End User Computing", "Containers", "IoT", "Containers"];
 
   return (
@@ -110,7 +125,7 @@ export default function Dashboard() {
             <Box variant="h3">Service Health</Box>
             <StatusIndicator
               type={
-                provider === "minstack" || provider === "localstack"
+                healthStatus === "healthy"
                   ? "success"
                   : "error"
               }
@@ -192,9 +207,9 @@ export default function Dashboard() {
       )}
 
       {categories.map((category) => {
-        const categoryServices = ALL_SERVICES.filter((s) => s.category === category);
+        const categoryServices = availableServices.filter((s) => s.category === category);
         if (categoryServices.length === 0) return null;
-        
+
         return (
           <Container key={category} header={<Header variant="h2">{category}</Header>}>
             <Cards

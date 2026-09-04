@@ -7,6 +7,7 @@ import FormField from '@cloudscape-design/components/form-field';
 import Input from '@cloudscape-design/components/input';
 import SpaceBetween from '@cloudscape-design/components/space-between';
 import Button from '@cloudscape-design/components/button';
+import Textarea from '@cloudscape-design/components/textarea';
 
 export function EC2KeyPairForm(): React.ReactElement {
   return (
@@ -15,7 +16,7 @@ export function EC2KeyPairForm(): React.ReactElement {
         <Input value="" placeholder="my-key-pair" />
       </FormField>
       <FormField label="Public key" description="Paste public key content when importing">
-        <textarea style={{ width: '100%', minHeight: 120 }} placeholder="ssh-rsa AAAA..." />
+        <Textarea value="" onChange={() => undefined} placeholder="ssh-rsa AAAA..." rows={6} />
       </FormField>
       <Button variant="primary">Create / Import</Button>
     </SpaceBetween>

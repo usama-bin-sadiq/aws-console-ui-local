@@ -190,7 +190,7 @@ When an agent starts, it looks for rules in this order:
 
 ---
 
-**Reference:** `docs/requirements.md`, `docs/design.md`, `docs/plan.md`, `docs/minstack-localstack-common-different.md`, `docs/prd-aws-management-console.md`, `AGENTS.md`, `.opencode/rules.md`, `.claude/CLAUDE.md`, `opencode.json`, `https://opencode.ai/docs/rules/`, `src/constants/service-compatibility.ts`
+**Reference:** `docs/requirements.md`, `docs/design.md`, `docs/plan.md`, `docs/ministack-localstack-common-different.md`, `docs/prd-aws-management-console.md`, `AGENTS.md`, `.opencode/rules.md`, `.claude/CLAUDE.md`, `opencode.json`, `https://opencode.ai/docs/rules/`, `src/constants/service-compatibility.ts`
 
 `after reading references complete your task in plan.md`
 

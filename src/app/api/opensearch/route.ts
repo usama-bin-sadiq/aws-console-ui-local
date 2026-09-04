@@ -5,9 +5,6 @@ import {
   DeleteDomainCommand,
 } from "@aws-sdk/client-opensearch";
 import { opensearch } from "@/lib/aws-clients";
-import { createAdapter } from "@/lib/localstack-adapter";
-
-const adapter = createAdapter({ adapterMode: "localstack", serviceName: "opensearch" });
 
 export async function GET() {
   try {
@@ -16,14 +13,10 @@ export async function GET() {
     ]);
     const domains = (domainRes.DomainNames || []).map((d: any) => ({ DomainName: d.DomainName || "unknown" }));
 
-    // Adapter SDK pipeline mock — uses adapter middleware (endpoint/auth mapped)
-    const pipelines = adapter.adapterActive ? [
-      { PipelineName: "os-pipeline-1", PipelineStatus: "HEALTHY", Description: "Default ingestion pipeline" },
-    ] : [];
-
     return NextResponse.json({
       domains,
-      pipelines,
+      pipelines: [],
+      pipelineSupport: "unavailable",
     });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -34,21 +27,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     if (body.action === "createPipeline") {
-      // Adapter SDK middleware applied — endpoint/auth injected automatically
-      const mappedReq = adapter.mapRequest({
-        protocol: "https",
-        hostname: adapter.endpoint.hostname,
-        port: adapter.endpoint.port,
-        path: "/_opensearch/pipeline",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pipelineName: body.pipelineName, description: body.description }),
-        method: "POST",
-      }, adapter.adapterMode?.mode || "localstack");
-      return NextResponse.json({
-        pipelineName: body.pipelineName,
-        pipelineStatus: "HEALTHY",
-        adapterMapped: mappedReq.url,
-      });
+      return NextResponse.json({ error: "OpenSearch pipeline management is not supported by the active emulator." }, { status: 501 });
     }
     const res = await opensearch.send(
       new CreateDomainCommand({ DomainName: body.domainName, EngineVersion: body.engineVersion || "OpenSearch_2.11" })
@@ -67,7 +46,7 @@ export async function DELETE(request: Request) {
       await opensearch.send(new DeleteDomainCommand({ DomainName: domainName }));
       return NextResponse.json({ success: true });
     }
-    return NextResponse.json({ success: true, deletedPipeline: searchParams.get("pipelineName") || null });
+    return NextResponse.json({ error: "OpenSearch pipeline management is not supported by the active emulator." }, { status: 501 });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
   }

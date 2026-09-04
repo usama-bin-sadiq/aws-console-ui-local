@@ -1,13 +1,178 @@
-/* Responsive fixes for AWS Console Emulator */
-@media (max-width: 768px) {
-  .skip-nav-link { font-size: 14px; }
-  #awsui-top-navigation { padding: 0 8px !important; }
-  .search-dropdown { max-width: calc(100vw - 32px) !important; min-width: unset !important; }
-  footer { flex-direction: column; gap: 8px; text-align: center; padding: 12px 8px !important; }
-  .service-table { overflow-x: auto; }
-  .table-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+/* Responsive fixes for AWS Console Emulator — follows Cloudscape Design System guidelines */
+/* Reference: https://cloudscape.design/get-started/dev-guides/responsive-development/ */
+/* Cloudscape uses element queries (container size), not viewport media queries */
+
+html,
+body {
+  overflow-x: hidden;
 }
 
-@media (min-width: 769px) {
-  footer { display: flex; justify-content: space-between; align-items: center; }
+body {
+  min-width: 320px;
+}
+
+.aws-console-search-wrapper {
+  z-index: 1002;
+  min-width: 0;
+}
+
+.aws-console-main-shell,
+.aws-console-main-content {
+  min-width: 0;
+}
+
+.aws-console-shell-footer {
+  flex-wrap: wrap;
+}
+
+.aws-service-layout,
+.aws-service-layout__container,
+.aws-service-layout__header {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.aws-service-layout__header {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 960px) {
+  #awsui-top-navigation {
+    width: 100vw;
+    min-width: 0 !important;
+    max-width: 100vw;
+    overflow: hidden;
+  }
+
+  #awsui-top-navigation [class*="utilities"] {
+    min-width: 0 !important;
+    max-width: calc(100vw - 16px) !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .aws-console-search-wrapper {
+    max-width: 100% !important;
+  }
+
+  #awsui-top-navigation {
+    padding: 0 8px !important;
+  }
+
+  .aws-console-shell-footer {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+    padding: 12px 8px !important;
+  }
+
+  .aws-service-layout__header [class*="awsui_root"] {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .aws-service-layout__header [class*="awsui_actions"] {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .skip-nav-link {
+    font-size: 14px;
+  }
+
+  .service-content {
+    min-width: 0;
+  }
+
+  .service-table {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .aws-console-main-content {
+    overflow-x: auto;
+  }
+
+  .awsui-content-layout,
+  .awsui-content-layout__header,
+  .awsui-content-layout__content,
+  .awsui-container,
+  .awsui-form-field,
+  .awsui-table-container,
+  .awsui-space-between {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .awsui-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .awsui-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .awsui-table th,
+  .awsui-table td {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .awsui-form-field {
+    margin-bottom: 0.75rem;
+  }
+
+  .awsui-form-field .awsui-input,
+  .awsui-form-field .awsui-select,
+  .awsui-form-field .awsui-textarea,
+  .awsui-form-field .awsui-button-dropdown,
+  .awsui-form-field button,
+  .awsui-form-field input,
+  .awsui-form-field select,
+  .awsui-form-field textarea {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .awsui-space-between {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .aws-service-layout__container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .service-content {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+/* Interactive labels remain content-sized; never truncate Cloudscape controls. */
+.service-content button,
+.service-content a {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .awsui-content-layout__header {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  .awsui-table-container,
+  .awsui-container,
+  .awsui-space-between {
+    margin-left: 0;
+    margin-right: 0;
+  }
 }

@@ -1,5 +1,5 @@
 # Docker Compose — Both Emulators (LocalStack + MinStack) + App
-# Adapter: ADAPTER_MODE=localstack (default) or minstack based on endpoint selection
+# Adapter: ADAPTER_MODE=localstack (default) or ministack based on endpoint selection
 # Usage: docker-compose -f docker-compose.both.yml up -d
 
 services:
@@ -30,7 +30,7 @@ services:
     image: ministackorg/ministack:latest
     container_name: aws-console-ministack
     ports:
-      - "4566:4566"
+      - "4567:4566"
     environment:
       - PERSIST_STATE=1
       - S3_PERSIST=1
@@ -73,8 +73,9 @@ services:
     environment:
       - LOCALSTACK_HOSTNAME=localstack
       - LOCALSTACK_EDGE_PORT=4566
-      - MINSTACK_HOSTNAME=localhost
+      - MINSTACK_HOSTNAME=ministack
       - MINSTACK_EDGE_PORT=4566
+      - MINSTACK_ENDPOINT=http://ministack:4566
       - ADAPTER_MODE=localstack
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test

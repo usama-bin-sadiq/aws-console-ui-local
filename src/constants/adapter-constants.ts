@@ -15,7 +15,7 @@ export const ADAPTER_DEFAULT_PROTOCOL_HTTP = 'http';
 export const ADAPTER_DEFAULT_PROTOCOL_HTTPS = 'https';
 
 export const ADAPTER_DEFAULT_MODE_LOCALSTACK = 'localstack';
-export const ADAPTER_DEFAULT_MODE_MINSTACK = 'minstack';
+export const ADAPTER_DEFAULT_MODE_MINSTACK = 'ministack';
 export const ADAPTER_DEFAULT_MODE_REAL = 'real';
 
 export const ADAPTER_DEFAULT_ACCESS_KEY = 'test';

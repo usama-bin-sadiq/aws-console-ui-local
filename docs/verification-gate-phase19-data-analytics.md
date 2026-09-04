@@ -72,7 +72,7 @@
 - [x] `mapRequest` uses `resolveEndpoint` + `injectAuth` from adapter layer
 - [x] `normalizeResponse` applied where adapter middleware is active
 - [x] No duplicate endpoint/auth logic in analytics routes
-- [x] Adapter mode (`localstack` / `minstack` / `real`) propagated through middleware
+- [x] Adapter mode (`localstack` / `ministack` / `real`) propagated through middleware
 
 ### Verification Checklist Complete
 Phase 19 Data Analytics implemented per PRD §9.2.7, adapter SDK rules (§4.2, §10.1), and verification gate requirements.

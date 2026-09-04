@@ -5,7 +5,6 @@ import Widget from "./Widget";
 import Box from "@cloudscape-design/components/box";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import SpaceBetween from "@cloudscape-design/components/space-between";
-import Link from "@cloudscape-design/components/link";
 
 interface HealthData {
   provider: string;
@@ -35,21 +34,17 @@ export default function AwsHealthWidget({
       try {
         const response = await fetch("/api/health");
         const data = await response.json();
-        
-        const providerStatus = 
-          data.provider === "localstack" || data.provider === "ministack"
-            ? "healthy"
-            : "warning";
+
+        const providerStatus = data.status === "healthy" ? "healthy" : data.status === "unreachable" ? "error" : "warning";
+        const services = Object.entries(data.services || {}).map(([name, value]) => ({
+          name,
+          status: value === true ? "healthy" as const : "warning" as const,
+        }));
 
         setHealth({
           provider: data.provider || "unknown",
           status: providerStatus as "healthy" | "warning" | "error",
-          services: [
-            { name: "S3", status: "healthy" },
-            { name: "EC2", status: "healthy" },
-            { name: "Lambda", status: "healthy" },
-            { name: "DynamoDB", status: "healthy" },
-          ],
+          services,
         });
       } catch (error) {
         setHealth({
@@ -76,11 +71,6 @@ export default function AwsHealthWidget({
       isCustomizing={isCustomizing}
       onResize={onResize}
       onRemove={onRemove}
-      actions={
-        <Link fontSize="body-s" href="#">
-          View all
-        </Link>
-      }
     >
       {loading ? (
         <Box textAlign="center" padding="l">
@@ -111,8 +101,8 @@ export default function AwsHealthWidget({
                     health?.status === "healthy"
                       ? "success"
                       : health?.status === "warning"
-                      ? "warning"
-                      : "error"
+                        ? "warning"
+                        : "error"
                   }
                 >
                   {health?.provider.toUpperCase() || "Unknown"}
@@ -133,7 +123,7 @@ export default function AwsHealthWidget({
               Service Health
             </div>
             <SpaceBetween size="xs">
-              {health?.services.map((service) => (
+              {health?.services.length ? health.services.map((service) => (
                 <div
                   key={service.name}
                   style={{
@@ -157,21 +147,19 @@ export default function AwsHealthWidget({
                       service.status === "healthy"
                         ? "success"
                         : service.status === "warning"
-                        ? "warning"
-                        : "error"
+                          ? "warning"
+                          : "error"
                     }
                   >
                     {service.status === "healthy" ? "Operational" : "Issues detected"}
                   </StatusIndicator>
                 </div>
-              ))}
+              )) : <Box color="text-body-secondary">No service health data returned by the active emulator.</Box>}
             </SpaceBetween>
           </Box>
 
           <Box textAlign="center">
-            <Link fontSize="body-s" href="#">
-              View service health dashboard
-            </Link>
+            <Box color="text-body-secondary">Health data is read directly from the active emulator.</Box>
           </Box>
         </SpaceBetween>
       )}

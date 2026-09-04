@@ -48,50 +48,7 @@ export function GlobalSearch({
         setShowResults(false);
         return;
       }
-      const mockResults: SearchResultItem[] = [
-        {
-          id: 'ec2-service',
-          category: 'service',
-          text: 'EC2 — Elastic Compute Cloud',
-          description: 'Virtual servers in the cloud',
-          href: '/ec2',
-          icon: 'compute',
-        },
-        {
-          id: 's3-bucket-resource',
-          category: 'resource',
-          text: 'my-bucket (S3)',
-          description: 'Resource: S3 Bucket',
-          href: '/s3/bucket/my-bucket',
-        },
-        {
-          id: 'lambda-function-resource',
-          category: 'resource',
-          text: 'process-data (Lambda)',
-          description: 'Resource: Lambda Function',
-          href: '/lambda/function/process-data',
-        },
-        {
-          id: 'ec2-doc',
-          category: 'documentation',
-          text: 'EC2 Instance Types — AWS Docs',
-          description: 'Documentation reference',
-          href: 'https://docs.aws.amazon.com/ec2/latest/userguide/instance-types.html',
-          icon: 'file',
-        },
-        {
-          id: 'launch-ec2-action',
-          category: 'action',
-          text: 'Launch EC2 Instance',
-          description: 'Quick action wizard',
-          href: '/ec2/launch',
-          icon: 'bolt',
-        },
-      ];
-      const filtered = mockResults.filter(
-        (r) => r.text.toLowerCase().includes(query.toLowerCase()) || r.description?.toLowerCase().includes(query.toLowerCase())
-      );
-      setResults(filtered);
+      setResults([]);
       setShowResults(true);
     },
     [onSearch]

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
+import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
@@ -11,6 +12,7 @@ import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Tabs from "@cloudscape-design/components/tabs";
+import Textarea from "@cloudscape-design/components/textarea";
 
 interface CodeBuildProject {
   name: string;
@@ -187,17 +189,21 @@ export default function CodeBuildPage() {
                 {
                   header: "Actions",
                   cell: (item) => (
-                    <SpaceBetween direction="horizontal" size="xs">
-                      <Button onClick={() => startBuild(item.name)} formAction="none">
-                        Start build
-                      </Button>
-                      <Button onClick={() => fetchBuilds(item.name)} formAction="none">
-                        View builds
-                      </Button>
-                      <Button onClick={() => deleteProject(item.name)} formAction="none">
-                        Delete
-                      </Button>
-                    </SpaceBetween>
+                    <ButtonDropdown
+                      items={[
+                        { id: "start", text: "Start build" },
+                        { id: "builds", text: "View builds" },
+                        { id: "delete", text: "Delete project" },
+                      ]}
+                      ariaLabel={`Actions for project ${item.name}`}
+                      onItemClick={({ detail }) => {
+                        if (detail.id === "start") startBuild(item.name);
+                        if (detail.id === "builds") fetchBuilds(item.name);
+                        if (detail.id === "delete") deleteProject(item.name);
+                      }}
+                    >
+                      Actions
+                    </ButtonDropdown>
                   ),
                 },
               ]}
@@ -264,11 +270,12 @@ export default function CodeBuildPage() {
           onDismiss={() => setViewLogsModal(false)}
           header="Build Logs"
         >
-          <textarea
+          <Textarea
             readOnly
             value={logText}
             rows={20}
-            style={{ width: "100%", fontFamily: "monospace", fontSize: "12px" }}
+            onChange={() => undefined}
+            ariaLabel="Build logs"
           />
         </Modal>
       </SpaceBetween>

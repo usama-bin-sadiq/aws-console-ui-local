@@ -2,8 +2,15 @@
 
 **Version:** 1.0.0  
 **Status:** Full Production Plan (Zero Stubs / Zero Deferred / Zero "Later")  
+
+### Current implementation update (September 2026)
+
+- Completed emulator availability gating for F-003/F-006/F-023: the shared compatibility resolver now combines LocalStack/MiniStack parity metadata with `/api/health` service state.
+- Updated the shell navigation, global search, and homepage dashboard to disable unavailable services and label partial MiniStack support consistently.
+- Unified health and SDK client endpoint resolution for LocalStack and MiniStack; MiniStack Docker networking now uses the `ministack` service hostname.
+- Added focused regression coverage in `src/constants/service-compatibility.test.ts` and repaired the adapter factory mode contract.
 **Source Rules:** `AGENTS.md`, `.opencode/rules.md`, `.claude/CLAUDE.md`, `opencode.json`, `https://opencode.ai/docs/rules/`  
-**Reference Documents:** `docs/requirements.md`, `docs/design.md`, `docs/prd-aws-management-console.md`, `docs/minstack-localstack-common-different.md`, `src/constants/service-compatibility.ts`, `.env.local`
+**Reference Documents:** `docs/requirements.md`, `docs/design.md`, `docs/prd-aws-management-console.md`, `docs/ministack-localstack-common-different.md`, `src/constants/service-compatibility.ts`, `.env.local`
 
 ---
 
@@ -14,7 +21,7 @@
 - Read this file (`docs/plan.md`) third (phases / tasks / sub-tasks / milestones / quality gates).
 - Before writing any code, read `AGENTS.md`, `.opencode/rules.md`, `.claude/CLAUDE.md`.
 - Check `src/constants/service-compatibility.ts` for adapter status (FULL / PARTIAL / NOT_SUPPORTED) per service.
-- Check `docs/minstack-localstack-common-different.md` for common vs different service names.
+- Check `docs/ministack-localstack-common-different.md` for common vs different service names.
 - Every phase must pass quality gates before starting the next phase (no stubs, no deferred work).
 
 ---

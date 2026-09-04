@@ -30,7 +30,7 @@ export function useUniversalCRUD(config: CRUDConfig) {
   });
 
   const adapterMode = ADAPTER_CONFIG.adapterMode;
-  const endpointBase = adapterMode === "minstack"
+  const endpointBase = adapterMode === "ministack"
     ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
     : ADAPTER_CONFIG.endpointConfig.localstackEndpoint;
 

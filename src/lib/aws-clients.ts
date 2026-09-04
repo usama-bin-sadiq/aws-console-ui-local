@@ -1,4 +1,5 @@
 // ─── Imports: all 98 AWS SDK v3 clients ──────────────────────────────────────
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 // Security & Identity
 import { ACMClient } from "@aws-sdk/client-acm";
@@ -146,7 +147,7 @@ const clientCache = new Map<string, unknown>();
 /**
  * Returns a cached SDK client instance for the given class and region.
  *
- * All clients point to `process.env.AWS_ENDPOINT_URL` (LocalStack / Ministack).
+ * All emulator clients point to the same endpoint used by `/api/health`.
  * S3Client automatically receives `forcePathStyle: true` for path-style URL
  * compatibility required by local emulators.
  *
@@ -161,11 +162,13 @@ export function getClient<T>(
 
   if (!clientCache.has(key)) {
     const config: AwsClientConfig = {
-      endpoint: process.env.AWS_ENDPOINT_URL ?? "http://localhost:4566",
+      endpoint: ADAPTER_CONFIG.adapterMode === "ministack"
+        ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
+        : ADAPTER_CONFIG.endpointConfig.localstackEndpoint,
       region,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "test",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "test",
+        accessKeyId: ADAPTER_CONFIG.authConfig.accessKeyId,
+        secretAccessKey: ADAPTER_CONFIG.authConfig.secretAccessKey,
       },
       // S3 requires path-style URLs with LocalStack / Ministack
       forcePathStyle: ClientClass.name === "S3Client" ? true : undefined,
@@ -185,7 +188,9 @@ export function getClient<T>(
 export async function detectProvider(): Promise<
   "ministack" | "localstack" | "unknown"
 > {
-  const base = process.env.AWS_ENDPOINT_URL ?? "http://localhost:4566";
+  const base = ADAPTER_CONFIG.adapterMode === "ministack"
+    ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
+    : ADAPTER_CONFIG.endpointConfig.localstackEndpoint;
 
   try {
     const res = await fetch(`${base}/_ministack/health`);

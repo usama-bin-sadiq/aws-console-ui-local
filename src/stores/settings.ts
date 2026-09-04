@@ -46,6 +46,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: "aws-console-settings",
+      skipHydration: true,
     }
   )
 );

@@ -21,6 +21,7 @@ import Alert from "@cloudscape-design/components/alert";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import ColumnLayout from "@cloudscape-design/components/column-layout";
 import Link from "@cloudscape-design/components/link";
+import Table from "@cloudscape-design/components/table";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 
 export default function S3BucketDetailPage() {
@@ -213,22 +214,19 @@ export default function S3BucketDetailPage() {
   const tagsContent = (
     <Container header={<Header variant="h2">Tags</Header>}>
       {tags.length > 0 ? (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "1px solid #aab7b8" }}>
-              <th style={{ textAlign: "left", padding: "8px" }}>Key</th>
-              <th style={{ textAlign: "left", padding: "8px" }}>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tags.map((tag, idx) => (
-              <tr key={idx} style={{ borderBottom: "1px solid #f2f3f3" }}>
-                <td style={{ padding: "8px" }}>{tag.Key || "—"}</td>
-                <td style={{ padding: "8px" }}>{tag.Value || "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table
+          items={tags}
+          variant="borderless"
+          columnDefinitions={[
+            { id: "key", header: "Key", cell: (tag) => tag.Key || "—" },
+            { id: "value", header: "Value", cell: (tag) => tag.Value || "—" },
+          ]}
+          ariaLabels={{
+            itemSelectionLabel: (tag) => `Select tag ${tag.Key || "without a key"}`,
+            selectionGroupLabel: "Bucket tags",
+          }}
+          empty={<Box>No tags assigned.</Box>}
+        />
       ) : (
         <Box>No tags assigned.</Box>
       )}

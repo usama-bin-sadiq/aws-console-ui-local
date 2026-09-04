@@ -8,7 +8,7 @@
 
 export enum AdapterMode {
   LOCALSTACK = 'localstack',
-  MINSTACK = 'minstack',
+  MINSTACK = 'ministack',
   REAL = 'real',
 }
 
@@ -23,10 +23,18 @@ export interface ServiceCompatibilityEntry {
   serviceName: string; // AWS service display name
   adapterStatusLocalStack: AdapterStatus; // full for all 150 in clone
   adapterStatusMinStack: AdapterStatus; // full / partial / not-supported
-  commonDifferentNote: string; // common vs different between localstack/minstack
+  commonDifferentNote: string; // common vs different between localstack/ministack
   sdkClient: string; // e.g., '@aws-sdk/client-ec2'
   hasRouteInRepo: boolean; // verified in src/app/
 }
+
+export interface ServiceAvailability {
+  readonly status: AdapterStatus | 'unavailable';
+  readonly enabled: boolean;
+  readonly reason: string;
+}
+
+export type EmulatorHealthStatus = 'healthy' | 'unreachable' | 'checking';
 
 export const SERVICE_REGISTRY: ServiceCompatibilityEntry[] = [
   // === COMPUTE ===
@@ -195,3 +203,54 @@ export const DIFFERENT_SERVICES = SERVICE_REGISTRY.filter(
 
 export const COMMON_SERVICE_NAMES = COMMON_SERVICES.map((s) => s.serviceName);
 export const DIFFERENT_SERVICE_NAMES = DIFFERENT_SERVICES.map((s) => s.serviceName);
+
+const normalizeServiceKey = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const healthValueIsEnabled = (value: unknown): boolean =>
+  value === true || value === 'available' || value === 'healthy' || value === 'running' || value === 'true';
+
+export function getServiceAvailability(
+  service: ServiceCompatibilityEntry,
+  mode: AdapterMode | 'unknown',
+  healthStatus: EmulatorHealthStatus = 'checking',
+  healthServices: Record<string, unknown> = {},
+): ServiceAvailability {
+  if (healthStatus === 'unreachable') {
+    return { status: 'unavailable', enabled: false, reason: 'The emulator endpoint is unreachable.' };
+  }
+
+  const compatibility = mode === AdapterMode.MINSTACK
+    ? service.adapterStatusMinStack
+    : service.adapterStatusLocalStack;
+  const healthKeys = Object.keys(healthServices);
+  const matchingHealthKey = healthKeys.find((key) => {
+    const normalizedKey = normalizeServiceKey(key);
+    return normalizedKey === normalizeServiceKey(service.routeDir)
+      || normalizedKey === normalizeServiceKey(service.serviceName);
+  });
+  const healthEnabled = matchingHealthKey === undefined
+    ? true
+    : healthValueIsEnabled(healthServices[matchingHealthKey]);
+
+  if (healthStatus === 'healthy' && !healthEnabled) {
+    return { status: 'unavailable', enabled: false, reason: 'The emulator reports this service as unavailable.' };
+  }
+
+  if (compatibility === AdapterStatus.NOT_SUPPORTED) {
+    return { status: compatibility, enabled: false, reason: `${mode} does not support this service.` };
+  }
+
+  return {
+    status: compatibility,
+    enabled: true,
+    reason: compatibility === AdapterStatus.PARTIAL
+      ? `${mode} provides partial support for this service.`
+      : 'Service is enabled by the active emulator.',
+  };
+}
+
+export function findServiceCompatibility(route: string): ServiceCompatibilityEntry | undefined {
+  const routeDir = route.replace(/^\//, '').split('/')[0];
+  return SERVICE_REGISTRY.find((service) => service.routeDir === routeDir);
+}

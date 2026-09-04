@@ -35,13 +35,13 @@ describe('Adapter Factory (createAdapter)', () => {
   });
 
   it('exposes mapRequest and normalizeResponse as callable functions', () => {
-    const adapter = createAdapter({ adapterMode: 'minstack', serviceName: 'lambda' });
+    const adapter = createAdapter({ adapterMode: 'ministack', serviceName: 'lambda' });
     expect(typeof adapter.mapRequest).toBe('function');
     expect(typeof adapter.normalizeResponse).toBe('function');
   });
 
   it('passes adapterMode through to endpoint resolution', () => {
-    const adapter = createAdapter({ adapterMode: 'minstack' });
+    const adapter = createAdapter({ adapterMode: 'ministack' });
     expect(adapter.endpoint.hostname).toBe('localhost');
     expect(adapter.endpoint.port).toBe(4566);
   });
@@ -66,8 +66,8 @@ describe('Endpoint Resolver (resolveEndpoint)', () => {
     expect(ep.sslEnabled).toBe(false);
   });
 
-  it('resolves minstack endpoint', () => {
-    const ep = resolveEndpoint('minstack');
+  it('resolves ministack endpoint', () => {
+    const ep = resolveEndpoint('ministack');
     expect(ep.hostname).toBe('localhost');
     expect(ep.port).toBe(4566);
     expect(ep.url).toContain(':4566');
@@ -102,8 +102,8 @@ describe('Auth Injector (injectAuth)', () => {
     expect(auth.sessionToken).toBeUndefined();
   });
 
-  it('injects dummy credentials for minstack', () => {
-    const auth = injectAuth('minstack');
+  it('injects dummy credentials for ministack', () => {
+    const auth = injectAuth('ministack');
     expect(auth.accessKeyId).toBe('test');
     expect(auth.secretAccessKey).toBe('test');
     expect(auth.region).toBe('us-east-1');
@@ -156,7 +156,7 @@ describe('Request Mapper (mapRequest)', () => {
   });
 
   it('maps POST method correctly', () => {
-    const mapped = mapRequest({ path: '/buckets', method: 'POST', body: '{"name":"test"}' }, 'minstack');
+    const mapped = mapRequest({ path: '/buckets', method: 'POST', body: '{"name":"test"}' }, 'ministack');
     expect(mapped.method).toBe('POST');
     expect(mapped.body).toBe('{"name":"test"}');
     expect(mapped.protocol).toBe('http');
@@ -190,7 +190,7 @@ describe('Request Mapper (mapRequest)', () => {
   });
 
   it('sets Host header based on endpoint', () => {
-    const mapped = mapRequest({ path: '/' }, 'minstack');
+    const mapped = mapRequest({ path: '/' }, 'ministack');
     expect(mapped.headers.Host).toBe('localhost:4566');
   });
 });
@@ -265,8 +265,8 @@ describe('Adapter Integration (end-to-end adapter flow)', () => {
   });
 
   it('produces normalized response matching SDK HttpResponse shape', () => {
-    const adapter = createAdapter({ adapterMode: 'minstack', serviceName: 's3' });
-    const mapped = adapter.mapRequest({ path: '/buckets/test', method: 'GET' }, 'minstack');
+    const adapter = createAdapter({ adapterMode: 'ministack', serviceName: 's3' });
+    const mapped = adapter.mapRequest({ path: '/buckets/test', method: 'GET' }, 'ministack');
     expect(mapped.path).toBe('/buckets/test');
     expect(mapped.method).toBe('GET');
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ALL_SERVICES } from "@/constants/navigation";
 import { SERVICE_REGISTRY } from "@/constants/service-compatibility";
+import { AdapterMode, EmulatorHealthStatus, findServiceCompatibility, getServiceAvailability } from "@/constants/service-compatibility";
 
 interface SearchResult {
   text: string;
@@ -210,7 +211,11 @@ const SERVICE_DESCRIPTIONS: Record<string, string> = {
   "Support": "AWS technical support",
 };
 
-export function useGlobalSearch() {
+export function useGlobalSearch(
+  mode: AdapterMode | 'unknown' = AdapterMode.LOCALSTACK,
+  healthStatus: EmulatorHealthStatus = 'checking',
+  healthServices: Record<string, unknown> = {},
+) {
   const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -232,9 +237,13 @@ export function useGlobalSearch() {
   useEffect(() => {
     if (searchValue.length >= 2) {
       const results: SearchResult[] = [];
-      
+
       ALL_SERVICES.forEach((service: any) => {
-        if (service.text?.toLowerCase().includes(searchValue.toLowerCase())) {
+        const compatibility = findServiceCompatibility(service.href);
+        const available = compatibility
+          ? getServiceAvailability(compatibility, mode, healthStatus, healthServices).enabled
+          : false;
+        if (available && service.text?.toLowerCase().includes(searchValue.toLowerCase())) {
           results.push({
             text: service.text,
             href: service.href,
@@ -246,7 +255,8 @@ export function useGlobalSearch() {
 
       // Also search SERVICE_REGISTRY for broader coverage
       SERVICE_REGISTRY.forEach((svc) => {
-        if (svc.serviceName.toLowerCase().includes(searchValue.toLowerCase())) {
+        const available = getServiceAvailability(svc, mode, healthStatus, healthServices).enabled;
+        if (available && svc.serviceName.toLowerCase().includes(searchValue.toLowerCase())) {
           const existing = results.find((r) => r.text === svc.serviceName);
           if (!existing) {
             results.push({
@@ -266,7 +276,7 @@ export function useGlobalSearch() {
       setShowDropdown(false);
       setSearchResults([]);
     }
-  }, [searchValue]);
+  }, [searchValue, mode, healthStatus, healthServices]);
 
   useEffect(() => {
     if (!showDropdown || searchResults.length === 0) return;
@@ -301,7 +311,7 @@ export function useGlobalSearch() {
     const updated = [result.text, ...recentSearches.filter(s => s !== result.text)].slice(0, 10);
     setRecentSearches(updated);
     localStorage.setItem("aws_recent_searches", JSON.stringify(updated));
-    
+
     router.push(result.href);
     setShowDropdown(false);
     setSearchValue("");
@@ -321,13 +331,13 @@ export function useGlobalSearch() {
 
 export function groupByCategory(results: SearchResult[]): Record<string, SearchResult[]> {
   const grouped: Record<string, SearchResult[]> = {};
-  
+
   results.forEach((result) => {
     if (!grouped[result.category]) {
       grouped[result.category] = [];
     }
     grouped[result.category].push(result);
   });
-  
+
   return grouped;
 }

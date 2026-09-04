@@ -21,6 +21,7 @@ import Input from "@cloudscape-design/components/input";
 import Select from "@cloudscape-design/components/select";
 import Checkbox from "@cloudscape-design/components/checkbox";
 import SpaceBetween from "@cloudscape-design/components/space-between";
+import ColumnLayout from "@cloudscape-design/components/column-layout";
 import Button from "@cloudscape-design/components/button";
 import Box from "@cloudscape-design/components/box";
 import Alert from "@cloudscape-design/components/alert";
@@ -163,27 +164,27 @@ export default function S3BucketCreatePage() {
             Tags help you manage and filter resources. Maximum 50 tags per bucket.
           </Box>
           {tags.map((tag, idx) => (
-            <SpaceBetween key={idx} direction="horizontal" size="xs">
-              <FormField label="Key" style={{ width: "45%" }}>
+            <ColumnLayout key={idx} columns={3} minColumnWidth={160} variant="default">
+              <FormField label="Key">
                 <Input
                   value={tag.Key}
                   onChange={({ detail }) => updateTag(idx, "Key", detail.value)}
                   placeholder="Key"
                 />
               </FormField>
-              <FormField label="Value" style={{ width: "45%" }}>
+              <FormField label="Value">
                 <Input
                   value={tag.Value}
                   onChange={({ detail }) => updateTag(idx, "Value", detail.value)}
                   placeholder="Value"
                 />
               </FormField>
-              <Box style={{ width: "10%", paddingTop: "28px" }}>
+              <Box padding={{ top: "m" }}>
                 <Button formAction="none" onClick={() => removeTag(idx)}>
                   Remove
                 </Button>
               </Box>
-            </SpaceBetween>
+            </ColumnLayout>
           ))}
           <Button formAction="none" onClick={addTag}>
             Add tag

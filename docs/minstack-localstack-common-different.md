@@ -7,7 +7,7 @@
 
 ## 1. Common Services (Supported Fully by Both LocalStack and MinStack)
 
-These services have `FULL` adapter status for both `localstack` and `minstack`. They are the core services that work identically across both emulator platforms.
+These services have `FULL` adapter status for both `localstack` and `ministack`. They are the core services that work identically across both emulator platforms.
 
 | Service Route (`src/app/`) | AWS Service Name | SDK Client | Adapter Mode Support |
 |---|---|---|---|
@@ -54,7 +54,7 @@ These services have `FULL` adapter status for both `localstack` and `minstack`. 
 
 ## 2. Different Services (Supported Differently Between LocalStack and MinStack)
 
-These services have `FULL` adapter status for `localstack` but `PARTIAL` or `NOT_SUPPORTED` for `minstack`. They represent the differences between the full emulator and the lightweight emulator.
+These services have `FULL` adapter status for `localstack` but `PARTIAL` or `NOT_SUPPORTED` for `ministack`. They represent the differences between the full emulator and the lightweight emulator.
 
 ### 2.1 Different — Partial in MinStack (`PARTIAL`)
 
@@ -175,14 +175,14 @@ These services work fully in LocalStack (`FULL`) but are not supported by MinSta
 
 ## 3. Service Name Mapping — Common vs Different References
 
-When switching adapter mode (`localstack` ↔ `minstack` ↔ `real`), the service names remain consistent (AWS service display names). The adapter layer (`src/lib/localstack-adapter/`) handles endpoint differences, but service display names never change. The `serviceName` field in `service-compatibility.ts` is the canonical name used across all adapter modes.
+When switching adapter mode (`localstack` ↔ `ministack` ↔ `real`), the service names remain consistent (AWS service display names). The adapter layer (`src/lib/localstack-adapter/`) handles endpoint differences, but service display names never change. The `serviceName` field in `service-compatibility.ts` is the canonical name used across all adapter modes.
 
 ### Example Adapter Mode Switching
 
 ```typescript
 // Adapter config reads ADAPTER_MODE from .env.local
 // When ADAPTER_MODE=localstack: endpoint = LOCALSTACK_ENDPOINT
-// When ADAPTER_MODE=minstack: endpoint = MINSTACK_ENDPOINT
+// When ADAPTER_MODE=ministack: endpoint = MINSTACK_ENDPOINT
 // Service name 'Amazon EC2' remains the same; endpoint changes.
 ```
 

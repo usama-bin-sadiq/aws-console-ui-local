@@ -5,7 +5,7 @@
  */
 
 export interface AdapterModeValue {
-  readonly mode: 'localstack' | 'minstack' | 'real';
+  readonly mode: 'localstack' | 'ministack' | 'real';
 }
 
 export interface AuthCredentials {
@@ -24,7 +24,7 @@ export interface EndpointResolution {
 }
 
 export interface AdapterConfigShape {
-  readonly adapterMode: 'localstack' | 'minstack' | 'real';
+  readonly adapterMode: 'localstack' | 'ministack' | 'real';
   readonly endpointConfig: {
     readonly localstackHostname: string;
     readonly localstackPort: number;
@@ -41,7 +41,7 @@ export interface AdapterConfigShape {
 }
 
 export interface AdapterFactoryOptions {
-  readonly adapterMode?: 'localstack' | 'minstack' | 'real';
+  readonly adapterMode?: 'localstack' | 'ministack' | 'real';
   readonly serviceName?: string;
 }
 

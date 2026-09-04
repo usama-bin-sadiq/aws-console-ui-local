@@ -1,0 +1,578 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: adapter-health.spec.ts >> Adapter Health — Endpoint & Auth >> adapter mode header shows active backend
+- Location: tests/e2e/adapter-health.spec.ts:19:7
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: locator('text=localstack')
+Expected: visible
+Error: strict mode violation: locator('text=localstack') resolved to 4 elements:
+    1) <span>LOCALSTACK</span> aka locator('#link-self_R_ldelbH1_').getByText('LOCALSTACK')
+    2) <span>LOCALSTACK</span> aka locator('#link-self_R_ltelbH1_').getByText('LOCALSTACK')
+    3) <span>LOCALSTACK</span> aka getByRole('button', { name: 'Provider: localstack' })
+    4) <div>…</div> aka getByText('Console v2.45.1 | Build 2026.')
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for locator('text=localstack')
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic:
+    - generic:
+      - list
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic "Status announcements" [ref=e3]
+  - banner [ref=e7]:
+    - generic [ref=e8]:
+      - link "AWS AWS Management Console" [ref=e10] [cursor=pointer]:
+        - /url: /
+        - img "AWS" [ref=e11]
+        - generic [ref=e12]: AWS Management Console
+      - generic [ref=e13]:
+        - button [ref=e16]
+        - link "AWS Documentation" [ref=e21]:
+          - /url: https://docs.aws.amazon.com/
+        - link "AWS Support Center" [ref=e29]:
+          - /url: /support
+        - button "Terminal" [ref=e34]
+        - button "US East (N. Virginia)" [ref=e41] [cursor=pointer]
+        - 'button "Provider: localstack" [ref=e46]':
+          - generic [ref=e47]: LOCALSTACK
+        - button "Switch to light mode" [ref=e50]:
+          - generic [ref=e51]: ☀️ Light
+        - button "Recently Visited" [ref=e57] [cursor=pointer]
+        - button "Notifications" [ref=e64] [cursor=pointer]
+        - button "Account" [ref=e71] [cursor=pointer]
+  - main [ref=e74]:
+    - navigation [ref=e77]:
+      - generic [ref=e78]:
+        - button [ref=e80] [cursor=pointer]
+        - generic [ref=e82]:
+          - link "AWS Services Home" [ref=e84] [cursor=pointer]:
+            - /url: /
+            - img "AWS" [ref=e85]
+            - generic [ref=e86]: AWS Services
+          - list [ref=e90]:
+            - listitem [ref=e91]:
+              - generic [ref=e92]:
+                - generic [ref=e93] [cursor=pointer]:
+                  - button "Compute" [expanded] [ref=e94]
+                  - generic [ref=e96]: Compute
+                - group "Compute" [ref=e100]:
+                  - list [ref=e103]:
+                    - listitem [ref=e104]:
+                      - link "EC2" [ref=e105] [cursor=pointer]:
+                        - /url: /ec2
+                    - listitem [ref=e108]:
+                      - link "Lambda" [ref=e109] [cursor=pointer]:
+                        - /url: /lambda
+                    - listitem [ref=e112]:
+                      - link "ECS Clusters" [ref=e113] [cursor=pointer]:
+                        - /url: /ecs-cluster
+                    - listitem [ref=e116]:
+                      - link "ECS Services" [ref=e117] [cursor=pointer]:
+                        - /url: /ecs-service
+                    - listitem [ref=e120]:
+                      - link "EKS Clusters" [ref=e121] [cursor=pointer]:
+                        - /url: /eks-cluster
+                    - listitem [ref=e124]:
+                      - link "Fargate" [ref=e125] [cursor=pointer]:
+                        - /url: /fargate
+                    - listitem [ref=e128]:
+                      - link "ECR Repos" [ref=e129] [cursor=pointer]:
+                        - /url: /ecr-repo
+                    - listitem [ref=e132]:
+                      - link "Auto Scaling" [ref=e133] [cursor=pointer]:
+                        - /url: /auto-scaling
+                    - listitem [ref=e136]:
+                      - link "Launch Templates" [ref=e137] [cursor=pointer]:
+                        - /url: /launch-template
+                    - listitem [ref=e140]:
+                      - link "AMI" [ref=e141] [cursor=pointer]:
+                        - /url: /ami
+                    - listitem [ref=e144]:
+                      - link "Batch Jobs" [ref=e145] [cursor=pointer]:
+                        - /url: /batch-job
+            - listitem [ref=e148]:
+              - generic [ref=e149]:
+                - generic [ref=e150] [cursor=pointer]:
+                  - button "Storage" [expanded] [ref=e151]
+                  - generic [ref=e153]: Storage
+                - group "Storage" [ref=e157]:
+                  - list [ref=e160]:
+                    - listitem [ref=e161]:
+                      - link "S3" [ref=e162] [cursor=pointer]:
+                        - /url: /s3
+                    - listitem [ref=e165]:
+                      - link "S3 Tables" [ref=e166] [cursor=pointer]:
+                        - /url: /s3-tables
+                    - listitem [ref=e169]:
+                      - link "EBS Volumes" [ref=e170] [cursor=pointer]:
+                        - /url: /volume
+                    - listitem [ref=e173]:
+                      - link "EBS Snapshots" [ref=e174] [cursor=pointer]:
+                        - /url: /snapshot
+                    - listitem [ref=e177]:
+                      - link "EFS" [ref=e178] [cursor=pointer]:
+                        - /url: /efs
+                    - listitem [ref=e181]:
+                      - link "Backup" [ref=e182] [cursor=pointer]:
+                        - /url: /backup
+            - listitem [ref=e185]:
+              - generic [ref=e186]:
+                - generic [ref=e187] [cursor=pointer]:
+                  - button "Database" [expanded] [ref=e188]
+                  - generic [ref=e190]: Database
+                - group "Database" [ref=e194]:
+                  - list [ref=e197]:
+                    - listitem [ref=e198]:
+                      - link "DynamoDB" [ref=e199] [cursor=pointer]:
+                        - /url: /dynamodb
+                    - listitem [ref=e202]:
+                      - link "RDS" [ref=e203] [cursor=pointer]:
+                        - /url: /rds
+                    - listitem [ref=e206]:
+                      - link "RDS Data" [ref=e207] [cursor=pointer]:
+                        - /url: /rds-data
+                    - listitem [ref=e210]:
+                      - link "ElastiCache" [ref=e211] [cursor=pointer]:
+                        - /url: /elasticache
+                    - listitem [ref=e214]:
+                      - link "DSQL" [ref=e215] [cursor=pointer]:
+                        - /url: /dsql
+            - listitem [ref=e218]:
+              - generic [ref=e219]:
+                - generic [ref=e220] [cursor=pointer]:
+                  - button "Networking & Content Delivery" [expanded] [ref=e221]
+                  - generic [ref=e223]: Networking & Content Delivery
+                - group "Networking & Content Delivery" [ref=e227]:
+                  - list [ref=e230]:
+                    - listitem [ref=e231]:
+                      - link "VPC" [ref=e232] [cursor=pointer]:
+                        - /url: /vpc
+                    - listitem [ref=e235]:
+                      - link "Subnets" [ref=e236] [cursor=pointer]:
+                        - /url: /subnet
+                    - listitem [ref=e239]:
+                      - link "Route Tables" [ref=e240] [cursor=pointer]:
+                        - /url: /route-table
+                    - listitem [ref=e243]:
+                      - link "Internet Gateways" [ref=e244] [cursor=pointer]:
+                        - /url: /internet-gateway
+                    - listitem [ref=e247]:
+                      - link "NAT Gateways" [ref=e248] [cursor=pointer]:
+                        - /url: /nat-gateway
+                    - listitem [ref=e251]:
+                      - link "Network ACLs" [ref=e252] [cursor=pointer]:
+                        - /url: /network-acl
+                    - listitem [ref=e255]:
+                      - link "Security Groups" [ref=e256] [cursor=pointer]:
+                        - /url: /security-group
+                    - listitem [ref=e259]:
+                      - link "Elastic IPs" [ref=e260] [cursor=pointer]:
+                        - /url: /elastic-ip
+                    - listitem [ref=e263]:
+                      - link "VPC Endpoints" [ref=e264] [cursor=pointer]:
+                        - /url: /ec2-vpc-endpoint
+                    - listitem [ref=e267]:
+                      - link "VPC Peering" [ref=e268] [cursor=pointer]:
+                        - /url: /ec2-vpc-peering
+                    - listitem [ref=e271]:
+                      - link "Transit Gateway" [ref=e272] [cursor=pointer]:
+                        - /url: /transit-gateway
+                    - listitem [ref=e275]:
+                      - link "VPN Connections" [ref=e276] [cursor=pointer]:
+                        - /url: /vpn
+                    - listitem [ref=e279]:
+                      - link "Direct Connect" [ref=e280] [cursor=pointer]:
+                        - /url: /direct-connect
+                    - listitem [ref=e283]:
+                      - link "Route 53" [ref=e284] [cursor=pointer]:
+                        - /url: /route53
+                    - listitem [ref=e287]:
+                      - link "EC2 Health Checks" [ref=e288] [cursor=pointer]:
+                        - /url: /ec2-health-check
+                    - listitem [ref=e291]:
+                      - link "Global Accelerator" [ref=e292] [cursor=pointer]:
+                        - /url: /global-accelerator
+                    - listitem [ref=e295]:
+                      - link "CloudFront" [ref=e296] [cursor=pointer]:
+                        - /url: /cloudfront
+            - listitem [ref=e299]:
+              - generic [ref=e300]:
+                - generic [ref=e301] [cursor=pointer]:
+                  - button "Security & Identity" [expanded] [ref=e302]
+                  - generic [ref=e304]: Security & Identity
+                - group "Security & Identity" [ref=e308]:
+                  - list [ref=e311]:
+                    - listitem [ref=e312]:
+                      - link "IAM" [ref=e313] [cursor=pointer]:
+                        - /url: /iam
+                    - listitem [ref=e316]:
+                      - link "IAM Policies" [ref=e317] [cursor=pointer]:
+                        - /url: /iam/policies
+                    - listitem [ref=e320]:
+                      - link "IAM Access Keys" [ref=e321] [cursor=pointer]:
+                        - /url: /iam-access-key
+                    - listitem [ref=e324]:
+                      - link "IAM Groups" [ref=e325] [cursor=pointer]:
+                        - /url: /iam-group
+                    - listitem [ref=e328]:
+                      - link "IAM Instance Profiles" [ref=e329] [cursor=pointer]:
+                        - /url: /iam-instance-profile
+                    - listitem [ref=e332]:
+                      - link "IAM SAML" [ref=e333] [cursor=pointer]:
+                        - /url: /iam-saml
+                    - listitem [ref=e336]:
+                      - link "IAM OpenID Connect" [ref=e337] [cursor=pointer]:
+                        - /url: /iam-openid-connect
+                    - listitem [ref=e340]:
+                      - link "IAM Password Policy" [ref=e341] [cursor=pointer]:
+                        - /url: /iam-password-policy
+                    - listitem [ref=e344]:
+                      - link "IAM Credential Report" [ref=e345] [cursor=pointer]:
+                        - /url: /iam-credential-report
+                    - listitem [ref=e348]:
+                      - link "IAM Virtual MFA" [ref=e349] [cursor=pointer]:
+                        - /url: /iam-virtual-mfa
+                    - listitem [ref=e352]:
+                      - link "KMS" [ref=e353] [cursor=pointer]:
+                        - /url: /kms
+                    - listitem [ref=e356]:
+                      - link "Secrets Manager" [ref=e357] [cursor=pointer]:
+                        - /url: /secrets-manager
+                    - listitem [ref=e360]:
+                      - link "ACM" [ref=e361] [cursor=pointer]:
+                        - /url: /acm
+                    - listitem [ref=e364]:
+                      - link "WAF" [ref=e365] [cursor=pointer]:
+                        - /url: /waf
+                    - listitem [ref=e368]:
+                      - link "WAF Classic" [ref=e369] [cursor=pointer]:
+                        - /url: /waf-classic
+                    - listitem [ref=e372]:
+                      - link "WAF v2" [ref=e373] [cursor=pointer]:
+                        - /url: /wafv2
+                    - listitem [ref=e376]:
+                      - link "Shield" [ref=e377] [cursor=pointer]:
+                        - /url: /shield
+                    - listitem [ref=e380]:
+                      - link "GuardDuty" [ref=e381] [cursor=pointer]:
+                        - /url: /guardduty
+                    - listitem [ref=e384]:
+                      - link "Security Hub" [ref=e385] [cursor=pointer]:
+                        - /url: /security-hub
+                    - listitem [ref=e388]:
+                      - link "Macie" [ref=e389] [cursor=pointer]:
+                        - /url: /macie
+                    - listitem [ref=e392]:
+                      - link "Inspector" [ref=e393] [cursor=pointer]:
+                        - /url: /inspector
+                    - listitem [ref=e396]:
+                      - link "Detective" [ref=e397] [cursor=pointer]:
+                        - /url: /detective
+                    - listitem [ref=e400]:
+                      - link "Verified Access" [ref=e401] [cursor=pointer]:
+                        - /url: /verified-access
+            - listitem [ref=e404]:
+              - generic [ref=e405]:
+                - generic [ref=e406] [cursor=pointer]:
+                  - button "Management & Governance" [expanded] [ref=e407]
+                  - generic [ref=e409]: Management & Governance
+                - group "Management & Governance" [ref=e413]:
+                  - list [ref=e416]:
+                    - listitem [ref=e417]:
+                      - link "CloudFormation" [ref=e418] [cursor=pointer]:
+                        - /url: /cloudformation
+                    - listitem [ref=e421]:
+                      - link "CloudTrail" [ref=e422] [cursor=pointer]:
+                        - /url: /cloudtrail
+                    - listitem [ref=e425]:
+                      - link "AWS Config" [ref=e426] [cursor=pointer]:
+                        - /url: /config
+                    - listitem [ref=e429]:
+                      - link "Systems Manager" [ref=e430] [cursor=pointer]:
+                        - /url: /systems-manager-parameter-store
+                    - listitem [ref=e433]:
+                      - link "Organizations" [ref=e434] [cursor=pointer]:
+                        - /url: /organizations
+                    - listitem [ref=e437]:
+                      - link "Resource Groups" [ref=e438] [cursor=pointer]:
+                        - /url: /resource-groups
+                    - listitem [ref=e441]:
+                      - link "Resource Tags" [ref=e442] [cursor=pointer]:
+                        - /url: /resource-groups-tagging
+                    - listitem [ref=e445]:
+                      - link "Cost Explorer" [ref=e446] [cursor=pointer]:
+                        - /url: /cost-explorer
+                    - listitem [ref=e449]:
+                      - link "Billing" [ref=e450] [cursor=pointer]:
+                        - /url: /billing
+                    - listitem [ref=e453]:
+                      - link "Budgets" [ref=e454] [cursor=pointer]:
+                        - /url: /budget
+                    - listitem [ref=e457]:
+                      - link "Support" [ref=e458] [cursor=pointer]:
+                        - /url: /support
+                    - listitem [ref=e461]:
+                      - link "CloudControl" [ref=e462] [cursor=pointer]:
+                        - /url: /cloudcontrol
+                    - listitem [ref=e465]:
+                      - link "AppConfig" [ref=e466] [cursor=pointer]:
+                        - /url: /appconfig
+            - listitem [ref=e469]:
+              - generic [ref=e470]:
+                - generic [ref=e471] [cursor=pointer]:
+                  - button "Application Integration" [expanded] [ref=e472]
+                  - generic [ref=e474]: Application Integration
+                - group "Application Integration" [ref=e478]:
+                  - list [ref=e481]:
+                    - listitem [ref=e482]:
+                      - link "SQS" [ref=e483] [cursor=pointer]:
+                        - /url: /sqs
+                    - listitem [ref=e486]:
+                      - link "SNS" [ref=e487] [cursor=pointer]:
+                        - /url: /sns
+                    - listitem [ref=e490]:
+                      - link "SNS SMS" [ref=e491] [cursor=pointer]:
+                        - /url: /sns-sms
+                    - listitem [ref=e494]:
+                      - link "EventBridge" [ref=e495] [cursor=pointer]:
+                        - /url: /eventbridge-schema
+                    - listitem [ref=e498]:
+                      - link "EventBridge Pipes" [ref=e499] [cursor=pointer]:
+                        - /url: /eventbridge-pipe
+                    - listitem [ref=e502]:
+                      - link "EventBridge Scheduler" [ref=e503] [cursor=pointer]:
+                        - /url: /eventbridge-scheduler
+                    - listitem [ref=e506]:
+                      - link "Step Functions" [ref=e507] [cursor=pointer]:
+                        - /url: /step-functions
+                    - listitem [ref=e510]:
+                      - link "API Gateway" [ref=e511] [cursor=pointer]:
+                        - /url: /api
+                    - listitem [ref=e514]:
+                      - link "AppSync" [ref=e515] [cursor=pointer]:
+                        - /url: /appsync
+                    - listitem [ref=e518]:
+                      - link "App Mesh" [ref=e519] [cursor=pointer]:
+                        - /url: /app-mesh
+                    - listitem [ref=e522]:
+                      - link "Service Discovery" [ref=e523] [cursor=pointer]:
+                        - /url: /servicediscovery
+                    - listitem [ref=e526]:
+                      - link "Pipes" [ref=e527] [cursor=pointer]:
+                        - /url: /pipes
+            - listitem [ref=e530]:
+              - generic [ref=e531]:
+                - generic [ref=e532] [cursor=pointer]:
+                  - button "Developer Tools" [expanded] [ref=e533]
+                  - generic [ref=e535]: Developer Tools
+                - group "Developer Tools" [ref=e539]:
+                  - list [ref=e542]:
+                    - listitem [ref=e543]:
+                      - link "CodeBuild" [ref=e544] [cursor=pointer]:
+                        - /url: /codebuild
+                    - listitem [ref=e547]:
+                      - link "CodePipeline" [ref=e548] [cursor=pointer]:
+                        - /url: /codepipeline
+                    - listitem [ref=e551]:
+                      - link "CodeDeploy" [ref=e552] [cursor=pointer]:
+                        - /url: /code-deploy
+                    - listitem [ref=e555]:
+                      - link "App Auto Scaling" [ref=e556] [cursor=pointer]:
+                        - /url: /app-auto-scaling
+            - listitem [ref=e559]:
+              - generic [ref=e560]:
+                - generic [ref=e561] [cursor=pointer]:
+                  - button "Analytics" [expanded] [ref=e562]
+                  - generic [ref=e564]: Analytics
+                - group "Analytics" [ref=e568]:
+                  - list [ref=e571]:
+                    - listitem [ref=e572]:
+                      - link "Athena" [ref=e573] [cursor=pointer]:
+                        - /url: /athena
+                    - listitem [ref=e576]:
+                      - link "EMR" [ref=e577] [cursor=pointer]:
+                        - /url: /emr
+                    - listitem [ref=e580]:
+                      - link "Glue Catalog" [ref=e581] [cursor=pointer]:
+                        - /url: /glue-catalog
+                    - listitem [ref=e584]:
+                      - link "Glue Jobs" [ref=e585] [cursor=pointer]:
+                        - /url: /glue-job
+                    - listitem [ref=e588]:
+                      - link "Kinesis Streams" [ref=e589] [cursor=pointer]:
+                        - /url: /kinesis
+                    - listitem [ref=e592]:
+                      - link "Kinesis Firehose" [ref=e593] [cursor=pointer]:
+                        - /url: /firehose
+                    - listitem [ref=e596]:
+                      - link "QuickSight" [ref=e597] [cursor=pointer]:
+                        - /url: /quicksight
+                    - listitem [ref=e600]:
+                      - link "OpenSearch" [ref=e601] [cursor=pointer]:
+                        - /url: /opensearch
+            - listitem [ref=e604]:
+              - generic [ref=e605]:
+                - generic [ref=e606] [cursor=pointer]:
+                  - button "Machine Learning" [expanded] [ref=e607]
+                  - generic [ref=e609]: Machine Learning
+                - group "Machine Learning" [ref=e613]:
+                  - list [ref=e616]:
+                    - listitem [ref=e617]:
+                      - link "SageMaker" [ref=e618] [cursor=pointer]:
+                        - /url: /sagemaker
+                    - listitem [ref=e621]:
+                      - link "Bedrock" [ref=e622] [cursor=pointer]:
+                        - /url: /bedrock
+                    - listitem [ref=e625]:
+                      - link "Rekognition" [ref=e626] [cursor=pointer]:
+                        - /url: /rekognition
+                    - listitem [ref=e629]:
+                      - link "Comprehend" [ref=e630] [cursor=pointer]:
+                        - /url: /comprehend
+                    - listitem [ref=e633]:
+                      - link "Polly" [ref=e634] [cursor=pointer]:
+                        - /url: /polly
+                    - listitem [ref=e637]:
+                      - link "Lex" [ref=e638] [cursor=pointer]:
+                        - /url: /lex
+            - listitem [ref=e641]:
+              - generic [ref=e642]:
+                - generic [ref=e643] [cursor=pointer]:
+                  - button "Mobile & IoT" [expanded] [ref=e644]
+                  - generic [ref=e646]: Mobile & IoT
+                - group "Mobile & IoT" [ref=e650]:
+                  - list [ref=e653]:
+                    - listitem [ref=e654]:
+                      - link "Amplify" [ref=e655] [cursor=pointer]:
+                        - /url: /amplify
+                    - listitem [ref=e658]:
+                      - link "IoT Core" [ref=e659] [cursor=pointer]:
+                        - /url: /iot-core
+                    - listitem [ref=e662]:
+                      - link "IoT Analytics" [ref=e663] [cursor=pointer]:
+                        - /url: /iot-analytics
+                    - listitem [ref=e666]:
+                      - link "Device Farm" [ref=e667] [cursor=pointer]:
+                        - /url: /device-farm
+            - listitem [ref=e670]:
+              - generic [ref=e671]:
+                - generic [ref=e672] [cursor=pointer]:
+                  - button "Customer Engagement" [expanded] [ref=e673]
+                  - generic [ref=e675]: Customer Engagement
+                - group "Customer Engagement" [ref=e679]:
+                  - list [ref=e682]:
+                    - listitem [ref=e683]:
+                      - link "Amazon Connect" [ref=e684] [cursor=pointer]:
+                        - /url: /connect
+                    - listitem [ref=e687]:
+                      - link "Pinpoint" [ref=e688] [cursor=pointer]:
+                        - /url: /pinpoint
+                    - listitem [ref=e691]:
+                      - link "SES" [ref=e692] [cursor=pointer]:
+                        - /url: /ses
+            - listitem [ref=e695]:
+              - generic [ref=e696]:
+                - generic [ref=e697] [cursor=pointer]:
+                  - button "Monitoring & Observability" [expanded] [ref=e698]
+                  - generic [ref=e700]: Monitoring & Observability
+                - group "Monitoring & Observability" [ref=e704]:
+                  - list [ref=e707]:
+                    - listitem [ref=e708]:
+                      - link "CloudWatch" [ref=e709] [cursor=pointer]:
+                        - /url: /cloudwatch
+                    - listitem [ref=e712]:
+                      - link "CloudWatch Logs" [ref=e713] [cursor=pointer]:
+                        - /url: /cloudwatch-logs
+                    - listitem [ref=e716]:
+                      - link "X-Ray" [ref=e717] [cursor=pointer]:
+                        - /url: /x-ray
+                    - listitem [ref=e720]:
+                      - link "IMDS" [ref=e721] [cursor=pointer]:
+                        - /url: /imds
+    - navigation [ref=e725]:
+      - list [ref=e726]:
+        - listitem [ref=e727]:
+          - link "Home" [ref=e729] [cursor=pointer]:
+            - /url: /
+        - listitem [ref=e733]:
+          - link "Console" [ref=e735] [cursor=pointer]:
+            - /url: /console
+        - listitem [ref=e739]:
+          - link "Ec2" [disabled] [ref=e741]
+      - list [ref=e743]:
+        - listitem [ref=e744]:
+          - link [ref=e746] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e747]: Home
+        - listitem [ref=e750]:
+          - link [ref=e752] [cursor=pointer]:
+            - /url: /console
+            - generic [ref=e753]: Console
+        - listitem [ref=e756]:
+          - generic [ref=e757]: Ec2
+    - main "Main content" [ref=e762]:
+      - generic [ref=e764]:
+        - heading "404" [level=1] [ref=e765]
+        - heading "This page could not be found." [level=2] [ref=e767]
+  - contentinfo "Footer" [ref=e768]:
+    - generic [ref=e769]:
+      - text: © 2008-2026 Amazon Web Services, Inc. or its affiliates. All rights reserved.|
+      - link "Privacy" [ref=e770] [cursor=pointer]:
+        - /url: /privacy
+      - link "Legal" [ref=e771] [cursor=pointer]:
+        - /url: /legal
+      - link "Communications Preferences" [ref=e772] [cursor=pointer]:
+        - /url: /communications
+    - generic [ref=e773]: "Console v2.45.1 | Build 2026.09.01 | Active Backend: LOCALSTACK"
+  - button "Open Next.js Dev Tools" [ref=e779] [cursor=pointer]
+  - alert [ref=e783]
+```
+
+# Test source
+
+```ts
+  1  | /**
+  2  |  * E2E: Adapter Health — Endpoint, Auth, Mode Verification (Playwright)
+  3  |  * Per PRD Appendix D (Adapter Layer) and Appendix H (Testing Strategy).
+  4  |  */
+  5  | 
+  6  | import { test, expect } from '@playwright/test';
+  7  | 
+  8  | test.describe('Adapter Health — Endpoint & Auth', () => {
+  9  |   test('health endpoint responds', async ({ request }) => {
+  10 |     const health = await request.get('http://localhost:4566/_localstack/health');
+  11 |     expect(health.status()).toBeGreaterThanOrEqual(200);
+  12 |   });
+  13 | 
+  14 |   test('console page loads with adapter badge', async ({ page }) => {
+  15 |     await page.goto('/console/home');
+  16 |     await expect(page.getByText('localstack', { exact: false })).toBeVisible({ timeout: 8000 });
+  17 |   });
+  18 | 
+  19 |   test('adapter mode header shows active backend', async ({ page }) => {
+  20 |     await page.goto('/console/ec2');
+> 21 |     await expect(page.locator('text=localstack')).toBeVisible({ timeout: 5000 });
+     |                                                   ^ Error: expect(locator).toBeVisible() failed
+  22 |   });
+  23 | });
+  24 | 
+```

@@ -2,7 +2,7 @@ import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export function getAdapterStatus(): { reachable: boolean; endpoint: string; mode: string } {
   const mode = ADAPTER_CONFIG.adapterMode;
-  const endpoint = mode === "minstack"
+  const endpoint = mode === "ministack"
     ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
     : ADAPTER_CONFIG.endpointConfig.localstackEndpoint;
   return { reachable: false, endpoint, mode };

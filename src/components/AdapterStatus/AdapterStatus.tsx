@@ -17,6 +17,7 @@ export interface AdapterStatusProps {
 
 export function AdapterStatus({ status = 'checking', endpointUrl }: AdapterStatusProps): React.ReactElement {
   const [currentStatus, setCurrentStatus] = useState<AdapterConnectionStatus>(status);
+  const [provider, setProvider] = useState('checking');
 
   useEffect(() => {
     setCurrentStatus('checking');
@@ -24,6 +25,7 @@ export function AdapterStatus({ status = 'checking', endpointUrl }: AdapterStatu
       .then((res) => res.json())
       .then((data) => {
         setCurrentStatus(data.status === 'healthy' ? 'connected' : data.status === 'unreachable' ? 'disconnected' : 'checking');
+        setProvider(data.provider || 'unknown');
       })
       .catch(() => setCurrentStatus('disconnected'));
   }, [endpointUrl]);
@@ -36,7 +38,7 @@ export function AdapterStatus({ status = 'checking', endpointUrl }: AdapterStatu
       <StatusIndicator type={statusType}>{statusText}</StatusIndicator>
       {endpointUrl ? (
         <span style={{ fontSize: '12px', color: '#666' }}>
-          {endpointUrl} | Mode: {currentStatus === 'connected' ? 'localstack/ministack' : currentStatus === 'disconnected' ? 'unreachable' : 'checking'}
+          {endpointUrl} | Mode: {currentStatus === 'connected' ? provider : currentStatus === 'disconnected' ? 'unreachable' : 'checking'}
         </span>
       ) : null}
     </div>

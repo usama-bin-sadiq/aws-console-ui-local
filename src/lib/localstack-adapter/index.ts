@@ -13,8 +13,9 @@ import { ADAPTER_DEFAULT_VERSION } from '@/constants/adapter-constants';
 export type { AdapterFactoryOptions } from '@/types/adapter';
 
 export function createAdapter(options?: AdapterFactoryOptions): AdapterFactoryResult {
-  const endpoint = resolveEndpoint(options?.adapterMode);
-  const auth = injectAuth(options?.adapterMode);
+  const adapterMode = options?.adapterMode || 'localstack';
+  const endpoint = resolveEndpoint(adapterMode);
+  const auth = injectAuth(adapterMode);
   const service = options?.serviceName || 'aws-console';
 
   return {
@@ -23,6 +24,7 @@ export function createAdapter(options?: AdapterFactoryOptions): AdapterFactoryRe
     service,
     adapterActive: true,
     adapterVersion: ADAPTER_DEFAULT_VERSION,
+    adapterMode: { mode: adapterMode },
     mapRequest: (req: unknown, adapterMode?: string) => {
       const mappedReq = req as { protocol?: string; hostname?: string; port?: number; path?: string; headers?: Record<string, string>; body?: unknown; method?: string };
       return mapRequest(mappedReq, adapterMode as AdapterFactoryOptions['adapterMode']);

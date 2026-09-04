@@ -54,9 +54,9 @@ Phase 23 closes the testing and visual regression gap for the AWS Console Emulat
 **Verification Steps:**
 
 - [x] Adapter tests cover all 5 adapter modules: `index.ts`, `endpoint-resolver.ts`, `auth-injector.ts`, `request-mapper.ts`, `response-normalizer.ts`.
-- [x] `createAdapter()` tested with `localstack`, `minstack`, `real`, and undefined mode.
+- [x] `createAdapter()` tested with `localstack`, `ministack`, `real`, and undefined mode.
 - [x] `resolveEndpoint()` tested for all 3 modes and undefined fallback.
-- [x] `injectAuth()` tested for `localstack`, `minstack`, `real`, undefined mode; verifies dummy `test`/`test` and real env var reading.
+- [x] `injectAuth()` tested for `localstack`, `ministack`, `real`, undefined mode; verifies dummy `test`/`test` and real env var reading.
 - [x] `mapRequest()` tested for GET/POST, missing path/default `/`, missing method/default GET, object body stringification, `Buffer`/`Uint8Array`, header merging, `Host` header, authorization format.
 - [x] `normalizeResponse()` tested for 200, missing status default 200, custom headers, binary (`Buffer`/`Uint8Array`), missing data (`{}`), different content types.
 - [x] Integration test verifies full adapter flow produces valid SDK `HttpResponse`-shaped output.

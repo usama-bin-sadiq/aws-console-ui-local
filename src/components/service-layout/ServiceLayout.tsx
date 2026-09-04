@@ -3,6 +3,8 @@ import SpaceBetween from '@cloudscape-design/components/space-between';
 import Header from '@cloudscape-design/components/header';
 import Container from '@cloudscape-design/components/container';
 import Tabs from '@cloudscape-design/components/tabs';
+import Box from '@cloudscape-design/components/box';
+import type { TabsProps } from '@cloudscape-design/components/tabs';
 
 export interface ServiceLayoutProps {
   readonly serviceName: string;
@@ -10,7 +12,7 @@ export interface ServiceLayoutProps {
   readonly breadcrumbs?: { text: string; href: string }[];
   readonly navigationItems?: React.ReactElement;
   readonly headerActions?: React.ReactElement;
-  readonly tabs?: React.ReactElement;
+  readonly tabs?: ReadonlyArray<TabsProps.Tab>;
   readonly children: React.ReactNode;
   readonly splitPanel?: React.ReactElement;
 }
@@ -29,15 +31,19 @@ export const ServiceLayout: React.FC<ServiceLayoutProps> = ({
   children,
 }) => {
   return (
-    <SpaceBetween size="l" direction="vertical">
-      <Header variant="h1" actions={headerActions ? <SpaceBetween size="s" direction="horizontal">{headerActions}</SpaceBetween> : undefined}>
+    <SpaceBetween size="l" direction="vertical" className="aws-service-layout">
+      <Header
+        variant="h1"
+        className="aws-service-layout__header"
+        actions={headerActions ? <SpaceBetween size="s" direction="horizontal">{headerActions}</SpaceBetween> : undefined}
+      >
         {serviceName}
       </Header>
-      <Container>
-        {tabs ? <Tabs tabs={tabs as any} /> : null}
-        <div style={{ padding: 'var(--awsui-spacing-m)' }}>
+      <Container className="aws-service-layout__container">
+        {tabs ? <Tabs tabs={tabs} /> : null}
+        <Box padding="m" className="service-content">
           {children}
-        </div>
+        </Box>
       </Container>
     </SpaceBetween>
   );
