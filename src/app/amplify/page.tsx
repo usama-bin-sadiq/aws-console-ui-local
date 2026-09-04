@@ -8,7 +8,7 @@ import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Alert from "@cloudscape-design/components/alert";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 
-export default function amplifyPage() {
+export default function AmplifyPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

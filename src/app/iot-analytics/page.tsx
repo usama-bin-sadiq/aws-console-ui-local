@@ -8,7 +8,7 @@ import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Alert from "@cloudscape-design/components/alert";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 
-export default function iot_analyticsPage() {
+export default function IotAnalyticsPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
