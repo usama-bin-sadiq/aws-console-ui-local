@@ -14,6 +14,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSettingsStore } from "@/stores/settings";
 import { AWS_REGIONS } from "@/constants/regions";
 import { NAVIGATION_ITEMS } from "@/constants/navigation";
+import { getRecentlyVisited } from "@/lib/sqlite-adapter";
 import { useGlobalSearch, groupByCategory } from "@/hooks/useGlobalSearch";
 import type { Terminal } from "xterm";
 import type { FitAddon } from "@xterm/addon-fit";
@@ -227,7 +228,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <TopNavigation
         identity={{
           href: "/",
-          title: "AWS Console",
+          title: "AWS Management Console",
           logo: { src: "/aws-logo.svg", alt: "AWS" },
         }}
         search={
@@ -368,6 +369,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             text: theme === "dark" ? "☀️ Light" : "🌙 Dark",
             ariaLabel: `Switch to ${theme === "dark" ? "light" : "dark"} mode`,
             onClick: toggleTheme,
+          },
+          {
+            type: "menu-dropdown",
+            text: "Recently Visited",
+            iconName: "history",
+            items: getRecentlyVisited().map((s) => ({
+              id: s.route,
+              text: s.service,
+              href: s.route,
+            })),
           },
           {
             type: "menu-dropdown",

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 import { DescribeVpcsCommand, CreateVpcCommand, DeleteVpcCommand } from "@aws-sdk/client-ec2";
 import { ec2 } from "@/lib/aws-clients";
 

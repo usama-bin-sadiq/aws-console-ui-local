@@ -128,15 +128,43 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   
   // Analytics
   { type: "expandable-link-group", text: "Analytics", items: [
-    { type: "link", text: "Kinesis Streams", href: "/kinesis" },
-    { type: "link", text: "Kinesis Firehose", href: "/firehose" },
+    { type: "link", text: "Athena", href: "/athena" },
+    { type: "link", text: "EMR", href: "/emr" },
     { type: "link", text: "Glue Catalog", href: "/glue-catalog" },
     { type: "link", text: "Glue Jobs", href: "/glue-job" },
-    { type: "link", text: "Athena Workgroups", href: "/athena-workgroup" },
-    { type: "link", text: "MSK", href: "/msk" },
-    { type: "link", text: "EMR", href: "/emr" },
+    { type: "link", text: "Kinesis Streams", href: "/kinesis" },
+    { type: "link", text: "Kinesis Firehose", href: "/firehose" },
+    { type: "link", text: "QuickSight", href: "/quicksight" },
+    { type: "link", text: "OpenSearch", href: "/opensearch" },
   ]},
-  
+
+  // Machine Learning
+  { type: "expandable-link-group", text: "Machine Learning", items: [
+    { type: "link", text: "SageMaker", href: "/sagemaker" },
+    { type: "link", text: "Bedrock", href: "/bedrock" },
+    { type: "link", text: "Rekognition", href: "/rekognition" },
+    { type: "link", text: "Comprehend", href: "/comprehend" },
+    { type: "link", text: "Polly", href: "/polly" },
+    { type: "link", text: "Lex", href: "/lex" },
+  ]},
+
+  // Mobile & IoT
+  { type: "expandable-link-group", text: "Mobile & IoT", items: [
+    { type: "link", text: "Amplify", href: "/amplify" },
+    { type: "link", text: "IoT Core", href: "/iot-core" },
+    { type: "link", text: "IoT Analytics", href: "/iot-analytics" },
+    { type: "link", text: "Device Farm", href: "/device-farm" },
+  ]},
+
+  // Customer Engagement
+  { type: "expandable-link-group", text: "Customer Engagement", items: [
+    { type: "link", text: "Amazon Connect", href: "/connect" },
+    { type: "link", text: "Pinpoint", href: "/pinpoint" },
+    { type: "link", text: "SES", href: "/ses" },
+    { type: "link", text: "SNS", href: "/sns" },
+    { type: "link", text: "SQS", href: "/sqs" },
+  ]},
+
   // Monitoring & Observability
   { type: "expandable-link-group", text: "Monitoring & Observability", items: [
     { type: "link", text: "CloudWatch", href: "/cloudwatch" },

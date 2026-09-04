@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 import { ListUsersCommand, ListRolesCommand, ListPoliciesCommand, CreateUserCommand, CreateRoleCommand, DeleteUserCommand, DeleteRoleCommand } from "@aws-sdk/client-iam";
 import { iam } from "@/lib/aws-clients";
 
@@ -15,7 +16,8 @@ export async function GET() {
       policies: policies.Policies || [],
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -35,7 +37,8 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -51,6 +54,7 @@ export async function DELETE(request: Request) {
     }
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

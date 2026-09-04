@@ -36,6 +36,21 @@ yarn-error.log*
 # vercel
 .vercel
 
+# AI / agent files
+.opencode/
+.claude/CLIP.md
+~/.claude/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AI / Agent files
+.claude/
+.cursor/
+.windsurf/
+.agent/
+AI.md
+AGENTS.md.backup
+.agents/
+.mcp/

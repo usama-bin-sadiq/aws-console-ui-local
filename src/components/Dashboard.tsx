@@ -96,7 +96,7 @@ export default function Dashboard() {
   };
 
   const favoriteServices = ALL_SERVICES.filter((s) => favorites.includes(s.href));
-  const categories = ["Compute", "Storage", "Database", "Networking", "Security", "Monitoring", "Application Integration"];
+  const categories = ["Compute", "Storage", "Database", "Networking", "Security", "Monitoring", "Application Integration", "Machine Learning", "Mobile & IoT", "Customer Engagement", "Analytics", "Developer Tools", "Migration & Transfer", "Management & Governance", "Cost Management", "Business Applications", "End User Computing", "Containers", "IoT", "Containers"];
 
   return (
     <SpaceBetween size="l">

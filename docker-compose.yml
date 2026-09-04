@@ -28,7 +28,7 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=all
+      - SERVICES=ec2,s3,lambda,iam,rds,dynamodb,vpc,cloudwatch,cloudtrail,config,cloudformation,route53,cloudfront,secretsmanager,kms,eventbridge,ecs,eks,ssm,lambda,logs
       - DEBUG=0
       - PERSISTENCE=1
       - LambdFlags=-p 4566
@@ -44,6 +44,33 @@ services:
     profiles:
       - localstack
     restart: unless-stopped
+
+  localstack-health:
+    image: alpine/curl
+    container_name: aws-console-localstack-health
+    depends_on:
+      - localstack
+    command: ["/bin/sh", "-c", "while ! curl -f http://localstack:4566/_localstack/health; do sleep 1; done"]
+    restart: unless-stopped
+
+  aws-console:
+    build: .
+    container_name: aws-console-app
+    ports:
+      - "3000:3000"
+    environment:
+      - LOCALSTACK_HOSTNAME=localstack
+      - LOCALSTACK_EDGE_PORT=4566
+      - ADAPTER_MODE=localstack
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+    depends_on:
+      - localstack
+      - localstack-health
+    volumes:
+      - .:/app
+    command: ["npm", "run", "dev"]
 
 volumes:
   ministack-state:

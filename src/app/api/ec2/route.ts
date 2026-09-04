@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 import { DescribeInstancesCommand, StartInstancesCommand, StopInstancesCommand, TerminateInstancesCommand } from "@aws-sdk/client-ec2";
 import { ec2 } from "@/lib/aws-clients";
 
@@ -13,7 +14,8 @@ export async function GET() {
     }
     return NextResponse.json({ instances });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -34,6 +36,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

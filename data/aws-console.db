@@ -1,0 +1,13 @@
+{
+  "recently_visited": [
+    {"service": "EC2", "route": "/ec2", "icon": "/icons/ec2-instance-contents_32.svg", "timestamp": 1700000000},
+    {"service": "S3", "route": "/s3", "icon": "/icons/aws-s3_32.svg", "timestamp": 1700000100},
+    {"service": "IAM", "route": "/iam", "icon": "/icons/aws-iam_32.svg", "timestamp": 1700000200},
+    {"service": "Lambda", "route": "/lambda", "icon": "/icons/aws-lambda_32.svg", "timestamp": 1700000300},
+    {"service": "VPC", "route": "/vpc", "icon": "/icons/aws-vpc_32.svg", "timestamp": 1700000400}
+  ],
+  "adapter_config": {
+    "mode": "localstack",
+    "endpoint": "http://localhost:4566"
+  }
+}

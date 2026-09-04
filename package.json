@@ -1,14 +1,22 @@
 {
-  "name": "aws-console",
+  "name": "aws-console-clone",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "docker-compose -f docker-compose.localstack.yml up -d localstack-health aws-console && NODE_ENV=production ADAPTER_MODE=localstack LOCALSTACK_HOSTNAME=localstack LOCALSTACK_EDGE_PORT=4566 MINSTACK_HOSTNAME=localhost MINSTACK_EDGE_PORT=4566 npm run start",
+    "start:minstack": "docker-compose -f docker-compose.minstack.yml up -d ministack-health aws-console && NODE_ENV=production ADAPTER_MODE=minstack MINSTACK_HOSTNAME=localhost MINSTACK_EDGE_PORT=4566 npm run start",
+    "start:localstack": "docker-compose -f docker-compose.localstack.yml up -d localstack-health aws-console && NODE_ENV=production ADAPTER_MODE=localstack LOCALSTACK_HOSTNAME=localhost LOCALSTACK_EDGE_PORT=4566 npm run start",
     "lint": "eslint",
     "test": "vitest --run",
-    "test:coverage": "vitest --run --coverage"
+    "test:coverage": "vitest --run --coverage",
+    "dev:minstack": "docker-compose -f docker-compose.minstack.yml up -d ministack-health aws-console && ADAPTER_MODE=minstack MINSTACK_HOSTNAME=localhost MINSTACK_EDGE_PORT=4566 next dev",
+    "dev:localstack": "docker-compose -f docker-compose.localstack.yml up -d localstack-health aws-console && ADAPTER_MODE=localstack LOCALSTACK_HOSTNAME=localhost LOCALSTACK_EDGE_PORT=4566 next dev",
+    "dev:both": "docker-compose -f docker-compose.yml up -d localstack ministack aws-console",
+    "stop:minstack": "docker-compose -f docker-compose.yml stop ministack aws-console",
+    "stop:localstack": "docker-compose -f docker-compose.yml stop localstack aws-console",
+    "stop:both": "docker-compose -f docker-compose.yml stop"
   },
   "dependencies": {
     "@aws-sdk/client-acm": "^3.1121.0",

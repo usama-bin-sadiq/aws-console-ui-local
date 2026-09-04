@@ -46,10 +46,10 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     await applicationAutoscaling.send(
       new DeregisterScalableTargetCommand({
-        ServiceNamespace: searchParams.get("namespace") || "ecs",
+        ServiceNamespace: (searchParams.get("namespace") || "ecs") as any,
         ResourceId: searchParams.get("resourceId")!,
         ScalableDimension:
-          searchParams.get("dimension") || "ecs:service:DesiredCount",
+          (searchParams.get("dimension") || "ecs:service:DesiredCount") as any,
       })
     );
     return NextResponse.json({ success: true });

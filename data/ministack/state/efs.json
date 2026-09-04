@@ -1,0 +1,1 @@
+{"__ministack_format__": 3, "payload": {"file_systems": {"__account_region_scoped__": true, "data": {}}, "mount_targets": {"__account_region_scoped__": true, "data": {}}, "access_points": {"__account_region_scoped__": true, "data": {}}, "lifecycle_configs": {"__account_region_scoped__": true, "data": {}}, "backup_policies": {"__account_region_scoped__": true, "data": {}}}}

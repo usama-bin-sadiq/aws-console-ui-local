@@ -1,52 +1,40 @@
 import { NextResponse } from "next/server";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export async function GET() {
-  const endpointUrl = process.env.AWS_ENDPOINT_URL || "http://localhost:4566";
+  const mode = ADAPTER_CONFIG.adapterMode;
+  const endpointUrl =
+    mode === "minstack"
+      ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
+      : ADAPTER_CONFIG.endpointConfig.localstackEndpoint;
 
-  // Try Ministack first
+  const healthCheckUrl =
+    mode === "minstack"
+      ? `${endpointUrl}/_ministack/health`
+      : `${endpointUrl}/_localstack/health`;
+
   try {
-    const ministackResponse = await fetch(`${endpointUrl}/_ministack/health`, {
-      signal: AbortSignal.timeout(2000),
+    const response = await fetch(healthCheckUrl, {
+      signal: AbortSignal.timeout(3000),
     });
 
-    if (ministackResponse.ok) {
+    if (response.ok) {
+      const data = await response.json();
       return NextResponse.json({
-        provider: "ministack",
         status: "healthy",
-      });
-    }
-  } catch (error) {
-    // Ministack not available, try LocalStack
-  }
-
-  // Try LocalStack
-  try {
-    const localstackResponse = await fetch(
-      `${endpointUrl}/_localstack/health`,
-      {
-        signal: AbortSignal.timeout(2000),
-      }
-    );
-
-    if (localstackResponse.ok) {
-      const data = await localstackResponse.json();
-      return NextResponse.json({
-        provider: "localstack",
-        status: "healthy",
+        provider: mode,
+        endpoint: endpointUrl,
         services: data.services || {},
       });
     }
-  } catch (error) {
-    // LocalStack not available
+  } catch {
+    // Endpoint unreachable — app is still healthy, adapter just not connected
   }
 
-  // Neither provider is available
-  return NextResponse.json(
-    {
-      provider: "unknown",
-      status: "unreachable",
-      error: "Could not reach Ministack or LocalStack",
-    },
-    { status: 503 }
-  );
+  return NextResponse.json({
+    status: "unreachable",
+    provider: mode,
+    endpoint: endpointUrl,
+    error: `Adapter configured for ${mode} at ${endpointUrl} but endpoint is unreachable`,
+  }, { status: 503 });
 }

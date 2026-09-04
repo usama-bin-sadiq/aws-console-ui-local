@@ -1,0 +1,28 @@
+# Docker Compose — Production Deployment
+# Uses production build image; adapter connects to user-configured endpoint (real AWS or local emulator).
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  aws-console-prod:
+    image: aws-console-clone:latest
+    container_name: aws-console-prod
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - ADAPTER_MODE=${ADAPTER_MODE:-localstack}
+      - LOCALSTACK_HOSTNAME=${LOCALSTACK_HOSTNAME:-localhost}
+      - LOCALSTACK_EDGE_PORT=${LOCALSTACK_EDGE_PORT:-4566}
+      - MINSTACK_HOSTNAME=${MINSTACK_HOSTNAME:-localhost}
+      - MINSTACK_EDGE_PORT=${MINSTACK_EDGE_PORT:-4566}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - NEXT_PUBLIC_LOCALSTACK_ENDPOINT=${NEXT_PUBLIC_LOCALSTACK_ENDPOINT:-http://localhost:4566}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 import { ListFunctionsCommand, CreateFunctionCommand, DeleteFunctionCommand, InvokeCommand } from "@aws-sdk/client-lambda";
 import { lambda } from "@/lib/aws-clients";
 
@@ -7,7 +8,8 @@ export async function GET() {
     const res = await lambda.send(new ListFunctionsCommand({}));
     return NextResponse.json({ functions: res.Functions || [] });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -24,7 +26,8 @@ export async function POST(request: Request) {
     await lambda.send(new CreateFunctionCommand(body));
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -35,6 +38,7 @@ export async function DELETE(request: Request) {
     await lambda.send(new DeleteFunctionCommand({ FunctionName: functionName! }));
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

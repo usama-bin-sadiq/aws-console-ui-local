@@ -4,7 +4,7 @@ import AppShell from "@/components/AppShell";
 import { NotificationProvider } from "@/context/NotificationContext";
 
 export const metadata: Metadata = {
-  title: "AWS Console - Local Stack",
+  title: "AWS Console Clone — Universal Adapter + Full Feature Parity",
   description: "AWS Console Web UI clone for local AWS services (Ministack / LocalStack)",
 };
 
