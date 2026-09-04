@@ -1,24 +1,116 @@
 "use client";
-import React from "react";
+
+import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
-import Container from "@cloudscape-design/components/container";
+import Table from "@cloudscape-design/components/table";
+import Button from "@cloudscape-design/components/button";
+import Modal from "@cloudscape-design/components/modal";
+import Input from "@cloudscape-design/components/input";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Container from "@cloudscape-design/components/container";
+import FormField from "@cloudscape-design/components/form-field";
 
-export default function Page() {
+interface SAMLProvider {
+  Arn?: string;
+  ValidUntil?: string;
+  CreateDate?: string;
+}
+
+export default function IAMSAMLPage() {
+  const [samlProviders, setSamlProviders] = useState<SAMLProvider[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createModal, setCreateModal] = useState(false);
+  const [providerName, setProviderName] = useState("");
+
+  const fetchProviders = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/iam-saml");
+      const data = await res.json();
+      setSamlProviders(data.samlProviders || []);
+    } catch {}
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchProviders();
+  }, []);
+
+  const createProvider = async () => {
+    await fetch("/api/iam-saml", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: providerName }),
+    });
+    setCreateModal(false);
+    setProviderName("");
+    fetchProviders();
+  };
+
+  const deleteProvider = async (arn: string) => {
+    await fetch(`/api/iam-saml?arn=${encodeURIComponent(arn)}`, { method: "DELETE" });
+    fetchProviders();
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
         <Header variant="h1">IAM SAML Providers</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
-          <Box>
-            <StatusIndicator type="info">
-              IAM SAML Providers — coming soon
-            </StatusIndicator>
-          </Box>
-          <Box>This service is emulated by LocalStack / Ministack.</Box>
+        <Container
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create SAML Provider</Button>}
+            >
+              SAML Providers
+            </Header>
+          }
+        >
+          <Table
+            items={samlProviders}
+            loading={loading}
+            columnDefinitions={[
+              { header: "ARN", cell: (item) => item.Arn || "—" },
+              {
+                header: "Created",
+                cell: (item) =>
+                  item.CreateDate ? new Date(item.CreateDate).toLocaleString() : "—",
+              },
+              {
+                header: "Actions",
+                cell: (item) => (
+                  <Button
+                    onClick={() => deleteProvider(item.Arn!)}
+                    formAction="none"
+                    disabled={!item.Arn}
+                  >
+                    Delete
+                  </Button>
+                ),
+              },
+            ]}
+            empty={<Box>No SAML providers found.</Box>}
+          />
         </Container>
+
+        <Modal
+          visible={createModal}
+          onDismiss={() => setCreateModal(false)}
+          header="Create SAML Provider"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
+              <Button variant="primary" onClick={createProvider}>
+                Create
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          <FormField label="Provider Name">
+            <Input value={providerName} onChange={(e) => setProviderName(e.detail.value)} />
+          </FormField>
+        </Modal>
       </SpaceBetween>
     </div>
   );

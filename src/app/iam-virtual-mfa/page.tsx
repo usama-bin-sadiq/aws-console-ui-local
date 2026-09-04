@@ -1,24 +1,121 @@
 "use client";
-import React from "react";
+
+import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
-import Container from "@cloudscape-design/components/container";
+import Table from "@cloudscape-design/components/table";
+import Button from "@cloudscape-design/components/button";
+import Modal from "@cloudscape-design/components/modal";
+import Input from "@cloudscape-design/components/input";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Container from "@cloudscape-design/components/container";
+import FormField from "@cloudscape-design/components/form-field";
 
-export default function Page() {
+interface VirtualMFADevice {
+  SerialNumber: string;
+  EnableDate?: string;
+  User?: { UserName?: string };
+}
+
+export default function IAMVirtualMFAPage() {
+  const [mfaDevices, setMfaDevices] = useState<VirtualMFADevice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createModal, setCreateModal] = useState(false);
+  const [deviceName, setDeviceName] = useState("");
+
+  const fetchDevices = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/iam-virtual-mfa");
+      const data = await res.json();
+      setMfaDevices(data.mfaDevices || []);
+    } catch {}
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchDevices();
+  }, []);
+
+  const createDevice = async () => {
+    await fetch("/api/iam-virtual-mfa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: deviceName }),
+    });
+    setCreateModal(false);
+    setDeviceName("");
+    fetchDevices();
+  };
+
+  const deleteDevice = async (serialNumber: string) => {
+    await fetch(`/api/iam-virtual-mfa?serialNumber=${encodeURIComponent(serialNumber)}`, {
+      method: "DELETE",
+    });
+    fetchDevices();
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
         <Header variant="h1">IAM Virtual MFA Devices</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
-          <Box>
-            <StatusIndicator type="info">
-              IAM Virtual MFA Devices — coming soon
-            </StatusIndicator>
-          </Box>
-          <Box>This service is emulated by LocalStack / Ministack.</Box>
+        <Container
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create MFA Device</Button>}
+            >
+              Virtual MFA Devices
+            </Header>
+          }
+        >
+          <Table
+            items={mfaDevices}
+            loading={loading}
+            columnDefinitions={[
+              { header: "Serial Number", cell: (item) => item.SerialNumber },
+              {
+                header: "Enable Date",
+                cell: (item) =>
+                  item.EnableDate ? new Date(item.EnableDate).toLocaleString() : "—",
+              },
+              {
+                header: "Assigned User",
+                cell: (item) => item.User?.UserName || "—",
+              },
+              {
+                header: "Actions",
+                cell: (item) => (
+                  <Button
+                    onClick={() => deleteDevice(item.SerialNumber)}
+                    formAction="none"
+                  >
+                    Delete
+                  </Button>
+                ),
+              },
+            ]}
+            empty={<Box>No virtual MFA devices found.</Box>}
+          />
         </Container>
+
+        <Modal
+          visible={createModal}
+          onDismiss={() => setCreateModal(false)}
+          header="Create Virtual MFA Device"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
+              <Button variant="primary" onClick={createDevice}>
+                Create
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          <FormField label="Device Name">
+            <Input value={deviceName} onChange={(e) => setDeviceName(e.detail.value)} />
+          </FormField>
+        </Modal>
       </SpaceBetween>
     </div>
   );

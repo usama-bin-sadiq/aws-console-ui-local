@@ -4,20 +4,21 @@ import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Alert from "@cloudscape-design/components/alert";
 
-export default function Page() {
+export default function GlobalAcceleratorPage() {
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Global Accelerator</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
+        <Alert type="info" header="Not available in local emulation">
+          Global Accelerator routes traffic through the AWS global network infrastructure to improve
+          application performance. It is not available in Ministack or LocalStack emulation.
+        </Alert>
+        <Container>
           <Box>
-            <StatusIndicator type="info">
-              AWS Global Accelerator — coming soon
-            </StatusIndicator>
+            Use the AWS Management Console to configure Global Accelerator for your applications.
           </Box>
-          <Box>This service is emulated by LocalStack / Ministack.</Box>
         </Container>
       </SpaceBetween>
     </div>

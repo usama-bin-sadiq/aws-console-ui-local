@@ -1,23 +1,26 @@
 "use client";
+
 import React from "react";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Alert from "@cloudscape-design/components/alert";
 
-export default function Page() {
+export default function SupportPage() {
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Support</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
+        <Alert type="info" header="Support">
+          AWS Support provides technical assistance for AWS products and services. Not available in
+          local emulation. Contact AWS Support via the AWS Console.
+        </Alert>
+        <Container>
           <Box>
-            <StatusIndicator type="info">
-              AWS Support — coming soon
-            </StatusIndicator>
+            Access AWS Support in the real AWS Console to create support cases, access
+            documentation, and get technical guidance from AWS experts.
           </Box>
-          <Box>This service is emulated by LocalStack / Ministack.</Box>
         </Container>
       </SpaceBetween>
     </div>

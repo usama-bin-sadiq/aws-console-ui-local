@@ -1,23 +1,22 @@
 "use client";
+
 import React from "react";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Alert from "@cloudscape-design/components/alert";
 
-export default function Page() {
+export default function DetectivePage() {
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon Detective</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
-          <Box>
-            <StatusIndicator type="info">
-              Amazon Detective — coming soon
-            </StatusIndicator>
-          </Box>
-          <Box>This service is emulated by LocalStack / Ministack.</Box>
+        <Alert type="info" header="Not available in local emulation">
+          Amazon Detective helps investigate security issues by analyzing AWS CloudTrail, VPC Flow Logs, and GuardDuty data. It is not supported in Ministack or LocalStack emulation.
+        </Alert>
+        <Container>
+          <Box>Enable Detective in your real AWS environment for automated security investigations and visualizations.</Box>
         </Container>
       </SpaceBetween>
     </div>

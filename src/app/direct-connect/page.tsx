@@ -4,20 +4,23 @@ import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Alert from "@cloudscape-design/components/alert";
 
-export default function Page() {
+export default function DirectConnectPage() {
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Direct Connect</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
+        <Alert type="info" header="Not available in local emulation">
+          Direct Connect provides dedicated network connectivity from your premises to AWS. This
+          requires physical network infrastructure and is not supported in Ministack or LocalStack
+          emulation.
+        </Alert>
+        <Container>
           <Box>
-            <StatusIndicator type="info">
-              AWS Direct Connect — coming soon
-            </StatusIndicator>
+            Use the AWS Management Console to manage Direct Connect connections in your real AWS
+            environment.
           </Box>
-          <Box>This service is emulated by LocalStack / Ministack.</Box>
         </Container>
       </SpaceBetween>
     </div>

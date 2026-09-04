@@ -1,23 +1,23 @@
 "use client";
+
 import React from "react";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Alert from "@cloudscape-design/components/alert";
 
-export default function Page() {
+export default function BillingPage() {
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Billing</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
-          <Box>
-            <StatusIndicator type="info">
-              AWS Billing — coming soon
-            </StatusIndicator>
-          </Box>
-          <Box>This service is emulated by LocalStack / Ministack.</Box>
+        <Alert type="info" header="Billing">
+          AWS Billing shows charges and invoices for your AWS account. Not available in local
+          emulation.
+        </Alert>
+        <Container>
+          <Box>Access billing information in the real AWS Console.</Box>
         </Container>
       </SpaceBetween>
     </div>

@@ -1,24 +1,126 @@
 "use client";
-import React from "react";
+
+import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
-import Container from "@cloudscape-design/components/container";
+import Table from "@cloudscape-design/components/table";
+import Button from "@cloudscape-design/components/button";
+import Modal from "@cloudscape-design/components/modal";
+import Input from "@cloudscape-design/components/input";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Container from "@cloudscape-design/components/container";
+import FormField from "@cloudscape-design/components/form-field";
 
-export default function Page() {
+interface OIDCProvider {
+  Arn?: string;
+}
+
+export default function IAMOpenIDConnectPage() {
+  const [providers, setProviders] = useState<OIDCProvider[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createModal, setCreateModal] = useState(false);
+  const [providerUrl, setProviderUrl] = useState("");
+  const [clientId, setClientId] = useState("");
+
+  const fetchProviders = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/iam-openid-connect");
+      const data = await res.json();
+      setProviders(data.providers || []);
+    } catch {}
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchProviders();
+  }, []);
+
+  const createProvider = async () => {
+    await fetch("/api/iam-openid-connect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: providerUrl, clientId }),
+    });
+    setCreateModal(false);
+    setProviderUrl("");
+    setClientId("");
+    fetchProviders();
+  };
+
+  const deleteProvider = async (arn: string) => {
+    await fetch(`/api/iam-openid-connect?arn=${encodeURIComponent(arn)}`, { method: "DELETE" });
+    fetchProviders();
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
-        <Header variant="h1">IAM OpenID Connect Providers</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
-          <Box>
-            <StatusIndicator type="info">
-              IAM OpenID Connect Providers — coming soon
-            </StatusIndicator>
-          </Box>
-          <Box>This service is emulated by LocalStack / Ministack.</Box>
+        <Header variant="h1">IAM OIDC Providers</Header>
+        <Container
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button onClick={() => setCreateModal(true)}>Create OIDC Provider</Button>
+              }
+            >
+              OpenID Connect Providers
+            </Header>
+          }
+        >
+          <Table
+            items={providers}
+            loading={loading}
+            columnDefinitions={[
+              { header: "ARN", cell: (item) => item.Arn || "—" },
+              {
+                header: "Actions",
+                cell: (item) => (
+                  <Button
+                    onClick={() => deleteProvider(item.Arn!)}
+                    formAction="none"
+                    disabled={!item.Arn}
+                  >
+                    Delete
+                  </Button>
+                ),
+              },
+            ]}
+            empty={<Box>No OIDC providers found.</Box>}
+          />
         </Container>
+
+        <Modal
+          visible={createModal}
+          onDismiss={() => setCreateModal(false)}
+          header="Create OIDC Provider"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
+              <Button variant="primary" onClick={createProvider}>
+                Create
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          <SpaceBetween size="m">
+            <FormField label="Provider URL">
+              <Input
+                value={providerUrl}
+                onChange={(e) => setProviderUrl(e.detail.value)}
+                placeholder="https://token.example.com"
+              />
+            </FormField>
+            <FormField label="Client ID">
+              <Input
+                value={clientId}
+                onChange={(e) => setClientId(e.detail.value)}
+                placeholder="sts.amazonaws.com"
+              />
+            </FormField>
+          </SpaceBetween>
+        </Modal>
       </SpaceBetween>
     </div>
   );

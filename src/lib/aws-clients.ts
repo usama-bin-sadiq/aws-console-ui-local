@@ -59,6 +59,9 @@ import { SchedulerClient } from "@aws-sdk/client-scheduler";
 import { PipesClient } from "@aws-sdk/client-pipes";
 import { MqClient } from "@aws-sdk/client-mq";
 
+// Containers
+import { ECRClient } from "@aws-sdk/client-ecr";
+
 // Streaming & Analytics
 import { KinesisClient } from "@aws-sdk/client-kinesis";
 import { FirehoseClient } from "@aws-sdk/client-firehose";
@@ -265,6 +268,10 @@ export const scheduler = getClient(SchedulerClient);
 export const pipes = getClient(PipesClient);
 export const mq = getClient(MqClient);
 
+// ─── Singleton exports — Containers ──────────────────────────────────────────
+
+export const ecr = getClient(ECRClient);
+
 // ─── Singleton exports — Streaming & Analytics ───────────────────────────────
 
 export const kinesis = getClient(KinesisClient);
@@ -395,6 +402,8 @@ export {
   SchedulerClient,
   PipesClient,
   MqClient,
+  // Containers
+  ECRClient,
   // Streaming & Analytics
   KinesisClient,
   FirehoseClient,

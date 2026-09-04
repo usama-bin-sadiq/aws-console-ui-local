@@ -1,23 +1,26 @@
 "use client";
+
 import React from "react";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Alert from "@cloudscape-design/components/alert";
 
-export default function Page() {
+export default function BudgetPage() {
   return (
     <div style={{ padding: "16px" }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Budgets</Header>
-        <Container header={<Header variant="h2">Resources</Header>}>
+        <Alert type="info" header="Budgets">
+          AWS Budgets lets you set custom cost and usage budgets with alerts. Not available in local
+          emulation.
+        </Alert>
+        <Container>
           <Box>
-            <StatusIndicator type="info">
-              AWS Budgets — coming soon
-            </StatusIndicator>
+            Use AWS Budgets in the real AWS Console to set spending thresholds and receive
+            notifications when your costs or usage exceed defined limits.
           </Box>
-          <Box>This service is emulated by LocalStack / Ministack.</Box>
         </Container>
       </SpaceBetween>
     </div>

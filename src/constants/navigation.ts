@@ -12,6 +12,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     { type: "link", text: "ECS Services", href: "/ecs-service" },
     { type: "link", text: "EKS Clusters", href: "/eks-cluster" },
     { type: "link", text: "Fargate", href: "/fargate" },
+    { type: "link", text: "ECR Repos", href: "/ecr-repo" },
     { type: "link", text: "Auto Scaling", href: "/auto-scaling" },
     { type: "link", text: "Launch Templates", href: "/launch-template" },
     { type: "link", text: "AMI", href: "/ami" },
@@ -122,8 +123,6 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     { type: "link", text: "CodeBuild", href: "/codebuild" },
     { type: "link", text: "CodePipeline", href: "/codepipeline" },
     { type: "link", text: "CodeDeploy", href: "/code-deploy" },
-    { type: "link", text: "ECR Repositories", href: "/ecr-repo" },
-    { type: "link", text: "X-Ray", href: "/x-ray" },
     { type: "link", text: "App Auto Scaling", href: "/app-auto-scaling" },
   ]},
   
@@ -136,15 +135,6 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     { type: "link", text: "Athena Workgroups", href: "/athena-workgroup" },
     { type: "link", text: "MSK", href: "/msk" },
     { type: "link", text: "EMR", href: "/emr" },
-  ]},
-  
-  // Containers
-  { type: "expandable-link-group", text: "Containers", items: [
-    { type: "link", text: "ECS Clusters", href: "/ecs-cluster" },
-    { type: "link", text: "ECS Services", href: "/ecs-service" },
-    { type: "link", text: "ECR Repos", href: "/ecr-repo" },
-    { type: "link", text: "EKS Clusters", href: "/eks-cluster" },
-    { type: "link", text: "Fargate", href: "/fargate" },
   ]},
   
   // Monitoring & Observability
