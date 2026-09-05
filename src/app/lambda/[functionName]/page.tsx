@@ -56,10 +56,7 @@ export default function LambdaFunctionDetailPage({
       const verData = await verRes.json();
       setVersions(verData.versions || []);
 
-      // Triggers (mocked based on common Lambda triggers)
-      setTriggers([
-        { TriggerType: "api-gateway", SourceArn: `arn:aws:execute-api:us-east-1:123456789012:abcd1234/prod/*/*`, SourceAccount: "123456789012" },
-      ]);
+      setTriggers([]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load function details");
     }

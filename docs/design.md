@@ -1,7 +1,7 @@
-# Design Document — AWS Console 100% Clone + LocalStack / MinStack Emulator Adapter
+# Design Document — Local AWS Emulator Console
 
 **Version:** 1.0.0  
-**Status:** Production Architecture (No Stubs / No Deferred Implementation)  
+**Status:** Legacy architecture reference; current scope is defined by the root `PRD.md`.
 **Author:** Senior Solution Architect / Software Architect  
 **Reference:** `docs/requirements.md`, `docs/plan.md`, `docs/prd-aws-management-console.md`, `AGENTS.md`, `.opencode/rules.md`, `.claude/CLAUDE.md`, `opencode.json`, `https://opencode.ai/docs/rules/`, `src/constants/service-compatibility.ts`, `docs/ministack-localstack-common-different.md`
 

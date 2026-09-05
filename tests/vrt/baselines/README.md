@@ -6,10 +6,10 @@ Per PRD Appendix F (§F.1 Source of Truth, §F.3 VRT Process) and Appendix H (§
 
 | File | Page / Component | Theme | Viewport | Reference Source |
 |---|---|---|---|---|
-| `ec2-table-baseline.png` | EC2 Instances Table (`/console/ec2`) | Light (default) | 1440x900 | Real AWS Console screenshot |
-| `s3-bucket-baseline.png` | S3 Buckets (`/console/s3`) | Light (default) | 1440x900 | Real AWS Console screenshot |
-| `lambda-wizard-baseline.png` | Lambda Create Function (`/console/lambda`) | Light (default) | 1440x900 | Real AWS Console screenshot |
-| `iam-user-baseline.png` | IAM Users (`/console/iam`) | Light (default) | 1440x900 | Real AWS Console screenshot |
+| `ec2-table-baseline.png` | EC2 Instances Table (`/console/ec2`) | Light (default) | 1440x900 | Cloudscape layout reference |
+| `s3-bucket-baseline.png` | S3 Buckets (`/console/s3`) | Light (default) | 1440x900 | Cloudscape layout reference |
+| `lambda-wizard-baseline.png` | Lambda Create Function (`/console/lambda`) | Light (default) | 1440x900 | Cloudscape layout reference |
+| `iam-user-baseline.png` | IAM Users (`/console/iam`) | Light (default) | 1440x900 | Cloudscape layout reference |
 
 ## Tolerance Settings (per PRD Appendix F §F.3)
 

@@ -1,7 +1,7 @@
-# Full Requirements — AWS Console Clone — Universal Adapter + Full Feature Parity + LocalStack / MinStack Emulator Adapter
+# Legacy Requirements — Local AWS Emulator Console
 
 **Version:** 1.0.0  
-**Status:** Production-Grade (Not MVP / Not Stub / No "Later")  
+**Status:** Legacy reference; current requirements are defined by the root `PRD.md`.
 **Author:** Senior Solution Architect / Software Architect  
 **Target:** Exact visual and functional replication of AWS Management Console using existing `aws-console` codebase (`cloudscape-design/components`, Next.js 14 App Router, 98 AWS SDK clients, 150 service route directories in `src/app/`).  
 **Emulator Layer:** Full adapter connecting all AWS SDK calls to `LOCALSTACK_ENDPOINT` / `MINSTACK_ENDPOINT` (via `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_DEFAULT_REGION` mapped to local endpoints).  

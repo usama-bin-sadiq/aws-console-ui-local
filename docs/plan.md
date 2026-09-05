@@ -1,7 +1,7 @@
-# Implementation Plan — AWS Console 100% Clone + LocalStack Adapter
+# Implementation Plan — Local AWS Emulator Console
 
 **Version:** 1.0.0  
-**Status:** Full Production Plan (Zero Stubs / Zero Deferred / Zero "Later")  
+**Status:** Legacy implementation plan; current scope is defined by the root `PRD.md`.
 
 ### Current implementation update (September 2026)
 

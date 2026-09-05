@@ -1,4 +1,4 @@
-# Cloudscape Strict Rules — AWS Console Clone
+# Cloudscape Strict Rules — Local AWS Emulator Console
 
 A consolidated, enforceable rulebook (not phased prompts) for keeping this project visually and behaviorally consistent with the real AWS Console / Cloudscape Design System. Feed this file directly to your AI coding assistant as a standing style guide (e.g. drop it in as `CLAUDE.md`, `.cursorrules`, or paste it at the top of any UI-related prompt) so every change gets checked against it, not just the initial refactor.
 

@@ -5,6 +5,7 @@ import Container from '@cloudscape-design/components/container';
 import Tabs from '@cloudscape-design/components/tabs';
 import Box from '@cloudscape-design/components/box';
 import type { TabsProps } from '@cloudscape-design/components/tabs';
+import StatusIndicator from '@cloudscape-design/components/status-indicator';
 
 export interface ServiceLayoutProps {
   readonly serviceName: string;
@@ -15,6 +16,10 @@ export interface ServiceLayoutProps {
   readonly tabs?: ReadonlyArray<TabsProps.Tab>;
   readonly children: React.ReactNode;
   readonly splitPanel?: React.ReactElement;
+  readonly provider?: string;
+  readonly region?: string;
+  readonly healthStatus?: 'healthy' | 'degraded' | 'unreachable' | 'checking';
+  readonly healthReason?: string;
 }
 
 /**
@@ -29,12 +34,21 @@ export const ServiceLayout: React.FC<ServiceLayoutProps> = ({
   headerActions,
   tabs,
   children,
+  provider,
+  region,
+  healthStatus,
+  healthReason,
 }) => {
+  const statusType = healthStatus === 'healthy' ? 'success' : healthStatus === 'degraded' ? 'warning' : healthStatus === 'unreachable' ? 'error' : 'in-progress';
+  const headerDescription = [provider, region].filter(Boolean).join(' | ');
+
   return (
     <SpaceBetween size="l" direction="vertical" className="aws-service-layout">
       <Header
         variant="h1"
         className="aws-service-layout__header"
+        description={headerDescription || undefined}
+        info={healthStatus ? <StatusIndicator type={statusType}>{healthReason || healthStatus}</StatusIndicator> : undefined}
         actions={headerActions ? <SpaceBetween size="s" direction="horizontal">{headerActions}</SpaceBetween> : undefined}
       >
         {serviceName}

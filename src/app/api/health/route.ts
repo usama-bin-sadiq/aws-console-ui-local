@@ -26,8 +26,14 @@ export async function GET() {
 
     if (response.ok) {
       const data = await response.json();
+      const serviceValues = Object.values(data.services || {});
+      const hasUnavailableService = serviceValues.some((service) => {
+        if (typeof service !== "object" || service === null) return false;
+        const value = (service as { status?: unknown }).status;
+        return value === false || value === "unavailable" || value === "error";
+      });
       return NextResponse.json({
-        status: "healthy",
+        status: hasUnavailableService ? "degraded" : "healthy",
         provider: mode,
         endpoint: endpointUrl,
         services: data.services || {},

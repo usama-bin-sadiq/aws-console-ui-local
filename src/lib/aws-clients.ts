@@ -126,6 +126,7 @@ import { MediaConvertClient } from "@aws-sdk/client-mediaconvert";
 // IoT
 import { IoTClient } from "@aws-sdk/client-iot";
 import { IoTDataPlaneClient } from "@aws-sdk/client-iot-data-plane";
+import { IoTAnalyticsClient } from "@aws-sdk/client-iotanalytics";
 
 // ─── Client config type ───────────────────────────────────────────────────────
 
@@ -348,6 +349,7 @@ export const mediaconvert = getClient(MediaConvertClient);
 
 export const iot = getClient(IoTClient);
 export const iotData = getClient(IoTDataPlaneClient);
+export const iotAnalytics = getClient(IoTAnalyticsClient);
 
 // ─── Re-export all client classes ────────────────────────────────────────────
 // API routes can do: import { S3Client, getClient } from "@/lib/aws-clients"

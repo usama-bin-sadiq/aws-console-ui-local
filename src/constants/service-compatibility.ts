@@ -34,7 +34,7 @@ export interface ServiceAvailability {
   readonly reason: string;
 }
 
-export type EmulatorHealthStatus = 'healthy' | 'unreachable' | 'checking';
+export type EmulatorHealthStatus = 'healthy' | 'degraded' | 'unreachable' | 'checking';
 
 export const SERVICE_REGISTRY: ServiceCompatibilityEntry[] = [
   // === COMPUTE ===
@@ -230,8 +230,12 @@ export function getServiceAvailability(
       || normalizedKey === normalizeServiceKey(service.serviceName);
   });
   const healthEnabled = matchingHealthKey === undefined
-    ? true
+    ? false
     : healthValueIsEnabled(healthServices[matchingHealthKey]);
+
+  if (matchingHealthKey === undefined) {
+    return { status: 'unavailable', enabled: false, reason: 'The emulator has not reported this service capability.' };
+  }
 
   if (healthStatus === 'healthy' && !healthEnabled) {
     return { status: 'unavailable', enabled: false, reason: 'The emulator reports this service as unavailable.' };

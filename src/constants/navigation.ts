@@ -218,10 +218,16 @@ export function getAvailableNavigationItems(
         return { ...service, disabled: true, disabledReason: 'No emulator compatibility is registered for this service.' };
       }
       const availability = getServiceAvailability(compatibility, mode, healthStatus, healthServices);
+      const hasReportedHealth = Object.keys(healthServices).some((key) => {
+        const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return normalizedKey === service.href.replace(/[^a-z0-9]/g, '').toLowerCase()
+          || normalizedKey === compatibility.serviceName.replace(/[^a-z0-9]/g, '').toLowerCase();
+      });
+      const isUnknown = healthStatus !== 'unreachable' && !hasReportedHealth;
       return {
         ...service,
-        disabled: !availability.enabled,
-        disabledReason: availability.reason,
+        disabled: !availability.enabled || isUnknown,
+        disabledReason: isUnknown ? 'The emulator has not reported this service capability.' : availability.reason,
         ...(availability.status === AdapterStatus.PARTIAL ? { text: `${service.text} (partial)` } : {}),
       };
     });

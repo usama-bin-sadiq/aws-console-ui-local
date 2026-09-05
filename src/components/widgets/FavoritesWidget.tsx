@@ -73,7 +73,7 @@ export default function FavoritesWidget({
                 color: "var(--awsui-color-text-body-secondary)",
               }}
             >
-              You haven't added any favorites yet.
+              You haven&apos;t added any favorites yet.
             </div>
             <div>
               <Button variant="primary">Browse services</Button>

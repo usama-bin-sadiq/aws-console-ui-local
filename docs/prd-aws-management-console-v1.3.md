@@ -3,7 +3,9 @@
 > **Version:** 1.3  
 > **Last Updated:** September 2026  
 > **Document Owner:** Product Engineering Team  
-> **Status:** Active
+> **Status:** Historical reference
+
+> Current product scope is defined by the root `PRD.md`. It is emulator-only and supersedes the real-AWS requirements in this document.
 
 ### Changelog
 

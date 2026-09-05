@@ -88,7 +88,7 @@ export default function Dashboard() {
       .then((r) => r.json())
       .then((d) => {
         setProvider(d.provider || "unknown");
-        setHealthStatus(d.status === "healthy" ? "healthy" : "unreachable");
+        setHealthStatus(d.status === "healthy" ? "healthy" : d.status === "degraded" ? "degraded" : "unreachable");
         setHealthServices(d.services || {});
       })
       .catch(() => {
@@ -134,12 +134,10 @@ export default function Dashboard() {
             </StatusIndicator>
           </SpaceBetween>
           <SpaceBetween size="s">
-            <Box variant="h3">Quick Links</Box>
-            <SpaceBetween direction="horizontal" size="xs">
-              <Link href="/billing">Billing</Link>
-              <Link href="/support">Support</Link>
-              <Link href="/account">Account</Link>
-            </SpaceBetween>
+            <Box variant="h3">Endpoint</Box>
+            <StatusIndicator type={healthStatus === "healthy" ? "success" : healthStatus === "degraded" ? "warning" : "info"}>
+              {healthStatus === "healthy" ? "Connected to local emulator" : healthStatus === "degraded" ? "Connected with limited service support" : "Waiting for emulator capability data"}
+            </StatusIndicator>
           </SpaceBetween>
         </Grid>
       </Container>

@@ -14,6 +14,7 @@ import Alert from "@cloudscape-design/components/alert";
 import Spinner from "@cloudscape-design/components/spinner";
 import Table from "@cloudscape-design/components/table";
 import { EC2Instance, EC2InstanceState } from "@/types/ec2";
+import CapabilityLink from "@/components/CapabilityLink";
 
 export default function EC2InstanceDetailsPage({
   params,
@@ -149,7 +150,15 @@ export default function EC2InstanceDetailsPage({
         </div>
         <div>
           <Box variant="small" color="text-label">IAM Role</Box>
-          <Box>{instance.IamInstanceProfile?.Arn || "—"}</Box>
+          <Box>
+            {instance.IamInstanceProfile?.Arn ? (
+              <CapabilityLink
+                label={instance.IamInstanceProfile.Arn}
+                href={`/iam?resource=${encodeURIComponent(instance.IamInstanceProfile.Arn)}`}
+                enabled
+              />
+            ) : "—"}
+          </Box>
         </div>
         <div>
           <Box variant="small" color="text-label">Launch Time</Box>
@@ -200,11 +209,11 @@ export default function EC2InstanceDetailsPage({
         </div>
         <div>
           <Box variant="small" color="text-label">VPC ID</Box>
-          <Box>{instance.VpcId || "—"}</Box>
+          <Box>{instance.VpcId ? <CapabilityLink label={instance.VpcId} href={`/vpc?resource=${encodeURIComponent(instance.VpcId)}`} enabled /> : "—"}</Box>
         </div>
         <div>
           <Box variant="small" color="text-label">Subnet ID</Box>
-          <Box>{instance.SubnetId || "—"}</Box>
+          <Box>{instance.SubnetId ? <CapabilityLink label={instance.SubnetId} href={`/subnet?resource=${encodeURIComponent(instance.SubnetId)}`} enabled /> : "—"}</Box>
         </div>
         <div>
           <Box variant="small" color="text-label">Availability Zone</Box>
@@ -216,8 +225,13 @@ export default function EC2InstanceDetailsPage({
           <Box variant="small" color="text-label">Security Groups</Box>
           <SpaceBetween size="xs">
             {instance.SecurityGroups.map((sg, idx) => (
-              <Box key={idx}>
-                {sg.GroupName} ({sg.GroupId})
+              <Box key={sg.GroupId || sg.GroupName || idx}>
+                <CapabilityLink
+                  label={`${sg.GroupName} (${sg.GroupId})`}
+                  href={sg.GroupId ? `/security-group?resource=${encodeURIComponent(sg.GroupId)}` : undefined}
+                  enabled={Boolean(sg.GroupId)}
+                  reason="missing security group identifier"
+                />
               </Box>
             ))}
           </SpaceBetween>

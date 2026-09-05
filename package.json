@@ -1,7 +1,17 @@
 {
-  "name": "aws-console-clone",
+  "name": "local-aws-emulator-console",
   "version": "0.1.0",
-  "private": true,
+  "description": "An open-source Cloudscape console for AWS-compatible services running in local emulators.",
+  "private": false,
+  "license": "MIT",
+  "keywords": [
+    "aws",
+    "localstack",
+    "ministack",
+    "cloudscape",
+    "emulator",
+    "console"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -75,6 +85,7 @@
     "@aws-sdk/client-inspector2": "^3.1121.0",
     "@aws-sdk/client-iot": "^3.1121.0",
     "@aws-sdk/client-iot-data-plane": "^3.1121.0",
+    "@aws-sdk/client-iotanalytics": "3.986.0",
     "@aws-sdk/client-kafka": "^3.1121.0",
     "@aws-sdk/client-kinesis": "^3.1121.0",
     "@aws-sdk/client-kms": "^3.1121.0",

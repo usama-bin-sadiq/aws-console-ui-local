@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import Image from "next/image";
 import AppLayout from "@cloudscape-design/components/app-layout";
 import SideNavigation from "@cloudscape-design/components/side-navigation";
 import TopNavigation from "@cloudscape-design/components/top-navigation";
@@ -10,7 +11,8 @@ import SplitPanel from "@cloudscape-design/components/split-panel";
 import Flashbar from "@cloudscape-design/components/flashbar";
 import { Mode, applyMode } from "@cloudscape-design/global-styles";
 import { usePathname, useRouter } from "next/navigation";
-import { useSettingsStore, FavoriteItem } from "@/stores/settings";
+import Link from "next/link";
+import { useSettingsStore } from "@/stores/settings";
 import { AWS_REGIONS } from "@/constants/regions";
 import { getAvailableNavigationItems } from "@/constants/navigation";
 import { AdapterMode, EmulatorHealthStatus } from "@/constants/service-compatibility";
@@ -22,7 +24,7 @@ import type { FitAddon } from "@xterm/addon-fit";
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { region, setRegion, theme, setTheme, provider, setProvider, favorites, addFavorite, removeFavorite, reorderFavorites } = useSettingsStore();
+  const { region, setRegion, theme, setTheme, provider, setProvider, favorites } = useSettingsStore();
   const [healthStatus, setHealthStatus] = useState<EmulatorHealthStatus>("checking");
   const [healthServices, setHealthServices] = useState<Record<string, unknown>>({});
   const activeMode = provider === "ministack" ? AdapterMode.MINSTACK : AdapterMode.LOCALSTACK;
@@ -31,7 +33,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [navigationOpen, setNavigationOpen] = useState(true);
   const [isCompactLayout, setIsCompactLayout] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-  const toggleNavigation = () => setNavigationOpen((current) => !current);
   const [mounted, setMounted] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Array<{
@@ -77,7 +78,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     fetch("/api/health")
       .then((res) => res.json())
       .then((data) => {
-        setHealthStatus(data.status === "healthy" ? "healthy" : "unreachable");
+        setHealthStatus(data.status === "healthy" ? "healthy" : data.status === "degraded" ? "degraded" : "unreachable");
         setHealthServices(data.services || {});
         if (data.provider) {
           setProvider(data.provider);
@@ -112,10 +113,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // Expanded categories are kept open by default for consistent SSR/hydration
   // (localStorage persistence removed to avoid server/client mismatch)
 
-  const handleCategoryToggle = (categoryText: string, expanded: boolean) => {
-    setExpandedCategories({ ...expandedCategories, [categoryText]: expanded });
-  };
-
   // Load xterm CSS dynamically
   useEffect(() => {
     if (terminalOpen && typeof window !== "undefined") {
@@ -125,6 +122,32 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       document.head.appendChild(link);
     }
   }, [terminalOpen]);
+
+  function executeCommand(cmd: string, term: Terminal): void {
+    const trimmed = cmd.trim();
+
+    if (trimmed === "help") {
+      term.writeln("Available commands:");
+      term.writeln("  aws s3 ls             - List S3 buckets");
+      term.writeln("  aws ec2 describe-instances - List EC2 instances");
+      term.writeln("  clear                 - Clear terminal");
+      term.writeln("  help                  - Show this help");
+    } else if (trimmed === "clear") {
+      term.clear();
+    } else if (trimmed.startsWith("aws")) {
+      term.writeln(`Executing: ${trimmed}`);
+      fetch("/api/terminal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: trimmed }),
+      })
+        .then((r) => r.json())
+        .then((data) => term.writeln(data.output || ""))
+        .catch(() => term.writeln("Error executing command"));
+    } else if (trimmed) {
+      term.writeln(`Command not found: ${trimmed}`);
+    }
+  }
 
   // Terminal setup
   useEffect(() => {
@@ -195,37 +218,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       });
     }
   }, [terminalOpen, theme]);
-
-  function executeCommand(cmd: string, term: Terminal): void {
-    const trimmed = cmd.trim();
-
-    if (trimmed === "help") {
-      term.writeln("Available commands:");
-      term.writeln("  aws s3 ls             - List S3 buckets");
-      term.writeln("  aws ec2 describe-instances - List EC2 instances");
-      term.writeln("  clear                 - Clear terminal");
-      term.writeln("  help                  - Show this help");
-    } else if (trimmed === "clear") {
-      term.clear();
-    } else if (trimmed.startsWith("aws")) {
-      term.writeln(`Executing: ${trimmed}`);
-      // Execute AWS CLI command via API
-      fetch("/api/terminal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command: trimmed }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          term.writeln(data.output || "");
-        })
-        .catch(() => {
-          term.writeln("Error executing command");
-        });
-    } else if (trimmed) {
-      term.writeln(`Command not found: ${trimmed}`);
-    }
-  }
 
   // Load terminal state from localStorage
   useEffect(() => {
@@ -439,16 +431,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             },
             {
               type: "menu-dropdown",
-              text: "Account",
-              iconName: "user-profile",
+              text: "Console",
+              iconName: "settings",
               items: [
-                { id: "profile", text: "Account", href: "/account" },
-                { id: "org", text: "Organization", href: "/organizations" },
-                { id: "security", text: "Security Credentials", href: "/iam-virtual-mfa" },
-                { id: "billing", text: "Billing Dashboard", href: "/billing" },
-                { id: "quotas", text: "Service Quotas", href: "/servicequotas/home" },
-                { id: "settings", text: "Console Settings", href: "/console/account/v2/home#settings" },
-                { id: "signout", text: "Sign Out", href: "/signout" },
+                { id: "home", text: "Console home", href: "/" },
+                { id: "settings", text: "Provider settings", href: "/settings" },
+                { id: "health", text: "Emulator health", href: "/health" },
               ],
               onItemFollow: (e) => {
                 if (e.detail.href) {
@@ -506,7 +494,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               borderBottom: theme === "dark" ? "1px solid #34495e" : "1px solid #d5dbdb",
               flexShrink: 0,
             }}>
-              <a
+              <Link
                 href="/"
                 style={{
                   color: theme === "dark" ? "#d5dbdb" : "#232f3e",
@@ -520,9 +508,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 }}
                 aria-label="AWS Services Home"
               >
-                <img src={theme === "dark" ? "/icons/Architecture-Group/AWS-Cloud-logo_32_Dark.svg" : "/icons/Architecture-Group/AWS-Cloud-logo_32.svg"} alt="AWS" style={{ width: 28, height: 28 }} />
+                <Image
+                  src={theme === "dark" ? "/icons/Architecture-Group/AWS-Cloud-logo_32_Dark.svg" : "/icons/Architecture-Group/AWS-Cloud-logo_32.svg"}
+                  alt="AWS"
+                  width={28}
+                  height={28}
+                />
                 <span>AWS Services</span>
-              </a>
+              </Link>
             </div>
 
             {/* Scrollable services */}
