@@ -24,7 +24,8 @@ export default function PollyPage() {
     <ServiceLayout serviceName="Polly" serviceCategory="Services"
       breadcrumbs={[{ text: "Services", href: "/" }, { text: "Polly", href: "/polly" }]}>
       <SpaceBetween size="l" direction="vertical">
-        <Box padding="l" style={{ background: "var(--awsui-color-background-container-content)", borderRadius: 8, border: "1px solid var(--awsui-color-border-divider-default)" }}>
+        <div style={{ background: "var(--awsui-color-background-container-content)", borderRadius: 8, border: "1px solid var(--awsui-color-border-divider-default)" }}>
+        <Box padding="l">
           <Header variant="h2">Polly - Voices</Header>
           {loading ? (
             <Box>Loading voices from adapter SDK...</Box>
@@ -36,6 +37,7 @@ export default function PollyPage() {
             </Box>
           )}
         </Box>
+        </div>
       </SpaceBetween>
     </ServiceLayout>
   );

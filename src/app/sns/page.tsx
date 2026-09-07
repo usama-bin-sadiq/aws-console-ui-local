@@ -17,6 +17,7 @@ import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
 import Select from "@cloudscape-design/components/select";
+import TruncatedText from "@/components/TruncatedText";
 
 interface Topic { TopicArn?: string; }
 
@@ -130,7 +131,7 @@ export default function SNSPage() {
             header={<Header variant="h2">Topics ({topics.length})</Header>}
             items={topics}
             columnDefinitions={[
-              { header: "ARN", cell: (item: Topic) => item.TopicArn },
+              { header: "ARN", cell: (item: Topic) => <TruncatedText>{String(item.TopicArn)}</TruncatedText> },
               {
                 header: "Actions",
                 cell: (item: Topic) => (
@@ -166,7 +167,7 @@ export default function SNSPage() {
               header={<Header variant="h2">Subscriptions for {selectedTopic}</Header>}
               items={subscriptions.map((s: any) => ({ ...s, SubscriptionArn: s.SubscriptionArn || s.Protocol || "pending" }))}
               columnDefinitions={[
-                { header: "Subscription ARN", cell: (item: any) => item.SubscriptionArn },
+                { header: "Subscription ARN", cell: (item: any) => <TruncatedText>{item.SubscriptionArn}</TruncatedText> },
                 { header: "Protocol", cell: (item: any) => item.Protocol || "-" },
                 { header: "Endpoint", cell: (item: any) => item.Endpoint || "-" },
                 {

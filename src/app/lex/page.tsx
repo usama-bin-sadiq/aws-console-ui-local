@@ -24,7 +24,8 @@ export default function LexPage() {
     <ServiceLayout serviceName="Lex" serviceCategory="Services"
       breadcrumbs={[{ text: "Services", href: "/" }, { text: "Lex", href: "/lex" }]}>
       <SpaceBetween size="l" direction="vertical">
-        <Box padding="l" style={{ background: "var(--awsui-color-background-container-content)", borderRadius: 8, border: "1px solid var(--awsui-color-border-divider-default)" }}>
+        <div style={{ background: "var(--awsui-color-background-container-content)", borderRadius: 8, border: "1px solid var(--awsui-color-border-divider-default)" }}>
+        <Box padding="l">
           <Header variant="h2">Lex - Bots</Header>
           {loading ? (
             <Box>Loading bots from adapter SDK...</Box>
@@ -36,6 +37,7 @@ export default function LexPage() {
             </Box>
           )}
         </Box>
+        </div>
       </SpaceBetween>
     </ServiceLayout>
   );

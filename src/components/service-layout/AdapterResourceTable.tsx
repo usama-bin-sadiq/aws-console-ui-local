@@ -41,7 +41,7 @@ export function AdapterResourceTable<T extends object>({
             filter={<TextFilter filteringText={filterText} filteringPlaceholder={`Filter ${resourceName.toLowerCase()}`} filteringAriaLabel={`Filter ${resourceName.toLowerCase()}`} onChange={({ detail }) => onFilterChange(detail.filteringText)} countText={filterText ? `${filteredItems.length} matches` : undefined} />}
             header={<Header counter={`(${items.length})`} actions={<Button iconName="refresh" ariaLabel={`Refresh ${resourceName.toLowerCase()}`} onClick={onRefresh} />}>{resourceName}</Header>}
             empty={error ? <Box textAlign="center" padding="l">Unable to load {resourceName.toLowerCase()}.</Box> : <Box textAlign="center" padding="l">No {resourceName.toLowerCase()} found.</Box>}
-            ariaLabels={{ selectionGroupLabel: resourceName, allItemsSelectionLabel: "Select all", itemSelectionLabel: (_data, item) => `Select ${String(Object.values(item)[0] ?? resourceName)}` }}
+            ariaLabels={{ selectionGroupLabel: resourceName, allItemsSelectionLabel: () => "Select all", itemSelectionLabel: (_data, item) => `Select ${String(Object.values(item as Record<string, unknown>)[0] ?? resourceName)}` }}
         />
     );
 }

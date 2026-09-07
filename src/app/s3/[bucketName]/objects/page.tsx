@@ -183,7 +183,7 @@ export default function S3BucketObjectsPage() {
         <BreadcrumbGroup items={[
           { text: "S3", href: "/s3" },
           { text: bucketName, href: `/s3/${encodeURIComponent(bucketName)}` },
-          { text: "Objects" },
+          { text: "Objects", href: "#" },
         ]} />
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

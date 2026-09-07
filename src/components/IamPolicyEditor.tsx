@@ -74,13 +74,15 @@ const POLICY_TEMPLATES: PolicyTemplate[] = [
 interface IamPolicyEditorProps {
   label?: string;
   value: string;
-  onChange: (v: string) => void;
+  onChange?: (v: string) => void;
+  readOnly?: boolean;
 }
 
 export default function IamPolicyEditor({
   label = "Policy document",
   value,
-  onChange,
+  onChange = () => undefined,
+  readOnly = false,
 }: IamPolicyEditorProps) {
   const handleTemplateSelect = (templateId: string) => {
     const template = POLICY_TEMPLATES.find((t) => t.id === templateId);
@@ -91,15 +93,15 @@ export default function IamPolicyEditor({
 
   return (
     <SpaceBetween size="s">
-      <FormField label="Load a template (optional)">
+      {!readOnly ? <FormField label="Load a template (optional)">
         <ButtonDropdown
           items={POLICY_TEMPLATES.map((t) => ({ id: t.id, text: t.label }))}
           onItemClick={(e) => handleTemplateSelect(e.detail.id)}
         >
           Choose a policy template
         </ButtonDropdown>
-      </FormField>
-      <JsonEditor label={label} value={value} onChange={onChange} />
+      </FormField> : null}
+      <JsonEditor label={label} value={value} onChange={onChange} readOnly={readOnly} />
     </SpaceBetween>
   );
 }

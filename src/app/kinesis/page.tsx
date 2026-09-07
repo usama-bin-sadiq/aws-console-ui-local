@@ -29,6 +29,7 @@ export default function KinesisPage() {
   const [shardCount, setShardCount] = useState("1");
   const [retentionHours, setRetentionHours] = useState("24");
   const [creating, setCreating] = useState(false);
+  const [streamNameError, setStreamNameError] = useState<string | null>(null);
 
   const fetchStreams = async () => {
     setLoading(true);
@@ -57,6 +58,11 @@ export default function KinesisPage() {
   }, []);
 
   const createStream = async () => {
+    if (!streamName.trim()) {
+      setStreamNameError("Stream name is required");
+      return;
+    }
+    setStreamNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/kinesis", {
@@ -207,10 +213,10 @@ export default function KinesisPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Data stream name" constraintText="Required">
+            <FormField label={<>Data stream name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={streamNameError}>
               <Input
                 value={streamName}
-                onChange={(e) => setStreamName(e.detail.value)}
+                onChange={(e) => { setStreamName(e.detail.value); setStreamNameError(null); }}
                 placeholder="my-stream"
               />
             </FormField>

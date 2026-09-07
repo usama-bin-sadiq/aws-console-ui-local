@@ -26,6 +26,7 @@ export default function MSKPage() {
   const [createModal, setCreateModal] = useState(false);
   const [clusterName, setClusterName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [clusterNameError, setClusterNameError] = useState<string | null>(null);
 
   const fetchClusters = async () => {
     setLoading(true);
@@ -47,6 +48,11 @@ export default function MSKPage() {
   }, []);
 
   const createCluster = async () => {
+    if (!clusterName.trim()) {
+      setClusterNameError("Cluster name is required");
+      return;
+    }
+    setClusterNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/msk", {
@@ -144,10 +150,10 @@ export default function MSKPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Cluster name" constraintText="Required">
+            <FormField label={<>Cluster name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={clusterNameError}>
               <Input
                 value={clusterName}
-                onChange={(e) => setClusterName(e.detail.value)}
+                onChange={(e) => { setClusterName(e.detail.value); setClusterNameError(null); }}
                 placeholder="my-cluster"
               />
             </FormField>

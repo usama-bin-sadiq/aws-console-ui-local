@@ -24,7 +24,7 @@ export default function ConnectPage() {
     <ServiceLayout serviceName="Amazon Connect" serviceCategory="Services"
       breadcrumbs={[{ text: "Services", href: "/" }, { text: "Amazon Connect", href: "/connect" }]}>
       <SpaceBetween size="l" direction="vertical">
-        <Box padding="l" style={{ background: "var(--awsui-color-background-container-content)", borderRadius: 8, border: "1px solid var(--awsui-color-border-divider-default)" }}>
+        <Box padding="l">
           <Header variant="h2">Amazon Connect - Instances</Header>
           {loading ? (
             <Box>Loading instances from adapter SDK...</Box>

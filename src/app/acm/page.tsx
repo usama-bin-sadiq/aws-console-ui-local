@@ -13,6 +13,7 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Alert from "@cloudscape-design/components/alert";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
+import TruncatedText from "@/components/TruncatedText";
 
 interface Certificate {
   CertificateArn: string;
@@ -27,6 +28,7 @@ export default function AcmPage() {
   const [createModal, setCreateModal] = useState(false);
   const [domainName, setDomainName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [domainNameError, setDomainNameError] = useState<string | null>(null);
 
   const fetchCertificates = async () => {
     setLoading(true);
@@ -48,6 +50,11 @@ export default function AcmPage() {
   }, []);
 
   const createCertificate = async () => {
+    if (!domainName.trim()) {
+      setDomainNameError("Domain name is required");
+      return;
+    }
+    setDomainNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/acm", {
@@ -128,7 +135,7 @@ export default function AcmPage() {
               {
                 id: "arn",
                 header: "Certificate ARN",
-                cell: (item) => item.CertificateArn || "—",
+                cell: (item) => <TruncatedText>{item.CertificateArn || "—"}</TruncatedText>,
               },
               {
                 id: "actions",
@@ -156,10 +163,10 @@ export default function AcmPage() {
             </SpaceBetween>
           }
         >
-          <FormField label="Domain name" constraintText="Required">
+          <FormField label={<>Domain name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={domainNameError}>
             <Input
               value={domainName}
-              onChange={(e) => setDomainName(e.detail.value)}
+              onChange={(e) => { setDomainName(e.detail.value); setDomainNameError(null); }}
               placeholder="example.com"
               ariaLabel="Domain name"
             />

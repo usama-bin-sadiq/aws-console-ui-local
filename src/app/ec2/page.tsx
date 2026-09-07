@@ -15,6 +15,7 @@ import Pagination from "@cloudscape-design/components/pagination";
 import CollectionPreferences from "@cloudscape-design/components/collection-preferences";
 import Modal from "@cloudscape-design/components/modal";
 import Alert from "@cloudscape-design/components/alert";
+import TruncatedText from "@/components/TruncatedText";
 import { EC2Instance, EC2InstanceState } from "@/types/ec2";
 
 const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<EC2Instance>[] = [
@@ -36,7 +37,7 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<EC2Instance>[] = [
   {
     id: "instanceId",
     header: "Instance ID",
-    cell: (item) => item.InstanceId,
+    cell: (item) => <TruncatedText>{String(item.InstanceId)}</TruncatedText>,
     sortingField: "InstanceId",
   },
   {

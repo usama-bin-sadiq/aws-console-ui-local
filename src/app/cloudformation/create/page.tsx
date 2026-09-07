@@ -83,7 +83,7 @@ export default function CloudFormationCreatePage() {
         <Container header={<Header variant="h2">Specify stack details</Header>}>
           <form onSubmit={handleSubmit}>
             <SpaceBetween size="m">
-              <FormField label="Stack name" required>
+              <FormField label="Stack name">
                 <Input
                   value={stackName}
                   onChange={({ detail }) => setStackName(detail.value)}
@@ -92,7 +92,7 @@ export default function CloudFormationCreatePage() {
                 />
               </FormField>
 
-              <FormField label="Template body (JSON or YAML)" required>
+              <FormField label="Template body (JSON or YAML)">
                 <Textarea
                   value={templateBody}
                   onChange={({ detail }) => setTemplateBody(detail.value)}

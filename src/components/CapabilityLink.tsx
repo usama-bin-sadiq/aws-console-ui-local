@@ -10,7 +10,7 @@ export interface CapabilityLinkProps {
     readonly reason?: string;
 }
 
-export default function CapabilityLink({ label, href, enabled, reason }: CapabilityLinkProps): JSX.Element {
+export default function CapabilityLink({ label, href, enabled, reason }: CapabilityLinkProps) {
     if (enabled && href) {
         return <Link href={href}>{label}</Link>;
     }

@@ -107,7 +107,7 @@ export default function Page() {
         </Container>
 
         <Container header={<Header variant="h2">Adapter SDK Usage</Header>}>
-          <Box style={{ padding: AWACS_DESIGN_TOKENS.spacing.m, color: AWACS_DESIGN_TOKENS.colors.textSecondary }}>
+          <Box padding="m" color="text-body-secondary">
             This console uses adapter SDK clients ({" "}
             <code>route53</code> from{" "}
             <code>@/lib/aws-clients</code>) for all actions. APIs include{" "}

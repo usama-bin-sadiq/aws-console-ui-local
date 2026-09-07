@@ -24,7 +24,8 @@ export default function QuickSightPage() {
     <ServiceLayout serviceName="QuickSight" serviceCategory="Services"
       breadcrumbs={[{ text: "Services", href: "/" }, { text: "QuickSight", href: "/quicksight" }]}>
       <SpaceBetween size="l" direction="vertical">
-        <Box padding="l" style={{ background: "var(--awsui-color-background-container-content)", borderRadius: 8, border: "1px solid var(--awsui-color-border-divider-default)" }}>
+        <div style={{ background: "var(--awsui-color-background-container-content)", borderRadius: 8, border: "1px solid var(--awsui-color-border-divider-default)" }}>
+        <Box padding="l">
           <Header variant="h2">QuickSight - Dashboards</Header>
           {loading ? (
             <Box>Loading dashboards from adapter SDK...</Box>
@@ -36,6 +37,7 @@ export default function QuickSightPage() {
             </Box>
           )}
         </Box>
+        </div>
       </SpaceBetween>
     </ServiceLayout>
   );

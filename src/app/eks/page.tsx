@@ -43,6 +43,7 @@ export default function EKSPPage() {
   const [nodegroupName, setNodegroupName] = useState("");
   const [nodegroupInstance, setNodegroupInstance] = useState("t3.medium");
   const [nodegroupDesired, setNodegroupDesired] = useState("2");
+  const [nodegroupNameError, setNodegroupNameError] = useState<string | null>(null);
 
   const fetchClusters = async () => {
     setLoadingClusters(true);
@@ -86,7 +87,11 @@ export default function EKSPPage() {
   };
 
   const createNodegroup = async () => {
-    if (!nodegroupName.trim() || !selectedCluster) return;
+    if (!nodegroupName.trim() || !selectedCluster) {
+      if (!nodegroupName.trim()) setNodegroupNameError("Nodegroup name is required");
+      return;
+    }
+    setNodegroupNameError(null);
     try {
       await fetch("/api/eks", {
         method: "POST",
@@ -226,8 +231,8 @@ export default function EKSPPage() {
             <FormField label="Cluster" description="Auto-selected">
               <Input value={selectedCluster} disabled />
             </FormField>
-            <FormField label="Nodegroup name" constraintText="Required">
-              <Input value={nodegroupName} onChange={(e) => setNodegroupName(e.detail.value)} placeholder="my-nodegroup" />
+            <FormField label={<>Nodegroup name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={nodegroupNameError}>
+              <Input value={nodegroupName} onChange={(e) => { setNodegroupName(e.detail.value); setNodegroupNameError(null); }} placeholder="my-nodegroup" />
             </FormField>
             <FormField label="Instance type">
               <Input value={nodegroupInstance} onChange={(e) => setNodegroupInstance(e.detail.value)} placeholder="t3.medium" />

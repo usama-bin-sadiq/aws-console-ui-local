@@ -14,8 +14,10 @@ import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
+import Select from "@cloudscape-design/components/select";
 import Checkbox from "@cloudscape-design/components/checkbox";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import CapabilityLink from "@/components/CapabilityLink";
 
 interface Subnet {
   SubnetId: string;
@@ -32,6 +34,9 @@ export default function SubnetPage() {
   const [selected, setSelected] = useState<Subnet[]>([]);
   const [deleting, setDeleting] = useState(false);
 
+  // VPCs for dropdown
+  const [vpcs, setVpcs] = useState<Array<{ VpcId: string; CidrBlock?: string }>>([]);
+
   // Create state
   const [showCreate, setShowCreate] = useState(false);
   const [vpcId, setVpcId] = useState("");
@@ -43,6 +48,16 @@ export default function SubnetPage() {
   const [modifySubnet, setModifySubnet] = useState<Subnet | null>(null);
   const [mapPublicIpOnLaunch, setMapPublicIpOnLaunch] = useState(true);
   const [modifying, setModifying] = useState(false);
+
+  async function loadVpcs() {
+    try {
+      const res = await fetch("/api/vpc");
+      const data = await res.json();
+      setVpcs(data.vpcs || []);
+    } catch {
+      // VPCs will be empty, user can type manually
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -61,9 +76,14 @@ export default function SubnetPage() {
 
   useEffect(() => {
     load();
+    loadVpcs();
   }, []);
 
   async function handleCreate() {
+    if (!vpcId.trim() || !cidrBlock.trim()) {
+      setError("VPC ID and IPv4 CIDR block are required");
+      return;
+    }
     setCreating(true);
     try {
       const res = await fetch("/api/subnet", {
@@ -165,7 +185,6 @@ export default function SubnetPage() {
             selectedItems={selected}
             onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
             trackBy="SubnetId"
-            filterPlaceholder="Filter subnets"
             columnDefinitions={[
               {
                 id: "subnetId",
@@ -176,7 +195,14 @@ export default function SubnetPage() {
               {
                 id: "vpcId",
                 header: "VPC ID",
-                cell: (item: Subnet) => item.VpcId,
+                cell: (item: Subnet) => (
+                  <CapabilityLink
+                    label={item.VpcId}
+                    href={`/vpc?resource=${encodeURIComponent(item.VpcId)}`}
+                    enabled={Boolean(item.VpcId)}
+                    reason="missing VPC identifier"
+                  />
+                ),
               },
               {
                 id: "cidrBlock",
@@ -238,7 +264,12 @@ export default function SubnetPage() {
       >
         <SpaceBetween size="m">
           <FormField label="VPC ID" description="The VPC this subnet belongs to">
-            <Input value={vpcId} onChange={({ detail }) => setVpcId(detail.value)} placeholder="vpc-xxxxxxxx" />
+            <Select
+              selectedOption={vpcId ? { value: vpcId, label: `${vpcId} (${vpcs.find((v) => v.VpcId === vpcId)?.CidrBlock || ""})` } : null}
+              options={vpcs.map((vpc) => ({ value: vpc.VpcId, label: `${vpc.VpcId} (${vpc.CidrBlock || ""})` }))}
+              placeholder="Select a VPC"
+              onChange={({ detail }) => setVpcId(detail.selectedOption.value || "")}
+            />
           </FormField>
           <FormField label="IPv4 CIDR Block" description="IP range within the VPC CIDR">
             <Input value={cidrBlock} onChange={({ detail }) => setCidrBlock(detail.value)} placeholder="10.0.1.0/24" />

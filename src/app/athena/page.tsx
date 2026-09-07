@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Tabs from "@cloudscape-design/components/tabs";
@@ -45,11 +46,14 @@ export default function AthenaPage() {
   const [queryWorkgroup, setQueryWorkgroup] = useState("primary");
   const [queryResult, setQueryResult] = useState("");
   const [runningQuery, setRunningQuery] = useState(false);
+  const [queryStringError, setQueryStringError] = useState<string | null>(null);
 
   const [createQueryModal, setCreateQueryModal] = useState(false);
   const [newQueryName, setNewQueryName] = useState("");
   const [newQueryString, setNewQueryString] = useState("");
   const [creatingQuery, setCreatingQuery] = useState(false);
+  const [newQueryNameError, setNewQueryNameError] = useState<string | null>(null);
+  const [newQueryStringError, setNewQueryStringError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -73,6 +77,11 @@ export default function AthenaPage() {
   }, []);
 
   const startQuery = async () => {
+    if (!queryString.trim()) {
+      setQueryStringError("Query string is required");
+      return;
+    }
+    setQueryStringError(null);
     setRunningQuery(true);
     setQueryResult("");
     try {
@@ -96,6 +105,20 @@ export default function AthenaPage() {
   };
 
   const createNamedQuery = async () => {
+    let hasError = false;
+    if (!newQueryName.trim()) {
+      setNewQueryNameError("Query name is required");
+      hasError = true;
+    } else {
+      setNewQueryNameError(null);
+    }
+    if (!newQueryString.trim()) {
+      setNewQueryStringError("Query string is required");
+      hasError = true;
+    } else {
+      setNewQueryStringError(null);
+    }
+    if (hasError) return;
     setCreatingQuery(true);
     try {
       const res = await fetch("/api/athena", {
@@ -260,10 +283,10 @@ export default function AthenaPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Query string" constraintText="Required">
+            <FormField label={<>Query string <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={queryStringError}>
               <Textarea
                 value={queryString}
-                onChange={(e) => setQueryString(e.detail.value)}
+                onChange={(e) => { setQueryString(e.detail.value); setQueryStringError(null); }}
                 placeholder="SELECT * FROM my_table LIMIT 10"
                 rows={6}
               />
@@ -277,19 +300,7 @@ export default function AthenaPage() {
             </FormField>
             {queryResult && (
               <FormField label="Result">
-                <pre
-                  style={{
-                    background: "#1a1a2e",
-                    color: "#0f0",
-                    padding: "12px",
-                    borderRadius: "4px",
-                    overflow: "auto",
-                    maxHeight: "300px",
-                    fontSize: "12px",
-                  }}
-                >
-                  {queryResult}
-                </pre>
+                <CodeView content={queryResult} lineNumbers wrapLines />
               </FormField>
             )}
           </SpaceBetween>
@@ -322,17 +333,17 @@ export default function AthenaPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Query name" constraintText="Required">
+            <FormField label={<>Query name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={newQueryNameError}>
               <Input
                 value={newQueryName}
-                onChange={(e) => setNewQueryName(e.detail.value)}
+                onChange={(e) => { setNewQueryName(e.detail.value); setNewQueryNameError(null); }}
                 placeholder="my-query"
               />
             </FormField>
-            <FormField label="Query string" constraintText="Required">
+            <FormField label={<>Query string <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={newQueryStringError}>
               <Textarea
                 value={newQueryString}
-                onChange={(e) => setNewQueryString(e.detail.value)}
+                onChange={(e) => { setNewQueryString(e.detail.value); setNewQueryStringError(null); }}
                 placeholder="SELECT * FROM my_table LIMIT 10"
                 rows={6}
               />

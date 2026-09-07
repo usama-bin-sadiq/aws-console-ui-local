@@ -13,6 +13,7 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Textarea from "@cloudscape-design/components/textarea";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import TruncatedText from "@/components/TruncatedText";
 
 interface ECSServiceSummary {
   serviceName: string;
@@ -53,13 +54,15 @@ export default function ECSPage() {
   // Service actions
   const [serviceModal, setServiceModal] = useState(false);
   const [serviceNameInput, setServiceNameInput] = useState("");
-  const [serviceTaskDef, setServiceTaskDef] = useState("my-task-definition:1");
+  const [serviceTaskDef, setServiceTaskDef] = useState("");
   const [serviceDesired, setServiceDesired] = useState("1");
+  const [serviceNameError, setServiceNameError] = useState<string | null>(null);
 
   // Task definition actions
   const [taskDefModal, setTaskDefModal] = useState(false);
   const [taskDefFamily, setTaskDefFamily] = useState("");
   const [taskDefJson, setTaskDefJson] = useState('{}');
+  const [taskDefFamilyError, setTaskDefFamilyError] = useState<string | null>(null);
 
   // Tasks actions
   const [tasksLoaded, setTasksLoaded] = useState(false);
@@ -86,10 +89,17 @@ export default function ECSPage() {
   };
 
   const createService = async () => {
-    if (!serviceNameInput.trim()) return;
+    let hasError = false;
+    if (!serviceNameInput.trim()) {
+      setServiceNameError("Service name is required");
+      hasError = true;
+    } else {
+      setServiceNameError(null);
+    }
+    if (hasError) return;
     const cluster = clusterInput.trim() || clusterName;
     try {
-      await fetch("/api/ecs", {
+      const response = await fetch("/api/ecs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -100,6 +110,8 @@ export default function ECSPage() {
           desiredCount: parseInt(serviceDesired) || 1,
         }),
       });
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || "Failed to create ECS service");
       setServiceModal(false);
       setServiceNameInput("");
       fetchServices();
@@ -149,16 +161,26 @@ export default function ECSPage() {
   };
 
   const registerTaskDef = async () => {
+    if (!taskDefFamily.trim()) {
+      setTaskDefFamilyError("Family name is required");
+      return;
+    }
+    setTaskDefFamilyError(null);
     try {
-      await fetch("/api/ecs", {
+      const containerDefinitions = JSON.parse(taskDefJson);
+      if (!Array.isArray(containerDefinitions)) throw new Error("Container definitions must be a JSON array");
+      if (!taskDefFamily.trim()) throw new Error("Task definition family is required");
+      const response = await fetch("/api/ecs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "registerTaskDefinition",
           family: taskDefFamily,
-          containerDefinitions: taskDefJson ? JSON.parse(taskDefJson) : [],
+          containerDefinitions,
         }),
       });
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || "Failed to register task definition");
       setTaskDefModal(false);
       setTaskDefFamily("");
       setTaskDefJson('{}');
@@ -289,7 +311,7 @@ export default function ECSPage() {
               { header: "Family", cell: (i: TaskDefinitionSummary) => i.family || "—" },
               { header: "Revision", cell: (i: TaskDefinitionSummary) => i.revision ?? "—" },
               { header: "Status", cell: (i: TaskDefinitionSummary) => <StatusIndicator type="success">{i.status || "—"}</StatusIndicator> },
-              { header: "ARN", cell: (i: TaskDefinitionSummary) => <span style={{ fontSize: "11px", wordBreak: "break-all" }}>{i.taskDefinitionArn || "—"}</span> },
+              { header: "ARN", cell: (i: TaskDefinitionSummary) => <TruncatedText>{i.taskDefinitionArn || "—"}</TruncatedText> },
             ]}
             empty={<Box textAlign="center">No task definitions found.</Box>}
           />
@@ -311,7 +333,7 @@ export default function ECSPage() {
             items={tasks}
             loading={loadingTasks}
             columnDefinitions={[
-              { header: "Task ARN", cell: (i: TaskSummary) => i.taskArn || "—" },
+              { header: "Task ARN", cell: (i: TaskSummary) => <TruncatedText>{i.taskArn || "—"}</TruncatedText> },
               { header: "Status", cell: (i: TaskSummary) => <StatusIndicator type={i.lastStatus === "RUNNING" ? "success" : i.lastStatus === "STOPPED" ? "warning" : "in-progress"}>{i.lastStatus || "—"}</StatusIndicator> },
               { header: "Desired", cell: (i: TaskSummary) => i.desiredStatus || "—" },
               { header: "Service", cell: (i: TaskSummary) => i.serviceName || "—" },
@@ -333,8 +355,8 @@ export default function ECSPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Service name" constraintText="Required">
-              <Input value={serviceNameInput} onChange={(e) => setServiceNameInput(e.detail.value)} placeholder="my-service" />
+            <FormField label={<>Service name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={serviceNameError}>
+              <Input value={serviceNameInput} onChange={(e) => { setServiceNameInput(e.detail.value); setServiceNameError(null); }} placeholder="my-service" />
             </FormField>
             <FormField label="Task definition">
               <Input value={serviceTaskDef} onChange={(e) => setServiceTaskDef(e.detail.value)} placeholder="my-task-definition:1" />
@@ -358,8 +380,8 @@ export default function ECSPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Family name" constraintText="Required">
-              <Input value={taskDefFamily} onChange={(e) => setTaskDefFamily(e.detail.value)} placeholder="my-family" />
+            <FormField label={<>Family name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={taskDefFamilyError}>
+              <Input value={taskDefFamily} onChange={(e) => { setTaskDefFamily(e.detail.value); setTaskDefFamilyError(null); }} placeholder="my-family" />
             </FormField>
             <FormField label="Container definitions (JSON)">
               <Textarea value={taskDefJson} onChange={(e) => setTaskDefJson(e.detail.value)} rows={6} placeholder='[{"name":"app","image":"nginx","memory":512}]' />

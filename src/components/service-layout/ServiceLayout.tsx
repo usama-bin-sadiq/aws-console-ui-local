@@ -18,7 +18,7 @@ export interface ServiceLayoutProps {
   readonly splitPanel?: React.ReactElement;
   readonly provider?: string;
   readonly region?: string;
-  readonly healthStatus?: 'healthy' | 'degraded' | 'unreachable' | 'checking';
+  readonly healthStatus?: 'healthy' | 'degraded' | 'unreachable' | 'checking' | 'starting';
   readonly healthReason?: string;
 }
 

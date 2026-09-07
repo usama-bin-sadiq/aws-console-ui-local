@@ -27,6 +27,7 @@ export default function RedshiftPage() {
   const [identifier, setIdentifier] = useState("");
   const [nodeType, setNodeType] = useState("dc2.large");
   const [creating, setCreating] = useState(false);
+  const [identifierError, setIdentifierError] = useState<string | null>(null);
 
   const fetchClusters = async () => {
     setLoading(true);
@@ -48,6 +49,11 @@ export default function RedshiftPage() {
   }, []);
 
   const createCluster = async () => {
+    if (!identifier.trim()) {
+      setIdentifierError("Cluster identifier is required");
+      return;
+    }
+    setIdentifierError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/redshift", {
@@ -147,10 +153,10 @@ export default function RedshiftPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Cluster identifier" constraintText="Required">
+            <FormField label={<>Cluster identifier <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={identifierError}>
               <Input
                 value={identifier}
-                onChange={(e) => setIdentifier(e.detail.value)}
+                onChange={(e) => { setIdentifier(e.detail.value); setIdentifierError(null); }}
                 placeholder="my-redshift-cluster"
               />
             </FormField>

@@ -28,6 +28,7 @@ export default function LaunchTemplatePage() {
   const [imageId, setImageId] = useState("ami-12345678");
   const [instanceType, setInstanceType] = useState("t3.micro");
   const [creating, setCreating] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const fetchTemplates = async () => {
     setLoading(true);
@@ -49,6 +50,11 @@ export default function LaunchTemplatePage() {
   }, []);
 
   const createTemplate = async () => {
+    if (!name.trim()) {
+      setNameError("Template name is required");
+      return;
+    }
+    setNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/launch-template", {
@@ -143,8 +149,8 @@ export default function LaunchTemplatePage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Template name" constraintText="Required">
-              <Input value={name} onChange={(e: any) => setName(e.detail.value)} placeholder="my-launch-template" />
+            <FormField label={<>Template name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={nameError}>
+              <Input value={name} onChange={(e: any) => { setName(e.detail.value); setNameError(null); }} placeholder="my-launch-template" />
             </FormField>
             <FormField label="AMI ID">
               <Input value={imageId} onChange={(e: any) => setImageId(e.detail.value)} placeholder="ami-12345678" />

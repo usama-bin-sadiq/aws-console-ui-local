@@ -30,6 +30,16 @@ pnpm dev:ministack
 
 Open `http://localhost:3000`. The console reads provider health and capability information before enabling service links or write actions.
 
+MiniStack uses one gateway on port `4566`. Its `/_ministack/health` endpoint reports liveness and service availability; `/_ministack/ready` reports readiness after initialization scripts finish. The default slim image and the `:full` image expose different optional engines, so the console treats edition and operation coverage as capability data rather than assuming full parity.
+
+Provider references:
+
+- [MiniStack documentation](https://ministack.org/docs/)
+- [MiniStack service catalog](https://ministack.org/docs/services/)
+- [MiniStack limitations](https://ministack.org/docs/limitations/)
+- [LocalStack service catalog](https://docs.localstack.cloud/aws/services/)
+- [LocalStack feature coverage](https://docs.localstack.cloud/references/coverage/)
+
 ## Commands
 
 ```bash

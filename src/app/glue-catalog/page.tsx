@@ -46,16 +46,20 @@ export default function GlueCatalogPage() {
   const [createDbModal, setCreateDbModal] = useState(false);
   const [dbName, setDbName] = useState("");
   const [creatingDb, setCreatingDb] = useState(false);
+  const [dbNameError, setDbNameError] = useState<string | null>(null);
 
   const [createCrawlerModal, setCreateCrawlerModal] = useState(false);
   const [crawlerName, setCrawlerName] = useState("");
   const [crawlerRole, setCrawlerRole] = useState("");
   const [creatingCrawler, setCreatingCrawler] = useState(false);
+  const [crawlerNameError, setCrawlerNameError] = useState<string | null>(null);
 
   const [createJobModal, setCreateJobModal] = useState(false);
   const [jobName, setJobName] = useState("");
   const [jobRole, setJobRole] = useState("");
   const [creatingJob, setCreatingJob] = useState(false);
+  const [jobNameError, setJobNameError] = useState<string | null>(null);
+  const [jobRoleError, setJobRoleError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -87,6 +91,11 @@ export default function GlueCatalogPage() {
   }, []);
 
   const createDatabase = async () => {
+    if (!dbName.trim()) {
+      setDbNameError("Database name is required");
+      return;
+    }
+    setDbNameError(null);
     setCreatingDb(true);
     try {
       const res = await fetch("/api/glue", {
@@ -109,6 +118,11 @@ export default function GlueCatalogPage() {
   };
 
   const createCrawler = async () => {
+    if (!crawlerName.trim()) {
+      setCrawlerNameError("Crawler name is required");
+      return;
+    }
+    setCrawlerNameError(null);
     setCreatingCrawler(true);
     try {
       const res = await fetch("/api/glue", {
@@ -132,6 +146,20 @@ export default function GlueCatalogPage() {
   };
 
   const createJob = async () => {
+    let hasError = false;
+    if (!jobName.trim()) {
+      setJobNameError("Job name is required");
+      hasError = true;
+    } else {
+      setJobNameError(null);
+    }
+    if (!jobRole.trim()) {
+      setJobRoleError("IAM role is required");
+      hasError = true;
+    } else {
+      setJobRoleError(null);
+    }
+    if (hasError) return;
     setCreatingJob(true);
     try {
       const res = await fetch("/api/glue", {
@@ -287,8 +315,8 @@ export default function GlueCatalogPage() {
             </SpaceBetween>
           }
         >
-          <FormField label="Database name" constraintText="Required">
-            <Input value={dbName} onChange={(e) => setDbName(e.detail.value)} placeholder="my-database" />
+          <FormField label={<>Database name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={dbNameError}>
+            <Input value={dbName} onChange={(e) => { setDbName(e.detail.value); setDbNameError(null); }} placeholder="my-database" />
           </FormField>
         </Modal>
 
@@ -319,8 +347,8 @@ export default function GlueCatalogPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Crawler name" constraintText="Required">
-              <Input value={crawlerName} onChange={(e) => setCrawlerName(e.detail.value)} placeholder="my-crawler" />
+            <FormField label={<>Crawler name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={crawlerNameError}>
+              <Input value={crawlerName} onChange={(e) => { setCrawlerName(e.detail.value); setCrawlerNameError(null); }} placeholder="my-crawler" />
             </FormField>
             <FormField label="IAM role">
               <Input
@@ -359,13 +387,13 @@ export default function GlueCatalogPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Job name" constraintText="Required">
-              <Input value={jobName} onChange={(e) => setJobName(e.detail.value)} placeholder="my-job" />
+            <FormField label={<>Job name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={jobNameError}>
+              <Input value={jobName} onChange={(e) => { setJobName(e.detail.value); setJobNameError(null); }} placeholder="my-job" />
             </FormField>
-            <FormField label="IAM role" constraintText="Required">
+            <FormField label={<>IAM role <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={jobRoleError}>
               <Input
                 value={jobRole}
-                onChange={(e) => setJobRole(e.detail.value)}
+                onChange={(e) => { setJobRole(e.detail.value); setJobRoleError(null); }}
                 placeholder="arn:aws:iam::123456789012:role/GlueRole"
               />
             </FormField>

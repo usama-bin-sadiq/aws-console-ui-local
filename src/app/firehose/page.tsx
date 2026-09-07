@@ -28,6 +28,7 @@ export default function FirehosePage() {
   const [streamName, setStreamName] = useState("");
   const [deliveryType, setDeliveryType] = useState("DirectPut");
   const [creating, setCreating] = useState(false);
+  const [streamNameError, setStreamNameError] = useState<string | null>(null);
 
   const fetchStreams = async () => {
     setLoading(true);
@@ -58,6 +59,11 @@ export default function FirehosePage() {
   }, []);
 
   const createStream = async () => {
+    if (!streamName.trim()) {
+      setStreamNameError("Delivery stream name is required");
+      return;
+    }
+    setStreamNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/firehose", {
@@ -189,10 +195,10 @@ export default function FirehosePage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Delivery stream name" constraintText="Required">
+            <FormField label={<>Delivery stream name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={streamNameError}>
               <Input
                 value={streamName}
-                onChange={(e) => setStreamName(e.detail.value)}
+                onChange={(e) => { setStreamName(e.detail.value); setStreamNameError(null); }}
                 placeholder="my-delivery-stream"
               />
             </FormField>

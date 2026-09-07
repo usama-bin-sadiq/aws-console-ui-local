@@ -33,6 +33,7 @@ export default function EventBridgePage() {
   const [createModal, setCreateModal] = useState(false);
   const [busName, setBusName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [busNameError, setBusNameError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -55,6 +56,11 @@ export default function EventBridgePage() {
   }, []);
 
   const createBus = async () => {
+    if (!busName.trim()) {
+      setBusNameError("Event bus name is required");
+      return;
+    }
+    setBusNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/eventbridge", {
@@ -182,10 +188,10 @@ export default function EventBridgePage() {
             </SpaceBetween>
           }
         >
-          <FormField label="Event bus name" constraintText="Required">
+          <FormField label={<>Event bus name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={busNameError}>
             <Input
               value={busName}
-              onChange={(e) => setBusName(e.detail.value)}
+              onChange={(e) => { setBusName(e.detail.value); setBusNameError(null); }}
               placeholder="my-event-bus"
             />
           </FormField>

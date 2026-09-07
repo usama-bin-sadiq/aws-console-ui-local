@@ -81,9 +81,7 @@ export function GlobalSearch({
         }}
       />
       {showResults && results.length > 0 && (
-        <Box
-          padding="n"
-          variant="div"
+        <div
           style={{
             position: 'absolute',
             top: 'calc(100% + 4px)',
@@ -98,6 +96,7 @@ export function GlobalSearch({
             boxShadow: AWACS_DESIGN_TOKENS.elevation.level3,
           }}
         >
+          <Box padding="n">
           <SpaceBetween size="xs" direction="vertical">
             {Object.entries(grouped).map(([category, items]) => (
               <div key={category}>
@@ -138,7 +137,7 @@ export function GlobalSearch({
                       (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
                     }}
                   >
-                    <Icon name={item.icon || 'search'} size="small" />
+                    <Icon name={(item.icon || 'search') as any} size="small" />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, color: AWACS_DESIGN_TOKENS.colors.textPrimary }}>
                         {item.text}
@@ -155,7 +154,8 @@ export function GlobalSearch({
               </div>
             ))}
           </SpaceBetween>
-        </Box>
+          </Box>
+        </div>
       )}
     </div>
   );

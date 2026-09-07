@@ -21,7 +21,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const res = await ec2.send(new CreateSubnetCommand({ VpcId: body.vpcId, CidrBlock: body.cidrBlock }));
+    const res = await ec2.send(new CreateSubnetCommand({
+      VpcId: body.vpcId,
+      CidrBlock: body.cidrBlock,
+      AvailabilityZone: body.availabilityZone || undefined,
+    }));
     return NextResponse.json({ subnet: res.Subnet });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

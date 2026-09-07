@@ -6,13 +6,13 @@ import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Button from "@cloudscape-design/components/button";
-import { LambdaFunctionWizard } from "@/components/lambda/LambdaFunctionWizard";
+import { LambdaFunctionWizard, LambdaFunctionWizardConfig } from "@/components/lambda/LambdaFunctionWizard";
 
 export default function LambdaCreatePage() {
   const router = useRouter();
   const [showWizard, setShowWizard] = useState(true);
 
-  const handleCreate = (config: Record<string, unknown>) => {
+  const handleCreate = (config: LambdaFunctionWizardConfig) => {
     setShowWizard(false);
     router.push("/lambda");
   };

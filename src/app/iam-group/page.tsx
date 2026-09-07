@@ -51,6 +51,7 @@ export default function IAMGroupPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [addUserModal, setAddUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState("");
+  const [groupNameError, setGroupNameError] = useState<string | null>(null);
 
   const fetchGroups = useCallback(async () => {
     setLoading(true);
@@ -99,6 +100,11 @@ export default function IAMGroupPage() {
   }, [fetchPolicies, fetchUsers]);
 
   const createGroup = async () => {
+    if (!groupName.trim()) {
+      setGroupNameError("Group name is required");
+      return;
+    }
+    setGroupNameError(null);
     await fetch("/api/iam-group", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -279,7 +285,7 @@ export default function IAMGroupPage() {
 
         <Modal visible={createModal} onDismiss={() => setCreateModal(false)} header="Create IAM Group"
           footer={<SpaceBetween direction="horizontal" size="xs"><Button onClick={() => setCreateModal(false)}>Cancel</Button><Button variant="primary" onClick={createGroup}>Create</Button></SpaceBetween>}>
-          <FormField label="Group Name"><Input value={groupName} onChange={(e) => setGroupName((e as any).detail?.value || "")} /></FormField>
+          <FormField label={<>Group Name <span style={{ color: "red" }}>*</span></>} errorText={groupNameError}><Input value={groupName} onChange={(e) => { setGroupName((e as any).detail?.value || ""); setGroupNameError(null); }} /></FormField>
         </Modal>
 
         <Modal visible={attachPolicyModal} onDismiss={() => setAttachPolicyModal(false)} header="Attach Policy"

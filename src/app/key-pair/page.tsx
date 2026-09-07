@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -8,7 +9,6 @@ import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
@@ -226,18 +226,7 @@ export default function KeyPairPage() {
               Key pair created successfully. Download your private key file now. You cannot download it again.
             </Alert>
             <Container header={<Header variant="h3">Key Material</Header>}>
-              <pre style={{
-                background: "#1a1a2e",
-                color: "#e0e0e0",
-                padding: "16px",
-                borderRadius: "4px",
-                overflow: "auto",
-                maxHeight: "200px",
-                fontFamily: "monospace",
-                fontSize: "12px",
-              }}>
-                {createdKeyMaterial}
-              </pre>
+              <CodeView content={createdKeyMaterial} lineNumbers wrapLines />
             </Container>
             <Button
               onClick={() => {

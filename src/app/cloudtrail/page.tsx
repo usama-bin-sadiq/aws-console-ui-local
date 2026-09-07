@@ -27,6 +27,7 @@ export default function CloudTrailPage() {
   const [trailName, setTrailName] = useState("");
   const [s3BucketName, setS3BucketName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [trailNameError, setTrailNameError] = useState<string | null>(null);
 
   const fetchTrails = async () => {
     setLoading(true);
@@ -48,6 +49,11 @@ export default function CloudTrailPage() {
   }, []);
 
   const createTrail = async () => {
+    if (!trailName.trim()) {
+      setTrailNameError("Trail name is required");
+      return;
+    }
+    setTrailNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/cloudtrail", {
@@ -141,10 +147,10 @@ export default function CloudTrailPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Trail name" constraintText="Required">
+            <FormField label={<>Trail name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={trailNameError}>
               <Input
                 value={trailName}
-                onChange={(e) => setTrailName(e.detail.value)}
+                onChange={(e) => { setTrailName(e.detail.value); setTrailNameError(null); }}
                 placeholder="my-trail"
               />
             </FormField>

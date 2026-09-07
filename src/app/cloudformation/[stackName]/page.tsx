@@ -267,8 +267,8 @@ export default function StackDetailPage() {
               {
                 id: "paramValue",
                 header: "Parameter value",
-                cell: (item: { ParameterValue?: string; ResolvedValue?: string }) =>
-                  item.ResolvedValue || item.ParameterValue || "—",
+                cell: (item) =>
+                  (item as { ParameterValue?: string; ResolvedValue?: string }).ResolvedValue || (item as { ParameterValue?: string }).ParameterValue || "—",
               },
             ]}
             items={stack.Parameters}

@@ -220,7 +220,7 @@ export function getAvailableNavigationItems(
       const availability = getServiceAvailability(compatibility, mode, healthStatus, healthServices);
       const hasReportedHealth = Object.keys(healthServices).some((key) => {
         const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-        return normalizedKey === service.href.replace(/[^a-z0-9]/g, '').toLowerCase()
+        return normalizedKey === (service.href ?? "").replace(/[^a-z0-9]/g, '').toLowerCase()
           || normalizedKey === compatibility.serviceName.replace(/[^a-z0-9]/g, '').toLowerCase();
       });
       const isUnknown = healthStatus !== 'unreachable' && !hasReportedHealth;

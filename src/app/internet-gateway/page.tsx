@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -9,7 +9,7 @@ import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
-import Input from "@cloudscape-design/components/input";
+import Select from "@cloudscape-design/components/select";
 
 interface InternetGateway {
   InternetGatewayId: string;
@@ -27,6 +27,20 @@ export default function InternetGatewayPage() {
   const [submitting, setSubmitting] = useState(false);
   const [selected, setSelected] = useState<InternetGateway[]>([]);
   const [deleting, setDeleting] = useState(false);
+  const [detaching, setDetaching] = useState<string | null>(null);
+
+  // VPCs for dropdown
+  const [vpcs, setVpcs] = useState<Array<{ VpcId: string; CidrBlock?: string }>>([]);
+
+  async function loadVpcs() {
+    try {
+      const res = await fetch("/api/vpc");
+      const data = await res.json();
+      setVpcs(data.vpcs || []);
+    } catch {
+      // VPCs will be empty
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -43,7 +57,7 @@ export default function InternetGatewayPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); loadVpcs(); }, []);
 
   async function handleCreate() {
     setSubmitting(true);
@@ -81,6 +95,24 @@ export default function InternetGatewayPage() {
       setError(e instanceof Error ? e.message : "Failed to attach internet gateway");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleDetach(igwId: string, vpcId: string) {
+    setDetaching(igwId);
+    try {
+      const res = await fetch("/api/internet-gateway", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "detach", igwId, vpcId }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      await load();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to detach internet gateway");
+    } finally {
+      setDetaching(null);
     }
   }
 
@@ -145,6 +177,20 @@ export default function InternetGatewayPage() {
                   ? item.Attachments[0].State
                   : "detached",
               },
+              {
+                id: "actions",
+                header: "Actions",
+                cell: (item) => item.Attachments && item.Attachments.length > 0 ? (
+                  <Button
+                    variant="link"
+                    loading={detaching === item.InternetGatewayId}
+                    onClick={() => handleDetach(item.InternetGatewayId, item.Attachments![0].VpcId)}
+                    formAction="none"
+                  >
+                    Detach
+                  </Button>
+                ) : "—",
+              },
             ]}
             empty={
               <Box textAlign="center" color="inherit">
@@ -171,10 +217,20 @@ export default function InternetGatewayPage() {
       >
         <SpaceBetween size="m">
           <FormField label="Internet Gateway ID">
-            <Input value={attachIgwId} onChange={({ detail }) => setAttachIgwId(detail.value)} placeholder="igw-xxxxxxxx" />
+            <Select
+              selectedOption={attachIgwId ? { value: attachIgwId, label: attachIgwId } : null}
+              options={gateways.filter((g) => !g.Attachments || g.Attachments.length === 0).map((gw) => ({ value: gw.InternetGatewayId, label: gw.InternetGatewayId }))}
+              placeholder="Select an internet gateway"
+              onChange={({ detail }) => setAttachIgwId(detail.selectedOption.value || "")}
+            />
           </FormField>
           <FormField label="VPC ID">
-            <Input value={attachVpcId} onChange={({ detail }) => setAttachVpcId(detail.value)} placeholder="vpc-xxxxxxxx" />
+            <Select
+              selectedOption={attachVpcId ? { value: attachVpcId, label: `${attachVpcId} (${vpcs.find((v) => v.VpcId === attachVpcId)?.CidrBlock || ""})` } : null}
+              options={vpcs.map((vpc) => ({ value: vpc.VpcId, label: `${vpc.VpcId} (${vpc.CidrBlock || ""})` }))}
+              placeholder="Select a VPC"
+              onChange={({ detail }) => setAttachVpcId(detail.selectedOption.value || "")}
+            />
           </FormField>
         </SpaceBetween>
       </Modal>

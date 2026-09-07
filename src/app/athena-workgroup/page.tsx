@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Tabs from "@cloudscape-design/components/tabs";
@@ -171,19 +172,7 @@ export default function AthenaWorkgroupPage() {
             </FormField>
             {queryResult && (
               <FormField label="Result">
-                <pre
-                  style={{
-                    background: "#1a1a2e",
-                    color: "#0f0",
-                    padding: "12px",
-                    borderRadius: "4px",
-                    overflow: "auto",
-                    maxHeight: "200px",
-                    fontSize: "12px",
-                  }}
-                >
-                  {queryResult}
-                </pre>
+                <CodeView content={queryResult} lineNumbers wrapLines />
               </FormField>
             )}
           </SpaceBetween>

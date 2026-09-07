@@ -39,6 +39,7 @@ export default function S3BucketCreatePage() {
   const [versioning, setVersioning] = useState("Suspended");
   const [encryption, setEncryption] = useState("AES256");
   const [tags, setTags] = useState<Array<{ Key: string; Value: string }>>([{ Key: "Environment", Value: "development" }]);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const updateTag = useCallback((index: number, field: "Key" | "Value", value: string) => {
     const newTags = [...tags];
@@ -55,6 +56,11 @@ export default function S3BucketCreatePage() {
   }, [tags]);
 
   const handleCreate = useCallback(async () => {
+    if (!name.trim()) {
+      setNameError("Bucket name is required");
+      return;
+    }
+    setNameError(null);
     setCreating(true);
     setError(null);
     try {
@@ -99,10 +105,10 @@ export default function S3BucketCreatePage() {
       description: "Choose a globally unique bucket name and AWS region",
       content: (
         <SpaceBetween size="l">
-          <FormField label="Bucket name" required>
+          <FormField label={<>Bucket name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={nameError}>
             <Input
               value={name}
-              onChange={({ detail }) => setName(detail.value)}
+              onChange={({ detail }) => { setName(detail.value); setNameError(null); }}
               placeholder="my-unique-bucket"
               ariaLabel="Bucket name"
             />
@@ -110,7 +116,7 @@ export default function S3BucketCreatePage() {
               {S3_BUCKET_RULES.join(". ")}
             </Box>
           </FormField>
-          <FormField label="AWS Region" required>
+          <FormField label="AWS Region" constraintText="Required">
             <Select
               selectedOption={{ value: region, label: S3_REGION_OPTIONS.find((r) => r.value === region)?.label || region }}
               options={S3_REGION_OPTIONS}
@@ -121,7 +127,7 @@ export default function S3BucketCreatePage() {
           {name && (
             <Box>
               <Box variant="h4">Bucket name preview</Box>
-              <Box variant="code" style={{ fontFamily: "monospace" }}>{name}</Box>
+              <div style={{ fontFamily: "monospace" }}><Box variant="code">{name}</Box></div>
             </Box>
           )}
         </SpaceBetween>
@@ -259,7 +265,7 @@ export default function S3BucketCreatePage() {
               nextButton: "Next",
               previousButton: "Previous",
               navigationAriaLabel: "Bucket creation wizard navigation",
-              stepNumberingLabel: (stepIndex) => `Step ${stepIndex + 1}`,
+              stepNumberLabel: (stepIndex: number) => `Step ${stepIndex + 1}`,
             }}
           />
         )}

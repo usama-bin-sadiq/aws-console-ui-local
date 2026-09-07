@@ -51,7 +51,7 @@ export async function GET(request: Request) {
               Tags: stack.Tags,
               Outputs: stack.Outputs,
               Parameters: stack.Parameters,
-              TemplateDescription: stack.TemplateDescription,
+              TemplateDescription: (stack as any).TemplateDescription,
               NotificationARNs: stack.NotificationARNs,
             }
           : null,
@@ -78,12 +78,7 @@ export async function GET(request: Request) {
           "DELETE_IN_PROGRESS",
           "DELETE_COMPLETE",
           "DELETE_FAILED",
-          "IMPORT_IN_PROGRESS",
-          "IMPORT_COMPLETE",
-          "IMPORT_ROLLBACK_IN_PROGRESS",
-          "IMPORT_ROLLBACK_COMPLETE",
-          "IMPORT_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS",
-        ],
+        ] as any,
       })
     );
     return NextResponse.json({ stacks: res.StackSummaries || [] });

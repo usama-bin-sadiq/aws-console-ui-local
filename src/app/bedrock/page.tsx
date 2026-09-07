@@ -8,6 +8,7 @@ import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Tabs from "@cloudscape-design/components/tabs";
+import TruncatedText from "@/components/TruncatedText";
 
 
 interface FoundationModel {
@@ -71,7 +72,7 @@ export default function BedrockPage() {
                     { header: "Model ID", cell: (i) => i.modelId || "—" },
                     { header: "Name", cell: (i) => i.modelName || "—" },
                     { header: "Provider", cell: (i) => i.providerName || "—" },
-                    { header: "ARN", cell: (i) => i.modelArn || "—" },
+                    { header: "ARN", cell: (i) => <TruncatedText>{i.modelArn || "—"}</TruncatedText> },
                   ]}
                   empty={<Box textAlign="center">No foundation models found.</Box>}
                 />
@@ -88,7 +89,7 @@ export default function BedrockPage() {
                   columnDefinitions={[
                     { header: "Model ID", cell: (i) => i.modelId || "—" },
                     { header: "Name", cell: (i) => i.modelName || "—" },
-                    { header: "ARN", cell: (i) => i.modelArn || "—" },
+                    { header: "ARN", cell: (i) => <TruncatedText>{i.modelArn || "—"}</TruncatedText> },
                   ]}
                   empty={<Box textAlign="center">No custom models found.</Box>}
                 />

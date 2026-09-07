@@ -14,7 +14,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const res = await ec2.send(new CreateNatGatewayCommand({ SubnetId: body.subnetId, ConnectivityType: body.connectivityType || "private" }));
+    const res = await ec2.send(new CreateNatGatewayCommand({
+      SubnetId: body.subnetId,
+      ConnectivityType: body.connectivityType || "private",
+      AllocationId: body.allocationId || undefined,
+    }));
     return NextResponse.json({ natGateway: res.NatGateway });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

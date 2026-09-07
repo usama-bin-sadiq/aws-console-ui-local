@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import Cards from "@cloudscape-design/components/cards";
@@ -9,11 +10,10 @@ import Box from "@cloudscape-design/components/box";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
-import Badge from "@cloudscape-design/components/badge";
 import Link from "@cloudscape-design/components/link";
-import Icon from "@cloudscape-design/components/icon";
 import { useRouter } from "next/navigation";
 import { AdapterMode, EmulatorHealthStatus, findServiceCompatibility, getServiceAvailability } from "@/constants/service-compatibility";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface Service {
   name: string;
@@ -88,7 +88,7 @@ export default function Dashboard() {
       .then((r) => r.json())
       .then((d) => {
         setProvider(d.provider || "unknown");
-        setHealthStatus(d.status === "healthy" ? "healthy" : d.status === "degraded" ? "degraded" : "unreachable");
+        setHealthStatus(d.status === "healthy" ? "healthy" : d.status === "degraded" ? "degraded" : d.status === "starting" ? "starting" : "unreachable");
         setHealthServices(d.services || {});
       })
       .catch(() => {
@@ -135,8 +135,8 @@ export default function Dashboard() {
           </SpaceBetween>
           <SpaceBetween size="s">
             <Box variant="h3">Endpoint</Box>
-            <StatusIndicator type={healthStatus === "healthy" ? "success" : healthStatus === "degraded" ? "warning" : "info"}>
-              {healthStatus === "healthy" ? "Connected to local emulator" : healthStatus === "degraded" ? "Connected with limited service support" : "Waiting for emulator capability data"}
+            <StatusIndicator type={healthStatus === "healthy" ? "success" : healthStatus === "degraded" ? "warning" : healthStatus === "starting" ? "in-progress" : "info"}>
+              {healthStatus === "healthy" ? "Connected to local emulator" : healthStatus === "degraded" ? "Connected with limited service support" : healthStatus === "starting" ? "Emulator is starting" : "Waiting for emulator capability data"}
             </StatusIndicator>
           </SpaceBetween>
         </Grid>
@@ -146,12 +146,19 @@ export default function Dashboard() {
         <Container header={<Header variant="h2">Favorites</Header>}>
           <Cards
             cardDefinition={{
-              header: (item) => (
-                <SpaceBetween direction="horizontal" size="xs">
-                  <Icon name={item.icon as any} />
-                  <Link href={item.href}>{item.name}</Link>
-                </SpaceBetween>
-              ),
+              header: (item) => {
+                const icon = SERVICE_ICONS[item.href];
+                return (
+                  <SpaceBetween direction="horizontal" size="xs">
+                    {icon ? (
+                      <Image src={icon.small} alt={item.name} width={24} height={24} />
+                    ) : (
+                      <span style={{ display: "inline-block", width: 24, height: 24 }} />
+                    )}
+                    <Link href={item.href}>{item.name}</Link>
+                  </SpaceBetween>
+                );
+              },
               sections: [
                 {
                   id: "description",
@@ -184,9 +191,19 @@ export default function Dashboard() {
         <Container header={<Header variant="h2">Recently visited</Header>}>
           <Cards
             cardDefinition={{
-              header: (item) => (
-                <Link href={item.href}>{item.name}</Link>
-              ),
+              header: (item) => {
+                const icon = SERVICE_ICONS[item.href];
+                return (
+                  <SpaceBetween direction="horizontal" size="xs">
+                    {icon ? (
+                      <Image src={icon.small} alt={item.name} width={24} height={24} />
+                    ) : (
+                      <span style={{ display: "inline-block", width: 24, height: 24 }} />
+                    )}
+                    <Link href={item.href}>{item.name}</Link>
+                  </SpaceBetween>
+                );
+              },
               sections: [
                 {
                   id: "description",
@@ -212,12 +229,19 @@ export default function Dashboard() {
           <Container key={category} header={<Header variant="h2">{category}</Header>}>
             <Cards
               cardDefinition={{
-                header: (item) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Icon name={item.icon as any} />
-                    <Link href={item.href}>{item.name}</Link>
-                  </SpaceBetween>
-                ),
+                header: (item) => {
+                  const icon = SERVICE_ICONS[item.href];
+                  return (
+                    <SpaceBetween direction="horizontal" size="xs">
+                      {icon ? (
+                        <Image src={icon.small} alt={item.name} width={24} height={24} />
+                      ) : (
+                        <span style={{ display: "inline-block", width: 24, height: 24 }} />
+                      )}
+                      <Link href={item.href}>{item.name}</Link>
+                    </SpaceBetween>
+                  );
+                },
                 sections: [
                   {
                     id: "description",

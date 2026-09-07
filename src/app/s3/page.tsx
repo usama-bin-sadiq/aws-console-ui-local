@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
-import Cards from "@cloudscape-design/components/cards";
+import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -107,39 +107,29 @@ export default function S3BucketsPage() {
               </Button>
             </Box>
           ) : (
-            <Cards
-              cardDefinition={{
-                header: (item: S3BucketItem) => (
-                  <Header variant="h3">
-                    <a
-                      href={`/s3/${encodeURIComponent(item.Name)}`}
-                      style={{ color: "inherit", textDecoration: "none" }}
-                      aria-label={`Open bucket ${item.Name}`}
-                    >
-                      {item.Name}
-                    </a>
-                  </Header>
-                ),
-                sections: [
-                  {
-                    id: "region",
-                    header: "Region",
-                    content: (item: S3BucketItem) => item.Region || "us-east-1",
-                  },
-                  {
-                    id: "date",
-                    header: "Created",
-                    content: (item: S3BucketItem) => item.CreationDate || "—",
-                  },
-                ],
-              }}
+            <Table
               items={buckets}
               selectionType="multi"
-              visibleSections={["region", "date"]}
+              trackBy="Name"
+              columnDefinitions={[
+                {
+                  id: "name",
+                  header: "Bucket name",
+                  cell: (item) => (
+                    <a href={`/s3/${encodeURIComponent(item.Name)}`} aria-label={`Open bucket ${item.Name}`}>
+                      {item.Name}
+                    </a>
+                  ),
+                  sortingField: "Name",
+                },
+                { id: "region", header: "Region", cell: (item) => item.Region || "us-east-1", sortingField: "Region" },
+                { id: "created", header: "Creation date", cell: (item) => item.CreationDate || "—", sortingField: "CreationDate" },
+              ]}
               ariaLabels={{
                 selectionGroupLabel: "Selected buckets",
                 itemSelectionLabel: (_selection, item) => `Select ${item.Name || "bucket"}`,
               }}
+              empty={<Box textAlign="center" padding="l">No buckets found.</Box>}
             />
           )}
         </Container>

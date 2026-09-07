@@ -25,8 +25,13 @@ The product decisions in this document are based on:
 - Cloudscape accessibility principles: https://cloudscape.design/foundation/core-principles/accessibility/
 - LocalStack service catalog: https://docs.localstack.cloud/aws/services/
 - LocalStack feature coverage: https://docs.localstack.cloud/references/coverage/
+- MiniStack documentation: https://ministack.org/docs/
+- MiniStack service catalog: https://ministack.org/docs/services/
+- MiniStack configuration and image editions: https://ministack.org/docs/configuration/
+- MiniStack architecture and readiness lifecycle: https://ministack.org/docs/architecture/
+- MiniStack known limitations: https://ministack.org/docs/limitations/
 
-MiniStack support must be taken from the MiniStack distribution's published capability documentation or its runtime capability endpoint. No MiniStack service or operation may be invented from the AWS service catalog.
+MiniStack support must be taken from its published service pages, known-limitations page, image edition, and runtime capability or health endpoints. No MiniStack service or operation may be invented from the AWS service catalog.
 
 ### 2.2 Service inclusion rule
 
@@ -71,12 +76,17 @@ The console shall maintain a provider session containing:
 | Provider | `ministack` or `localstack` |
 | Endpoint | Displayed host and port; editable only through an explicit provider settings flow |
 | Region | Current emulated region; changing it reloads provider capabilities and resources |
-| Health | `checking`, `healthy`, `degraded`, or `unreachable` |
+| Health | `checking`, `starting`, `healthy`, `degraded`, or `unreachable` |
+| Edition | Provider edition such as MiniStack `slim` or `full`, when reported |
 | Services | Service name, service key, status, and optional documentation URL |
 | Operations | Operation key, read/write classification, support status, and reason |
 | Last checked | Locale-formatted timestamp |
 
 The capability manifest must distinguish service availability from operation support. A healthy provider may still report a service or operation as unsupported.
+
+MiniStack has two documented image editions. The default slim image omits optional engines such as DuckDB, database drivers, SAM translation, IoT certificate crypto, and SFTP dependencies; the full image enables those capabilities. The active MiniStack edition must be part of the provider session and capability explanation.
+
+MiniStack liveness (`/_ministack/health`) and readiness (`/_ministack/ready`) are separate states. The console must keep writes disabled until readiness succeeds. LocalStack health and feature coverage remain provider-specific and must not be inferred from MiniStack behavior.
 
 When capability data is missing, the UI must show `Unknown` and prevent mutating actions. Read actions may run only when the provider contract explicitly permits optimistic discovery; errors must remain visible.
 
@@ -214,6 +224,8 @@ The page must show a service-specific operation manifest. Unsupported operations
 
 LocalStack publicly documents a broad catalog including, among others, API Gateway, AppConfig, AppSync, Athena, CloudFormation, CloudFront, CloudTrail, CloudWatch, DynamoDB, EC2, ECR, ECS, EFS, EKS, EventBridge, Glue, IAM, IoT, Kinesis, KMS, Lambda, OpenSearch, RDS, Redshift, Route 53, S3, Secrets Manager, SNS, SQS, Step Functions, Systems Manager, X-Ray, and additional services.
 
+MiniStack publicly documents 60+ services, with 10 fully featured services and 45+ partial or by-design-gap services. “Supported” means the documented operation set is available, not that the service has production AWS semantics. The catalog explicitly identifies metadata-only services, stored-but-not-dispatched integrations, optional full-image engines, and impossible-local behaviors such as real VPC packet routing and DNS propagation.
+
 This list is a discovery reference only, not a permission to display all of these services. The implementation must filter it through the active LocalStack capability response and the local operation manifest. MiniStack must be filtered through its own published or runtime capability response. Service families shown in the UI should follow the AWS console grouping model, but empty categories should be hidden.
 
 ## 10. Cloudscape Design Requirements
@@ -271,6 +283,7 @@ Follow Cloudscape component usage guidance and WCAG 2.1 AA:
 | Condition | UI response |
 |---|---|
 | Provider unreachable | Full-page or service-level `Alert`; keep navigation usable; show retry and provider settings actions |
+| Provider starting/not ready | `Alert` or progress state; keep reads conservative and disable all mutations until readiness succeeds |
 | Capability check in progress | Skeleton or loading state; prevent unsupported writes |
 | Service unavailable | Service unavailable state with provider reason; no create/update/delete actions |
 | Operation partial | `StatusIndicator` and inline explanation; allow only supported operations |
@@ -336,3 +349,4 @@ Follow Cloudscape component usage guidance and WCAG 2.1 AA:
 - Responsive checks cover 320px, desktop, and 400% zoom behavior.
 - Keyboard and screen-reader checks cover the shell, catalog, collection, details, wizard, modal, and notifications.
 - Documentation links point to public AWS, Cloudscape, LocalStack, or MiniStack sources; unknown MiniStack behavior remains explicitly unknown until verified.
+- MiniStack slim/full edition, readiness behavior, and documented service limitations are represented in provider state and operation explanations.

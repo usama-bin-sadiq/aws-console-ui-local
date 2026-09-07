@@ -18,6 +18,7 @@ import Alert from "@cloudscape-design/components/alert";
 import TextFilter from "@cloudscape-design/components/text-filter";
 import Pagination from "@cloudscape-design/components/pagination";
 import { CloudWatchAlarm, CloudWatchMetric, CloudWatchLogGroup, CloudWatchLogStream, CloudWatchInsightsQuery } from "@/types/cloudwatch";
+import TruncatedText from "@/components/TruncatedText";
 
 export default function CloudWatchPage() {
   const [alarms, setAlarms] = useState<CloudWatchAlarm[]>([]);
@@ -303,7 +304,7 @@ export default function CloudWatchPage() {
   ];
 
   const logGroupColumns: TableProps.ColumnDefinition<CloudWatchLogGroup>[] = [
-    { id: "name", header: "Log Group Name", cell: (item) => <Button variant="link" onClick={() => setSelectedLogGroup(item.logGroupName || null)} formAction="none">{item.logGroupName || "—"}</Button>, sortingField: "logGroupName", isRowHeader: true },
+    { id: "name", header: "Log Group Name", cell: (item) => <TruncatedText><Button variant="link" onClick={() => setSelectedLogGroup(item.logGroupName || null)} formAction="none">{item.logGroupName || "—"}</Button></TruncatedText>, sortingField: "logGroupName", isRowHeader: true },
     { id: "retention", header: "Retention (days)", cell: (item) => item.retentionInDays ?? "—" },
     { id: "storedBytes", header: "Stored Bytes", cell: (item) => (item.storedBytes !== undefined ? String(item.storedBytes) : "—") },
     { id: "actions", header: "Actions", cell: (item) => (

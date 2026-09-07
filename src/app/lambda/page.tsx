@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -13,12 +14,12 @@ import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Modal from "@cloudscape-design/components/modal";
 import Textarea from "@cloudscape-design/components/textarea";
 import FormField from "@cloudscape-design/components/form-field";
-import Input from "@cloudscape-design/components/input";
 import TextFilter from "@cloudscape-design/components/text-filter";
 import Pagination from "@cloudscape-design/components/pagination";
 import CollectionPreferences from "@cloudscape-design/components/collection-preferences";
 import Alert from "@cloudscape-design/components/alert";
 import Link from "@cloudscape-design/components/link";
+import TruncatedText from "@/components/TruncatedText";
 import { LambdaFunctionConfig } from "@/types/lambda";
 
 const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<LambdaFunctionConfig>[] = [
@@ -68,7 +69,7 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<LambdaFunctionConfig>[] = 
   {
     id: "description",
     header: "Description",
-    cell: (item) => item.Description || "—",
+    cell: (item) => <TruncatedText>{item.Description || "—"}</TruncatedText>,
     sortingField: "Description",
   },
   {
@@ -139,7 +140,6 @@ export default function LambdaPage() {
   const [invokeLoading, setInvokeLoading] = useState(false);
 
   // Create wizard state
-  const [createModal, setCreateModal] = useState(false);
 
   const fetchFunctions = useCallback(async () => {
     setLoading(true);
@@ -425,18 +425,7 @@ export default function LambdaPage() {
             </FormField>
             {invokeResult && (
               <FormField label="Result">
-                <pre
-                  style={{
-                    background: "#1a1a2e",
-                    color: "#0f0",
-                    padding: "12px",
-                    borderRadius: "4px",
-                    overflow: "auto",
-                    maxHeight: "300px",
-                  }}
-                >
-                  {invokeResult}
-                </pre>
+                <CodeView content={invokeResult} lineNumbers wrapLines />
               </FormField>
             )}
           </SpaceBetween>

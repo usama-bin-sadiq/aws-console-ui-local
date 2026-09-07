@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -161,9 +162,7 @@ export default function GlueJobPage() {
             </FormField>
             {startResult && (
               <FormField label="Result">
-                <div style={{ padding: "8px", background: "#1a1a2e", color: "#0f0", borderRadius: "4px" }}>
-                  {startResult}
-                </div>
+                <CodeView content={startResult} lineNumbers wrapLines />
               </FormField>
             )}
           </SpaceBetween>

@@ -308,6 +308,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.1121.0
         version: 3.1124.0
+      '@cloudscape-design/code-view':
+        specifier: ^3.0.173
+        version: 3.0.173(@cloudscape-design/components@3.0.1358(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       '@cloudscape-design/components':
         specifier: ^3.0.1356
         version: 3.0.1358(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -320,6 +323,9 @@ importers:
       '@xterm/addon-fit':
         specifier: ^0.11.0
         version: 0.11.0
+      ace-builds:
+        specifier: ^1.44.0
+        version: 1.44.0
       better-sqlite3:
         specifier: ^11.7.0
         version: 11.10.0
@@ -1014,6 +1020,12 @@ packages:
 
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
+
+  '@cloudscape-design/code-view@3.0.173':
+    resolution: {integrity: sha512-OTH7DtO9G8Zr1SRyVesy27d8TapV4BsHMB7nWCeAd8tZSv3Rz+PCZxAsukzgSRsWFjbze8sqLVcOYeNyCdNUUQ==}
+    peerDependencies:
+      '@cloudscape-design/components': ^3
+      react: '>=18.2.0'
 
   '@cloudscape-design/collection-hooks@1.0.107':
     resolution: {integrity: sha512-oLfcRAlC9Xau3BKBop6HSRWzIKsP2K7p2YiwzsOncpVfAgpZdyUMjzYH8f32g/e0/D7J9aQLRN9uGX2YL7JWgg==}
@@ -2090,6 +2102,10 @@ packages:
 
   ace-builds@1.44.0:
     resolution: {integrity: sha512-PFNMSYqFdEUkul2Ntud0HvA09AgY+F1ag0UYdpMH60wNI/qOA8cB8tlTgoALMEwIdUPJK2CjrIQ7OnbiSS/ugQ==}
+
+  ace-code@1.44.0:
+    resolution: {integrity: sha512-6hmMdpJ7DTB4xGSPfZcINgwL2v5/0u6Oh5GXbcH7KZqjWkVADxSbA1IMoWmk/WvgHAsbaYmZoWh7DS2zCfVbeQ==}
+    engines: {node: '>= 0.6.0'}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -5411,6 +5427,14 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
+  '@cloudscape-design/code-view@3.0.173(@cloudscape-design/components@3.0.1358(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
+    dependencies:
+      '@cloudscape-design/component-toolkit': 1.0.0-beta.183(react@19.2.8)
+      '@cloudscape-design/components': 3.0.1358(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      ace-code: 1.44.0
+      clsx: 1.2.1
+      react: 19.2.8
+
   '@cloudscape-design/collection-hooks@1.0.107(react@19.2.8)':
     dependencies:
       '@cloudscape-design/component-toolkit': 1.0.0-beta.183(react@19.2.8)
@@ -6357,6 +6381,8 @@ snapshots:
   '@xterm/addon-fit@0.11.0': {}
 
   ace-builds@1.44.0: {}
+
+  ace-code@1.44.0: {}
 
   acorn-jsx@5.3.2(acorn@8.18.0):
     dependencies:

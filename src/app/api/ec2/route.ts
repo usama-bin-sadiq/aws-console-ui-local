@@ -20,7 +20,6 @@ import {
   DescribeVpcsCommand,
   CreateKeyPairCommand,
   DeleteKeyPairCommand,
-  ImportKeyPairCommand,
   DescribeRegionsCommand,
   DescribeAvailabilityZonesCommand,
 } from "@aws-sdk/client-ec2";
@@ -106,11 +105,16 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "modifyAttribute") {
-      await ec2.send(new ModifyInstanceAttributeCommand({
-        InstanceId: body.instanceId,
-        ...body.attributes,
-      }));
-      return NextResponse.json({ success: true });
+      try {
+        await ec2.send(new ModifyInstanceAttributeCommand({
+          InstanceId: body.instanceId,
+          ...body.attributes,
+        }));
+        return NextResponse.json({ success: true });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Failed to modify attribute";
+        return NextResponse.json({ error: message }, { status: 500 });
+      }
     }
 
     if (body.action === "describeStatus") {

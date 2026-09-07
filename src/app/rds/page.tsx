@@ -19,6 +19,7 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Select from "@cloudscape-design/components/select";
 import { RDSInstance } from "@/types/rds";
+import TruncatedText from "@/components/TruncatedText";
 import { RDS_ENGINE_OPTIONS } from "@/constants/rds-constants";
 
 const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<RDSInstance>[] = [
@@ -26,13 +27,17 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<RDSInstance>[] = [
     id: "identifier",
     header: "DB Identifier",
     cell: (item) => (
-      <Button
-        variant="link"
-        onClick={() => window.location.href = `/rds/${item.DBInstanceIdentifier}`}
-        formAction="none"
-      >
-        {item.DBInstanceIdentifier || "—"}
-      </Button>
+      <TruncatedText>
+        {String(
+          <Button
+            variant="link"
+            onClick={() => window.location.href = `/rds/${item.DBInstanceIdentifier}`}
+            formAction="none"
+          >
+            {item.DBInstanceIdentifier || "—"}
+          </Button>
+        )}
+      </TruncatedText>
     ),
     sortingField: "DBInstanceIdentifier",
     isRowHeader: true,
@@ -108,7 +113,7 @@ export default function RDSPage() {
     title: string;
     onConfirm: () => void;
     content: React.ReactNode;
-  }>({ visible: false, title: "", onConfirm: () => {}, content: null });
+  }>({ visible: false, title: "", onConfirm: () => { }, content: null });
 
   // Create instance modal state
   const [showCreate, setShowCreate] = useState(false);
@@ -150,19 +155,15 @@ export default function RDSPage() {
   const executeInstanceAction = useCallback(
     async (action: string, dbInstanceIdentifiers: string[], extra?: Record<string, unknown>) => {
       try {
-        const res = await fetch("/api/rds", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action,
-            dbInstanceIdentifiers,
-            ...extra,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok || data.error) {
-          throw new Error(data.error || `Action ${action} failed`);
-        }
+        await Promise.all(dbInstanceIdentifiers.map(async (dbInstanceIdentifier) => {
+          const res = await fetch("/api/rds", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action, dbInstanceIdentifier, ...extra }),
+          });
+          const data = await res.json();
+          if (!res.ok || data.error) throw new Error(data.error || `Action ${action} failed for ${dbInstanceIdentifier}`);
+        }));
         fetchInstances();
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : `Failed to ${action}`);
@@ -213,16 +214,17 @@ export default function RDSPage() {
       visible: true,
       title: `Delete ${ids.length} DB instance(s)?`,
       onConfirm: () => {
-        for (const id of ids) {
-          fetch("/api/rds", {
+        void Promise.all(ids.map(async (id) => {
+          const response = await fetch("/api/rds", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: "deleteInstance", dbInstanceIdentifier: id, skipFinalSnapshot: true }),
-          }).catch(() => {});
-        }
+          });
+          const data = await response.json();
+          if (!response.ok || data.error) throw new Error(data.error || `Failed to delete ${id}`);
+        })).then(() => fetchInstances()).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Failed to delete DB instances"));
         setSelectedItems([]);
         setConfirmModal((prev) => ({ ...prev, visible: false }));
-        fetchInstances();
       },
       content: (
         <Box>

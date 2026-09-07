@@ -14,6 +14,7 @@ import Textarea from "@cloudscape-design/components/textarea";
 import Tabs from "@cloudscape-design/components/tabs";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Badge from "@cloudscape-design/components/badge";
+import TruncatedText from "@/components/TruncatedText";
 
 interface EventRule {
   Name?: string;
@@ -51,6 +52,8 @@ export default function EventBridgePage() {
   const [selectedRule, setSelectedRule] = useState<string>("");
   const [targetArn, setTargetArn] = useState("");
   const [targetInput, setTargetInput] = useState("");
+  const [ruleNameError, setRuleNameError] = useState<string | null>(null);
+  const [targetArnError, setTargetArnError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -85,6 +88,11 @@ export default function EventBridgePage() {
   };
 
   const createRule = async () => {
+    if (!ruleName.trim()) {
+      setRuleNameError("Rule name is required");
+      return;
+    }
+    setRuleNameError(null);
     try {
       const res = await fetch("/api/eventbridge", {
         method: "POST",
@@ -136,7 +144,11 @@ export default function EventBridgePage() {
   };
 
   const addTarget = async () => {
-    if (!selectedRule || !targetArn) return;
+    if (!selectedRule || !targetArn) {
+      if (!targetArn) setTargetArnError("Target ARN is required");
+      return;
+    }
+    setTargetArnError(null);
     const bus = rules.find((r) => r.Name === selectedRule)?.EventBusName || "default";
     try {
       const res = await fetch("/api/eventbridge", {
@@ -226,7 +238,7 @@ export default function EventBridgePage() {
                     loading={loading}
                     columnDefinitions={[
                       { header: "Name", cell: (i: EventBus) => i.Name || "—" },
-                      { header: "ARN", cell: (i: EventBus) => i.Arn || "—" },
+                      { header: "ARN", cell: (i: EventBus) => <TruncatedText>{i.Arn || "—"}</TruncatedText> },
                     ]}
                     empty={<Box textAlign="center">No event buses found.</Box>}
                   />
@@ -243,7 +255,7 @@ export default function EventBridgePage() {
           </SpaceBetween>
         }>
           <SpaceBetween size="m">
-            <FormField label="Rule name" constraintText="Required"><Input value={ruleName} onChange={e => setRuleName(e.detail.value)} /></FormField>
+            <FormField label={<>Rule name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={ruleNameError}><Input value={ruleName} onChange={e => { setRuleName(e.detail.value); setRuleNameError(null); }} /></FormField>
             <FormField label="Event bus"><Input value={busName} onChange={e => setBusName(e.detail.value)} placeholder="default" /></FormField>
             <FormField label="Schedule expression (optional)"><Input value={scheduleExpression} onChange={e => setScheduleExpression(e.detail.value)} placeholder="rate(5 minutes)" /></FormField>
             <FormField label="Event pattern (JSON, optional)"><Textarea value={eventPattern} onChange={e => setEventPattern(e.detail.value)} placeholder='{"source":["aws.ec2"]}' rows={3} /></FormField>
@@ -262,13 +274,13 @@ export default function EventBridgePage() {
               items={targets[selectedRule] || []}
               columnDefinitions={[
                 { header: "Target ID", cell: (t: RuleTarget) => t.Id || "—" },
-                { header: "ARN", cell: (t: RuleTarget) => t.Arn || "—" },
+                { header: "ARN", cell: (t: RuleTarget) => <TruncatedText>{t.Arn || "—"}</TruncatedText> },
                 { header: "Input", cell: (t: RuleTarget) => t.Input || "—" },
               ]}
               empty={<Box textAlign="center">No targets configured.</Box>}
             />
             <SpaceBetween size="xs" direction="vertical">
-              <FormField label="Target ARN"><Input value={targetArn} onChange={e => setTargetArn(e.detail.value)} placeholder="arn:aws:lambda:us-east-1:000000000000:function:myFunction" /></FormField>
+              <FormField label={<>Target ARN <span style={{ color: "red" }}>*</span></>} errorText={targetArnError}><Input value={targetArn} onChange={e => { setTargetArn(e.detail.value); setTargetArnError(null); }} placeholder="arn:aws:lambda:us-east-1:000000000000:function:myFunction" /></FormField>
               <FormField label="Input (JSON, optional)"><Textarea value={targetInput} onChange={e => setTargetInput(e.detail.value)} placeholder='{"key":"value"}' rows={2} /></FormField>
             </SpaceBetween>
           </SpaceBetween>

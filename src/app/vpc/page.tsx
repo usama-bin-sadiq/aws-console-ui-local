@@ -161,7 +161,6 @@ export default function VpcPage() {
             selectedItems={selected}
             onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
             trackBy="VpcId"
-            filterPlaceholder="Filter VPCs"
             columnDefinitions={[
               {
                 id: "vpcId",

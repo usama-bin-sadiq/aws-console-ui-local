@@ -33,12 +33,14 @@ export default function ConfigPage() {
   const [ruleName, setRuleName] = useState("");
   const [sourceIdentifier, setSourceIdentifier] = useState("");
   const [creating, setCreating] = useState(false);
+  const [ruleNameError, setRuleNameError] = useState<string | null>(null);
 
   // Recorder management
   const [recorderModal, setRecorderModal] = useState(false);
   const [recorderName, setRecorderName] = useState("");
   const [recorderRoleARN, setRecorderRoleARN] = useState("");
   const [creatingRecorder, setCreatingRecorder] = useState(false);
+  const [recorderNameError, setRecorderNameError] = useState<string | null>(null);
 
   const fetchConfig = async () => {
     setLoading(true);
@@ -61,6 +63,11 @@ export default function ConfigPage() {
   }, []);
 
   const createRule = async () => {
+    if (!ruleName.trim()) {
+      setRuleNameError("Rule name is required");
+      return;
+    }
+    setRuleNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/config", {
@@ -97,6 +104,11 @@ export default function ConfigPage() {
   };
 
   const createRecorder = async () => {
+    if (!recorderName.trim()) {
+      setRecorderNameError("Recorder name is required");
+      return;
+    }
+    setRecorderNameError(null);
     setCreatingRecorder(true);
     try {
       const res = await fetch("/api/config", {
@@ -221,8 +233,8 @@ export default function ConfigPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Recorder name" constraintText="Required">
-              <Input value={recorderName} onChange={(e) => setRecorderName(e.detail.value)} placeholder="default" />
+            <FormField label={<>Recorder name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={recorderNameError}>
+              <Input value={recorderName} onChange={(e) => { setRecorderName(e.detail.value); setRecorderNameError(null); }} placeholder="default" />
             </FormField>
             <FormField label="Role ARN">
               <Input value={recorderRoleARN} onChange={(e) => setRecorderRoleARN(e.detail.value)} placeholder="arn:aws:iam::123456789012:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig" />
@@ -244,10 +256,10 @@ export default function ConfigPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Rule name" constraintText="Required">
+            <FormField label={<>Rule name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={ruleNameError}>
               <Input
                 value={ruleName}
-                onChange={(e) => setRuleName(e.detail.value)}
+                onChange={(e) => { setRuleName(e.detail.value); setRuleNameError(null); }}
                 placeholder="my-config-rule"
               />
             </FormField>

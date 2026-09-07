@@ -15,6 +15,7 @@ import FormField from "@cloudscape-design/components/form-field";
 import Select from "@cloudscape-design/components/select";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import IamPolicyEditor from "@/components/IamPolicyEditor";
+import TruncatedText from "@/components/TruncatedText";
 
 interface UserDetail {
   UserName: string;
@@ -66,9 +67,13 @@ export default function IAMPage() {
     try {
       const res = await fetch("/api/iam");
       const d = await res.json();
-      setData(d);
+      setData({
+        users: Array.isArray(d.users) ? d.users : [],
+        roles: Array.isArray(d.roles) ? d.roles : [],
+        policies: Array.isArray(d.policies) ? d.policies : [],
+      });
       setPolicyOptions((d.policies || []).map((p: any) => ({ label: p.PolicyName || "", value: p.Arn || "" })));
-    } catch {}
+    } catch { }
     setLoading(false);
   }, []);
 
@@ -89,7 +94,7 @@ export default function IAMPage() {
         Groups: d.groups || [],
         AttachedPolicies: d.attachedPolicies || [],
       });
-    } catch {}
+    } catch { }
     setUserDetailLoading(false);
   }, []);
 
@@ -109,7 +114,7 @@ export default function IAMPage() {
         AssumeRolePolicyDocument: d.role?.AssumeRolePolicyDocument || "",
         AttachedPolicies: d.attachedPolicies || [],
       });
-    } catch {}
+    } catch { }
     setRoleDetailLoading(false);
   }, []);
 
@@ -218,7 +223,7 @@ export default function IAMPage() {
                       columnDefinitions={[
                         { header: "Name", cell: (item: any) => item.UserName },
                         { header: "Created", cell: (item: any) => item.CreateDate },
-                        { header: "ARN", cell: (item: any) => item.Arn },
+                        { header: "ARN", cell: (item: any) => <TruncatedText>{item.Arn}</TruncatedText> },
                         { header: "Path", cell: (item: any) => item.Path || "/" },
                         {
                           id: "actions",
@@ -287,7 +292,7 @@ export default function IAMPage() {
                             items={userDetail.AttachedPolicies}
                             columnDefinitions={[
                               { header: "Policy Name", cell: (p: any) => p.PolicyName },
-                              { header: "ARN", cell: (p: any) => p.PolicyArn },
+                              { header: "ARN", cell: (p: any) => <TruncatedText>{p.PolicyArn}</TruncatedText> },
                               {
                                 header: "Actions",
                                 cell: (p: any) => (
@@ -317,7 +322,7 @@ export default function IAMPage() {
                       columnDefinitions={[
                         { header: "Name", cell: (item: any) => item.RoleName },
                         { header: "Created", cell: (item: any) => item.CreateDate },
-                        { header: "ARN", cell: (item: any) => item.Arn },
+                        { header: "ARN", cell: (item: any) => <TruncatedText>{item.Arn}</TruncatedText> },
                         { header: "Path", cell: (item: any) => item.Path || "/" },
                         {
                           header: "Actions",
@@ -363,7 +368,7 @@ export default function IAMPage() {
                             items={roleDetail.AttachedPolicies}
                             columnDefinitions={[
                               { header: "Policy Name", cell: (p: any) => p.PolicyName },
-                              { header: "ARN", cell: (p: any) => p.PolicyArn },
+                              { header: "ARN", cell: (p: any) => <TruncatedText>{p.PolicyArn}</TruncatedText> },
                               {
                                 header: "Actions",
                                 cell: (p: any) => (
@@ -389,7 +394,7 @@ export default function IAMPage() {
                     items={data.policies}
                     columnDefinitions={[
                       { header: "Name", cell: (item: any) => item.PolicyName },
-                      { header: "ARN", cell: (item: any) => item.Arn },
+                      { header: "ARN", cell: (item: any) => <TruncatedText>{item.Arn}</TruncatedText> },
                       { header: "Created", cell: (item: any) => item.CreateDate },
                     ]}
                     loading={loading}

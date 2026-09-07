@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -91,20 +92,7 @@ export default function BedrockRuntimePage() {
 
             {response !== null && (
               <FormField label="Response">
-                <pre
-                  style={{
-                    background: "#1a1a2e",
-                    color: "#0f0",
-                    padding: "12px",
-                    borderRadius: "4px",
-                    overflow: "auto",
-                    maxHeight: "400px",
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {response}
-                </pre>
+                <CodeView content={response} lineNumbers wrapLines />
               </FormField>
             )}
 

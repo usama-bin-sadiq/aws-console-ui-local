@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { CodeView } from "@cloudscape-design/code-view";
 import Wizard from "@cloudscape-design/components/wizard";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
-import Select, { SelectProps } from "@cloudscape-design/components/select";
+import Select from "@cloudscape-design/components/select";
 import Checkbox from "@cloudscape-design/components/checkbox";
 import RadioGroup from "@cloudscape-design/components/radio-group";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -15,27 +16,16 @@ import Button from "@cloudscape-design/components/button";
 import Box from "@cloudscape-design/components/box";
 import Alert from "@cloudscape-design/components/alert";
 import Spinner from "@cloudscape-design/components/spinner";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Textarea from "@cloudscape-design/components/textarea";
 import ColumnLayout from "@cloudscape-design/components/column-layout";
-import Table, { TableProps } from "@cloudscape-design/components/table";
+import Table from "@cloudscape-design/components/table";
+
+import TextFilter from "@cloudscape-design/components/text-filter";
 import { EC2LaunchConfig } from "@/types/ec2";
 import {
   EC2_VOLUME_TYPES,
   EC2_DEFAULT_INSTANCE_TYPE,
-  EC2_DEFAULT_IMAGE_ID,
-  EC2_DEFAULT_VPC_ID,
-  EC2_DEFAULT_SUBNET_ID,
 } from "@/constants/ec2-constants";
-
-const AMI_IMAGES = [
-  { ImageId: "ami-0abcdef123456", Name: "Amazon Linux 2023 - x86_64", Architecture: "x86_64", OwnerId: "amazon" },
-  { ImageId: "ami-0abcdef123457", Name: "Amazon Linux 2023 - arm64", Architecture: "arm64", OwnerId: "amazon" },
-  { ImageId: "ami-0abcdef123458", Name: "Ubuntu 22.04 LTS - x86_64", Architecture: "x86_64", OwnerId: "099720109477" },
-  { ImageId: "ami-0abcdef123459", Name: "Ubuntu 24.04 LTS - x86_64", Architecture: "x86_64", OwnerId: "099720109477" },
-  { ImageId: "ami-0abcdef123460", Name: "Windows Server 2022 Base", Architecture: "x86_64", OwnerId: "amazon" },
-  { ImageId: "ami-0abcdef123461", Name: "Red Hat Enterprise Linux 9", Architecture: "x86_64", OwnerId: "309956199498" },
-];
 
 const INSTANCE_TYPES = [
   { value: "t3.micro", label: "t3.micro", vcpus: 2, memory: "1 GiB", freeTier: true },
@@ -55,12 +45,58 @@ export default function EC2LaunchPage() {
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [amiImages, setAmiImages] = useState<Array<{ ImageId: string; Name?: string; Architecture?: string; OwnerId?: string }>>([]);
+  const [vpcs, setVpcs] = useState<Array<{ VpcId: string; CidrBlock?: string }>>([]);
+  const [subnets, setSubnets] = useState<Array<{ SubnetId: string; VpcId?: string; CidrBlock?: string; AvailabilityZone?: string }>>([]);
+  const [securityGroups, setSecurityGroups] = useState<Array<{ GroupId: string; GroupName?: string; VpcId?: string }>>([]);
+  const [instanceProfiles, setInstanceProfiles] = useState<Array<{ Arn?: string; InstanceProfileName?: string }>>([]);
+  const [keyPairs, setKeyPairs] = useState<Array<{ KeyName?: string; KeyFingerprint?: string; KeyType?: string }>>([]);
+  const [securityGroupId, setSecurityGroupId] = useState("");
+  const [selectedVpcId, setSelectedVpcId] = useState("");
+  const [amiFilter, setAmiFilter] = useState("");
+  const [amiVisibleCount, setAmiVisibleCount] = useState(50);
+  const amiScrollRef = useRef<HTMLDivElement>(null);
+  const [createdKeyMaterial, setCreatedKeyMaterial] = useState<string | null>(null);
+  const [createdKeyName, setCreatedKeyName] = useState("");
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [keyPairMode, setKeyPairMode] = useState<"select" | "create" | "none">("none");
+
+  const filteredAmis = useMemo(() => {
+    if (!amiFilter.trim()) return amiImages;
+    const lower = amiFilter.toLowerCase();
+    return amiImages.filter(
+      (a) =>
+        a.Name?.toLowerCase().includes(lower) ||
+        a.ImageId?.toLowerCase().includes(lower) ||
+        a.Architecture?.toLowerCase().includes(lower)
+    );
+  }, [amiImages, amiFilter]);
+
+  const visibleAmis = useMemo(
+    () => filteredAmis.slice(0, amiVisibleCount),
+    [filteredAmis, amiVisibleCount]
+  );
+
+  const amiHasMore = amiVisibleCount < filteredAmis.length;
+
+  const handleAmiScroll = useCallback(() => {
+    if (!amiScrollRef.current || !amiHasMore) return;
+    const { scrollTop, scrollHeight, clientHeight } = amiScrollRef.current;
+    if (scrollHeight - scrollTop - clientHeight < 100) {
+      setAmiVisibleCount((prev) => Math.min(prev + 50, filteredAmis.length));
+    }
+  }, [amiHasMore, filteredAmis.length]);
+
+  useEffect(() => {
+    setAmiVisibleCount(50);
+  }, [amiFilter]);
 
   const [config, setConfig] = useState<EC2LaunchConfig>({
-    imageId: EC2_DEFAULT_IMAGE_ID,
+    imageId: "",
     instanceType: EC2_DEFAULT_INSTANCE_TYPE,
     keyName: "",
-    subnetId: EC2_DEFAULT_SUBNET_ID,
+    subnetId: "",
     securityGroupIds: [],
     iamInstanceProfile: "",
     userData: "",
@@ -80,9 +116,64 @@ export default function EC2LaunchPage() {
     numInstances: 1,
   });
 
+  useEffect(() => {
+    const loadResources = async (): Promise<void> => {
+      try {
+        const [imagesResponse, vpcsResponse, subnetsResponse, groupsResponse, profilesResponse, keyPairsResponse] = await Promise.all([
+          fetch("/api/ec2", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "describeImages", owners: ["amazon", "self"] }) }),
+          fetch("/api/ec2", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "describeVpcs" }) }),
+          fetch("/api/ec2", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "describeSubnets" }) }),
+          fetch("/api/ec2", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "describeSecurityGroups" }) }),
+          fetch("/api/iam-instance-profile"),
+          fetch("/api/ec2", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "describeKeyPairs" }) }),
+        ]);
+        const [images, vpcData, subnetData, groupData, profileData, keyPairsData] = await Promise.all([
+          imagesResponse.json(), vpcsResponse.json(), subnetsResponse.json(), groupsResponse.json(), profilesResponse.json(), keyPairsResponse.json(),
+        ]);
+        setAmiImages(images.images || []);
+        setVpcs(vpcData.vpcs || []);
+        setSubnets(subnetData.subnets || []);
+        setSecurityGroups(groupData.securityGroups || []);
+        setInstanceProfiles(profileData.instanceProfiles || []);
+        setKeyPairs(keyPairsData.keyPairs || []);
+      } catch (cause: unknown) {
+        setError(cause instanceof Error ? cause.message : "Failed to load EC2 launch resources");
+      }
+    };
+    void loadResources();
+  }, []);
+
   const updateConfig = useCallback((updates: Partial<EC2LaunchConfig>) => {
     setConfig((prev) => ({ ...prev, ...updates }));
   }, []);
+
+  const handleCreateKeyPair = useCallback(async () => {
+    const keyName = createdKeyName.trim();
+    if (!keyName) return;
+    setCreatingKey(true);
+    try {
+      const res = await fetch("/api/ec2", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "createKeyPair", keyName }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Failed to create key pair");
+      setCreatedKeyMaterial(data.keyPair?.KeyMaterial || "");
+      updateConfig({ keyName: data.keyPair?.KeyName || keyName });
+      setKeyPairs((prev) => [...prev, { KeyName: data.keyPair?.KeyName || keyName, KeyType: "rsa" }]);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create key pair");
+    } finally {
+      setCreatingKey(false);
+    }
+  }, [createdKeyName, updateConfig]);
+
+  const validateStep = (stepIndex: number): string | null => {
+    if (stepIndex === 0 && !config.imageId) return "Please select an AMI";
+    if (stepIndex === 1 && !config.instanceType) return "Please select an instance type";
+    return null;
+  };
 
   const steps = [
     {
@@ -92,30 +183,54 @@ export default function EC2LaunchPage() {
         <SpaceBetween size="l">
           <Box variant="h3">Quick Start</Box>
           <Box variant="small" color="text-body-secondary">
-            Choose from popular AMIs. These are free to use, you only pay for the resources used by the instances.
+            Choose an AMI returned by the active emulator. No synthetic AMI identifiers are shown.
           </Box>
-          <Table
-            columnDefinitions={[
-              {
-                header: "Select",
-                cell: (item) => (
-                  <RadioGroup
-                    value={config.imageId}
-                    onChange={({ detail }) => updateConfig({ imageId: detail.value })}
-                    items={[{ value: item.ImageId!, label: "" }]}
-                  />
-                ),
-                width: 60,
-              },
-              { header: "Name", cell: (item) => item.Name, sortingField: "Name" },
-              { header: "Architecture", cell: (item) => item.Architecture },
-              { header: "Owner", cell: (item) => item.OwnerId },
-            ]}
-            items={AMI_IMAGES}
-            selectedItems={AMI_IMAGES.filter((a) => a.ImageId === config.imageId)}
-            trackBy="ImageId"
-            header={<Header variant="h3">Available AMIs ({AMI_IMAGES.length})</Header>}
-          />
+          <div style={{ border: "1px solid var(--awsui-color-border-default)", borderRadius: "4px" }}>
+            <div style={{ position: "sticky", top: 0, zIndex: 1, background: "var(--awsui-color-background-layout)" }}>
+              <Header variant="h3">
+                Available AMIs ({filteredAmis.length})
+                {amiHasMore && <span style={{ fontWeight: "normal", marginLeft: 8, fontSize: 12 }}>({amiVisibleCount} of {filteredAmis.length} shown — scroll for more)</span>}
+              </Header>
+              <TextFilter
+                filteringText={amiFilter}
+                filteringPlaceholder="Filter AMIs by name, ID, or architecture"
+                filteringAriaLabel="Filter AMIs"
+                onChange={({ detail }) => {
+                  setAmiFilter(detail.filteringText);
+                  setAmiVisibleCount(50);
+                  if (amiScrollRef.current) amiScrollRef.current.scrollTop = 0;
+                }}
+              />
+            </div>
+            <div
+              ref={amiScrollRef}
+              onScroll={handleAmiScroll}
+              style={{ height: "400px", overflowY: "auto" }}
+            >
+              <Table
+                columnDefinitions={[
+                  {
+                    header: "Select",
+                    cell: (item) => (
+                      <RadioGroup
+                        value={config.imageId}
+                        onChange={({ detail }) => updateConfig({ imageId: detail.value })}
+                        items={[{ value: item.ImageId!, label: "" }]}
+                      />
+                    ),
+                    width: 60,
+                  },
+                  { header: "Name", cell: (item) => item.Name, sortingField: "Name" },
+                  { header: "Architecture", cell: (item) => item.Architecture },
+                  { header: "Owner", cell: (item) => item.OwnerId },
+                ]}
+                items={visibleAmis}
+                selectedItems={amiImages.filter((a) => a.ImageId === config.imageId)}
+                trackBy="ImageId"
+                empty={<Box>No AMIs are available from the active emulator.</Box>}
+              />
+            </div>
+          </div>
         </SpaceBetween>
       ),
     },
@@ -143,12 +258,7 @@ export default function EC2LaunchPage() {
               },
               {
                 header: "Instance Type",
-                cell: (item) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Box>{item.label}</Box>
-                    {item.freeTier && <StatusIndicator type="success">Free tier eligible</StatusIndicator>}
-                  </SpaceBetween>
-                ),
+                cell: (item) => item.label,
                 sortingField: "value",
               },
               { header: "vCPUs", cell: (item) => item.vcpus },
@@ -183,7 +293,7 @@ export default function EC2LaunchPage() {
                   { value: "on-demand", label: "On-Demand" },
                   { value: "spot", label: "Spot" },
                 ]}
-                onChange={() => {}}
+                onChange={() => { }}
               />
             </FormField>
           </ColumnLayout>
@@ -192,17 +302,28 @@ export default function EC2LaunchPage() {
               <div>
                 <Box variant="small" color="text-label">VPC</Box>
                 <Select
-                  selectedOption={{ value: EC2_DEFAULT_VPC_ID, label: EC2_DEFAULT_VPC_ID }}
-                  options={[{ value: EC2_DEFAULT_VPC_ID, label: EC2_DEFAULT_VPC_ID }]}
-                  onChange={() => {}}
+                  selectedOption={selectedVpcId ? { value: selectedVpcId, label: `${selectedVpcId} (${vpcs.find((v) => v.VpcId === selectedVpcId)?.CidrBlock || ""})` } : null}
+                  options={vpcs.map((vpc) => ({ value: vpc.VpcId, label: `${vpc.VpcId}${vpc.CidrBlock ? ` (${vpc.CidrBlock})` : ""}` }))}
+                  placeholder="Select a VPC"
+                  onChange={({ detail }) => {
+                    const newVpcId = detail.selectedOption.value || "";
+                    setSelectedVpcId(newVpcId);
+                    const firstSubnet = subnets.find((s) => s.VpcId === newVpcId);
+                    updateConfig({ subnetId: firstSubnet?.SubnetId || "" });
+                    setSecurityGroupId("");
+                  }}
                 />
               </div>
               <div>
                 <Box variant="small" color="text-label">Subnet</Box>
                 <Select
-                  selectedOption={{ value: EC2_DEFAULT_SUBNET_ID, label: EC2_DEFAULT_SUBNET_ID }}
-                  options={[{ value: EC2_DEFAULT_SUBNET_ID, label: EC2_DEFAULT_SUBNET_ID }]}
-                  onChange={() => {}}
+                  selectedOption={config.subnetId ? { value: config.subnetId, label: `${config.subnetId} (${subnets.find((s) => s.SubnetId === config.subnetId)?.AvailabilityZone || ""})` } : null}
+                  options={subnets.filter((subnet) => !selectedVpcId || subnet.VpcId === selectedVpcId).map((subnet) => ({ value: subnet.SubnetId, label: `${subnet.SubnetId} (${subnet.AvailabilityZone || ""}) - ${subnet.CidrBlock || ""}` }))}
+                  placeholder="Select a subnet"
+                  onChange={({ detail }) => {
+                    updateConfig({ subnetId: detail.selectedOption.value || "" });
+                    setSecurityGroupId("");
+                  }}
                 />
               </div>
             </ColumnLayout>
@@ -210,10 +331,7 @@ export default function EC2LaunchPage() {
           <FormField label="IAM Role (optional)">
             <Select
               selectedOption={{ value: config.iamInstanceProfile || "", label: config.iamInstanceProfile || "None" }}
-              options={[
-                { value: "", label: "None" },
-                { value: "arn:aws:iam::role/ec2-role", label: "ec2-role" },
-              ]}
+              options={[{ value: "", label: "None" }, ...instanceProfiles.flatMap((profile) => profile.Arn && profile.InstanceProfileName ? [{ value: profile.Arn, label: profile.InstanceProfileName }] : [])]}
               onChange={({ detail }) => updateConfig({ iamInstanceProfile: detail.selectedOption.value })}
             />
           </FormField>
@@ -387,13 +505,21 @@ systemctl start httpd"
       content: (
         <SpaceBetween size="l">
           <Box variant="h3">Firewall (security groups)</Box>
-          <RadioGroup
-            value="create"
-            items={[
-              { value: "create", label: "Create a new security group" },
-              { value: "select", label: "Select an existing security group" },
-            ]}
-          />
+          <FormField label="Security group" description="Security groups must belong to the selected VPC.">
+            <Select
+              selectedOption={securityGroupId ? { value: securityGroupId, label: `${securityGroupId} (${securityGroups.find((g) => g.GroupId === securityGroupId)?.GroupName || ""})` } : null}
+              options={securityGroups.filter((group) => {
+                if (!selectedVpcId) return true;
+                return group.VpcId === selectedVpcId;
+              }).map((group) => ({ value: group.GroupId, label: `${group.GroupId} (${group.GroupName || ""})` }))}
+              placeholder="Select a security group"
+              onChange={({ detail }) => {
+                setSecurityGroupId(detail.selectedOption.value || "");
+                updateConfig({ securityGroupIds: detail.selectedOption.value ? [detail.selectedOption.value] : [] });
+              }}
+            />
+          </FormField>
+          <Box variant="small" color="text-body-secondary">Create additional security groups from the Security Groups console before launching.</Box>
           <Box variant="h4">Inbound Rules</Box>
           <Box variant="small" color="text-body-secondary">
             Configure the traffic allowed to reach your instance.
@@ -422,24 +548,73 @@ systemctl start httpd"
             Select an existing key pair or create a new one. You will need the private key to connect to your instance.
           </Box>
           <RadioGroup
-            value="select"
+            value={keyPairMode}
             items={[
               { value: "select", label: "Select an existing key pair" },
               { value: "create", label: "Create a new key pair" },
               { value: "none", label: "Proceed without a key pair" },
             ]}
+            onChange={({ detail }) => {
+              setKeyPairMode(detail.value as "select" | "create" | "none");
+              updateConfig({ keyName: "" });
+              setCreatedKeyMaterial(null);
+              setCreatedKeyName("");
+            }}
           />
-          <FormField label="Key pair name">
-            <Select
-              selectedOption={{ value: config.keyName || "", label: config.keyName || "Choose a key pair" }}
-              options={[
-                { value: "", label: "Choose a key pair" },
-                { value: "aws-console-key", label: "aws-console-key" },
-                { value: "my-key", label: "my-key" },
-              ]}
-              onChange={({ detail }) => updateConfig({ keyName: detail.selectedOption.value })}
-            />
-          </FormField>
+          {keyPairMode === "select" && (
+            <FormField label="Key pair name">
+              <Select
+                selectedOption={config.keyName ? { value: config.keyName, label: config.keyName } : null}
+                options={keyPairs.map((kp) => ({ value: kp.KeyName || "", label: `${kp.KeyName || ""} (${kp.KeyType || "rsa"})` }))}
+                placeholder="Choose a key pair"
+                onChange={({ detail }) => updateConfig({ keyName: detail.selectedOption.value || "" })}
+              />
+            </FormField>
+          )}
+          {keyPairMode === "create" && (
+            createdKeyMaterial ? (
+              <SpaceBetween size="m">
+                <Alert type="success">
+                  Key pair created successfully. Download your private key file now — you cannot download it again.
+                </Alert>
+                <Container header={<Header variant="h3">Private Key ({createdKeyName})</Header>}>
+                  <CodeView content={createdKeyMaterial} lineNumbers wrapLines />
+                </Container>
+                <Button
+                  onClick={() => {
+                    const blob = new Blob([createdKeyMaterial], { type: "text/plain" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `${createdKeyName}.pem`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  iconName="download"
+                >
+                  Download private key
+                </Button>
+              </SpaceBetween>
+            ) : (
+              <FormField label="Key pair name" constraintText="Must be unique. Private key will be downloaded once.">
+                <SpaceBetween direction="horizontal" size="s">
+                  <Input
+                    value={createdKeyName}
+                    onChange={({ detail }) => setCreatedKeyName(detail.value)}
+                    placeholder="my-key-pair"
+                  />
+                  <Button
+                    variant="primary"
+                    loading={creatingKey}
+                    onClick={handleCreateKeyPair}
+                    disabled={!createdKeyName.trim()}
+                  >
+                    Create
+                  </Button>
+                </SpaceBetween>
+              </FormField>
+            )
+          )}
           <Alert type="info">
             Without a key pair, you will not be able to SSH into your instance. You can still use Session Manager if available.
           </Alert>
@@ -460,7 +635,7 @@ systemctl start httpd"
               </div>
               <div>
                 <Box variant="small" color="text-label">AMI Name</Box>
-                <Box>{AMI_IMAGES.find((a) => a.ImageId === config.imageId)?.Name || "—"}</Box>
+                <Box>{amiImages.find((a) => a.ImageId === config.imageId)?.Name || "—"}</Box>
               </div>
             </ColumnLayout>
           </Container>
@@ -524,6 +699,8 @@ systemctl start httpd"
     setLaunching(true);
     setError(null);
     try {
+      if (!config.imageId) throw new Error("Select an AMI returned by the active emulator");
+      if (!config.subnetId) throw new Error("Select a subnet returned by the active emulator");
       const res = await fetch("/api/ec2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -533,7 +710,7 @@ systemctl start httpd"
           instanceType: config.instanceType,
           keyName: config.keyName || undefined,
           subnetId: config.subnetId || undefined,
-          securityGroupIds: config.securityGroupIds.length ? config.securityGroupIds : undefined,
+          securityGroupIds: config?.securityGroupIds?.length ? config.securityGroupIds : undefined,
           iamInstanceProfile: config.iamInstanceProfile || undefined,
           userData: config.userData || undefined,
           tags: config.tags.filter((t) => t.Key),
@@ -595,10 +772,27 @@ systemctl start httpd"
             </Box>
           </Container>
         ) : (
-          <Wizard
+          <>
+            {validationError && (
+              <Alert type="error" dismissible onDismiss={() => setValidationError(null)}>
+                {validationError}
+              </Alert>
+            )}
+            <Wizard
             steps={steps}
             activeStepIndex={activeStepIndex}
-            onNavigate={({ detail }) => setActiveStepIndex(detail.requestedStepIndex)}
+            onNavigate={({ detail }) => {
+              const targetStep = detail.requestedStepIndex;
+              if (targetStep > activeStepIndex) {
+                const err = validateStep(activeStepIndex);
+                if (err) {
+                  setValidationError(err);
+                  return;
+                }
+              }
+              setValidationError(null);
+              setActiveStepIndex(targetStep);
+            }}
             onSubmit={handleLaunch}
             i18nStrings={{
               submitButton: "Launch instance",
@@ -606,9 +800,10 @@ systemctl start httpd"
               nextButton: "Next",
               previousButton: "Previous",
               navigationAriaLabel: "Wizard navigation",
-              stepNumberingLabel: (stepIndex) => `Step ${stepIndex + 1}`,
+              stepNumberLabel: (stepIndex) => `Step ${stepIndex + 1}`,
             }}
           />
+          </>
         )}
       </SpaceBetween>
     </div>

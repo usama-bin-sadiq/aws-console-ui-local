@@ -33,6 +33,7 @@ export default function OpenSearchPage() {
   const [domainName, setDomainName] = useState("");
   const [engineVersion, setEngineVersion] = useState("");
   const [creating, setCreating] = useState(false);
+  const [domainNameError, setDomainNameError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -55,6 +56,11 @@ export default function OpenSearchPage() {
   }, []);
 
   const createDomain = async () => {
+    if (!domainName.trim()) {
+      setDomainNameError("Domain name is required");
+      return;
+    }
+    setDomainNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/opensearch", {
@@ -190,10 +196,10 @@ export default function OpenSearchPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Domain name" constraintText="Required">
+            <FormField label={<>Domain name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={domainNameError}>
               <Input
                 value={domainName}
-                onChange={(e) => setDomainName(e.detail.value)}
+                onChange={(e) => { setDomainName(e.detail.value); setDomainNameError(null); }}
                 placeholder="my-domain"
               />
             </FormField>

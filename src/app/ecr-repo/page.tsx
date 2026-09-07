@@ -26,6 +26,7 @@ export default function ECRRepoPage() {
   const [createModal, setCreateModal] = useState(false);
   const [repositoryName, setRepositoryName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [repositoryNameError, setRepositoryNameError] = useState<string | null>(null);
 
   const fetchRepositories = async () => {
     setLoading(true);
@@ -47,6 +48,11 @@ export default function ECRRepoPage() {
   }, []);
 
   const createRepository = async () => {
+    if (!repositoryName.trim()) {
+      setRepositoryNameError("Repository name is required");
+      return;
+    }
+    setRepositoryNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/ecr", {
@@ -145,10 +151,10 @@ export default function ECRRepoPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Repository name" constraintText="Required">
+            <FormField label={<>Repository name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={repositoryNameError}>
               <Input
                 value={repositoryName}
-                onChange={(e) => setRepositoryName(e.detail.value)}
+                onChange={(e) => { setRepositoryName(e.detail.value); setRepositoryNameError(null); }}
                 placeholder="my-repo"
               />
             </FormField>

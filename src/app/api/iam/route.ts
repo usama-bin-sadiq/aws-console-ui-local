@@ -22,11 +22,9 @@ import {
   ListAttachedUserPoliciesCommand,
   ListAttachedRolePoliciesCommand,
   GetPolicyCommand,
+  GetPolicyVersionCommand,
   CreatePolicyCommand,
   DeletePolicyCommand,
-  ListUserPoliciesCommand,
-  GetGroupCommand,
-  ListGroupsCommand,
 } from "@aws-sdk/client-iam";
 import { iam } from "@/lib/aws-clients";
 
@@ -84,7 +82,11 @@ export async function GET(request: Request) {
     if (action === "getPolicy") {
       const arn = searchParams.get("policyArn")!;
       const res = await iam.send(new GetPolicyCommand({ PolicyArn: arn }));
-      return NextResponse.json({ policy: res.Policy });
+      const defaultVersionId = res.Policy?.DefaultVersionId;
+      const version = defaultVersionId
+        ? await iam.send(new GetPolicyVersionCommand({ PolicyArn: arn, VersionId: defaultVersionId }))
+        : undefined;
+      return NextResponse.json({ policy: res.Policy, document: version?.PolicyVersion?.Document });
     }
 
     return NextResponse.json({ error: "Unknown GET action" }, { status: 400 });

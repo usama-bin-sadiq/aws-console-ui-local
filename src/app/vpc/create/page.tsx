@@ -76,32 +76,124 @@ export default function VpcCreatePage() {
       const vpcRes = await fetch("/api/vpc", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cidrBlock }),
+        body: JSON.stringify({
+          cidrBlock,
+          instanceTenancy: tenancy,
+          tags: tags.filter((tag) => tag.Key?.trim()),
+        }),
       });
       const vpcData = await vpcRes.json();
-      if (vpcData.error) throw new Error(vpcData.error);
+      if (!vpcRes.ok || vpcData.error) throw new Error(vpcData.error || "Failed to create VPC");
       const vpcId = vpcData.vpc?.VpcId;
+      if (!vpcId) throw new Error("VPC was created without an identifier");
+
+      const dnsRes = await fetch("/api/vpc", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vpcId, enableDnsHostnames: dnsHostnames, enableDnsSupport: dnsResolution }),
+      });
+      if (!dnsRes.ok) throw new Error("VPC DNS attributes could not be configured");
 
       // Create subnets
+      const createdSubnets: Array<{ name: string; id: string }> = [];
       for (const subnet of subnets) {
         const subRes = await fetch("/api/subnet", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ vpcId, cidrBlock: subnet.cidr }),
+          body: JSON.stringify({ vpcId, cidrBlock: subnet.cidr, availabilityZone: subnet.az }),
         });
         const subData = await subRes.json();
-        if (subData.error) throw new Error(subData.error);
+        if (!subRes.ok || subData.error) throw new Error(subData.error || `Failed to create subnet ${subnet.name}`);
+        if (subData.subnet?.SubnetId) createdSubnets.push({ name: subnet.name, id: subData.subnet.SubnetId });
+      }
+
+      const publicSubnets = createdSubnets.filter((subnet) => subnet.name.startsWith("public-"));
+      const privateSubnets = createdSubnets.filter((subnet) => subnet.name.startsWith("private-"));
+
+      const gatewayRes = await fetch("/api/internet-gateway", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const gatewayData = await gatewayRes.json();
+      if (!gatewayRes.ok || gatewayData.error || !gatewayData.internetGateway?.InternetGatewayId) {
+        throw new Error(gatewayData.error || "Failed to create internet gateway");
+      }
+      const internetGatewayId = gatewayData.internetGateway.InternetGatewayId as string;
+
+      const attachGatewayRes = await fetch("/api/internet-gateway", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "attach", igwId: internetGatewayId, vpcId }),
+      });
+      if (!attachGatewayRes.ok) throw new Error("Failed to attach internet gateway to VPC");
+
+      const publicRouteTableRes = await fetch("/api/route-table", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vpcId }),
+      });
+      const publicRouteTableData = await publicRouteTableRes.json();
+      if (!publicRouteTableRes.ok || !publicRouteTableData.routeTable?.RouteTableId) {
+        throw new Error(publicRouteTableData.error || "Failed to create public route table");
+      }
+      const publicRouteTableId = publicRouteTableData.routeTable.RouteTableId as string;
+
+      const publicRouteRes = await fetch("/api/route-table", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create-route", routeTableId: publicRouteTableId, gatewayId: internetGatewayId, destinationCidrBlock: "0.0.0.0/0" }),
+      });
+      if (!publicRouteRes.ok) throw new Error("Failed to add public route");
+      for (const subnet of publicSubnets) {
+        const associationRes = await fetch("/api/route-table", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "associate-route-table", routeTableId: publicRouteTableId, subnetId: subnet.id }),
+        });
+        if (!associationRes.ok) throw new Error(`Failed to associate public subnet ${subnet.name}`);
       }
 
       // Create NAT Gateway if selected
       if (natOption === "create" && vpcId) {
         // Use the selected NAT subnet name to find a matching subnet CIDR for creation call
-        const selectedNatName = natSubnet || subnets[0]?.name;
-        await fetch("/api/nat-gateway", {
+        const selectedNat = createdSubnets.find((subnet) => subnet.name === (natSubnet || subnets[0]?.name));
+        if (!selectedNat) throw new Error("The selected NAT subnet was not created");
+        const allocationRes = await fetch("/api/elastic-ip", { method: "POST" });
+        const allocationData = await allocationRes.json();
+        if (!allocationRes.ok || !allocationData.allocationId) throw new Error("Failed to allocate NAT gateway Elastic IP");
+        const natRes = await fetch("/api/nat-gateway", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ subnetId: selectedNatName, connectivityType: "public" }),
+          body: JSON.stringify({ subnetId: selectedNat.id, connectivityType: "public", allocationId: allocationData.allocationId }),
         });
+        const natData = await natRes.json();
+        if (!natRes.ok || !natData.natGateway?.NatGatewayId) throw new Error(natData.error || "Failed to create NAT gateway");
+
+        const privateRouteTableRes = await fetch("/api/route-table", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vpcId }),
+        });
+        const privateRouteTableData = await privateRouteTableRes.json();
+        if (!privateRouteTableRes.ok || !privateRouteTableData.routeTable?.RouteTableId) throw new Error(privateRouteTableData.error || "Failed to create private route table");
+        const privateRouteTableId = privateRouteTableData.routeTable.RouteTableId as string;
+        const privateRouteRes = await fetch("/api/route-table", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "create-route", routeTableId: privateRouteTableId, natGatewayId: natData.natGateway.NatGatewayId, destinationCidrBlock: "0.0.0.0/0" }),
+        });
+        if (!privateRouteRes.ok) throw new Error("Failed to add private NAT route");
+        for (const subnet of privateSubnets) {
+          const associationRes = await fetch("/api/route-table", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "associate-route-table", routeTableId: privateRouteTableId, subnetId: subnet.id }),
+          });
+          if (!associationRes.ok) throw new Error(`Failed to associate private subnet ${subnet.name}`);
+        }
+      } else if (natOption === "existing") {
+        throw new Error("Using an existing NAT gateway is not available until a NAT gateway ID is selected");
       }
 
       router.push("/vpc");
@@ -110,7 +202,7 @@ export default function VpcCreatePage() {
     } finally {
       setCreating(false);
     }
-  }, [cidrBlock, subnets, natOption, router]);
+  }, [cidrBlock, subnets, natOption, natSubnet, tenancy, tags, dnsHostnames, dnsResolution, router]);
 
   const steps = [
     {
@@ -165,7 +257,7 @@ export default function VpcCreatePage() {
             Subnets divide your VPC into smaller network segments.
           </Box>
           {subnets.map((subnet, idx) => (
-            <Container key={idx} header={<Header variant="h4">{subnet.name}</Header>}>
+            <Container key={idx} header={<Header variant="h3">{subnet.name}</Header>}>
               <ColumnLayout columns={3} variant="default">
                 <FormField label="Name">
                   <Input value={subnet.name} onChange={({ detail }) => {
@@ -351,7 +443,7 @@ export default function VpcCreatePage() {
                 nextButton: "Next",
                 previousButton: "Previous",
                 navigationAriaLabel: "VPC wizard navigation",
-                stepNumberingLabel: (stepIndex) => `Step ${stepIndex + 1}`,
+                stepNumberLabel: (stepIndex: number) => `Step ${stepIndex + 1}`,
               }}
             />
           )}

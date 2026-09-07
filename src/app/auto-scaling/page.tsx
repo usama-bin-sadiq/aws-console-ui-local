@@ -56,6 +56,7 @@ export default function AutoScalingPage() {
   const [maxSize, setMaxSize] = useState("3");
   const [desiredCapacity, setDesiredCapacity] = useState("1");
   const [creating, setCreating] = useState(false);
+  const [groupNameError, setGroupNameError] = useState<string | null>(null);
 
   const [updateModal, setUpdateModal] = useState(false);
   const [updateGroupName, setUpdateGroupName] = useState("");
@@ -78,12 +79,14 @@ export default function AutoScalingPage() {
   const [policyName, setPolicyName] = useState("");
   const [policyAdjustment, setPolicyAdjustment] = useState("1");
   const [policyCreating, setPolicyCreating] = useState(false);
+  const [policyNameError, setPolicyNameError] = useState<string | null>(null);
 
   const [scheduledActions, setScheduledActions] = useState<ScheduledAction[]>([]);
   const [scheduledLoading, setScheduledLoading] = useState(false);
   const [scheduledModal, setScheduledModal] = useState(false);
   const [scheduledName, setScheduledName] = useState("");
   const [scheduledCreating, setScheduledCreating] = useState(false);
+  const [scheduledNameError, setScheduledNameError] = useState<string | null>(null);
 
   const fetchGroups = async () => {
     setLoading(true);
@@ -105,6 +108,11 @@ export default function AutoScalingPage() {
   }, []);
 
   const createGroup = async () => {
+    if (!groupName.trim()) {
+      setGroupNameError("Group name is required");
+      return;
+    }
+    setGroupNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/auto-scaling", {
@@ -240,6 +248,11 @@ export default function AutoScalingPage() {
   };
 
   const createPolicy = async () => {
+    if (!policyName.trim()) {
+      setPolicyNameError("Policy name is required");
+      return;
+    }
+    setPolicyNameError(null);
     setPolicyCreating(true);
     try {
       const res = await fetch("/api/auto-scaling", {
@@ -281,6 +294,11 @@ export default function AutoScalingPage() {
   };
 
   const createScheduledAction = async () => {
+    if (!scheduledName.trim()) {
+      setScheduledNameError("Scheduled action name is required");
+      return;
+    }
+    setScheduledNameError(null);
     setScheduledCreating(true);
     try {
       const res = await fetch("/api/auto-scaling", {
@@ -421,10 +439,10 @@ export default function AutoScalingPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Group name" constraintText="Required">
+            <FormField label={<>Group name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={groupNameError}>
               <Input
                 value={groupName}
-                onChange={(e) => setGroupName(e.detail.value)}
+                onChange={(e) => { setGroupName(e.detail.value); setGroupNameError(null); }}
                 placeholder="my-asg"
               />
             </FormField>
@@ -535,8 +553,8 @@ export default function AutoScalingPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="Policy name">
-              <Input value={policyName} onChange={(e) => setPolicyName(e.detail.value)} placeholder="ScaleUp" />
+            <FormField label={<>Policy name <span style={{ color: "red" }}>*</span></>} errorText={policyNameError}>
+              <Input value={policyName} onChange={(e) => { setPolicyName(e.detail.value); setPolicyNameError(null); }} placeholder="ScaleUp" />
             </FormField>
             <FormField label="Scaling adjustment">
               <Input value={policyAdjustment} onChange={(e) => setPolicyAdjustment(e.detail.value)} type="number" placeholder="1" />
@@ -555,8 +573,8 @@ export default function AutoScalingPage() {
             </SpaceBetween>
           }
         >
-          <FormField label="Scheduled action name">
-            <Input value={scheduledName} onChange={(e) => setScheduledName(e.detail.value)} placeholder="scheduled-action" />
+          <FormField label={<>Scheduled action name <span style={{ color: "red" }}>*</span></>} errorText={scheduledNameError}>
+            <Input value={scheduledName} onChange={(e) => { setScheduledName(e.detail.value); setScheduledNameError(null); }} placeholder="scheduled-action" />
           </FormField>
         </Modal>
       </SpaceBetween>

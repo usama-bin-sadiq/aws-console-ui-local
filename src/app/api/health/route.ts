@@ -26,6 +26,17 @@ export async function GET() {
 
     if (response.ok) {
       const data = await response.json();
+      let readiness: "ready" | "starting" | "unknown" = "unknown";
+      if (mode === "ministack") {
+        try {
+          const readyResponse = await fetch(`${endpointUrl}/_ministack/ready`, {
+            signal: AbortSignal.timeout(1500),
+          });
+          readiness = readyResponse.ok ? "ready" : "starting";
+        } catch {
+          readiness = "starting";
+        }
+      }
       const serviceValues = Object.values(data.services || {});
       const hasUnavailableService = serviceValues.some((service) => {
         if (typeof service !== "object" || service === null) return false;
@@ -33,9 +44,11 @@ export async function GET() {
         return value === false || value === "unavailable" || value === "error";
       });
       return NextResponse.json({
-        status: hasUnavailableService ? "degraded" : "healthy",
+        status: readiness === "starting" ? "starting" : hasUnavailableService ? "degraded" : "healthy",
         provider: mode,
         endpoint: endpointUrl,
+        edition: data.edition,
+        readiness,
         services: data.services || {},
       });
     }

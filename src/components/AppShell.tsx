@@ -18,6 +18,8 @@ import { getAvailableNavigationItems } from "@/constants/navigation";
 import { AdapterMode, EmulatorHealthStatus } from "@/constants/service-compatibility";
 import { getRecentlyVisited } from "@/lib/sqlite-adapter";
 import { useGlobalSearch, groupByCategory } from "@/hooks/useGlobalSearch";
+import { useResourceCounts } from "@/hooks/useResourceCounts";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 import type { Terminal } from "xterm";
 import type { FitAddon } from "@xterm/addon-fit";
 
@@ -29,6 +31,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [healthServices, setHealthServices] = useState<Record<string, unknown>>({});
   const activeMode = provider === "ministack" ? AdapterMode.MINSTACK : AdapterMode.LOCALSTACK;
   const { searchValue, setSearchValue, searchResults } = useGlobalSearch(activeMode, healthStatus, healthServices);
+  const { counts: resourceCounts } = useResourceCounts();
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [navigationOpen, setNavigationOpen] = useState(true);
   const [isCompactLayout, setIsCompactLayout] = useState(false);
@@ -78,7 +81,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     fetch("/api/health")
       .then((res) => res.json())
       .then((data) => {
-        setHealthStatus(data.status === "healthy" ? "healthy" : data.status === "degraded" ? "degraded" : "unreachable");
+        setHealthStatus(data.status === "healthy" ? "healthy" : data.status === "degraded" ? "degraded" : data.status === "starting" ? "starting" : "unreachable");
         setHealthServices(data.services || {});
         if (data.provider) {
           setProvider(data.provider);
@@ -397,8 +400,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             },
             {
               type: "button",
-              text: "Theme",
-              iconName: "settings",
+              text: theme === "dark" ? "Light mode" : "Dark mode",
+              iconName: theme === "dark" ? "star" : "star-filled",
               ariaLabel: `Switch to ${theme === "dark" ? "light" : "dark"} mode`,
               onClick: toggleTheme,
             },
@@ -536,11 +539,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       type: "expandable-link-group" as const,
                       text: "Favorites",
                       defaultExpanded: true,
-                      items: favorites.map((fav) => ({
-                        type: "link" as const,
-                        text: fav.serviceName,
-                        href: fav.serviceHref,
-                      })),
+                      items: favorites.map((fav) => {
+                        const icon = SERVICE_ICONS[fav.serviceHref];
+                        return {
+                          type: "link" as const,
+                          text: fav.serviceName,
+                          href: fav.serviceHref,
+                          ...(icon ? { iconName: undefined } : {}),
+                        };
+                      }),
                     } as any,
                   ] : []),
                   ...navigationItems.map((item: any) => {

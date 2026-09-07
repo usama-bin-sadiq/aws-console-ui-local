@@ -18,7 +18,7 @@ import Button from "@cloudscape-design/components/button";
 import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import ColumnLayout from "@cloudscape-design/components/column-layout";
-import Textarea from "@cloudscape-design/components/textarea";
+import AwsCodeEditor from "@/components/AwsCodeEditor";
 import {
   LAMBDA_RUNTIMES,
   LAMBDA_DEFAULT_RUNTIME,
@@ -59,6 +59,9 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [creating, setCreating] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
+  const [functionNameError, setFunctionNameError] = useState<string | null>(null);
+  const [roleError, setRoleError] = useState<string | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
 
   const [config, setConfig] = useState<LambdaFunctionWizardConfig>({
     authorType: "scratch",
@@ -84,28 +87,35 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
   const validateStep = (index: number): boolean => {
     if (index === 0) return !!config.authorType;
     if (index === 1) {
+      let valid = true;
       if (!config.functionName?.trim()) {
-        setStepError("Function name is required.");
-        return false;
+        setFunctionNameError("Function name is required");
+        valid = false;
+      } else {
+        setFunctionNameError(null);
       }
       if (!config.runtime) {
         setStepError("Runtime is required.");
-        return false;
+        valid = false;
       }
-      return true;
+      return valid;
     }
     if (index === 2) {
       if (config.authorType === "scratch" && !config.code?.trim()) {
+        setCodeError("Code is required for scratch authoring.");
         setStepError("Code is required for scratch authoring.");
         return false;
       }
+      setCodeError(null);
       return true;
     }
     if (index === 3) {
       if (!config.role?.trim()) {
+        setRoleError("Execution role ARN is required");
         setStepError("Execution role is required.");
         return false;
       }
+      setRoleError(null);
       return true;
     }
     return true;
@@ -203,14 +213,14 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
       content: (
         <SpaceBetween size="l">
           <ColumnLayout columns={2} variant="default">
-            <FormField label="Function name" required={true}>
+            <FormField label={<>Function name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={functionNameError}>
               <Input
                 value={config.functionName || ""}
-                onChange={({ detail }) => updateConfig({ functionName: detail.value })}
+                onChange={({ detail }) => { updateConfig({ functionName: detail.value }); setFunctionNameError(null); }}
                 placeholder="my-lambda-function"
               />
             </FormField>
-            <FormField label="Runtime" required={true}>
+            <FormField label="Runtime" constraintText="Required">
               <Select
                 selectedOption={{ value: config.runtime || LAMBDA_DEFAULT_RUNTIME, label: LAMBDA_RUNTIMES.find((r) => r.value === config.runtime)?.label || LAMBDA_DEFAULT_RUNTIME }}
                 options={LAMBDA_RUNTIMES.map((r) => ({ value: r.value, label: r.label }))}
@@ -228,16 +238,16 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
             </FormField>
             <FormField label="Memory size (MB)">
               <Select
-                selectedOption={{ value: config.memorySize || LAMBDA_DEFAULT_MEMORY, label: LAMBDA_MEMORY_OPTIONS.find((m) => m.value === config.memorySize)?.label || `${LAMBDA_DEFAULT_MEMORY} MB` }}
-                options={LAMBDA_MEMORY_OPTIONS.map((m) => ({ value: m.value, label: m.label }))}
-                onChange={({ detail }) => updateConfig({ memorySize: detail.selectedOption.value as number })}
+                selectedOption={{ value: String(config.memorySize || LAMBDA_DEFAULT_MEMORY), label: LAMBDA_MEMORY_OPTIONS.find((m) => m.value === config.memorySize)?.label || `${LAMBDA_DEFAULT_MEMORY} MB` }}
+                options={LAMBDA_MEMORY_OPTIONS.map((m) => ({ value: String(m.value), label: m.label }))}
+                onChange={({ detail }) => updateConfig({ memorySize: Number(detail.selectedOption.value) })}
               />
             </FormField>
             <FormField label="Timeout (seconds)">
               <Select
-                selectedOption={{ value: config.timeout || LAMBDA_DEFAULT_TIMEOUT, label: LAMBDA_TIMEOUT_OPTIONS.find((t) => t.value === config.timeout)?.label || `${LAMBDA_DEFAULT_TIMEOUT} s` }}
-                options={LAMBDA_TIMEOUT_OPTIONS.map((t) => ({ value: t.value, label: t.label }))}
-                onChange={({ detail }) => updateConfig({ timeout: detail.selectedOption.value as number })}
+                selectedOption={{ value: String(config.timeout || LAMBDA_DEFAULT_TIMEOUT), label: LAMBDA_TIMEOUT_OPTIONS.find((t) => t.value === config.timeout)?.label || `${LAMBDA_DEFAULT_TIMEOUT} s` }}
+                options={LAMBDA_TIMEOUT_OPTIONS.map((t) => ({ value: String(t.value), label: t.label }))}
+                onChange={({ detail }) => updateConfig({ timeout: Number(detail.selectedOption.value) })}
               />
             </FormField>
           </ColumnLayout>
@@ -264,12 +274,13 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
       content: (
         <SpaceBetween size="l">
           <Box variant="h3">Function code</Box>
-          <FormField label="Source code (JavaScript / Python / TypeScript)">
-            <Textarea
+          <FormField label={<>Source code (JavaScript / Python / TypeScript) <span style={{ color: "red" }}>*</span></>} errorText={codeError}>
+            <AwsCodeEditor
               value={config.code || ""}
-              onChange={({ detail }) => updateConfig({ code: detail.value })}
-              rows={12}
-              placeholder={`exports.handler = async (event) => {\n  return { statusCode: 200, body: 'Hello' };\n};`}
+              onChange={(value) => { updateConfig({ code: value }); setCodeError(null); }}
+              language="javascript"
+              height={300}
+              ariaLabel="Lambda function code editor"
             />
           </FormField>
           <Alert type="info">
@@ -283,10 +294,10 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
       description: "Configure execution role and permissions",
       content: (
         <SpaceBetween size="l">
-          <FormField label="Execution role ARN" required={true}>
+          <FormField label={<>Execution role ARN <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={roleError}>
             <Input
               value={config.role || ""}
-              onChange={({ detail }) => updateConfig({ role: detail.value })}
+              onChange={({ detail }) => { updateConfig({ role: detail.value }); setRoleError(null); }}
               placeholder="arn:aws:iam::123456789012:role/lambda-execution-role"
             />
           </FormField>
@@ -467,9 +478,13 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
             {Object.keys(config.environment || {}).filter((k) => k).length === 0 && <Box>None</Box>}
           </Container>
           <Container header={<Header variant="h3">Code preview</Header>}>
-            <pre style={{ background: "#1a1a2e", padding: "12px", borderRadius: "4px", overflow: "auto", maxHeight: "200px", fontSize: "12px" }}>
-              {config.code || ""}
-            </pre>
+            <AwsCodeEditor
+              value={config.code || ""}
+              language="javascript"
+              height={200}
+              readOnly
+              ariaLabel="Lambda function code preview"
+            />
           </Container>
         </SpaceBetween>
       ),
@@ -506,7 +521,7 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
             nextButton: "Next",
             previousButton: "Previous",
             navigationAriaLabel: "Wizard navigation",
-            stepNumberingLabel: (stepIndex) => `Step ${stepIndex + 1}`,
+            stepNumberLabel: (stepIndex: number) => `Step ${stepIndex + 1}`,
           }}
         />
       )}

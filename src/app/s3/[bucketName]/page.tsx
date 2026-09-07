@@ -11,6 +11,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -23,6 +24,7 @@ import ColumnLayout from "@cloudscape-design/components/column-layout";
 import Link from "@cloudscape-design/components/link";
 import Table from "@cloudscape-design/components/table";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
+import TruncatedText from "@/components/TruncatedText";
 
 export default function S3BucketDetailPage() {
   const params = useParams() as { bucketName: string };
@@ -82,7 +84,7 @@ export default function S3BucketDetailPage() {
       <ColumnLayout columns={2} variant="default">
         <div>
           <Box variant="small" color="text-label">Bucket name</Box>
-          <Box style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{bucketName}</Box>
+          <TruncatedText>{bucketName}</TruncatedText>
         </div>
         <div>
           <Box variant="small" color="text-label">Region</Box>
@@ -184,20 +186,7 @@ export default function S3BucketDetailPage() {
           <Header variant="h3">Bucket Policy</Header>
           <Box>
             {policy ? (
-              <pre
-                style={{
-                  background: "#1a1a2e",
-                  color: "#e0e0e0",
-                  padding: "16px",
-                  borderRadius: "4px",
-                  overflow: "auto",
-                  maxHeight: "400px",
-                  fontFamily: "monospace",
-                  fontSize: "12px",
-                }}
-              >
-                {JSON.stringify(policy, null, 2)}
-              </pre>
+              <CodeView content={JSON.stringify(policy, null, 2)} lineNumbers wrapLines />
             ) : (
               <Box>No bucket policy set.</Box>
             )}
@@ -222,7 +211,7 @@ export default function S3BucketDetailPage() {
             { id: "value", header: "Value", cell: (tag) => tag.Value || "—" },
           ]}
           ariaLabels={{
-            itemSelectionLabel: (tag) => `Select tag ${tag.Key || "without a key"}`,
+            itemSelectionLabel: (_data, tag) => `Select tag ${(tag as { Key?: string }).Key || "without a key"}`,
             selectionGroupLabel: "Bucket tags",
           }}
           empty={<Box>No tags assigned.</Box>}

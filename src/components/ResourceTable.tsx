@@ -323,7 +323,7 @@ function ResourceTableInner<T extends object>({
   // ── CollectionPreferences shape ────────────────────────────────────────────
   const preferences: CollectionPreferencesProps.Preferences = {
     pageSize,
-    contentDisplay: visibleColumns,
+    contentDisplay: allColumnIds.map((id) => ({ id, visible: visibleColumns.includes(id) })),
   };
 
   // ── Generated header (used when caller does not supply `header`) ───────────
@@ -435,19 +435,14 @@ function ResourceTableInner<T extends object>({
           }}
           contentDisplayPreference={{
             title: "Select visible columns",
-            options: [
-              {
-                label: "Columns",
-                options: allColumnIds.map((id) => ({
-                  id,
-                  label:
-                    columnDefinitions
-                      .find((c) => c.id === id)
-                      ?.header?.toString() ?? id,
-                  editable: true,
-                })),
-              },
-            ],
+            options: allColumnIds.map((id) => ({
+              id,
+              label:
+                columnDefinitions
+                  .find((c) => c.id === id)
+                  ?.header?.toString() ?? id,
+              editable: true,
+            })),
           }}
         />
       }

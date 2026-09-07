@@ -24,7 +24,7 @@ export default function ComprehendPage() {
     <ServiceLayout serviceName="Comprehend" serviceCategory="Services"
       breadcrumbs={[{ text: "Services", href: "/" }, { text: "Comprehend", href: "/comprehend" }]}>
       <SpaceBetween size="l" direction="vertical">
-        <Box padding="l" style={{ background: "var(--awsui-color-background-container-content)", borderRadius: 8, border: "1px solid var(--awsui-color-border-divider-default)" }}>
+        <Box padding="l">
           <Header variant="h2">Comprehend - Classifiers</Header>
           {loading ? (
             <Box>Loading classifiers from adapter SDK...</Box>

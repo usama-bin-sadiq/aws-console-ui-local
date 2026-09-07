@@ -49,12 +49,11 @@ export interface S3BucketSummary {
 export interface S3ObjectConfig {
   Key?: string;
   Bucket?: string;
-  StorageClass?: 'STANDARD' | 'REDUCED_REDUNDANCY' | 'GLACIER' | 'STANDARD_IA';
+  StorageClass?: 'STANDARD' | 'REDUCED_REDUNDANCY' | 'GLACIER' | 'STANDARD_IA' | string;
   Metadata?: Record<string, string>;
   Size?: number;
   LastModified?: string | Date;
   ETag?: string;
-  StorageClass?: string;
 }
 
 export interface S3BucketPolicyStatement {

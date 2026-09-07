@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
 import Button from "@cloudscape-design/components/button";
 import Modal from "@cloudscape-design/components/modal";
@@ -19,8 +20,6 @@ import Alert from "@cloudscape-design/components/alert";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import TextFilter from "@cloudscape-design/components/text-filter";
 import Table from "@cloudscape-design/components/table";
-import Link from "@cloudscape-design/components/link";
-import Badge from "@cloudscape-design/components/badge";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 import JsonEditor from "@/components/JsonEditor";
 
@@ -405,9 +404,7 @@ export default function DynamoDBTableDetailPage() {
             This action cannot be undone. The item will be permanently deleted from <strong>{tableName}</strong>.
           </Alert>
           <Box>
-            <pre style={{ background: "#f2f3f3", padding: "12px", borderRadius: "4px", fontFamily: "monospace", fontSize: "12px", overflow: "auto" }}>
-              {selectedItem ? JSON.stringify(selectedItem, null, 2) : ""}
-            </pre>
+            <CodeView content={selectedItem ? JSON.stringify(selectedItem, null, 2) : ""} lineNumbers wrapLines />
           </Box>
         </SpaceBetween>
       </Modal>

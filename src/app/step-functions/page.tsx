@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -12,6 +13,7 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Textarea from "@cloudscape-design/components/textarea";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import TruncatedText from "@/components/TruncatedText";
 
 interface StateMachine {
   stateMachineArn?: string;
@@ -191,7 +193,7 @@ export default function StepFunctionsPage() {
                   { header: "Name", cell: (i: StateMachine) => i.name || "—" },
                   { header: "Type", cell: (i: StateMachine) => i.type || "—" },
                   { header: "Status", cell: (i: StateMachine) => (i.status === "ACTIVE" ? <StatusIndicator type="success">Active</StatusIndicator> : <StatusIndicator type="warning">Inactive</StatusIndicator>) },
-                  { header: "ARN", cell: (i: StateMachine) => i.stateMachineArn || "—" },
+                  { header: "ARN", cell: (i: StateMachine) => <TruncatedText>{i.stateMachineArn || "—"}</TruncatedText> },
                   {
                     header: "Actions",
                     cell: (i: StateMachine) => (
@@ -231,9 +233,7 @@ export default function StepFunctionsPage() {
                 />
                 {Object.keys(executionDetail).length > 0 && (
                   <Container header={<Header variant="h3">Execution Details</Header>}>
-                    <pre style={{ padding: "12px", background: "var(--awsui-color-background-container-content)", borderRadius: "4px", overflowX: "auto" }}>
-                      {JSON.stringify(executionDetail, null, 2)}
-                    </pre>
+                    <CodeView content={JSON.stringify(executionDetail, null, 2)} lineNumbers wrapLines />
                   </Container>
                 )}
               </div>

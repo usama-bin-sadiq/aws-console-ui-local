@@ -38,6 +38,7 @@ export default function CodeDeployPage() {
   const [createModal, setCreateModal] = useState(false);
   const [appName, setAppName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [appNameError, setAppNameError] = useState<string | null>(null);
 
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [deploymentGroups, setDeploymentGroups] = useState<DeploymentGroup[]>([]);
@@ -51,6 +52,7 @@ export default function CodeDeployPage() {
   const [groupModal, setGroupModal] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [groupCreating, setGroupCreating] = useState(false);
+  const [groupNameError, setGroupNameError] = useState<string | null>(null);
 
   const [deployModal, setDeployModal] = useState(false);
   const [deployBucket, setDeployBucket] = useState("code-deploy-bucket");
@@ -77,6 +79,11 @@ export default function CodeDeployPage() {
   }, []);
 
   const createApplication = async () => {
+    if (!appName.trim()) {
+      setAppNameError("Application name is required");
+      return;
+    }
+    setAppNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/code-deploy", {
@@ -141,6 +148,11 @@ export default function CodeDeployPage() {
   };
 
   const createDeploymentGroup = async () => {
+    if (!groupName.trim()) {
+      setGroupNameError("Deployment group name is required");
+      return;
+    }
+    setGroupNameError(null);
     setGroupCreating(true);
     try {
       const res = await fetch("/api/code-deploy", {
@@ -295,10 +307,10 @@ export default function CodeDeployPage() {
             </SpaceBetween>
           }
         >
-          <FormField label="Application name" constraintText="Required">
+          <FormField label={<>Application name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={appNameError}>
             <Input
               value={appName}
-              onChange={(e) => setAppName(e.detail.value)}
+              onChange={(e) => { setAppName(e.detail.value); setAppNameError(null); }}
               placeholder="my-app"
             />
           </FormField>
@@ -315,10 +327,10 @@ export default function CodeDeployPage() {
             </SpaceBetween>
           }
         >
-          <FormField label="Deployment group name" constraintText="Required">
+          <FormField label={<>Deployment group name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={groupNameError}>
             <Input
               value={groupName}
-              onChange={(e) => setGroupName(e.detail.value)}
+              onChange={(e) => { setGroupName(e.detail.value); setGroupNameError(null); }}
               placeholder="my-group"
             />
           </FormField>

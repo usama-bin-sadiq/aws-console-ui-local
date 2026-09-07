@@ -157,6 +157,7 @@ export default function KmsPage() {
 
   const [aliasName, setAliasName] = useState("");
   const [aliasTargetKeyId, setAliasTargetKeyId] = useState("");
+  const [aliasNameError, setAliasNameError] = useState<string | null>(null);
 
   const [policyKeyId, setPolicyKeyId] = useState("");
   const [policyText, setPolicyText] = useState("{}");
@@ -278,6 +279,11 @@ export default function KmsPage() {
   };
 
   const handleCreateAlias = async () => {
+    if (!aliasName.trim()) {
+      setAliasNameError("Alias name is required");
+      return;
+    }
+    setAliasNameError(null);
     try {
       const res = await fetch("/api/kms", {
         method: "POST",
@@ -545,8 +551,8 @@ export default function KmsPage() {
         }
       >
         <SpaceBetween size="m">
-          <FormField label="Alias name" constraintText="Required">
-            <Input value={aliasName} onChange={(e) => setAliasName(e.detail.value)} placeholder="alias/my-key" ariaLabel="Alias name" />
+          <FormField label={<>Alias name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={aliasNameError}>
+            <Input value={aliasName} onChange={(e) => { setAliasName(e.detail.value); setAliasNameError(null); }} placeholder="alias/my-key" ariaLabel="Alias name" />
           </FormField>
           <Box>Key: {aliasTargetKeyId}</Box>
         </SpaceBetween>

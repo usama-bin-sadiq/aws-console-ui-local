@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { DescribeAddressesCommand, AllocateAddressCommand, ReleaseAddressCommand } from "@aws-sdk/client-ec2";
+import {
+  DescribeAddressesCommand,
+  AllocateAddressCommand,
+  ReleaseAddressCommand,
+  AssociateAddressCommand,
+  DisassociateAddressCommand,
+} from "@aws-sdk/client-ec2";
 import { ec2 } from "@/lib/aws-clients";
 
 export async function GET() {
@@ -11,10 +17,24 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const body = await request.json().catch(() => ({}));
+    if (body.action === "associate") {
+      const res = await ec2.send(new AssociateAddressCommand({
+        AllocationId: body.allocationId,
+        InstanceId: body.instanceId,
+      }));
+      return NextResponse.json({ associationId: res.AssociationId });
+    }
+    if (body.action === "disassociate") {
+      await ec2.send(new DisassociateAddressCommand({
+        AssociationId: body.associationId,
+      }));
+      return NextResponse.json({ success: true });
+    }
     const res = await ec2.send(new AllocateAddressCommand({ Domain: "vpc" }));
-    return NextResponse.json({ allocationId: res.AllocationId });
+    return NextResponse.json({ allocationId: res.AllocationId, publicIp: res.PublicIp });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
   }

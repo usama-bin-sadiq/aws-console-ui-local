@@ -24,7 +24,7 @@ export default function DeviceFarmPage() {
     <ServiceLayout serviceName="Device Farm" serviceCategory="Services"
       breadcrumbs={[{ text: "Services", href: "/" }, { text: "Device Farm", href: "/device-farm" }]}>
       <SpaceBetween size="l" direction="vertical">
-        <Box padding="l" style={{ background: "var(--awsui-color-background-container-content)", borderRadius: 8, border: "1px solid var(--awsui-color-border-divider-default)" }}>
+        <Box padding="l">
           <Header variant="h2">Device Farm - Projects</Header>
           {loading ? (
             <Box>Loading projects from adapter SDK...</Box>

@@ -24,7 +24,8 @@ export default function RekognitionPage() {
     <ServiceLayout serviceName="Rekognition" serviceCategory="Services"
       breadcrumbs={[{ text: "Services", href: "/" }, { text: "Rekognition", href: "/rekognition" }]}>
       <SpaceBetween size="l" direction="vertical">
-        <Box padding="l" style={{ background: "var(--awsui-color-background-container-content)", borderRadius: 8, border: "1px solid var(--awsui-color-border-divider-default)" }}>
+        <div style={{ background: "var(--awsui-color-background-container-content)", borderRadius: 8, border: "1px solid var(--awsui-color-border-divider-default)" }}>
+        <Box padding="l">
           <Header variant="h2">Rekognition - Collections</Header>
           {loading ? (
             <Box>Loading collections from adapter SDK...</Box>
@@ -36,6 +37,7 @@ export default function RekognitionPage() {
             </Box>
           )}
         </Box>
+        </div>
       </SpaceBetween>
     </ServiceLayout>
   );

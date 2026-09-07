@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -9,7 +9,7 @@ import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
-import Input from "@cloudscape-design/components/input";
+import Select from "@cloudscape-design/components/select";
 
 interface NatGateway {
   NatGatewayId: string;
@@ -31,6 +31,35 @@ export default function NatGatewayPage() {
   const [selected, setSelected] = useState<NatGateway[]>([]);
   const [deleting, setDeleting] = useState(false);
 
+  // Subnets for dropdown
+  const [subnets, setSubnets] = useState<Array<{ SubnetId: string; VpcId?: string; AvailabilityZone?: string; CidrBlock?: string }>>([]);
+  // Elastic IPs for dropdown
+  const [elasticIps, setElasticIps] = useState<Array<{ AllocationId?: string; PublicIp?: string }>>([]);
+
+  async function loadSubnets() {
+    try {
+      const res = await fetch("/api/ec2", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "describeSubnets" }),
+      });
+      const data = await res.json();
+      setSubnets(data.subnets || []);
+    } catch {
+      // Subnets will be empty
+    }
+  }
+
+  async function loadElasticIps() {
+    try {
+      const res = await fetch("/api/elastic-ip");
+      const data = await res.json();
+      setElasticIps(data.addresses || []);
+    } catch {
+      // Elastic IPs will be empty
+    }
+  }
+
   async function load() {
     setLoading(true);
     setError(null);
@@ -46,7 +75,7 @@ export default function NatGatewayPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); loadSubnets(); loadElasticIps(); }, []);
 
   async function handleCreate() {
     setCreating(true);
@@ -145,13 +174,30 @@ export default function NatGatewayPage() {
       >
         <SpaceBetween size="m">
           <FormField label="Subnet ID">
-            <Input value={subnetId} onChange={({ detail }) => setSubnetId(detail.value)} placeholder="subnet-xxxxxxxx" />
+            <Select
+              selectedOption={subnetId ? { value: subnetId, label: `${subnetId} (${subnets.find((s) => s.SubnetId === subnetId)?.AvailabilityZone || ""})` } : null}
+              options={subnets.map((s) => ({ value: s.SubnetId, label: `${s.SubnetId} (${s.AvailabilityZone || ""}) - ${s.CidrBlock || ""}` }))}
+              placeholder="Select a subnet"
+              onChange={({ detail }) => setSubnetId(detail.selectedOption.value || "")}
+            />
           </FormField>
           <FormField label="Allocation ID (for public NAT)">
-            <Input value={allocationId} onChange={({ detail }) => setAllocationId(detail.value)} placeholder="eipalloc-xxxxxxxx" />
+            <Select
+              selectedOption={allocationId ? { value: allocationId, label: `${allocationId} (${elasticIps.find((e) => e.AllocationId === allocationId)?.PublicIp || ""})` } : null}
+              options={elasticIps.filter((e) => e.AllocationId).map((e) => ({ value: e.AllocationId!, label: `${e.AllocationId} (${e.PublicIp || ""})` }))}
+              placeholder="Select an Elastic IP"
+              onChange={({ detail }) => setAllocationId(detail.selectedOption.value || "")}
+            />
           </FormField>
           <FormField label="Connectivity Type">
-            <Input value={connectivityType} onChange={({ detail }) => setConnectivityType(detail.value)} placeholder="public" />
+            <Select
+              selectedOption={{ value: connectivityType, label: connectivityType === "public" ? "Public" : "Private" }}
+              options={[
+                { value: "public", label: "Public" },
+                { value: "private", label: "Private" },
+              ]}
+              onChange={({ detail }) => setConnectivityType(detail.selectedOption.value || "public")}
+            />
           </FormField>
         </SpaceBetween>
       </Modal>

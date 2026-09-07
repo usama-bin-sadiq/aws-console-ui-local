@@ -16,6 +16,7 @@ import Select from "@cloudscape-design/components/select";
 import Alert from "@cloudscape-design/components/alert";
 import TextFilter from "@cloudscape-design/components/text-filter";
 import Pagination from "@cloudscape-design/components/pagination";
+import TruncatedText from "@/components/TruncatedText";
 import { EC2Volume } from "@/types/ec2";
 import { EC2_VOLUME_TYPES } from "@/constants/ec2-constants";
 
@@ -27,7 +28,6 @@ export default function VolumePage() {
   const [filteringText, setFilteringText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [createModal, setCreateModal] = useState(false);
-  const [modifyModal, setModifyModal] = useState(false);
   const [attachModal, setAttachModal] = useState(false);
   const [formSize, setFormSize] = useState("20");
   const [formType, setFormType] = useState("gp3");
@@ -177,16 +177,14 @@ export default function VolumePage() {
                 items={[
                   { text: "Attach", id: "attach", disabled: selectedIds.length !== 1 || selectedItems.some((v) => v.State === "in-use") },
                   { text: "Detach", id: "detach", disabled: selectedIds.length !== 1 || selectedItems.some((v) => v.State !== "in-use") },
-                  { text: "Modify", id: "modify", disabled: selectedIds.length !== 1 },
                   { text: "Delete", id: "delete", disabled: selectedIds.length === 0 },
                 ]}
                 onItemClick={({ detail }) => {
                   if (detail.id === "attach") setAttachModal(true);
                   else if (detail.id === "detach") handleDetach();
-                  else if (detail.id === "modify") setModifyModal(true);
                   else if (detail.id === "delete") handleDelete();
                 }}
-                disabled={selectedIds.length === 0 && selectedIds.length !== 1}
+                disabled={selectedIds.length === 0 || selectedIds.length !== 1}
                 ariaLabel="Volume actions"
               >
                 Actions
@@ -215,7 +213,7 @@ export default function VolumePage() {
               { id: "state", header: "State", cell: (item) => <StatusIndicator type={item.State === "available" ? "success" : item.State === "in-use" ? "info" : "warning"}>{item.State || "—"}</StatusIndicator> },
               { id: "az", header: "Availability Zone", cell: (item) => item.AvailabilityZone || "—" },
               { id: "iops", header: "IOPS", cell: (item) => item.Iops ? String(item.Iops) : "—" },
-              { id: "attachments", header: "Attachments", cell: (item) => (item.Attachments && item.Attachments.length > 0 ? item.Attachments.map((a) => a.InstanceId).join(", ") : "—") },
+              { id: "attachments", header: "Attachments", cell: (item) => <TruncatedText>{item.Attachments && item.Attachments.length > 0 ? item.Attachments.map((a) => a.InstanceId).join(", ") : "—"}</TruncatedText> },
             ]}
             items={pagedItems}
             loading={loading}

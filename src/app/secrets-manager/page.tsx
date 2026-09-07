@@ -114,6 +114,8 @@ export default function SecretsManagerPage() {
   const [createString, setCreateString] = useState("");
   const [createKmsKey, setCreateKmsKey] = useState("");
   const [createDescription, setCreateDescription] = useState("");
+  const [createNameError, setCreateNameError] = useState<string | null>(null);
+  const [createStringError, setCreateStringError] = useState<string | null>(null);
 
   const [viewName, setViewName] = useState("");
   const [viewValue, setViewValue] = useState("");
@@ -205,6 +207,20 @@ export default function SecretsManagerPage() {
   }, [fetchSecrets]);
 
   const handleCreateSecret = async () => {
+    let hasError = false;
+    if (!createName.trim()) {
+      setCreateNameError("Secret name is required");
+      hasError = true;
+    } else {
+      setCreateNameError(null);
+    }
+    if (!createString.trim()) {
+      setCreateStringError("Secret value is required");
+      hasError = true;
+    } else {
+      setCreateStringError(null);
+    }
+    if (hasError) return;
     try {
       const res = await fetch("/api/secrets-manager", {
         method: "POST",
@@ -407,11 +423,11 @@ export default function SecretsManagerPage() {
         }
       >
         <SpaceBetween size="m">
-          <FormField label="Secret name" constraintText="Required">
-            <Input value={createName} onChange={(e) => setCreateName(e.detail.value)} placeholder="my-secret" ariaLabel="Secret name" />
+          <FormField label={<>Secret name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={createNameError}>
+            <Input value={createName} onChange={(e) => { setCreateName(e.detail.value); setCreateNameError(null); }} placeholder="my-secret" ariaLabel="Secret name" />
           </FormField>
-          <FormField label="Secret value" constraintText="Required">
-            <Textarea value={createString} onChange={(e) => setCreateString(e.detail.value)} rows={6} placeholder="key=value" ariaLabel="Secret value" />
+          <FormField label={<>Secret value <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={createStringError}>
+            <Textarea value={createString} onChange={(e) => { setCreateString(e.detail.value); setCreateStringError(null); }} rows={6} placeholder="key=value" ariaLabel="Secret value" />
           </FormField>
           <FormField label="KMS key ID" constraintText="Optional">
             <Input value={createKmsKey} onChange={(e) => setCreateKmsKey(e.detail.value)} placeholder="alias/aws/secretsmanager" ariaLabel="KMS key ID" />

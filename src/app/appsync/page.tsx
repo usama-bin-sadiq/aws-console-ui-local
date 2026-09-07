@@ -35,6 +35,7 @@ export default function AppSyncPage() {
   const [apiName, setApiName] = useState("");
   const [authType, setAuthType] = useState({ label: "API Key", value: "API_KEY" });
   const [creating, setCreating] = useState(false);
+  const [apiNameError, setApiNameError] = useState<string | null>(null);
 
   const fetchApis = async () => {
     setLoading(true);
@@ -56,6 +57,11 @@ export default function AppSyncPage() {
   }, []);
 
   const createApi = async () => {
+    if (!apiName.trim()) {
+      setApiNameError("API name is required");
+      return;
+    }
+    setApiNameError(null);
     setCreating(true);
     try {
       const res = await fetch("/api/appsync", {
@@ -151,10 +157,10 @@ export default function AppSyncPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label="API name" constraintText="Required">
+            <FormField label={<>API name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={apiNameError}>
               <Input
                 value={apiName}
-                onChange={(e) => setApiName(e.detail.value)}
+                onChange={(e) => { setApiName(e.detail.value); setApiNameError(null); }}
                 placeholder="my-graphql-api"
               />
             </FormField>

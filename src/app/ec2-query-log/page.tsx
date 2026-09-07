@@ -7,7 +7,7 @@ import Box from "@cloudscape-design/components/box";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Cards from "@cloudscape-design/components/cards";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
-import { AWACS_DESIGN_TOKENS } from "@/constants/design-tokens";
+
 
 export default function Page() {
   return (
@@ -30,7 +30,7 @@ export default function Page() {
           />
         </Container>
         <Container header={<Header variant="h2">Resources</Header>}>
-          <Box style={{ padding: AWACS_DESIGN_TOKENS.spacing.m, color: AWACS_DESIGN_TOKENS.colors.textSecondary }}>
+          <Box padding="m" color="text-body-secondary">
             Resources managed via adapter SDK clients. No deferred features. PRD feature IDs applied.
           </Box>
         </Container>
