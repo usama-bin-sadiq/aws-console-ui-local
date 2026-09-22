@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { GetCallerIdentityCommand } from "@aws-sdk/client-sts";
-import { sts } from "@/lib/aws-clients";
+import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await sts.send(new GetCallerIdentityCommand({}));
+    const stsClient = getUserClientFromRequest(STSClient, request);
+    const res = await stsClient.send(new GetCallerIdentityCommand({}));
     return NextResponse.json({
       identity: { Account: res.Account, UserId: res.UserId, Arn: res.Arn },
     });

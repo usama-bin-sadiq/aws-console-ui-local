@@ -37,6 +37,7 @@ import CollectionPreferences from "@cloudscape-design/components/collection-pref
 import Alert from "@cloudscape-design/components/alert";
 import Link from "@cloudscape-design/components/link";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
+import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 
 interface StackSummary {
   StackName?: string;
@@ -327,6 +328,8 @@ export default function CloudFormationPage() {
           />
         </Container>
       </SpaceBetween>
+
+      <CrossServiceLinks links={CROSS_SERVICE_LINKS["/cloudformation"] || []} />
 
       {/* Confirm delete modal */}
       {confirmDelete && (

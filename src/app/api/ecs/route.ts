@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  ECSClient,
   ListClustersCommand,
   DescribeClustersCommand,
   CreateClusterCommand,
@@ -16,16 +17,21 @@ import {
   ListTasksCommand,
   DescribeTasksCommand,
 } from "@aws-sdk/client-ecs";
-import { ecs } from "@/lib/aws-clients";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const listRes = await ecs.send(new ListClustersCommand({}));
+    const ecsClient = getUserClientFromRequest(ECSClient, request);
+    const listRes = await ecsClient.send(new ListClustersCommand({}));
     const clusterArns = listRes.clusterArns || [];
     if (clusterArns.length === 0) {
       return NextResponse.json({ clusters: [] });
     }
-    const descRes = await ecs.send(new DescribeClustersCommand({ clusters: clusterArns }));
+    const descRes = await ecsClient.send(new DescribeClustersCommand({ clusters: clusterArns }));
     return NextResponse.json({ clusters: descRes.clusters || [] });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -33,12 +39,16 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const ecsClient = getUserClientFromRequest(ECSClient, request);
     const body = await request.json();
 
     // Services
     if (body.action === "createService") {
-      const res = await ecs.send(new CreateServiceCommand({
+      const res = await ecsClient.send(new CreateServiceCommand({
         cluster: body.cluster,
         serviceName: body.serviceName,
         taskDefinition: body.taskDefinition,
@@ -47,7 +57,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ service: res.service });
     }
     if (body.action === "updateService") {
-      const res = await ecs.send(new UpdateServiceCommand({
+      const res = await ecsClient.send(new UpdateServiceCommand({
         cluster: body.cluster,
         service: body.serviceName,
         desiredCount: body.desiredCount,
@@ -57,7 +67,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ service: res.service });
     }
     if (body.action === "deleteService") {
-      await ecs.send(new DeleteServiceCommand({
+      await ecsClient.send(new DeleteServiceCommand({
         cluster: body.cluster,
         service: body.serviceName,
         force: body.force,
@@ -65,12 +75,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
     if (body.action === "listServices") {
-      const res = await ecs.send(new ListServicesCommand({ cluster: body.cluster }));
+      const res = await ecsClient.send(new ListServicesCommand({ cluster: body.cluster }));
       const serviceArns = res.serviceArns || [];
       if (serviceArns.length === 0) {
         return NextResponse.json({ services: [] });
       }
-      const descRes = await ecs.send(new DescribeServicesCommand({
+      const descRes = await ecsClient.send(new DescribeServicesCommand({
         cluster: body.cluster,
         services: serviceArns,
       }));
@@ -79,7 +89,7 @@ export async function POST(request: Request) {
 
     // Task Definitions
     if (body.action === "registerTaskDefinition") {
-      const res = await ecs.send(new RegisterTaskDefinitionCommand({
+      const res = await ecsClient.send(new RegisterTaskDefinitionCommand({
         family: body.family,
         containerDefinitions: body.containerDefinitions || [],
         networkMode: body.networkMode,
@@ -92,20 +102,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ taskDefinition: res.taskDefinition });
     }
     if (body.action === "listTaskDefinitions") {
-      const res = await ecs.send(new ListTaskDefinitionsCommand({
+      const res = await ecsClient.send(new ListTaskDefinitionsCommand({
         familyPrefix: body.familyPrefix,
         status: body.status || "ACTIVE",
       }));
       return NextResponse.json({ taskDefinitionArns: res.taskDefinitionArns || [] });
     }
     if (body.action === "describeTaskDefinition") {
-      const res = await ecs.send(new DescribeTaskDefinitionCommand({
+      const res = await ecsClient.send(new DescribeTaskDefinitionCommand({
         taskDefinition: body.taskDefinition,
       }));
       return NextResponse.json({ taskDefinition: res.taskDefinition });
     }
     if (body.action === "deleteTaskDefinitions") {
-      await ecs.send(new DeleteTaskDefinitionsCommand({
+      await ecsClient.send(new DeleteTaskDefinitionsCommand({
         taskDefinitions: body.taskDefinitions || [body.taskDefinition],
       }));
       return NextResponse.json({ success: true });
@@ -113,7 +123,7 @@ export async function POST(request: Request) {
 
     // Tasks
     if (body.action === "listTasks") {
-      const res = await ecs.send(new ListTasksCommand({
+      const res = await ecsClient.send(new ListTasksCommand({
         cluster: body.cluster,
         desiredStatus: body.desiredStatus,
         serviceName: body.serviceName,
@@ -121,7 +131,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ taskArns: res.taskArns || [] });
     }
     if (body.action === "describeTasks") {
-      const res = await ecs.send(new DescribeTasksCommand({
+      const res = await ecsClient.send(new DescribeTasksCommand({
         cluster: body.cluster,
         tasks: body.tasks || [],
       }));
@@ -129,7 +139,7 @@ export async function POST(request: Request) {
     }
 
     // Default: createCluster
-    const res = await ecs.send(new CreateClusterCommand({ clusterName: body.clusterName }));
+    const res = await ecsClient.send(new CreateClusterCommand({ clusterName: body.clusterName }));
     return NextResponse.json({ cluster: res.cluster });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -137,10 +147,14 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const ecsClient = getUserClientFromRequest(ECSClient, request);
     const { searchParams } = new URL(request.url);
     const cluster = searchParams.get("cluster")!;
-    await ecs.send(new DeleteClusterCommand({ cluster }));
+    await ecsClient.send(new DeleteClusterCommand({ cluster }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

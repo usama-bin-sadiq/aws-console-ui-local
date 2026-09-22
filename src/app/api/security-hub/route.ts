@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { securityhub } from "@/lib/aws-clients";
-import { GetFindingsCommand } from "@aws-sdk/client-securityhub";
+import { GetFindingsCommand, SecurityHubClient } from "@aws-sdk/client-securityhub";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await securityhub.send(new GetFindingsCommand({ MaxResults: 20 }));
+    const securityhubClient = getUserClientFromRequest(SecurityHubClient, request);
+    const res = await securityhubClient.send(new GetFindingsCommand({ MaxResults: 20 }));
     return NextResponse.json({ findings: res.Findings || [] });
   } catch (error: unknown) {
     // Security Hub may not be enabled — return graceful empty state

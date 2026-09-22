@@ -1,11 +1,11 @@
 /**
- * Adapter Types — Universal SDK Adapter Interfaces
+ * Adapter Types — Universal SDK Adapter Interfaces (Emulator Only)
  * Every adapter module uses these exported interfaces.
  * No inline types allowed inside adapter implementations.
  */
 
 export interface AdapterModeValue {
-  readonly mode: 'localstack' | 'ministack' | 'real';
+  readonly mode: 'localstack' | 'ministack';
 }
 
 export interface AuthCredentials {
@@ -24,7 +24,7 @@ export interface EndpointResolution {
 }
 
 export interface AdapterConfigShape {
-  readonly adapterMode: 'localstack' | 'ministack' | 'real';
+  readonly adapterMode: 'localstack' | 'ministack';
   readonly endpointConfig: {
     readonly localstackHostname: string;
     readonly localstackPort: number;
@@ -32,7 +32,6 @@ export interface AdapterConfigShape {
     readonly minstackHostname: string;
     readonly minstackPort: number;
     readonly minstackSslEnabled: boolean;
-    readonly realEndpointUrl?: string;
     readonly localstackEndpoint: string;
     readonly minstackEndpoint: string;
   };
@@ -41,7 +40,7 @@ export interface AdapterConfigShape {
 }
 
 export interface AdapterFactoryOptions {
-  readonly adapterMode?: 'localstack' | 'ministack' | 'real';
+  readonly adapterMode?: 'localstack' | 'ministack';
   readonly serviceName?: string;
 }
 

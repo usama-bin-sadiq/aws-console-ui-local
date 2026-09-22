@@ -8,12 +8,18 @@ import {
   UpdateShardCountCommand,
   IncreaseStreamRetentionPeriodCommand,
 } from "@aws-sdk/client-kinesis";
-import { kinesis } from "@/lib/aws-clients";
+import { KinesisClient } from "@aws-sdk/client-kinesis";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const kinesisClient = getUserClientFromRequest(KinesisClient, request);
     const [listRes, describePromises] = [
-      kinesis.send(new ListStreamsCommand({})).catch(() => ({ StreamNames: [] })),
+      kinesisClient.send(new ListStreamsCommand({})).catch(() => ({ StreamNames: [] })),
       Promise.resolve({} as any),
     ];
     const res = await listRes;
@@ -23,7 +29,7 @@ export async function GET() {
     await Promise.all(
       streamNames.map(async (name) => {
         try {
-          const d = await kinesis.send(new DescribeStreamCommand({ StreamName: name }));
+          const d = await kinesisClient.send(new DescribeStreamCommand({ StreamName: name }));
           details[name] = d.StreamDescription || {};
         } catch {
           details[name] = { StreamStatus: "ACTIVE", Shards: [] };
@@ -37,10 +43,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const kinesisClient = getUserClientFromRequest(KinesisClient, request);
     const body = await request.json();
     if (body.action === "putRecord") {
-      await kinesis.send(
+      await kinesisClient.send(
         new PutRecordCommand({
           StreamName: body.streamName,
           Data: Buffer.from(body.data || ""),
@@ -50,7 +60,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
     if (body.action === "updateRetention") {
-      await kinesis.send(
+      await kinesisClient.send(
         new IncreaseStreamRetentionPeriodCommand({
           StreamName: body.streamName,
           RetentionPeriodHours: body.retentionHours || 24,
@@ -59,7 +69,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
     const streamName = body.streamName || body.StreamName;
-    await kinesis.send(new CreateStreamCommand({ StreamName: streamName, ShardCount: body.shardCount || 1 }));
+    await kinesisClient.send(new CreateStreamCommand({ StreamName: streamName, ShardCount: body.shardCount || 1 }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -67,9 +77,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const kinesisClient = getUserClientFromRequest(KinesisClient, request);
     const { searchParams } = new URL(request.url);
-    await kinesis.send(new DeleteStreamCommand({ StreamName: searchParams.get("streamName")! }));
+    await kinesisClient.send(new DeleteStreamCommand({ StreamName: searchParams.get("streamName")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

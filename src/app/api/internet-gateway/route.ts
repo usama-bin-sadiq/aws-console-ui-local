@@ -3,17 +3,23 @@
 // DeleteInternetGateway, AttachInternetGateway, DetachInternetGateway)
 import { NextResponse } from "next/server";
 import {
+  EC2Client,
   DescribeInternetGatewaysCommand,
   CreateInternetGatewayCommand,
   DeleteInternetGatewayCommand,
   AttachInternetGatewayCommand,
   DetachInternetGatewayCommand,
 } from "@aws-sdk/client-ec2";
-import { ec2 } from "@/lib/aws-clients";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await ec2.send(new DescribeInternetGatewaysCommand({}));
+    const ec2Client = getUserClientFromRequest(EC2Client, request);
+    const res = await ec2Client.send(new DescribeInternetGatewaysCommand({}));
     return NextResponse.json({ internetGateways: res.InternetGateways || [] });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -21,18 +27,22 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const ec2Client = getUserClientFromRequest(EC2Client, request);
     const body = await request.json();
     if (body.action === "attach") {
-      await ec2.send(new AttachInternetGatewayCommand({ InternetGatewayId: body.igwId, VpcId: body.vpcId }));
+      await ec2Client.send(new AttachInternetGatewayCommand({ InternetGatewayId: body.igwId, VpcId: body.vpcId }));
       return NextResponse.json({ success: true });
     }
     if (body.action === "detach") {
-      await ec2.send(new DetachInternetGatewayCommand({ InternetGatewayId: body.igwId, VpcId: body.vpcId }));
+      await ec2Client.send(new DetachInternetGatewayCommand({ InternetGatewayId: body.igwId, VpcId: body.vpcId }));
       return NextResponse.json({ success: true });
     }
     // default: create
-    const res = await ec2.send(new CreateInternetGatewayCommand({}));
+    const res = await ec2Client.send(new CreateInternetGatewayCommand({}));
     return NextResponse.json({ internetGateway: res.InternetGateway });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -40,9 +50,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const ec2Client = getUserClientFromRequest(EC2Client, request);
     const { searchParams } = new URL(request.url);
-    await ec2.send(new DeleteInternetGatewayCommand({ InternetGatewayId: searchParams.get("igwId")! }));
+    await ec2Client.send(new DeleteInternetGatewayCommand({ InternetGatewayId: searchParams.get("igwId")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

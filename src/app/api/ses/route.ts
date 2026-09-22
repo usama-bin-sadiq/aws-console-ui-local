@@ -5,11 +5,17 @@ import {
   SendEmailCommand,
   DeleteIdentityCommand,
 } from "@aws-sdk/client-ses";
-import { ses } from "@/lib/aws-clients";
+import { SESClient } from "@aws-sdk/client-ses";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await ses.send(new ListIdentitiesCommand({ IdentityType: "EmailAddress" }));
+    const sesClient = getUserClientFromRequest(SESClient, request);
+    const res = await sesClient.send(new ListIdentitiesCommand({ IdentityType: "EmailAddress" }));
     return NextResponse.json({ identities: res.Identities || [] });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -17,14 +23,18 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const sesClient = getUserClientFromRequest(SESClient, request);
     const body = await request.json();
     if (body.action === "send") {
-      await ses.send(new SendEmailCommand({ Source: body.source, Destination: body.destination, Message: body.message }));
+      await sesClient.send(new SendEmailCommand({ Source: body.source, Destination: body.destination, Message: body.message }));
       return NextResponse.json({ success: true });
     }
     // default: verify
-    await ses.send(new VerifyEmailIdentityCommand({ EmailAddress: body.emailAddress }));
+    await sesClient.send(new VerifyEmailIdentityCommand({ EmailAddress: body.emailAddress }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -32,10 +42,14 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const sesClient = getUserClientFromRequest(SESClient, request);
     const { searchParams } = new URL(request.url);
     const identity = searchParams.get("identity")!;
-    await ses.send(new DeleteIdentityCommand({ Identity: identity }));
+    await sesClient.send(new DeleteIdentityCommand({ Identity: identity }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

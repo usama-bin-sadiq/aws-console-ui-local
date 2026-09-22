@@ -19,6 +19,7 @@ import TextFilter from "@cloudscape-design/components/text-filter";
 import Pagination from "@cloudscape-design/components/pagination";
 import { CloudWatchAlarm, CloudWatchMetric, CloudWatchLogGroup, CloudWatchLogStream, CloudWatchInsightsQuery } from "@/types/cloudwatch";
 import TruncatedText from "@/components/TruncatedText";
+import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 
 export default function CloudWatchPage() {
   const [alarms, setAlarms] = useState<CloudWatchAlarm[]>([]);
@@ -472,6 +473,8 @@ export default function CloudWatchPage() {
           ]}
         />
       </SpaceBetween>
+
+      <CrossServiceLinks links={CROSS_SERVICE_LINKS["/cloudwatch"] || []} />
 
       {/* Alarm Create / Edit Modal */}
       <Modal

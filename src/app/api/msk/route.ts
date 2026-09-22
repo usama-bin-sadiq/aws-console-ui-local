@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
-import { ListClustersV2Command, CreateClusterV2Command, DeleteClusterCommand } from "@aws-sdk/client-kafka";
-import { kafka } from "@/lib/aws-clients";
+import { ListClustersV2Command, CreateClusterV2Command, DeleteClusterCommand, KafkaClient } from "@aws-sdk/client-kafka";
 import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await kafka.send(new ListClustersV2Command({}));
+    const kafkaClient = getUserClientFromRequest(KafkaClient, request);
+    const res = await kafkaClient.send(new ListClustersV2Command({}));
     return NextResponse.json({ clusterInfoList: res.ClusterInfoList || [] });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();
@@ -14,9 +19,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const kafkaClient = getUserClientFromRequest(KafkaClient, request);
     const body = await request.json();
-    const res = await kafka.send(new CreateClusterV2Command({ ClusterName: body.clusterName, Provisioned: body.provisioned }));
+    const res = await kafkaClient.send(new CreateClusterV2Command({ ClusterName: body.clusterName, Provisioned: body.provisioned }));
     return NextResponse.json({ clusterArn: res.ClusterArn });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();
@@ -25,9 +34,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const kafkaClient = getUserClientFromRequest(KafkaClient, request);
     const { searchParams } = new URL(request.url);
-    await kafka.send(new DeleteClusterCommand({ ClusterArn: searchParams.get("clusterArn")! }));
+    await kafkaClient.send(new DeleteClusterCommand({ ClusterArn: searchParams.get("clusterArn")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();

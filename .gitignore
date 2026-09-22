@@ -1,56 +1,64 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
+.pnpm-store/
+.ultimate-dev
+# Build output
+.next/
+dist/
+build/
+*.tsbuildinfo
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-data
-# testing
-/coverage
+# Database (local development)
+data/
+*.db
+*.db-wal
+*.db-shm
 
-# next.js
-/.next/
-/out/
+# Environment files
+.env
+.env.local
+.env.*.local
 
-# production
-/build
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 
-# misc
+# OS files
 .DS_Store
-*.pem
+Thumbs.db
 
-# debug
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Testing
+coverage/
+test-results/
+playwright-report/
+.vrt/
 
-# vercel
-.vercel
+# Docker
+docker-compose.override.yml
+docker-compose.local.yml
 
-# AI / agent files
-.opencode/
-.claude/CLIP.md
-~/.claude/
+# Misc
+*.pem
+*.key
+.credentials/
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Local AWS Console specific
+.eslintcache
+.npmrc
+pnpm-lock.yaml.legacy
 
-# AI / Agent files
+# Claude / OpenCode
 .claude/
-.cursor/
-.windsurf/
-.agent/
-AI.md
-AGENTS.md.backup
-.agents/
-.mcp/
+.opencode/
+.ultimate-dev/
+
+.memory/ultimate-dev/

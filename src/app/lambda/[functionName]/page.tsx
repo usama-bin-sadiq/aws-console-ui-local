@@ -16,6 +16,7 @@ import Table from "@cloudscape-design/components/table";
 import Textarea from "@cloudscape-design/components/textarea";
 import Link from "@cloudscape-design/components/link";
 import { LambdaFunctionConfig, LambdaAliasConfig, LambdaVersionConfig, LambdaTriggerConfig } from "@/types/lambda";
+import { apiFetch } from "@/lib/api-client";
 
 export default function LambdaFunctionDetailPage({
   params,
@@ -39,7 +40,7 @@ export default function LambdaFunctionDetailPage({
     setError(null);
     try {
       // Get function config
-      const res = await fetch(`/api/lambda?action=getFunction&functionName=${encodeURIComponent(functionName)}`);
+      const res = await apiFetch(`/api/lambda?action=getFunction&functionName=${encodeURIComponent(functionName)}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setFunctionConfig(data.function || data);
@@ -47,12 +48,12 @@ export default function LambdaFunctionDetailPage({
       setCode(data.function?.Code?.Code || "// Function code\nexports.handler = async (event) => {\n  return { statusCode: 200, body: 'Hello' };\n};");
 
       // Aliases
-      const aliasRes = await fetch(`/api/lambda?action=listAliases&functionName=${encodeURIComponent(functionName)}`);
+      const aliasRes = await apiFetch(`/api/lambda?action=listAliases&functionName=${encodeURIComponent(functionName)}`);
       const aliasData = await aliasRes.json();
       setAliases(aliasData.aliases || []);
 
       // Versions
-      const verRes = await fetch(`/api/lambda?action=listVersions&functionName=${encodeURIComponent(functionName)}`);
+      const verRes = await apiFetch(`/api/lambda?action=listVersions&functionName=${encodeURIComponent(functionName)}`);
       const verData = await verRes.json();
       setVersions(verData.versions || []);
 

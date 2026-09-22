@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { DescribeLogGroupsCommand, CreateLogGroupCommand, DeleteLogGroupCommand, GetLogEventsCommand, FilterLogEventsCommand } from "@aws-sdk/client-cloudwatch-logs";
-import { cloudwatchLogs } from "@/lib/aws-clients";
+import { DescribeLogGroupsCommand, CreateLogGroupCommand, DeleteLogGroupCommand, GetLogEventsCommand, FilterLogEventsCommand, CloudWatchLogsClient } from "@aws-sdk/client-cloudwatch-logs";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await cloudwatchLogs.send(new DescribeLogGroupsCommand({}));
+    const cloudwatchLogsClient = getUserClientFromRequest(CloudWatchLogsClient, request);
+    const res = await cloudwatchLogsClient.send(new DescribeLogGroupsCommand({}));
     return NextResponse.json({ logGroups: res.logGroups || [] });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -12,17 +17,21 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const cloudwatchLogsClient = getUserClientFromRequest(CloudWatchLogsClient, request);
     const body = await request.json();
     if (body.action === "getEvents") {
-      const res = await cloudwatchLogs.send(new GetLogEventsCommand({ logGroupName: body.logGroupName, logStreamName: body.logStreamName }));
+      const res = await cloudwatchLogsClient.send(new GetLogEventsCommand({ logGroupName: body.logGroupName, logStreamName: body.logStreamName }));
       return NextResponse.json({ events: res.events || [] });
     }
     if (body.action === "filterEvents") {
-      const res = await cloudwatchLogs.send(new FilterLogEventsCommand({ logGroupName: body.logGroupName, filterPattern: body.filterPattern }));
+      const res = await cloudwatchLogsClient.send(new FilterLogEventsCommand({ logGroupName: body.logGroupName, filterPattern: body.filterPattern }));
       return NextResponse.json({ events: res.events || [] });
     }
-    await cloudwatchLogs.send(new CreateLogGroupCommand({ logGroupName: body.logGroupName }));
+    await cloudwatchLogsClient.send(new CreateLogGroupCommand({ logGroupName: body.logGroupName }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -30,9 +39,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const cloudwatchLogsClient = getUserClientFromRequest(CloudWatchLogsClient, request);
     const { searchParams } = new URL(request.url);
-    await cloudwatchLogs.send(new DeleteLogGroupCommand({ logGroupName: searchParams.get("logGroupName")! }));
+    await cloudwatchLogsClient.send(new DeleteLogGroupCommand({ logGroupName: searchParams.get("logGroupName")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

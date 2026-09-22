@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { ListSchedulesCommand, CreateScheduleCommand, DeleteScheduleCommand } from "@aws-sdk/client-scheduler";
-import { scheduler } from "@/lib/aws-clients";
+import { ListSchedulesCommand, CreateScheduleCommand, DeleteScheduleCommand, SchedulerClient } from "@aws-sdk/client-scheduler";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await scheduler.send(new ListSchedulesCommand({}));
+    const schedulerClient = getUserClientFromRequest(SchedulerClient, request);
+    const res = await schedulerClient.send(new ListSchedulesCommand({}));
     return NextResponse.json({ schedules: res.Schedules || [] });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -12,9 +17,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const schedulerClient = getUserClientFromRequest(SchedulerClient, request);
     const body = await request.json();
-    await scheduler.send(new CreateScheduleCommand({
+    await schedulerClient.send(new CreateScheduleCommand({
       Name: body.name,
       ScheduleExpression: body.scheduleExpression || "rate(1 hour)",
       Target: body.target || {
@@ -30,9 +39,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const schedulerClient = getUserClientFromRequest(SchedulerClient, request);
     const { searchParams } = new URL(request.url);
-    await scheduler.send(new DeleteScheduleCommand({ Name: searchParams.get("name")! }));
+    await schedulerClient.send(new DeleteScheduleCommand({ Name: searchParams.get("name")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

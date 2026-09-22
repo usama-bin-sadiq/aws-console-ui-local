@@ -9,7 +9,6 @@
 export enum AdapterMode {
   LOCALSTACK = 'localstack',
   MINSTACK = 'ministack',
-  REAL = 'real',
 }
 
 export enum AdapterStatus {
@@ -179,17 +178,26 @@ export const SERVICE_REGISTRY: ServiceCompatibilityEntry[] = [
   { routeDir: 'cost-usage-report', serviceName: 'AWS Cost and Usage Report', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different', sdkClient: '@aws-sdk/client-cost-and-usage-report-service', hasRouteInRepo: true },
   { routeDir: 'account', serviceName: 'AWS Account', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different — account settings partial in MinStack', sdkClient: '@aws-sdk/client-account', hasRouteInRepo: true },
   { routeDir: 'acm', serviceName: 'AWS Certificate Manager', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different', sdkClient: '@aws-sdk/client-acm', hasRouteInRepo: true },
-  { routeDir: 'ami', serviceName: 'Amazon Machine Image (AMI)', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different — AMI management partial', sdkClient: '@aws-sdk/client-ec2', hasRouteInRepo: true },
-  { routeDir: 'lambda-alias', serviceName: 'Lambda Alias', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.FULL, commonDifferentNote: 'Common', sdkClient: '@aws-sdk/client-lambda', hasRouteInRepo: true },
-  { routeDir: 'lambda-layer', serviceName: 'Lambda Layer', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different', sdkClient: '@aws-sdk/client-lambda', hasRouteInRepo: true },
+
+  // === SERVICES NOT PREVIOUSLY REGISTERED ===
+  { routeDir: 'amplify', serviceName: 'AWS Amplify', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different — Amplify control-plane metadata; actual builds require external CI', sdkClient: '@aws-sdk/client-amplify', hasRouteInRepo: true },
+  { routeDir: 'bedrock', serviceName: 'Amazon Bedrock', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — Bedrock not in MinStack', sdkClient: '@aws-sdk/client-bedrock', hasRouteInRepo: true },
+  { routeDir: 'comprehend', serviceName: 'Amazon Comprehend', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — Comprehend not in MinStack', sdkClient: '@aws-sdk/client-comprehend', hasRouteInRepo: true },
+  { routeDir: 'connect', serviceName: 'Amazon Connect', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — Connect not in MinStack', sdkClient: '@aws-sdk/client-connect', hasRouteInRepo: true },
+  { routeDir: 'device-farm', serviceName: 'AWS Device Farm', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — Device Farm not in MinStack', sdkClient: '@aws-sdk/client-devicefarm', hasRouteInRepo: true },
+  { routeDir: 'ec2-health-check', serviceName: 'EC2 Health Check', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — Route 53 health checks', sdkClient: '@aws-sdk/client-route-53', hasRouteInRepo: true },
+  { routeDir: 'elasticache', serviceName: 'Amazon ElastiCache', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different — ElastiCache control-plane metadata', sdkClient: '@aws-sdk/client-elasticache', hasRouteInRepo: true },
+  { routeDir: 'iot-analytics', serviceName: 'AWS IoT Analytics', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — IoT Analytics not in MinStack', sdkClient: '@aws-sdk/client-iotanalytics', hasRouteInRepo: true },
+  { routeDir: 'lex', serviceName: 'Amazon Lex', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — Lex not in MinStack', sdkClient: '@aws-sdk/client-lex-runtime', hasRouteInRepo: true },
+  { routeDir: 'pinpoint', serviceName: 'Amazon Pinpoint', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — Pinpoint not in MinStack', sdkClient: '@aws-sdk/client-pinpoint', hasRouteInRepo: true },
+  { routeDir: 'polly', serviceName: 'Amazon Polly', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — Polly not in MinStack', sdkClient: '@aws-sdk/client-polly', hasRouteInRepo: true },
+  { routeDir: 'quicksight', serviceName: 'Amazon QuickSight', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — QuickSight not in MinStack', sdkClient: '@aws-sdk/client-quicksight', hasRouteInRepo: true },
+  { routeDir: 'rekognition', serviceName: 'Amazon Rekognition', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — Rekognition not in MinStack', sdkClient: '@aws-sdk/client-rekognition', hasRouteInRepo: true },
+  { routeDir: 'sagemaker', serviceName: 'Amazon SageMaker', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — SageMaker not in MinStack', sdkClient: '@aws-sdk/client-sagemaker', hasRouteInRepo: true },
+  { routeDir: 'servicediscovery', serviceName: 'AWS Cloud Map', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different — Service Discovery partial in MinStack', sdkClient: '@aws-sdk/client-servicediscovery', hasRouteInRepo: true },
+  { routeDir: 'ses', serviceName: 'Amazon SES', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different — SES control-plane metadata', sdkClient: '@aws-sdk/client-ses', hasRouteInRepo: true },
+  { routeDir: 'support', serviceName: 'AWS Support', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — Support requires real AWS account', sdkClient: '@aws-sdk/client-support', hasRouteInRepo: true },
   { routeDir: 'lambda-microvms', serviceName: 'Lambda MicroVMs', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different', sdkClient: '@aws-sdk/client-lambda', hasRouteInRepo: true },
-  { routeDir: 'ecs-cluster', serviceName: 'Amazon ECS Cluster', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different — MinStack partial ECS support', sdkClient: '@aws-sdk/client-ecs', hasRouteInRepo: true },
-  { routeDir: 'ecs-service', serviceName: 'Amazon ECS Service', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.FULL, commonDifferentNote: 'Common', sdkClient: '@aws-sdk/client-ecs', hasRouteInRepo: true },
-  { routeDir: 'fargate', serviceName: 'AWS Fargate', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different', sdkClient: '@aws-sdk/client-ecs', hasRouteInRepo: true },
-  { routeDir: 'batch-job', serviceName: 'AWS Batch', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different — Batch scheduling partial', sdkClient: '@aws-sdk/client-batch', hasRouteInRepo: true },
-  { routeDir: 'redshift', serviceName: 'Amazon Redshift', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.PARTIAL, commonDifferentNote: 'Different', sdkClient: '@aws-sdk/client-redshift', hasRouteInRepo: true },
-  { routeDir: 'dsql', serviceName: 'Amazon Aurora DSQL', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different', sdkClient: '@aws-sdk/client-rds', hasRouteInRepo: true },
-  { routeDir: 'opensearch', serviceName: 'Amazon OpenSearch', adapterStatusLocalStack: AdapterStatus.FULL, adapterStatusMinStack: AdapterStatus.NOT_SUPPORTED, commonDifferentNote: 'Different', sdkClient: '@aws-sdk/client-opensearch', hasRouteInRepo: true },
 ];
 export const SERVICE_COUNT = SERVICE_REGISTRY.length; // 150 verified routes
 

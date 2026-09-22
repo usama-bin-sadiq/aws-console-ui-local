@@ -68,15 +68,15 @@ export const AWACS_DESIGN_TOKENS = {
     statusInfoOnBackgroundPrimary: "Verified 4.5:1+ (#0073bb on #fff ≈ 4.7:1; #58a6ff on #0a0e14 ≈ 4.5:1)",
     textSecondaryOnBackgroundSecondary: "Verified 4.5:1+ (#545b64 on #f2f3f3 ≈ 4.6:1; #8b949e on #161b22 ≈ 4.5:1)",
   },
-  // Service icons paths (public/icons)
+  // Service icons paths (public/icons/Architecture-Service/)
   icons: {
-    ec2: '/icons/ec2.svg',
-    s3: '/icons/s3.svg',
-    lambda: '/icons/lambda.svg',
-    iam: '/icons/iam.svg',
-    rds: '/icons/rds.svg',
-    vpc: '/icons/vpc.svg',
-    cloudwatch: '/icons/cloudwatch.svg',
-    cloudformation: '/icons/cloudformation.svg',
+    ec2: '/icons/Architecture-Service/Arch_Compute/32/Arch_Amazon-EC2_32.svg',
+    s3: '/icons/Architecture-Service/Arch_Storage/32/Arch_Amazon-Simple-Storage-Service_32.svg',
+    lambda: '/icons/Architecture-Service/Arch_Compute/32/Arch_AWS-Lambda_32.svg',
+    iam: '/icons/Architecture-Service/Arch_Security-Identity/32/Arch_AWS-Identity-and-Access-Management_32.svg',
+    rds: '/icons/Architecture-Service/Arch_Databases/32/Arch_Amazon-RDS_32.svg',
+    vpc: '/icons/Architecture-Service/Arch_Networking-Content-Delivery/32/Arch_Amazon-Virtual-Private-Cloud_32.svg',
+    cloudwatch: '/icons/Architecture-Service/Arch_Management-Tools/32/Arch_Amazon-CloudWatch_32.svg',
+    cloudformation: '/icons/Architecture-Service/Arch_Management-Tools/32/Arch_AWS-CloudFormation_32.svg',
   },
 } as const;

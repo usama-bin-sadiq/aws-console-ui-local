@@ -1,6 +1,21 @@
-/* Responsive fixes for AWS Console Emulator — follows Cloudscape Design System guidelines */
+/* AWS Console Emulator — Responsive + AWS Console color tokens */
 /* Reference: https://cloudscape.design/get-started/dev-guides/responsive-development/ */
-/* Cloudscape uses element queries (container size), not viewport media queries */
+
+:root {
+  /* AWS Console color tokens */
+  --aws-console-bg: #f2f3f3;
+  --aws-console-bg-dark: #232f3e;
+  --aws-console-text: #16191f;
+  --aws-console-text-dark: #d5dbdb;
+  --aws-console-border: #d5dbdb;
+  --aws-console-border-dark: #34495e;
+  --aws-console-hover: #e9ecef;
+  --aws-console-hover-dark: #37475a;
+  --aws-console-accent: #ff9900;
+  --aws-console-accent-text: #0073bb;
+  --aws-console-sidebar-width: 280px;
+  --aws-console-topnav-height: 48px;
+}
 
 html,
 body {
@@ -11,11 +26,18 @@ body {
   min-width: 320px;
 }
 
+/* Skip nav link */
+.skip-nav-link:focus {
+  top: 0 !important;
+}
+
+/* AWS Console search */
 .aws-console-search-wrapper {
   z-index: 1002;
   min-width: 0;
 }
 
+/* Main layout */
 .aws-console-main-shell,
 .aws-console-main-content {
   min-width: 0;
@@ -25,6 +47,7 @@ body {
   flex-wrap: wrap;
 }
 
+/* Service layout */
 .aws-service-layout,
 .aws-service-layout__container,
 .aws-service-layout__header {
@@ -36,6 +59,22 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* AWS Console table styling */
+.awsui-table {
+  font-size: 14px;
+}
+
+.awsui-table th {
+  font-weight: 700;
+}
+
+/* AWS Console header */
+.awsui-header--h1 {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* Responsive breakpoints */
 @media (max-width: 960px) {
   #awsui-top-navigation {
     width: 100vw;

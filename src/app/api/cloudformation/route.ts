@@ -23,19 +23,25 @@ import {
   DescribeStackEventsCommand,
   ListStackResourcesCommand,
 } from "@aws-sdk/client-cloudformation";
-import { cloudformation } from "@/lib/aws-clients";
+import { CloudFormationClient } from "@aws-sdk/client-cloudformation";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
 export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const cloudformationClient = getUserClientFromRequest(CloudFormationClient, request);
     const { searchParams } = new URL(request.url);
     const stackName = searchParams.get("stackName");
 
     if (stackName) {
       // Describe single stack with events and resources (detail page support)
       const [stacksRes, eventsRes, resourcesRes] = await Promise.all([
-        cloudformation.send(new DescribeStacksCommand({ StackName: stackName })),
-        cloudformation.send(new DescribeStackEventsCommand({ StackName: stackName })),
-        cloudformation.send(new ListStackResourcesCommand({ StackName: stackName })),
+        cloudformationClient.send(new DescribeStacksCommand({ StackName: stackName })),
+        cloudformationClient.send(new DescribeStackEventsCommand({ StackName: stackName })),
+        cloudformationClient.send(new ListStackResourcesCommand({ StackName: stackName })),
       ]);
 
       const stack = stacksRes.Stacks?.[0] || null;
@@ -61,7 +67,7 @@ export async function GET(request: Request) {
     }
 
     // List all stacks with full status filter per PRD §9.2.8 / §15.11
-    const res = await cloudformation.send(
+    const res = await cloudformationClient.send(
       new ListStacksCommand({
         StackStatusFilter: [
           "CREATE_COMPLETE",
@@ -88,12 +94,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const cloudformationClient = getUserClientFromRequest(CloudFormationClient, request);
     const body = await request.json();
 
     // UpdateStack takes precedence when action is explicitly "update"
     if (body.action === "update" || (body.StackName && body.TemplateBody && body.action !== "create")) {
-      await cloudformation.send(
+      await cloudformationClient.send(
         new UpdateStackCommand({
           StackName: body.StackName,
           TemplateBody: body.TemplateBody,
@@ -107,7 +117,7 @@ export async function POST(request: Request) {
     }
 
     // Default: CreateStack
-    await cloudformation.send(
+    await cloudformationClient.send(
       new CreateStackCommand({
         StackName: body.StackName,
         TemplateBody: body.TemplateBody,
@@ -127,13 +137,17 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const cloudformationClient = getUserClientFromRequest(CloudFormationClient, request);
     const { searchParams } = new URL(request.url);
     const stackName = searchParams.get("stackName");
     if (!stackName) {
       return NextResponse.json({ error: "stackName is required for delete" }, { status: 400 });
     }
-    await cloudformation.send(new DeleteStackCommand({ StackName: stackName }));
+    await cloudformationClient.send(new DeleteStackCommand({ StackName: stackName }));
     return NextResponse.json({ success: true, action: "delete" });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "CloudFormation delete error" }, { status: 500 });

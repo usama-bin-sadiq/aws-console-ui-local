@@ -4,11 +4,17 @@ import {
   CreateGraphqlApiCommand,
   DeleteGraphqlApiCommand,
 } from "@aws-sdk/client-appsync";
-import { appsync } from "@/lib/aws-clients";
+import { AppSyncClient } from "@aws-sdk/client-appsync";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await appsync.send(new ListGraphqlApisCommand({}));
+    const appsyncClient = getUserClientFromRequest(AppSyncClient, request);
+    const res = await appsyncClient.send(new ListGraphqlApisCommand({}));
     return NextResponse.json({ graphqlApis: res.graphqlApis || [] });
   } catch (error: unknown) {
     return NextResponse.json(
@@ -19,9 +25,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const appsyncClient = getUserClientFromRequest(AppSyncClient, request);
     const body = await request.json();
-    const res = await appsync.send(
+    const res = await appsyncClient.send(
       new CreateGraphqlApiCommand({
         name: body.name,
         authenticationType: body.authenticationType || "API_KEY",
@@ -37,9 +47,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const appsyncClient = getUserClientFromRequest(AppSyncClient, request);
     const { searchParams } = new URL(request.url);
-    await appsync.send(
+    await appsyncClient.send(
       new DeleteGraphqlApiCommand({ apiId: searchParams.get("apiId")! })
     );
     return NextResponse.json({ success: true });

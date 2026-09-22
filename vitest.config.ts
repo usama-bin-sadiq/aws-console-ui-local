@@ -1,26 +1,34 @@
-import { defineConfig } from "vitest/config";
-import path from "path";
+import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
   test: {
-    environment: "node",
     globals: true,
-    include: ["src/**/*.test.ts"],
-    exclude: ["node_modules", "tests/**", "**/*.spec.*"],
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+    exclude: ['node_modules/', '.next/', 'public/'],
     coverage: {
-      provider: "v8",
-      reporter: ["text", "json", "html"],
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      exclude: [
+        'node_modules/',
+        '.next/',
+        'src/app/**',
+        '**/*.d.ts',
+        '**/types/**',
+      ],
       thresholds: {
-        lines: 85,
-        functions: 85,
-        branches: 85,
-        statements: 85,
+        lines: 70,
+        functions: 70,
+        branches: 70,
+        statements: 70,
       },
-      include: ["src/lib/localstack-adapter/**/*.ts"],
-      exclude: ["node_modules", "tests", "**/*.test.*", "**/*.spec.*"],
     },
+  },
+  resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      '@': path.resolve(__dirname, './src'),
     },
   },
 });

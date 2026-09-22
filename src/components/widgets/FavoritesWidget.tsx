@@ -3,11 +3,15 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Widget from "./Widget";
+import Cards from "@cloudscape-design/components/cards";
 import Box from "@cloudscape-design/components/box";
 import Link from "@cloudscape-design/components/link";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Button from "@cloudscape-design/components/button";
+import Header from "@cloudscape-design/components/header";
 import { Favorite } from "@/lib/db";
+import { SERVICE_ICONS } from "@/constants/service-icons";
+import Image from "next/image";
 
 export default function FavoritesWidget({
   widgetId = "favorites",
@@ -81,71 +85,37 @@ export default function FavoritesWidget({
           </SpaceBetween>
         </Box>
       ) : (
-        <SpaceBetween size="xs">
-          {favorites.slice(0, 10).map((fav) => (
-            <div
-              key={fav.id}
-              onClick={() => handleServiceClick(fav.service_href)}
-              style={{
-                padding: "12px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                border: "1px solid var(--awsui-color-border-container)",
-                backgroundColor: "var(--awsui-color-background-container-content)",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor =
-                  "var(--awsui-color-background-container-header)";
-                e.currentTarget.style.borderColor =
-                  "var(--awsui-color-border-item-selected)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor =
-                  "var(--awsui-color-background-container-content)";
-                e.currentTarget.style.borderColor =
-                  "var(--awsui-color-border-container)";
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "4px",
-                    backgroundColor: "var(--awsui-color-background-badge-icon)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
+        <Cards
+          cardDefinition={{
+            header: (item: Favorite) => (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {SERVICE_ICONS[item.service_href] ? (
+                  <Image
+                    src={SERVICE_ICONS[item.service_href].small}
+                    alt=""
+                    width={16}
+                    height={16}
+                  />
+                ) : null}
+                <Link
+                  fontSize="body-m"
+                  href={item.service_href}
+                  onFollow={(e) => {
+                    e.preventDefault();
+                    handleServiceClick(item.service_href);
                   }}
                 >
-                  <span style={{ fontSize: "18px" }}>📦</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      color: "var(--awsui-color-text-link-default)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {fav.service_name}
-                  </div>
-                </div>
+                  {item.service_name}
+                </Link>
               </div>
-            </div>
-          ))}
-        </SpaceBetween>
+            ),
+            sections: [],
+          }}
+          items={favorites.slice(0, 10)}
+          loadingText="Loading favorites..."
+          empty="No favorites"
+          cardsPerRow={[{ cards: 1 }, { minWidth: 400, cards: 2 }, { minWidth: 600, cards: 3 }]}
+        />
       )}
 
       {favorites.length > 0 && (

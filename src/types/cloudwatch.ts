@@ -32,11 +32,12 @@ export interface CloudWatchAlarm {
   Threshold?: number;
   ComparisonOperator?: string;
   EvaluationPeriods?: number;
-  StateValue?: string;
-  StateReason?: string;
-  StateReasonData?: string;
+  TreatMissingData?: 'missing' | 'notBreaching' | 'breaching' | 'ignore';
   ActionsEnabled?: boolean;
   Actions?: string[];
+  AlarmActions?: string[];
+  OKActions?: string[];
+  InsufficientDataActions?: string[];
 }
 
 export interface CloudWatchMetric {

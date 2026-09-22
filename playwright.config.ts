@@ -1,34 +1,52 @@
-/**
- * Playwright Configuration — E2E + VRT tests for AWS Console Emulator.
- * Per PRD Appendix H (Testing Strategy) and Appendix F (VRT).
- * Reference: docs/prd-aws-management-console-v1.3.md §H.1–H.3
- */
-
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: 'tests/e2e',
+  testDir: './tests/e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 1 : undefined,
-  reporter: [['list'], ['html', { outputFolder: 'tests/reports/playwright' }]],
+  reporter: [
+    ['html', { open: 'never' }],
+    ['json', { outputFile: 'test-results/results.json' }],
+    ['list'],
+  ],
   use: {
-    actionTimeout: 15000,
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    viewport: { width: 1440, height: 900 },
-    ignoreHTTPSErrors: true,
   },
   projects: [
     {
-      name: 'localstack',
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: process.env.BASE_URL || 'http://localhost:3000',
-      },
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 5'] },
+    },
+    {
+      name: 'responsive-320px',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 640 } },
+    },
+    {
+      name: 'responsive-400-zoom',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
     },
   ],
+  webServer: {
+    command: 'pnpm dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 30000,
+  },
 });

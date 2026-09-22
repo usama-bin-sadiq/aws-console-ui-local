@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 import {
+  ConfigServiceClient,
   DescribeConfigurationRecordersCommand,
   DescribeConfigurationRecorderStatusCommand,
   PutConfigurationRecorderCommand,
@@ -11,22 +12,27 @@ import {
   PutConfigRuleCommand,
   DeleteConfigRuleCommand,
 } from "@aws-sdk/client-config-service";
-import { configService } from "@/lib/aws-clients";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
 export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const configClient = getUserClientFromRequest(ConfigServiceClient, request);
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
 
     if (action === "describeRecorderStatus") {
       const name = searchParams.get("recorderName") || "default";
-      const res = await configService.send(new DescribeConfigurationRecorderStatusCommand({ ConfigurationRecorderNames: [name] }));
+      const res = await configClient.send(new DescribeConfigurationRecorderStatusCommand({ ConfigurationRecorderNames: [name] }));
       return NextResponse.json({ status: res.ConfigurationRecordersStatus || [] });
     }
 
     const [recorderRes, rulesRes] = await Promise.all([
-      configService.send(new DescribeConfigurationRecordersCommand({})),
-      configService.send(new DescribeConfigRulesCommand({})),
+      configClient.send(new DescribeConfigurationRecordersCommand({})),
+      configClient.send(new DescribeConfigRulesCommand({})),
     ]);
     return NextResponse.json({
       recorders: recorderRes.ConfigurationRecorders || [],
@@ -39,11 +45,15 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const configClient = getUserClientFromRequest(ConfigServiceClient, request);
     const body = await request.json();
 
     if (body.action === "createRecorder") {
-      await configService.send(
+      await configClient.send(
         new PutConfigurationRecorderCommand({
           ConfigurationRecorder: {
             name: body.recorderName || "default",
@@ -56,16 +66,16 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "startRecorder") {
-      const res = await configService.send(new StartConfigurationRecorderCommand({ ConfigurationRecorderName: body.recorderName || "default" }));
+      const res = await configClient.send(new StartConfigurationRecorderCommand({ ConfigurationRecorderName: body.recorderName || "default" }));
       return NextResponse.json({ success: true, recorderName: body.recorderName || "default" });
     }
 
     if (body.action === "stopRecorder") {
-      const res = await configService.send(new StopConfigurationRecorderCommand({ ConfigurationRecorderName: body.recorderName || "default" }));
+      const res = await configClient.send(new StopConfigurationRecorderCommand({ ConfigurationRecorderName: body.recorderName || "default" }));
       return NextResponse.json({ success: true, recorderName: body.recorderName || "default" });
     }
 
-    await configService.send(
+    await configClient.send(
       new PutConfigRuleCommand({
         ConfigRule: {
           ConfigRuleName: body.ruleName,
@@ -81,17 +91,21 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const configClient = getUserClientFromRequest(ConfigServiceClient, request);
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
 
     if (action === "deleteRecorder") {
       const name = searchParams.get("recorderName") || "default";
-      await configService.send(new DeleteConfigurationRecorderCommand({ ConfigurationRecorderName: name }));
+      await configClient.send(new DeleteConfigurationRecorderCommand({ ConfigurationRecorderName: name }));
       return NextResponse.json({ success: true, recorderName: name });
     }
 
-    await configService.send(new DeleteConfigRuleCommand({ ConfigRuleName: searchParams.get("ruleName")! }));
+    await configClient.send(new DeleteConfigRuleCommand({ ConfigRuleName: searchParams.get("ruleName")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();

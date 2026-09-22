@@ -19,44 +19,50 @@ import {
   RemovePermissionCommand,
   ListEventSourceMappingsCommand,
 } from "@aws-sdk/client-lambda";
-import { lambda } from "@/lib/aws-clients";
+import { LambdaClient } from "@aws-sdk/client-lambda";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
 export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const lambdaClient = getUserClientFromRequest(LambdaClient, request);
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
     const functionName = searchParams.get("functionName");
 
     if (action === "getFunction" && functionName) {
-      const res = await lambda.send(
+      const res = await lambdaClient.send(
         new GetFunctionCommand({ FunctionName: functionName })
       );
       return NextResponse.json({ function: res.Configuration || res });
     }
 
     if (action === "listVersions" && functionName) {
-      const res = await lambda.send(
+      const res = await lambdaClient.send(
         new ListVersionsByFunctionCommand({ FunctionName: functionName })
       );
       return NextResponse.json({ versions: res.Versions || [] });
     }
 
     if (action === "listAliases" && functionName) {
-      const res = await lambda.send(
+      const res = await lambdaClient.send(
         new ListAliasesCommand({ FunctionName: functionName })
       );
       return NextResponse.json({ aliases: res.Aliases || [] });
     }
 
     if (action === "listEventSourceMappings" && functionName) {
-      const res = await lambda.send(
+      const res = await lambdaClient.send(
         new ListEventSourceMappingsCommand({ FunctionName: functionName })
       );
       return NextResponse.json({ mappings: res.EventSourceMappings || [] });
     }
 
     // Default: list all functions
-    const res = await lambda.send(new ListFunctionsCommand({}));
+    const res = await lambdaClient.send(new ListFunctionsCommand({}));
     return NextResponse.json({ functions: res.Functions || [] });
   } catch (error: any) {
     const adapter = getAdapterStatus();
@@ -65,12 +71,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const lambdaClient = getUserClientFromRequest(LambdaClient, request);
     const body = await request.json();
     const { action } = body;
 
     if (action === "invoke") {
-      const res = await lambda.send(
+      const res = await lambdaClient.send(
         new InvokeCommand({
           FunctionName: body.functionName,
           Payload: body.payload ? Buffer.from(body.payload) : undefined,
@@ -80,19 +90,19 @@ export async function POST(request: Request) {
     }
 
     if (action === "create") {
-      await lambda.send(new CreateFunctionCommand(body));
+      await lambdaClient.send(new CreateFunctionCommand(body));
       return NextResponse.json({ success: true });
     }
 
     if (action === "delete") {
-      await lambda.send(
+      await lambdaClient.send(
         new DeleteFunctionCommand({ FunctionName: body.functionName })
       );
       return NextResponse.json({ success: true });
     }
 
     if (action === "updateCode") {
-      await lambda.send(
+      await lambdaClient.send(
         new UpdateFunctionCodeCommand({
           FunctionName: body.functionName,
           ZipFile: body.zipFile ? Buffer.from(body.zipFile, "base64") : undefined,
@@ -104,7 +114,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "updateConfiguration") {
-      await lambda.send(
+      await lambdaClient.send(
         new UpdateFunctionConfigurationCommand({
           FunctionName: body.functionName,
           Runtime: body.runtime,
@@ -122,7 +132,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "publishVersion") {
-      const res = await lambda.send(
+      const res = await lambdaClient.send(
         new PublishVersionCommand({
           FunctionName: body.functionName,
           Description: body.description,
@@ -132,7 +142,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "createAlias") {
-      await lambda.send(
+      await lambdaClient.send(
         new CreateAliasCommand({
           FunctionName: body.functionName,
           Name: body.aliasName,
@@ -143,7 +153,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "addPermission") {
-      await lambda.send(
+      await lambdaClient.send(
         new AddPermissionCommand({
           FunctionName: body.functionName,
           StatementId: body.statementId,
@@ -156,7 +166,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "removePermission") {
-      await lambda.send(
+      await lambdaClient.send(
         new RemovePermissionCommand({
           FunctionName: body.functionName,
           StatementId: body.statementId,
@@ -166,7 +176,7 @@ export async function POST(request: Request) {
     }
 
     // Default create
-    await lambda.send(new CreateFunctionCommand(body));
+    await lambdaClient.send(new CreateFunctionCommand(body));
     return NextResponse.json({ success: true });
   } catch (error: any) {
     const adapter = getAdapterStatus();
@@ -175,7 +185,11 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const lambdaClient = getUserClientFromRequest(LambdaClient, request);
     const { searchParams } = new URL(request.url);
     const functionName = searchParams.get("functionName");
     if (!functionName) {
@@ -184,7 +198,7 @@ export async function DELETE(request: Request) {
         { status: 400 }
       );
     }
-    await lambda.send(
+    await lambdaClient.send(
       new DeleteFunctionCommand({ FunctionName: functionName })
     );
     return NextResponse.json({ success: true });

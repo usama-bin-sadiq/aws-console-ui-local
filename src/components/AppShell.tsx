@@ -1,17 +1,15 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import Image from "next/image";
 import AppLayout from "@cloudscape-design/components/app-layout";
-import SideNavigation from "@cloudscape-design/components/side-navigation";
 import TopNavigation from "@cloudscape-design/components/top-navigation";
 import BreadcrumbGroup from "@cloudscape-design/components/breadcrumb-group";
 import Autosuggest from "@cloudscape-design/components/autosuggest";
 import SplitPanel from "@cloudscape-design/components/split-panel";
 import Flashbar from "@cloudscape-design/components/flashbar";
+import Box from "@cloudscape-design/components/box";
 import { Mode, applyMode } from "@cloudscape-design/global-styles";
 import { usePathname, useRouter } from "next/navigation";
-import Link from "next/link";
 import { useSettingsStore } from "@/stores/settings";
 import { AWS_REGIONS } from "@/constants/regions";
 import { getAvailableNavigationItems } from "@/constants/navigation";
@@ -19,14 +17,16 @@ import { AdapterMode, EmulatorHealthStatus } from "@/constants/service-compatibi
 import { getRecentlyVisited } from "@/lib/sqlite-adapter";
 import { useGlobalSearch, groupByCategory } from "@/hooks/useGlobalSearch";
 import { useResourceCounts } from "@/hooks/useResourceCounts";
-import { SERVICE_ICONS } from "@/constants/service-icons";
+import { AwsConsoleSidebar } from "@/components/AwsConsoleSidebar";
+import { useAuth } from "@/context/AuthContext";
 import type { Terminal } from "xterm";
 import type { FitAddon } from "@xterm/addon-fit";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { region, setRegion, theme, setTheme, provider, setProvider, favorites } = useSettingsStore();
+  const { user, signOut, isRootUser, isSuperAdmin } = useAuth();
+  const { region, setRegion, theme, setTheme, provider, setProvider } = useSettingsStore();
   const [healthStatus, setHealthStatus] = useState<EmulatorHealthStatus>("checking");
   const [healthServices, setHealthServices] = useState<Record<string, unknown>>({});
   const activeMode = provider === "ministack" ? AdapterMode.MINSTACK : AdapterMode.LOCALSTACK;
@@ -35,7 +35,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [navigationOpen, setNavigationOpen] = useState(true);
   const [isCompactLayout, setIsCompactLayout] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Array<{
@@ -96,7 +95,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // Keyboard shortcuts: Ctrl+K opens search, Esc closes dropdown
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+      if (e.altKey && e.key === "s") {
         e.preventDefault();
         const searchInput = document.querySelector('input[aria-label="Search services"]') as HTMLInputElement | null;
         searchInput?.focus();
@@ -158,65 +157,76 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       // Import xterm dynamically to avoid SSR issues
       import("xterm").then(({ Terminal }) => {
         import("@xterm/addon-fit").then(({ FitAddon }) => {
-          const term = new Terminal({
-            cursorBlink: true,
-            fontSize: 14,
-            fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-            theme: {
-              background: theme === "dark" ? "#000000" : "#ffffff",
-              foreground: theme === "dark" ? "#ffffff" : "#000000",
-              cursor: theme === "dark" ? "#ffffff" : "#000000",
-              // selection: "rgba(255, 255, 255, 0.3)",
-            },
-          });
+          import("@xterm/addon-web-links").then(({ WebLinksAddon }) => {
+            import("@xterm/addon-search").then(({ SearchAddon }) => {
+              const term = new Terminal({
+                cursorBlink: true,
+                fontSize: 14,
+                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                theme: {
+                  background: theme === "dark" ? "#000000" : "#ffffff",
+                  foreground: theme === "dark" ? "#ffffff" : "#000000",
+                  cursor: theme === "dark" ? "#ffffff" : "#000000",
+                },
+                allowProposedApi: true,
+              });
 
-          const fit = new FitAddon();
-          fitAddon.current = fit;
-          term.loadAddon(fit);
-          term.open(terminalRef.current!);
-          fit.fit();
+              const fit = new FitAddon();
+              fitAddon.current = fit;
+              term.loadAddon(fit);
 
-          term.writeln("AWS Console Terminal");
-          term.writeln("LocalStack/MiniStack Shell");
-          term.writeln("");
-          term.write("$ ");
+              const webLinks = new WebLinksAddon();
+              term.loadAddon(webLinks);
 
-          // Handle input
-          let currentLine = "";
-          term.onData((data) => {
-            if (data === "\r") {
-              // Enter key
-              term.write("\r\n");
-              executeCommand(currentLine, term);
-              currentLine = "";
+              const search = new SearchAddon();
+              term.loadAddon(search);
+
+              term.open(terminalRef.current!);
+              fit.fit();
+
+              term.writeln("AWS Console Terminal");
+              term.writeln("LocalStack/MiniStack Shell");
+              term.writeln("");
               term.write("$ ");
-            } else if (data === "\u007F") {
-              // Backspace
-              if (currentLine.length > 0) {
-                currentLine = currentLine.slice(0, -1);
-                term.write("\b \b");
-              }
-            } else {
-              currentLine += data;
-              term.write(data);
-            }
+
+              // Handle input
+              let currentLine = "";
+              term.onData((data) => {
+                if (data === "\r") {
+                  // Enter key
+                  term.write("\r\n");
+                  executeCommand(currentLine, term);
+                  currentLine = "";
+                  term.write("$ ");
+                } else if (data === "\u007F") {
+                  // Backspace
+                  if (currentLine.length > 0) {
+                    currentLine = currentLine.slice(0, -1);
+                    term.write("\b \b");
+                  }
+                } else {
+                  currentLine += data;
+                  term.write(data);
+                }
+              });
+
+              terminalInstance.current = term;
+
+              // Handle resize
+              const handleResize = () => {
+                if (fitAddon.current) {
+                  fitAddon.current.fit();
+                }
+              };
+              window.addEventListener("resize", handleResize);
+
+              return () => {
+                window.removeEventListener("resize", handleResize);
+                term.dispose();
+                terminalInstance.current = null;
+              };
+            });
           });
-
-          terminalInstance.current = term;
-
-          // Handle resize
-          const handleResize = () => {
-            if (fitAddon.current) {
-              fitAddon.current.fit();
-            }
-          };
-          window.addEventListener("resize", handleResize);
-
-          return () => {
-            window.removeEventListener("resize", handleResize);
-            term.dispose();
-            terminalInstance.current = null;
-          };
         });
       });
     }
@@ -320,7 +330,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <TopNavigation
           identity={{
             href: "/",
-            title: "AWS Management Console",
+            title: "AWS",
             logo: { src: "/aws-logo.svg", alt: "AWS" },
           }}
           i18nStrings={{
@@ -342,7 +352,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 empty="No matching AWS services"
                 selectedAriaLabel="Selected service"
                 filteringResultsText={(matchCount) => `${matchCount} service${matchCount === 1 ? "" : "s"} found`}
-                placeholder="Search AWS services (e.g., S3, EC2, Lambda)"
+                placeholder="Search"
                 onChange={(e) => setSearchValue(e.detail.value)}
                 onSelect={(e) => {
                   const href = e.detail.selectedOption?.value ?? e.detail.value;
@@ -393,17 +403,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               },
             },
             {
-              type: "button",
-              text: provider.toUpperCase(),
-              iconName: "status-info",
-              ariaLabel: `Provider: ${provider}`,
-            },
-            {
-              type: "button",
-              text: theme === "dark" ? "Light mode" : "Dark mode",
-              iconName: theme === "dark" ? "star" : "star-filled",
-              ariaLabel: `Switch to ${theme === "dark" ? "light" : "dark"} mode`,
-              onClick: toggleTheme,
+              type: "menu-dropdown",
+              text: user?.username || "root",
+              iconName: "user-profile",
+              ariaLabel: "Account menu",
+              items: [
+                { id: "user-info", text: `Signed in as: ${user?.username || "root"}`, disabled: true },
+                { id: "role", text: `Role: ${isSuperAdmin ? "Root/Super Admin" : "IAM User"}`, disabled: true },
+                { id: "account", text: "Account", href: "/account" },
+                { id: "organization", text: "Organization", href: "/organizations" },
+                { id: "billing", text: "Billing and Cost Management", href: "/billing" },
+                { id: "security", text: "Security credentials", href: "/iam/credentials" },
+                { id: "settings", text: "Settings", href: "/settings" },
+                { id: "signout", text: "Sign out" },
+              ],
+              onItemFollow: (e) => {
+                if (e.detail.id === "signout") {
+                  signOut().then(() => router.push("/login"));
+                  return;
+                }
+                if (e.detail.href) {
+                  e.preventDefault();
+                  router.push(e.detail.href);
+                }
+              },
             },
             {
               type: "menu-dropdown",
@@ -423,13 +446,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             },
             {
               type: "menu-dropdown",
-              text: "Notifications",
+              text: "",
               iconName: "notification",
-              items: notifications.map((n) => ({
-                id: n.id,
-                text: n.header,
-                description: n.content,
-              })),
+              ariaLabel: "Notifications",
+              items: notifications.length > 0
+                ? notifications.map((n) => ({
+                    id: n.id,
+                    text: n.header,
+                    description: n.content,
+                  }))
+                : [{ id: "none", text: "No notifications", disabled: true }],
               onItemClick: () => setNotificationsOpen(!notificationsOpen),
             },
             {
@@ -440,8 +466,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 { id: "home", text: "Console home", href: "/" },
                 { id: "settings", text: "Provider settings", href: "/settings" },
                 { id: "health", text: "Emulator health", href: "/health" },
+                { id: "theme", text: theme === "dark" ? "Switch to light mode" : "Switch to dark mode" },
               ],
               onItemFollow: (e) => {
+                if (e.detail.id === "theme") {
+                  toggleTheme();
+                  return;
+                }
                 if (e.detail.href) {
                   e.preventDefault();
                   router.push(e.detail.href);
@@ -458,7 +489,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           navigationToggle: "Open service navigation",
           navigationClose: "Close service navigation",
         }}
-        navigationWidth={isCompactLayout ? 220 : 280}
+        navigationWidth={isCompactLayout ? 220 : 220}
         navigationCollapsedWidth={54}
         navigationOpen={navigationOpen}
         navigationCloseBehavior="collapse"
@@ -480,108 +511,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           />
         ) : null}
         navigation={
-          <div style={{
-            backgroundColor: theme === "dark" ? "#232f3e" : "#f2f3f3",
-            height: "100vh",
-            borderRight: theme === "dark" ? "1px solid #34495e" : "1px solid #d5dbdb",
-            display: "flex",
-            flexDirection: "column",
-          }}>
-            {/* Sticky header */}
-            <div style={{
-              position: "sticky",
-              top: 0,
-              zIndex: 10,
-              backgroundColor: theme === "dark" ? "#232f3e" : "#f2f3f3",
-              padding: "8px 16px",
-              borderBottom: theme === "dark" ? "1px solid #34495e" : "1px solid #d5dbdb",
-              flexShrink: 0,
-            }}>
-              <Link
-                href="/"
-                style={{
-                  color: theme === "dark" ? "#d5dbdb" : "#232f3e",
-                  textDecoration: "none",
-                  fontWeight: 700,
-                  fontSize: "22px",
-                  letterSpacing: "0.5px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-                aria-label="AWS Services Home"
-              >
-                <Image
-                  src={theme === "dark" ? "/icons/Architecture-Group/AWS-Cloud-logo_32_Dark.svg" : "/icons/Architecture-Group/AWS-Cloud-logo_32.svg"}
-                  alt="AWS"
-                  width={28}
-                  height={28}
-                />
-                <span>AWS Services</span>
-              </Link>
-            </div>
-
-            {/* Scrollable services */}
-            <div style={{
-              overflowY: "auto",
-              overflowX: "hidden",
-              flex: 1,
-              padding: "8px 4px",
-            }}>
-              <SideNavigation
-                activeHref={pathname}
-                collapsed={!navigationOpen}
-                header={undefined}
-                items={[
-                  // Favorites section (persisted via Zustand store)
-                  ...(mounted && favorites.length > 0 ? [
-                    {
-                      type: "expandable-link-group" as const,
-                      text: "Favorites",
-                      defaultExpanded: true,
-                      items: favorites.map((fav) => {
-                        const icon = SERVICE_ICONS[fav.serviceHref];
-                        return {
-                          type: "link" as const,
-                          text: fav.serviceName,
-                          href: fav.serviceHref,
-                          ...(icon ? { iconName: undefined } : {}),
-                        };
-                      }),
-                    } as any,
-                  ] : []),
-                  ...navigationItems.map((item: any) => {
-                    if (item.type === "divider") return { type: "divider" };
-                    if (item.type === "expandable-link-group") {
-                      return {
-                        type: "expandable-link-group" as const,
-                        text: item.text,
-                        defaultExpanded: expandedCategories[item.text] !== false,
-                        items: item.items,
-                      };
-                    }
-                    return item;
-                  }),
-                ]}
-                onFollow={(event) => {
-                  if (!event.detail.external) {
-                    event.preventDefault();
-                    router.push(event.detail.href);
-                  }
-                }}
-                onChange={({ detail }) => {
-                  const item = detail.item as { text?: string };
-                  if (item.text) {
-                    setExpandedCategories((current) => ({ ...current, [item.text!]: detail.expanded }));
-                  }
-                }}
-              />
-            </div>
-          </div>
+          <AwsConsoleSidebar
+            items={navigationItems.filter((item) => item.type === "expandable-link-group").map((item: any) => ({
+              text: item.text,
+              items: item.items || [],
+            }))}
+            activeHref={pathname}
+            resourceCounts={resourceCounts}
+            countsLoading={false}
+          />
         }
         content={
           <div className="aws-console-main-shell" style={{ display: "flex", flexDirection: "column", minHeight: "calc(100vh - 60px)", paddingTop: isCompactLayout ? 16 : 64 }}>
-            <div id="main-content" className="aws-console-main-content" aria-label="Main content" role="main" tabIndex={-1} style={{ outline: "none", flex: 1, width: "100%", overflowX: "hidden" }}>{children}</div>
+            <div id="main-content" className="aws-console-main-content" aria-label="Main content" role="main" tabIndex={-1} style={{ flex: 1, width: "100%", overflowX: "hidden" }}>{children}</div>
           </div>
         }
         splitPanel={terminalOpen ? (
@@ -603,33 +545,35 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       />
 
       {/* Global Footer */}
-      <footer
+      <Box
+        tagOverride="footer"
         className="aws-console-shell-footer"
-        style={{
-          padding: isCompactLayout ? "12px 16px" : "16px 24px",
-          backgroundColor: "var(--awsui-color-background-container-header)",
-          borderTop: "1px solid var(--awsui-color-border-divider-default)",
-          fontSize: "12px",
-          color: "var(--awsui-color-text-body-secondary)",
-          display: "flex",
-          alignItems: isCompactLayout ? "flex-start" : "center",
-          justifyContent: "space-between",
-          flexDirection: isCompactLayout ? "column" : "row",
-          gap: isCompactLayout ? "8px" : 0,
-        }}
+        padding={isCompactLayout ? "s" : "m"}
+        color="text-body-secondary"
+        fontSize="body-s"
         aria-label="Footer"
       >
-        <div style={{ lineHeight: 1.5 }}>
-          © 2008-2026 Amazon Web Services, Inc. or its affiliates. All rights reserved.
-          <span style={{ marginLeft: 16 }}>|</span>
-          <a href="/privacy" style={{ marginLeft: 16, color: "var(--awsui-color-text-link-default)", textDecoration: "none" }}>Privacy</a>
-          <a href="/legal" style={{ marginLeft: 8, color: "var(--awsui-color-text-link-default)", textDecoration: "none" }}>Legal</a>
-          <a href="/communications" style={{ marginLeft: 8, color: "var(--awsui-color-text-link-default)", textDecoration: "none" }}>Communications Preferences</a>
+        <div
+          style={{
+            display: "flex",
+            alignItems: isCompactLayout ? "flex-start" : "center",
+            justifyContent: "space-between",
+            flexDirection: isCompactLayout ? "column" : "row",
+            gap: isCompactLayout ? "8px" : 0,
+          }}
+        >
+          <div style={{ lineHeight: 1.5 }}>
+            © 2008-2026 Amazon Web Services, Inc. or its affiliates. All rights reserved.
+            <span style={{ marginLeft: 16 }}>|</span>
+            <a href="/privacy" style={{ marginLeft: 16, color: "var(--awsui-color-text-link-default)", textDecoration: "none" }}>Privacy</a>
+            <a href="/legal" style={{ marginLeft: 8, color: "var(--awsui-color-text-link-default)", textDecoration: "none" }}>Legal</a>
+            <a href="/communications" style={{ marginLeft: 8, color: "var(--awsui-color-text-link-default)", textDecoration: "none" }}>Communications Preferences</a>
+          </div>
+          <div>
+            Console v2.45.1 | Build 2026.09.01 | Active Backend: {provider.toUpperCase()}
+          </div>
         </div>
-        <div>
-          Console v2.45.1 | Build 2026.09.01 | Active Backend: {provider.toUpperCase()}
-        </div>
-      </footer>
+      </Box>
     </>
   );
 }

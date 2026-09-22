@@ -15,6 +15,7 @@ import Spinner from "@cloudscape-design/components/spinner";
 import Table from "@cloudscape-design/components/table";
 import Modal from "@cloudscape-design/components/modal";
 import { RDSInstance, RDSDBSnapshot } from "@/types/rds";
+import { apiFetch } from "@/lib/api-client";
 
 export default function RDSInstanceDetailsPage({
   params,
@@ -32,7 +33,7 @@ export default function RDSInstanceDetailsPage({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/rds");
+      const res = await apiFetch("/api/rds");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       const found = (data.instances || []).find(
@@ -49,7 +50,7 @@ export default function RDSInstanceDetailsPage({
   const fetchSnapshots = useCallback(async () => {
     setLoadingSnapshots(true);
     try {
-      const res = await fetch("/api/rds", {
+      const res = await apiFetch("/api/rds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "describeSnapshots", dbInstanceIdentifier: params.dbInstanceIdentifier }),
@@ -71,7 +72,7 @@ export default function RDSInstanceDetailsPage({
   const executeAction = useCallback(
     async (action: string, extra?: Record<string, unknown>) => {
       try {
-        const res = await fetch("/api/rds", {
+        const res = await apiFetch("/api/rds", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -307,7 +308,7 @@ export default function RDSInstanceDetailsPage({
               )}
               <Button
                 onClick={() =>
-                  fetch("/api/rds", {
+                  apiFetch("/api/rds", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

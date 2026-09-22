@@ -10,17 +10,23 @@ import {
   BatchGetBuildBatchesCommand,
   ListBuildsForProjectCommand,
 } from "@aws-sdk/client-codebuild";
-import { codebuild } from "@/lib/aws-clients";
+import { CodeBuildClient } from "@aws-sdk/client-codebuild";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
 export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const codebuildClient = getUserClientFromRequest(CodeBuildClient, request);
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
     const projectName = searchParams.get("projectName");
     const buildId = searchParams.get("buildId");
 
     if (action === "builds" && projectName) {
-      const listRes = await codebuild.send(
+      const listRes = await codebuildClient.send(
         new ListBuildsForProjectCommand({ projectName })
       );
       return NextResponse.json({ builds: listRes.ids || [] });
@@ -32,7 +38,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "ids required" }, { status: 400 });
       }
       const ids = idsParam.split(",").map((s) => s.trim()).filter(Boolean);
-      const res = await codebuild.send(new BatchGetBuildsCommand({ ids }));
+      const res = await codebuildClient.send(new BatchGetBuildsCommand({ ids }));
       return NextResponse.json({ builds: res.builds || [] });
     }
 
@@ -43,10 +49,10 @@ export async function GET(request: Request) {
       });
     }
 
-    const listRes = await codebuild.send(new ListProjectsCommand({}));
+    const listRes = await codebuildClient.send(new ListProjectsCommand({}));
     const names = listRes.projects || [];
     if (names.length === 0) return NextResponse.json({ projects: [] });
-    const detailRes = await codebuild.send(new BatchGetProjectsCommand({ names }));
+    const detailRes = await codebuildClient.send(new BatchGetProjectsCommand({ names }));
     return NextResponse.json({ projects: detailRes.projects || [] });
   } catch (error: unknown) {
     return NextResponse.json(
@@ -57,24 +63,28 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const codebuildClient = getUserClientFromRequest(CodeBuildClient, request);
     const body = await request.json();
 
     if (body.action === "startBuild") {
-      const res = await codebuild.send(
+      const res = await codebuildClient.send(
         new StartBuildCommand({ projectName: body.projectName })
       );
       return NextResponse.json({ build: res.build });
     }
 
     if (body.action === "stopBuild") {
-      const res = await codebuild.send(
+      const res = await codebuildClient.send(
         new StopBuildCommand({ id: body.buildId })
       );
       return NextResponse.json({ build: res.build });
     }
 
-    const res = await codebuild.send(
+    const res = await codebuildClient.send(
       new CreateProjectCommand({
         name: body.name,
         source: body.source || { type: "NO_SOURCE" },
@@ -100,9 +110,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const codebuildClient = getUserClientFromRequest(CodeBuildClient, request);
     const { searchParams } = new URL(request.url);
-    await codebuild.send(
+    await codebuildClient.send(
       new DeleteProjectCommand({ name: searchParams.get("name")! })
     );
     return NextResponse.json({ success: true });

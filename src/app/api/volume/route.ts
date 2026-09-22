@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  EC2Client,
   DescribeVolumesCommand,
   CreateVolumeCommand,
   DeleteVolumeCommand,
@@ -9,12 +10,17 @@ import {
   CreateTagsCommand,
   DescribeInstancesCommand,
 } from "@aws-sdk/client-ec2";
-import { ec2 } from "@/lib/aws-clients";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await ec2.send(new DescribeVolumesCommand({}));
+    const ec2Client = getUserClientFromRequest(EC2Client, request);
+    const res = await ec2Client.send(new DescribeVolumesCommand({}));
     return NextResponse.json({ volumes: res.Volumes || [] });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();
@@ -23,11 +29,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const ec2Client = getUserClientFromRequest(EC2Client, request);
     const body = await request.json();
 
     if (body.action === "create") {
-      const res = await ec2.send(new CreateVolumeCommand({
+      const res = await ec2Client.send(new CreateVolumeCommand({
         AvailabilityZone: body.availabilityZone || "us-east-1a",
         Size: body.size || 20,
         VolumeType: body.volumeType || "gp3",
@@ -44,12 +54,12 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "delete") {
-      await ec2.send(new DeleteVolumeCommand({ VolumeId: body.volumeId }));
+      await ec2Client.send(new DeleteVolumeCommand({ VolumeId: body.volumeId }));
       return NextResponse.json({ success: true });
     }
 
     if (body.action === "attach") {
-      const res = await ec2.send(new AttachVolumeCommand({
+      const res = await ec2Client.send(new AttachVolumeCommand({
         VolumeId: body.volumeId,
         InstanceId: body.instanceId,
         Device: body.device || "/dev/xvdf",
@@ -58,7 +68,7 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "detach") {
-      const res = await ec2.send(new DetachVolumeCommand({
+      const res = await ec2Client.send(new DetachVolumeCommand({
         VolumeId: body.volumeId,
         Force: body.force ?? false,
       }));
@@ -66,7 +76,7 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "modify") {
-      const res = await ec2.send(new ModifyVolumeCommand({
+      const res = await ec2Client.send(new ModifyVolumeCommand({
         VolumeId: body.volumeId,
         Size: body.size,
         VolumeType: body.volumeType,
@@ -77,7 +87,7 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "createTags") {
-      await ec2.send(new CreateTagsCommand({
+      await ec2Client.send(new CreateTagsCommand({
         Resources: [body.volumeId],
         Tags: body.tags,
       }));
@@ -85,7 +95,7 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "listInstances") {
-      const res = await ec2.send(new DescribeInstancesCommand({}));
+      const res = await ec2Client.send(new DescribeInstancesCommand({}));
       const instances = [];
       for (const reservation of res.Reservations || []) {
         for (const instance of reservation.Instances || []) {

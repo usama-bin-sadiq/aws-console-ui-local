@@ -21,6 +21,8 @@ import Select from "@cloudscape-design/components/select";
 import { RDSInstance } from "@/types/rds";
 import TruncatedText from "@/components/TruncatedText";
 import { RDS_ENGINE_OPTIONS } from "@/constants/rds-constants";
+import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { apiFetch } from "@/lib/api-client";
 
 const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<RDSInstance>[] = [
   {
@@ -136,7 +138,7 @@ export default function RDSPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/rds");
+      const res = await apiFetch("/api/rds");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -156,7 +158,7 @@ export default function RDSPage() {
     async (action: string, dbInstanceIdentifiers: string[], extra?: Record<string, unknown>) => {
       try {
         await Promise.all(dbInstanceIdentifiers.map(async (dbInstanceIdentifier) => {
-          const res = await fetch("/api/rds", {
+          const res = await apiFetch("/api/rds", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action, dbInstanceIdentifier, ...extra }),
@@ -215,7 +217,7 @@ export default function RDSPage() {
       title: `Delete ${ids.length} DB instance(s)?`,
       onConfirm: () => {
         void Promise.all(ids.map(async (id) => {
-          const response = await fetch("/api/rds", {
+          const response = await apiFetch("/api/rds", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: "deleteInstance", dbInstanceIdentifier: id, skipFinalSnapshot: true }),
@@ -249,7 +251,7 @@ export default function RDSPage() {
     if (ids.length === 0 || !snapshotId.trim()) return;
     setCreatingSnapshot(true);
     try {
-      const res = await fetch("/api/rds", {
+      const res = await apiFetch("/api/rds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -274,7 +276,7 @@ export default function RDSPage() {
   const handleCreateInstance = useCallback(async () => {
     setCreating(true);
     try {
-      const res = await fetch("/api/rds", {
+      const res = await apiFetch("/api/rds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -358,7 +360,6 @@ export default function RDSPage() {
           </Alert>
         )}
 
-        <Container>
           <Table
             columnDefinitions={COLUMN_DEFINITIONS}
             items={pagedItems}
@@ -449,8 +450,9 @@ export default function RDSPage() {
               </Box>
             }
           />
-        </Container>
       </SpaceBetween>
+
+      <CrossServiceLinks links={CROSS_SERVICE_LINKS["/rds"] || []} />
 
       {/* Confirm Modal */}
       <Modal

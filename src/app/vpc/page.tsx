@@ -18,6 +18,7 @@ import Input from "@cloudscape-design/components/input";
 import Checkbox from "@cloudscape-design/components/checkbox";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Link from "@cloudscape-design/components/link";
+import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 
 interface Vpc {
   VpcId: string;
@@ -217,6 +218,8 @@ export default function VpcPage() {
           />
         </Container>
       </SpaceBetween>
+
+      <CrossServiceLinks links={CROSS_SERVICE_LINKS["/vpc"] || []} />
 
       {/* Modify VPC Modal */}
       <Modal

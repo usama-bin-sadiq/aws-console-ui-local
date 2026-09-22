@@ -4,7 +4,7 @@
 // All API calls go through @aws-sdk/client-ec2 commands via /api/vpc and /api/subnet.
 // Cloudscape components only; no custom CSS outside design tokens.
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Wizard from "@cloudscape-design/components/wizard";
 import Header from "@cloudscape-design/components/header";
@@ -32,21 +32,58 @@ export default function VpcCreatePage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [azs, setAzs] = useState<string[]>([]);
+  const [loadingAzs, setLoadingAzs] = useState(true);
+
+  useEffect(() => {
+    async function fetchAzs() {
+      try {
+        const res = await fetch("/api/availability-zones");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.zones?.length) {
+            setAzs(data.zones.map((z: { ZoneName: string }) => z.ZoneName));
+            setLoadingAzs(false);
+            return;
+          }
+        }
+      } catch {}
+      // Fallback: construct from region
+      try {
+        const settingsRes = await fetch("/api/settings");
+        const settings = await settingsRes.json();
+        const region = settings.region || "us-east-1";
+        setAzs([`${region}a`, `${region}b`, `${region}c`]);
+      } catch {
+        setAzs(["us-east-1a", "us-east-1b", "us-east-1c"]);
+      } finally {
+        setLoadingAzs(false);
+      }
+    }
+    fetchAzs();
+  }, []);
+
   // Step 1: VPC Settings
   const [vpcName, setVpcName] = useState("my-vpc");
   const [cidrBlock, setCidrBlock] = useState("10.0.0.0/16");
-  const [ipv6Cidr, setIpv6Cidr] = useState("No IPv6");
   const [tenancy, setTenancy] = useState("default");
   const [dnsHostnames, setDnsHostnames] = useState(true);
   const [dnsResolution, setDnsResolution] = useState(true);
 
-  // Step 2: Subnets
-  const [subnets, setSubnets] = useState<SubnetConfig[]>([
-    { name: "public-1a", az: "us-east-1a", cidr: "10.0.0.0/24" },
-    { name: "public-1b", az: "us-east-1b", cidr: "10.0.1.0/24" },
-    { name: "private-1a", az: "us-east-1a", cidr: "10.0.2.0/24" },
-    { name: "private-1b", az: "us-east-1b", cidr: "10.0.3.0/24" },
-  ]);
+  // Step 2: Subnets (initialized once AZs are loaded)
+  const [subnets, setSubnets] = useState<SubnetConfig[]>([]);
+  useEffect(() => {
+    if (azs.length > 0 && subnets.length === 0) {
+      const az1 = azs[0];
+      const az2 = azs[1] || azs[0];
+      setSubnets([
+        { name: "public-1a", az: az1, cidr: "10.0.0.0/24" },
+        { name: "public-1b", az: az2, cidr: "10.0.1.0/24" },
+        { name: "private-1a", az: az1, cidr: "10.0.2.0/24" },
+        { name: "private-1b", az: az2, cidr: "10.0.3.0/24" },
+      ]);
+    }
+  }, [azs, subnets.length]);
 
   // Step 3: NAT Gateway
   const [natOption, setNatOption] = useState<"create" | "none" | "existing">("create");
@@ -58,6 +95,9 @@ export default function VpcCreatePage() {
 
   // Step 5: Tags
   const [tags, setTags] = useState([{ Key: "Name", Value: vpcName }, { Key: "Environment", Value: "production" }]);
+
+  // IPv6 CIDR
+  const [ipv6Cidr, setIpv6Cidr] = useState("No IPv6");
 
   const handleTagChange = (index: number, field: "Key" | "Value", value: string) => {
     const newTags = [...tags];
@@ -267,11 +307,19 @@ export default function VpcCreatePage() {
                   }} />
                 </FormField>
                 <FormField label="Availability Zone">
-                  <Input value={subnet.az} onChange={({ detail }) => {
-                    const newSubnets = [...subnets];
-                    newSubnets[idx] = { ...subnet, az: detail.value };
-                    setSubnets(newSubnets);
-                  }} />
+                  {loadingAzs ? (
+                    <StatusIndicator type="in-progress">Loading AZs...</StatusIndicator>
+                  ) : (
+                    <Select
+                      selectedOption={{ value: subnet.az, label: subnet.az }}
+                      options={azs.map((az) => ({ value: az, label: az }))}
+                      onChange={({ detail }) => {
+                        const newSubnets = [...subnets];
+                        newSubnets[idx] = { ...subnet, az: detail.selectedOption.value || subnet.az };
+                        setSubnets(newSubnets);
+                      }}
+                    />
+                  )}
                 </FormField>
                 <FormField label="IPv4 CIDR">
                   <Input value={subnet.cidr} onChange={({ detail }) => {

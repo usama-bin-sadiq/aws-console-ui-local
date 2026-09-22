@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  SageMakerClient,
   ListNotebookInstancesCommand,
   ListEndpointsCommand,
   CreateNotebookInstanceCommand,
@@ -9,13 +10,18 @@ import {
   StartNotebookInstanceCommand,
   StopNotebookInstanceCommand,
 } from "@aws-sdk/client-sagemaker";
-import { sagemaker } from "@/lib/aws-clients";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const sagemakerClient = getUserClientFromRequest(SageMakerClient, request);
     const [nbRes, epRes] = await Promise.all([
-      sagemaker.send(new ListNotebookInstancesCommand({})),
-      sagemaker.send(new ListEndpointsCommand({})),
+      sagemakerClient.send(new ListNotebookInstancesCommand({})),
+      sagemakerClient.send(new ListEndpointsCommand({})),
     ]);
     return NextResponse.json({
       notebookInstances: nbRes.NotebookInstances || [],
@@ -27,24 +33,28 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const sagemakerClient = getUserClientFromRequest(SageMakerClient, request);
     const body = await request.json();
     if (body.action === "startNotebook") {
-      await sagemaker.send(new StartNotebookInstanceCommand({ NotebookInstanceName: body.name }));
+      await sagemakerClient.send(new StartNotebookInstanceCommand({ NotebookInstanceName: body.name }));
       return NextResponse.json({ success: true });
     }
     if (body.action === "stopNotebook") {
-      await sagemaker.send(new StopNotebookInstanceCommand({ NotebookInstanceName: body.name }));
+      await sagemakerClient.send(new StopNotebookInstanceCommand({ NotebookInstanceName: body.name }));
       return NextResponse.json({ success: true });
     }
     if (body.action === "createEndpoint") {
-      await sagemaker.send(new CreateEndpointCommand({
+      await sagemakerClient.send(new CreateEndpointCommand({
         EndpointName: body.endpointName,
         EndpointConfigName: body.endpointConfigName,
       }));
       return NextResponse.json({ success: true });
     }
-    await sagemaker.send(new CreateNotebookInstanceCommand({
+    await sagemakerClient.send(new CreateNotebookInstanceCommand({
       NotebookInstanceName: body.notebookInstanceName,
       InstanceType: body.instanceType || "ml.t2.medium",
       RoleArn: body.roleArn || "arn:aws:iam::000000000000:role/sagemaker-role",
@@ -56,14 +66,18 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const sagemakerClient = getUserClientFromRequest(SageMakerClient, request);
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");
     const name = searchParams.get("name")!;
     if (type === "endpoint") {
-      await sagemaker.send(new DeleteEndpointCommand({ EndpointName: name }));
+      await sagemakerClient.send(new DeleteEndpointCommand({ EndpointName: name }));
     } else {
-      await sagemaker.send(new DeleteNotebookInstanceCommand({ NotebookInstanceName: name }));
+      await sagemakerClient.send(new DeleteNotebookInstanceCommand({ NotebookInstanceName: name }));
     }
     return NextResponse.json({ success: true });
   } catch (error: unknown) {

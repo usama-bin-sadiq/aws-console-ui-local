@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { spawn } from "child_process";
 import { addTerminalHistory, getTerminalHistory } from "@/lib/db";
+import { requirePermission } from "@/lib/data-isolation";
 
 /**
  * Tokenizes a command string into an array of arguments,
@@ -71,6 +72,9 @@ function runCommand(
 }
 
 export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get("sessionId") || "default";
@@ -86,6 +90,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const command: string = (body.command || "").trim();

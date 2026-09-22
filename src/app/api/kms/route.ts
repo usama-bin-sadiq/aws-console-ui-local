@@ -10,13 +10,19 @@ import {
   CreateAliasCommand,
   DeleteAliasCommand,
 } from "@aws-sdk/client-kms";
-import { kms } from "@/lib/aws-clients";
+import { KMSClient } from "@aws-sdk/client-kms";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const kmsClient = getUserClientFromRequest(KMSClient, request);
     const [keysRes, aliasesRes] = await Promise.all([
-      kms.send(new ListKeysCommand({})),
-      kms.send(new ListAliasesCommand({})),
+      kmsClient.send(new ListKeysCommand({})),
+      kmsClient.send(new ListAliasesCommand({})),
     ]);
     const keys = (keysRes.Keys || []).map((k: any) => ({
       KeyId: k.KeyId,
@@ -45,12 +51,16 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const kmsClient = getUserClientFromRequest(KMSClient, request);
     const body = await request.json();
     const action = body.action || body;
 
     if (action === "createKey" || body.action === "createKey") {
-      const res = await kms.send(
+      const res = await kmsClient.send(
         new CreateKeyCommand({
           Description: body.description || "",
           KeyUsage: body.keyUsage || "ENCRYPT_DECRYPT",
@@ -62,17 +72,17 @@ export async function POST(request: Request) {
     }
 
     if (action === "enable" || body.action === "enable") {
-      await kms.send(new EnableKeyCommand({ KeyId: body.keyId }));
+      await kmsClient.send(new EnableKeyCommand({ KeyId: body.keyId }));
       return NextResponse.json({ success: true });
     }
 
     if (action === "disable" || body.action === "disable") {
-      await kms.send(new DisableKeyCommand({ KeyId: body.keyId }));
+      await kmsClient.send(new DisableKeyCommand({ KeyId: body.keyId }));
       return NextResponse.json({ success: true });
     }
 
     if (action === "scheduleDeletion" || body.action === "scheduleDeletion") {
-      await kms.send(
+      await kmsClient.send(
         new ScheduleKeyDeletionCommand({
           KeyId: body.keyId,
           PendingWindowInDays: body.pendingWindowInDays || 30,
@@ -82,7 +92,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "createAlias" || body.action === "createAlias") {
-      await kms.send(
+      await kmsClient.send(
         new CreateAliasCommand({
           AliasName: body.aliasName,
           TargetKeyId: body.keyId,
@@ -92,12 +102,12 @@ export async function POST(request: Request) {
     }
 
     if (action === "deleteAlias" || body.action === "deleteAlias") {
-      await kms.send(new DeleteAliasCommand({ AliasName: body.aliasName }));
+      await kmsClient.send(new DeleteAliasCommand({ AliasName: body.aliasName }));
       return NextResponse.json({ success: true });
     }
 
     if (action === "getPolicy" || body.action === "getPolicy") {
-      const res = await kms.send(new DescribeKeyCommand({ KeyId: body.keyId }));
+      const res = await kmsClient.send(new DescribeKeyCommand({ KeyId: body.keyId }));
       return NextResponse.json({ policy: res.KeyMetadata ? { Statement: [{ Sid: "Enable IAM User Permissions", Effect: "Allow", Principal: { AWS: "*" }, Action: "kms:*", Resource: "*" }] } : null });
     }
 

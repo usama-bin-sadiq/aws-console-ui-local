@@ -20,6 +20,8 @@ import CollectionPreferences from "@cloudscape-design/components/collection-pref
 import Alert from "@cloudscape-design/components/alert";
 import Link from "@cloudscape-design/components/link";
 import TruncatedText from "@/components/TruncatedText";
+import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { apiFetch } from "@/lib/api-client";
 import { LambdaFunctionConfig } from "@/types/lambda";
 
 const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<LambdaFunctionConfig>[] = [
@@ -145,7 +147,7 @@ export default function LambdaPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/lambda");
+      const res = await apiFetch("/api/lambda");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -173,7 +175,7 @@ export default function LambdaPage() {
       const fn = (e as CustomEvent).detail as string;
       if (!fn) return;
       try {
-        await fetch(`/api/lambda?functionName=${encodeURIComponent(fn)}`, {
+        await apiFetch(`/api/lambda?functionName=${encodeURIComponent(fn)}`, {
           method: "DELETE",
         });
         fetchFunctions();
@@ -193,7 +195,7 @@ export default function LambdaPage() {
     setInvokeLoading(true);
     setInvokeResult("");
     try {
-      const res = await fetch("/api/lambda", {
+      const res = await apiFetch("/api/lambda", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "invoke", functionName: selectedFn, payload }),
@@ -219,7 +221,7 @@ export default function LambdaPage() {
     for (const item of selectedItems) {
       if (!item.FunctionName) continue;
       try {
-        await fetch(`/api/lambda?functionName=${encodeURIComponent(item.FunctionName)}`, {
+        await apiFetch(`/api/lambda?functionName=${encodeURIComponent(item.FunctionName)}`, {
           method: "DELETE",
         });
       } catch {
@@ -292,7 +294,6 @@ export default function LambdaPage() {
           </Alert>
         )}
 
-        <Container>
           <Table
             columnDefinitions={COLUMN_DEFINITIONS}
             items={pagedItems}
@@ -389,7 +390,6 @@ export default function LambdaPage() {
               </Box>
             }
           />
-        </Container>
 
         <Modal
           visible={invokeModal}
@@ -431,6 +431,8 @@ export default function LambdaPage() {
           </SpaceBetween>
         </Modal>
       </SpaceBetween>
+
+      <CrossServiceLinks links={CROSS_SERVICE_LINKS["/lambda"] || []} />
     </div>
   );
 }

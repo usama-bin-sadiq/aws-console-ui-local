@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
-import { ListAccountsCommand, DescribeOrganizationCommand, CreateAccountCommand } from "@aws-sdk/client-organizations";
-import { organizations } from "@/lib/aws-clients";
+import { OrganizationsClient, ListAccountsCommand, DescribeOrganizationCommand, CreateAccountCommand } from "@aws-sdk/client-organizations";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const organizationsClient = getUserClientFromRequest(OrganizationsClient, request);
     const [accountsRes, orgRes] = await Promise.all([
-      organizations.send(new ListAccountsCommand({})).catch(() => ({ Accounts: [] })),
-      organizations.send(new DescribeOrganizationCommand({})).catch(() => ({ Organization: null })),
+      organizationsClient.send(new ListAccountsCommand({})).catch(() => ({ Accounts: [] })),
+      organizationsClient.send(new DescribeOrganizationCommand({})).catch(() => ({ Organization: null })),
     ]);
     return NextResponse.json({
       accounts: accountsRes.Accounts || [],
@@ -18,9 +23,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const organizationsClient = getUserClientFromRequest(OrganizationsClient, request);
     const body = await request.json();
-    const res = await organizations.send(new CreateAccountCommand({
+    const res = await organizationsClient.send(new CreateAccountCommand({
       Email: body.email,
       AccountName: body.accountName,
     }));

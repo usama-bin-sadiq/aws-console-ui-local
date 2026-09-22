@@ -1,8 +1,8 @@
 import { AdapterConfigShape } from '@/types/adapter';
 
 /**
- * Adapter Configuration — Full Support for localstack, ministack, real
- * Every service uses this config. No exceptions. No stubs.
+ * Adapter Configuration — Emulator Only (LocalStack / MinStack)
+ * Real AWS endpoint support removed. This console is for local emulators only.
  */
 
 export const ADAPTER_CONFIG: AdapterConfigShape = {
@@ -14,7 +14,6 @@ export const ADAPTER_CONFIG: AdapterConfigShape = {
     minstackHostname: process.env.MINSTACK_HOSTNAME || 'localhost',
     minstackPort: parseInt(process.env.MINSTACK_EDGE_PORT || '4566', 10),
     minstackSslEnabled: process.env.MINSTACK_SSL_ENABLED === 'true',
-    realEndpointUrl: process.env.AWS_ENDPOINT_URL,
     localstackEndpoint: process.env.LOCALSTACK_ENDPOINT || `http://${process.env.LOCALSTACK_HOSTNAME || 'localhost'}:${process.env.LOCALSTACK_EDGE_PORT || '4566'}`,
     minstackEndpoint: process.env.MINSTACK_ENDPOINT || `http://${process.env.MINSTACK_HOSTNAME || 'localhost'}:${process.env.MINSTACK_EDGE_PORT || '4566'}`,
   },

@@ -48,3 +48,34 @@ body {
     transition: none !important;
   }
 }
+
+/* Focus-visible ring for keyboard navigation (accessibility) */
+*:focus-visible {
+  outline: 2px solid var(--awsui-color-text-link-default, #0073bb);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Remove default focus ring for mouse users */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Ensure Cloudscape components respect focus-visible */
+.awsui-button:focus-visible,
+.awsui-link:focus-visible,
+.awsui-checkbox:focus-visible,
+.awsui-radio:focus-visible,
+.awsui-select:focus-visible,
+.awsui-input:focus-visible,
+.awsui-textarea:focus-visible {
+  outline: 2px solid var(--awsui-color-text-link-default, #0073bb);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+  *:focus-visible {
+    outline: 2px solid LinkText;
+  }
+}

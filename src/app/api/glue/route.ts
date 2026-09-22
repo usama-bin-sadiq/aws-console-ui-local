@@ -14,15 +14,21 @@ import {
   StartCrawlerCommand,
   GetCrawlerCommand,
 } from "@aws-sdk/client-glue";
-import { glue } from "@/lib/aws-clients";
+import { GlueClient } from "@aws-sdk/client-glue";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const glueClient = getUserClientFromRequest(GlueClient, request);
     const [dbRes, tableRes, crawlerRes, jobRes] = await Promise.all([
-      glue.send(new GetDatabasesCommand({})),
-      glue.send(new GetTablesCommand({ DatabaseName: "default" })).catch(() => ({ TableList: [] })),
-      glue.send(new GetCrawlersCommand({})).catch(() => ({ CrawlerNames: [] })),
-      glue.send(new GetJobsCommand({})).catch(() => ({ Jobs: [] })),
+      glueClient.send(new GetDatabasesCommand({})),
+      glueClient.send(new GetTablesCommand({ DatabaseName: "default" })).catch(() => ({ TableList: [] })),
+      glueClient.send(new GetCrawlersCommand({})).catch(() => ({ CrawlerNames: [] })),
+      glueClient.send(new GetJobsCommand({})).catch(() => ({ Jobs: [] })),
     ]);
     return NextResponse.json({
       databases: dbRes.DatabaseList || [],
@@ -36,10 +42,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const glueClient = getUserClientFromRequest(GlueClient, request);
     const body = await request.json();
     if (body.action === "createJob") {
-      await glue.send(
+      await glueClient.send(
         new CreateJobCommand({
           Name: body.name,
           Role: body.role || "arn:aws:iam::000000000000:role/glue-role",
@@ -49,11 +59,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
     if (body.action === "startJobRun") {
-      const res = await glue.send(new StartJobRunCommand({ JobName: body.jobName }));
+      const res = await glueClient.send(new StartJobRunCommand({ JobName: body.jobName }));
       return NextResponse.json({ jobRunId: res.JobRunId });
     }
     if (body.action === "createCrawler") {
-      await glue.send(
+      await glueClient.send(
         new CreateCrawlerCommand({
           Name: body.name,
           Role: body.role || "arn:aws:iam::000000000000:role/glue-crawler-role",
@@ -64,10 +74,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
     if (body.action === "startCrawler") {
-      await glue.send(new StartCrawlerCommand({ Name: body.name }));
+      await glueClient.send(new StartCrawlerCommand({ Name: body.name }));
       return NextResponse.json({ success: true });
     }
-    await glue.send(new CreateDatabaseCommand({ DatabaseInput: { Name: body.name } }));
+    await glueClient.send(new CreateDatabaseCommand({ DatabaseInput: { Name: body.name } }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -75,16 +85,20 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const glueClient = getUserClientFromRequest(GlueClient, request);
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");
     const name = searchParams.get("name")!;
     if (type === "job") {
-      await glue.send(new DeleteJobCommand({ JobName: name }));
+      await glueClient.send(new DeleteJobCommand({ JobName: name }));
     } else if (type === "crawler") {
-      await glue.send(new DeleteCrawlerCommand({ Name: name }));
+      await glueClient.send(new DeleteCrawlerCommand({ Name: name }));
     } else {
-      await glue.send(new DeleteDatabaseCommand({ Name: name }));
+      await glueClient.send(new DeleteDatabaseCommand({ Name: name }));
     }
     return NextResponse.json({ success: true });
   } catch (error: unknown) {

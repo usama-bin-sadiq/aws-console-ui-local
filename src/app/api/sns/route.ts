@@ -15,22 +15,28 @@ import {
   ListSubscriptionsByTopicCommand,
   GetTopicAttributesCommand,
 } from "@aws-sdk/client-sns";
-import { sns } from "@/lib/aws-clients";
+import { SNSClient } from "@aws-sdk/client-sns";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
 export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const snsClient = getUserClientFromRequest(SNSClient, request);
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
     const topicArn = searchParams.get("topicArn");
     if (action === "listSubscriptions" && topicArn) {
-      const res = await sns.send(new ListSubscriptionsByTopicCommand({ TopicArn: topicArn }));
+      const res = await snsClient.send(new ListSubscriptionsByTopicCommand({ TopicArn: topicArn }));
       return NextResponse.json({ subscriptions: res.Subscriptions || [] });
     }
     if (action === "getAttributes" && topicArn) {
-      const res = await sns.send(new GetTopicAttributesCommand({ TopicArn: topicArn }));
+      const res = await snsClient.send(new GetTopicAttributesCommand({ TopicArn: topicArn }));
       return NextResponse.json({ attributes: res.Attributes || {} });
     }
-    const res = await sns.send(new ListTopicsCommand({}));
+    const res = await snsClient.send(new ListTopicsCommand({}));
     return NextResponse.json({ topics: res.Topics || [] });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -38,10 +44,14 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const snsClient = getUserClientFromRequest(SNSClient, request);
     const body = await request.json();
     if (body.action === "publish") {
-      await sns.send(new PublishCommand({
+      await snsClient.send(new PublishCommand({
         TopicArn: body.topicArn,
         Message: body.message,
         Subject: body.subject,
@@ -50,7 +60,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
     if (body.action === "subscribe") {
-      const res = await sns.send(new SubscribeCommand({
+      const res = await snsClient.send(new SubscribeCommand({
         TopicArn: body.topicArn,
         Protocol: body.protocol,
         Endpoint: body.endpoint,
@@ -58,14 +68,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ subscriptionArn: res.SubscriptionArn || "pending" });
     }
     if (body.action === "unsubscribe") {
-      await sns.send(new UnsubscribeCommand({ SubscriptionArn: body.subscriptionArn }));
+      await snsClient.send(new UnsubscribeCommand({ SubscriptionArn: body.subscriptionArn }));
       return NextResponse.json({ success: true });
     }
     if (body.action === "getAttributes") {
-      const res = await sns.send(new GetTopicAttributesCommand({ TopicArn: body.topicArn }));
+      const res = await snsClient.send(new GetTopicAttributesCommand({ TopicArn: body.topicArn }));
       return NextResponse.json({ attributes: res.Attributes || {} });
     }
-    await sns.send(new CreateTopicCommand({ Name: body.name }));
+    await snsClient.send(new CreateTopicCommand({ Name: body.name }));
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -87,15 +97,19 @@ function parseMessageAttributes(raw: Record<string, any>): Record<string, any> {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const snsClient = getUserClientFromRequest(SNSClient, request);
     const { searchParams } = new URL(request.url);
     const topicArn = searchParams.get("topicArn");
     const subscriptionArn = searchParams.get("subscriptionArn");
     if (subscriptionArn) {
-      await sns.send(new UnsubscribeCommand({ SubscriptionArn: subscriptionArn }));
+      await snsClient.send(new UnsubscribeCommand({ SubscriptionArn: subscriptionArn }));
       return NextResponse.json({ success: true });
     }
-    await sns.send(new DeleteTopicCommand({ TopicArn: topicArn! }));
+    await snsClient.send(new DeleteTopicCommand({ TopicArn: topicArn! }));
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

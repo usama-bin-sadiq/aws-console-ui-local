@@ -11,19 +11,25 @@ import {
   GetFindingsCommand,
   UpdateDetectorCommand,
 } from "@aws-sdk/client-guardduty";
-import { guardduty } from "@/lib/aws-clients";
+import { GuardDutyClient } from "@aws-sdk/client-guardduty";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
 export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const guarddutyClient = getUserClientFromRequest(GuardDutyClient, request);
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
 
     if (action === "listFindings") {
-      const res = await guardduty.send(new ListFindingsCommand({ DetectorId: searchParams.get("detectorId") || undefined, FindingCriteria: {} }));
+      const res = await guarddutyClient.send(new ListFindingsCommand({ DetectorId: searchParams.get("detectorId") || undefined, FindingCriteria: {} }));
       return NextResponse.json({ findings: res.FindingIds ? res.FindingIds.map((id: any) => ({ Id: id })) : [] });
     }
 
-    const res = await guardduty.send(new ListDetectorsCommand({}));
+    const res = await guarddutyClient.send(new ListDetectorsCommand({}));
     return NextResponse.json({ detectors: (res.DetectorIds || []).map((id: string) => ({ DetectorId: id })) });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();
@@ -32,25 +38,29 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const guarddutyClient = getUserClientFromRequest(GuardDutyClient, request);
     const body = await request.json();
 
     if (body.action === "archiveFinding") {
-      await guardduty.send(new ArchiveFindingsCommand({ DetectorId: body.detectorId || "default", FindingIds: [body.findingId] }));
+      await guarddutyClient.send(new ArchiveFindingsCommand({ DetectorId: body.detectorId || "default", FindingIds: [body.findingId] }));
       return NextResponse.json({ success: true });
     }
 
     if (body.action === "unarchiveFinding") {
-      await guardduty.send(new UnarchiveFindingsCommand({ DetectorId: body.detectorId || "default", FindingIds: [body.findingId] }));
+      await guarddutyClient.send(new UnarchiveFindingsCommand({ DetectorId: body.detectorId || "default", FindingIds: [body.findingId] }));
       return NextResponse.json({ success: true });
     }
 
     if (body.action === "updateFindingFeedback") {
-      await guardduty.send(new UpdateFindingsFeedbackCommand({ DetectorId: body.detectorId || "default", FindingIds: [body.findingId], Feedback: body.feedback || "USEFUL" }));
+      await guarddutyClient.send(new UpdateFindingsFeedbackCommand({ DetectorId: body.detectorId || "default", FindingIds: [body.findingId], Feedback: body.feedback || "USEFUL" }));
       return NextResponse.json({ success: true });
     }
 
-    const res = await guardduty.send(new CreateDetectorCommand({ Enable: true }));
+    const res = await guarddutyClient.send(new CreateDetectorCommand({ Enable: true }));
     return NextResponse.json({ detectorId: res.DetectorId });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();
@@ -59,9 +69,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const guarddutyClient = getUserClientFromRequest(GuardDutyClient, request);
     const { searchParams } = new URL(request.url);
-    await guardduty.send(new DeleteDetectorCommand({ DetectorId: searchParams.get("detectorId")! }));
+    await guarddutyClient.send(new DeleteDetectorCommand({ DetectorId: searchParams.get("detectorId")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();

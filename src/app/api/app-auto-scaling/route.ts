@@ -4,11 +4,17 @@ import {
   RegisterScalableTargetCommand,
   DeregisterScalableTargetCommand,
 } from "@aws-sdk/client-application-auto-scaling";
-import { applicationAutoscaling } from "@/lib/aws-clients";
+import { ApplicationAutoScalingClient } from "@aws-sdk/client-application-auto-scaling";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await applicationAutoscaling.send(
+    const applicationAutoscalingClient = getUserClientFromRequest(ApplicationAutoScalingClient, request);
+    const res = await applicationAutoscalingClient.send(
       new DescribeScalableTargetsCommand({ ServiceNamespace: "ecs" })
     );
     return NextResponse.json({ scalableTargets: res.ScalableTargets || [] });
@@ -21,9 +27,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const applicationAutoscalingClient = getUserClientFromRequest(ApplicationAutoScalingClient, request);
     const body = await request.json();
-    await applicationAutoscaling.send(
+    await applicationAutoscalingClient.send(
       new RegisterScalableTargetCommand({
         ServiceNamespace: body.namespace || "ecs",
         ResourceId: body.resourceId,
@@ -42,9 +52,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const applicationAutoscalingClient = getUserClientFromRequest(ApplicationAutoScalingClient, request);
     const { searchParams } = new URL(request.url);
-    await applicationAutoscaling.send(
+    await applicationAutoscalingClient.send(
       new DeregisterScalableTargetCommand({
         ServiceNamespace: (searchParams.get("namespace") || "ecs") as any,
         ResourceId: searchParams.get("resourceId")!,

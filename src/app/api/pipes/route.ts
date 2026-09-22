@@ -6,11 +6,17 @@ import {
   StartPipeCommand,
   StopPipeCommand,
 } from "@aws-sdk/client-pipes";
-import { pipes } from "@/lib/aws-clients";
+import { PipesClient } from "@aws-sdk/client-pipes";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await pipes.send(new ListPipesCommand({}));
+    const pipesClient = getUserClientFromRequest(PipesClient, request);
+    const res = await pipesClient.send(new ListPipesCommand({}));
     return NextResponse.json({ pipes: res.Pipes || [] });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -18,17 +24,21 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const pipesClient = getUserClientFromRequest(PipesClient, request);
     const body = await request.json();
     if (body.action === "start") {
-      await pipes.send(new StartPipeCommand({ Name: body.name }));
+      await pipesClient.send(new StartPipeCommand({ Name: body.name }));
       return NextResponse.json({ success: true });
     }
     if (body.action === "stop") {
-      await pipes.send(new StopPipeCommand({ Name: body.name }));
+      await pipesClient.send(new StopPipeCommand({ Name: body.name }));
       return NextResponse.json({ success: true });
     }
-    const res = await pipes.send(new CreatePipeCommand({
+    const res = await pipesClient.send(new CreatePipeCommand({
       Name: body.name,
       Source: body.source,
       Target: body.target,
@@ -41,9 +51,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const pipesClient = getUserClientFromRequest(PipesClient, request);
     const { searchParams } = new URL(request.url);
-    await pipes.send(new DeletePipeCommand({ Name: searchParams.get("name")! }));
+    await pipesClient.send(new DeletePipeCommand({ Name: searchParams.get("name")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

@@ -8,7 +8,7 @@ import { resolveEndpoint } from './localstack-adapter/endpoint-resolver';
 import { injectAuth } from './localstack-adapter/auth-injector';
 
 export interface MiddlewareOptions {
-  readonly adapterMode?: 'localstack' | 'ministack' | 'real';
+  readonly adapterMode?: 'localstack' | 'ministack';
   readonly disableAdapter?: boolean;
 }
 
@@ -30,8 +30,7 @@ export interface HttpResponseLike {
 
 export function isAdapterDisabled(options?: MiddlewareOptions): boolean {
   if (options?.disableAdapter) return true;
-  const mode = options?.adapterMode || ADAPTER_CONFIG.adapterMode;
-  return mode === 'real';
+  return false;
 }
 
 export function createAdapterMiddleware(options?: MiddlewareOptions) {

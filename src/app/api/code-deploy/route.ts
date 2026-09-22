@@ -10,35 +10,41 @@ import {
   ListDeploymentConfigsCommand,
   CreateDeploymentConfigCommand,
 } from "@aws-sdk/client-codedeploy";
-import { codedeploy } from "@/lib/aws-clients";
+import { CodeDeployClient } from "@aws-sdk/client-codedeploy";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
 export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const codedeployClient = getUserClientFromRequest(CodeDeployClient, request);
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
     const appName = searchParams.get("appName");
 
     if (action === "deploymentGroups" && appName) {
-      const res = await codedeploy.send(
+      const res = await codedeployClient.send(
         new ListDeploymentGroupsCommand({ applicationName: appName })
       );
       return NextResponse.json({ deploymentGroups: res.deploymentGroups || [] });
     }
 
     if (action === "deployments" && appName) {
-      const res = await codedeploy.send(
+      const res = await codedeployClient.send(
         new ListDeploymentsCommand({ applicationName: appName })
       );
       return NextResponse.json({ deployments: res.deployments || [] });
     }
 
     if (action === "deploymentConfigs") {
-      const res = await codedeploy.send(new ListDeploymentConfigsCommand({}));
+      const res = await codedeployClient.send(new ListDeploymentConfigsCommand({}));
       const output = res as { deploymentConfigs?: any[]; deploymentConfigsList?: any[] };
       return NextResponse.json({ deploymentConfigs: output.deploymentConfigs || output.deploymentConfigsList || [] });
     }
 
-    const res = await codedeploy.send(new ListApplicationsCommand({}));
+    const res = await codedeployClient.send(new ListApplicationsCommand({}));
     return NextResponse.json({
       applications: (res.applications || []).map((name: string) => ({
         applicationName: name,
@@ -53,11 +59,15 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const codedeployClient = getUserClientFromRequest(CodeDeployClient, request);
     const body = await request.json();
 
     if (body.action === "createDeploymentGroup") {
-      const res = await codedeploy.send(
+      const res = await codedeployClient.send(
         new CreateDeploymentGroupCommand({
           applicationName: body.applicationName,
           deploymentGroupName: body.deploymentGroupName,
@@ -73,7 +83,7 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "createDeployment") {
-      const res = await codedeploy.send(
+      const res = await codedeployClient.send(
         new CreateDeploymentCommand({
           applicationName: body.applicationName,
           deploymentGroupName: body.deploymentGroupName,
@@ -91,7 +101,7 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "createDeploymentConfig") {
-      await codedeploy.send(
+      await codedeployClient.send(
         new CreateDeploymentConfigCommand({
           deploymentConfigName: body.deploymentConfigName || "CustomConfig",
           minimumHealthyHosts: body.minimumHealthyHosts || { type: "HOST_COUNT", value: 0 },
@@ -100,7 +110,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    await codedeploy.send(
+    await codedeployClient.send(
       new CreateApplicationCommand({
         applicationName: body.name,
         computePlatform: body.platform || "Server",
@@ -116,11 +126,15 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const codedeployClient = getUserClientFromRequest(CodeDeployClient, request);
     const { searchParams } = new URL(request.url);
     const appName = searchParams.get("appName");
     if (appName) {
-      await codedeploy.send(
+      await codedeployClient.send(
         new DeleteApplicationCommand({ applicationName: appName })
       );
       return NextResponse.json({ success: true });

@@ -23,8 +23,17 @@ import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import ColumnLayout from "@cloudscape-design/components/column-layout";
 import Link from "@cloudscape-design/components/link";
 import Table from "@cloudscape-design/components/table";
+import Modal from "@cloudscape-design/components/modal";
+import Textarea from "@cloudscape-design/components/textarea";
+import Select from "@cloudscape-design/components/select";
+import FormField from "@cloudscape-design/components/form-field";
+import Checkbox from "@cloudscape-design/components/checkbox";
+import RadioGroup from "@cloudscape-design/components/radio-group";
+import Input from "@cloudscape-design/components/input";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 import TruncatedText from "@/components/TruncatedText";
+import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { apiFetch } from "@/lib/api-client";
 
 export default function S3BucketDetailPage() {
   const params = useParams() as { bucketName: string };
@@ -39,41 +48,191 @@ export default function S3BucketDetailPage() {
   const [policy, setPolicy] = useState<any>(null);
   const [website, setWebsite] = useState<any>(null);
   const [lifecycle, setLifecycle] = useState<any>(null);
+  const [region, setRegion] = useState("us-east-1");
+  const [policyEditModal, setPolicyEditModal] = useState(false);
+  const [policyText, setPolicyText] = useState("");
+  const [policySaving, setPolicySaving] = useState(false);
+  const [versioningModal, setVersioningModal] = useState(false);
+  const [versioningTarget, setVersioningTarget] = useState<{ label: string; value: string }>({ label: "Enabled", value: "Enabled" });
+  const [versioningSaving, setVersioningSaving] = useState(false);
+  const [publicAccessBlock, setPublicAccessBlock] = useState<any>(null);
+  const [publicAccessBlockModal, setPublicAccessBlockModal] = useState(false);
+  const [publicAccessBlockSaving, setPublicAccessBlockSaving] = useState(false);
+  const [publicAccessBlockConfig, setPublicAccessBlockConfig] = useState({
+    BlockPublicAcls: true,
+    IgnorePublicAcls: true,
+    BlockPublicPolicy: true,
+    RestrictPublicBuckets: true,
+  });
+  const [acl, setAcl] = useState<any>(null);
+  const [aclModal, setAclModal] = useState(false);
+  const [aclSaving, setAclSaving] = useState(false);
+  const [aclConfig, setAclConfig] = useState<any[]>([]);
 
-  const fetchDetails = useCallback(async () => {
+const fetchDetails = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       // Fetch each detail independently so one adapter failure doesn't break the whole page
-      const vRes = await fetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=versioning`);
+      const vRes = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=versioning`);
       const vData = await vRes.json();
       if (!vData.error) setVersioning({ Status: vData.versioning, MFADelete: vData.mfaDelete });
 
-      const eRes = await fetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=encryption`);
+      const eRes = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=encryption`);
       const eData = await eRes.json();
       if (!eData.error) setEncryption(eData.encryption);
 
-      const tRes = await fetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=tags`);
+      const tRes = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=tags`);
       const tData = await tRes.json();
       if (!tData.error) setTags(tData.tags || []);
 
-      const pRes = await fetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=policy`);
+      const pRes = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=policy`);
       const pData = await pRes.json();
-      if (!pData.error) setPolicy(pData.policy);
+      if (!pData.error) {
+        setPolicy(pData.policy);
+        setPolicyText(JSON.stringify(pData.policy, null, 2));
+      }
 
-      const wRes = await fetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=website`);
+      const wRes = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=website`);
       const wData = await wRes.json();
       if (!wData.error) setWebsite(wData.website);
 
-      const lRes = await fetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=lifecycle`);
+      const lRes = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=lifecycle`);
       const lData = await lRes.json();
       if (!lData.error) setLifecycle(lData.rules || lData);
+
+      const locRes = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=location`);
+      const locData = await locRes.json();
+      if (!locData.error) setRegion(locData.location || "us-east-1");
+
+      // Fetch public access block
+      const pabRes = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=public-access-block`);
+      const pabData = await pabRes.json();
+      if (!pabData.error) setPublicAccessBlock(pabData.publicAccessBlock);
+
+      // Fetch ACL
+      const aclRes = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=acl`);
+      const aclData = await aclRes.json();
+      if (!aclData.error) setAcl(aclData.acl);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load some bucket details");
     } finally {
       setLoading(false);
     }
   }, [bucketName]);
+
+  const savePolicy = useCallback(async () => {
+    setPolicySaving(true);
+    setError(null);
+    try {
+      let parsedPolicy;
+      try {
+        parsedPolicy = JSON.parse(policyText);
+      } catch {
+        throw new Error("Invalid JSON policy");
+      }
+      const res = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=policy`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ policy: parsedPolicy }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Failed to save policy");
+      setPolicy(parsedPolicy);
+      setPolicyEditModal(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save policy");
+    } finally {
+      setPolicySaving(false);
+    }
+  }, [bucketName, policyText]);
+
+  const saveVersioning = useCallback(async () => {
+    setVersioningSaving(true);
+    setError(null);
+    try {
+      const res = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=versioning`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: versioningTarget.value }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Failed to save versioning");
+      setVersioning({ Status: versioningTarget.value, MFADelete: "Disabled" });
+      setVersioningModal(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save versioning");
+    } finally {
+      setVersioningSaving(false);
+    }
+  }, [bucketName, versioningTarget.value]);
+
+  const savePublicAccessBlock = useCallback(async () => {
+    setPublicAccessBlockSaving(true);
+    setError(null);
+    try {
+      const res = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=public-access-block`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(publicAccessBlockConfig),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Failed to save public access block");
+      setPublicAccessBlock(publicAccessBlockConfig);
+      setPublicAccessBlockModal(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save public access block");
+    } finally {
+      setPublicAccessBlockSaving(false);
+    }
+  }, [bucketName, publicAccessBlockConfig]);
+
+  const saveAcl = useCallback(async () => {
+    setAclSaving(true);
+    setError(null);
+    try {
+      const res = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=acl`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ grants: aclConfig }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Failed to save ACL");
+      setAcl({ Grants: aclConfig });
+      setAclModal(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save ACL");
+    } finally {
+      setAclSaving(false);
+    }
+  }, [bucketName, aclConfig]);
+
+  const openPolicyEdit = useCallback(() => {
+    setPolicyText(JSON.stringify(policy || {}, null, 2));
+    setPolicyEditModal(true);
+  }, [policy]);
+
+  const openVersioningEdit = useCallback(() => {
+    setVersioningTarget({ label: versioning?.Status === "Enabled" ? "Enabled" : "Suspended", value: versioning?.Status === "Enabled" ? "Enabled" : "Suspended" });
+    setVersioningModal(true);
+  }, [versioning]);
+
+  const openPublicAccessBlockEdit = useCallback(() => {
+    setPublicAccessBlockConfig({
+      BlockPublicAcls: publicAccessBlock?.BlockPublicAcls || true,
+      IgnorePublicAcls: publicAccessBlock?.IgnorePublicAcls || true,
+      BlockPublicPolicy: publicAccessBlock?.BlockPublicPolicy || true,
+      RestrictPublicBuckets: publicAccessBlock?.RestrictPublicBuckets || true,
+    });
+    setPublicAccessBlockModal(true);
+  }, [publicAccessBlock]);
+
+  const openAclEdit = useCallback(() => {
+    setAclConfig(acl?.Grants || [
+      { Grantee: { Type: "CanonicalUser", ID: "owner-id", DisplayName: "owner" }, Permission: "FULL_CONTROL" },
+    ]);
+    setAclModal(true);
+  }, [acl]);
 
   useEffect(() => {
     if (bucketName) fetchDetails();
@@ -88,7 +247,7 @@ export default function S3BucketDetailPage() {
         </div>
         <div>
           <Box variant="small" color="text-label">Region</Box>
-          <Box>us-east-1</Box>
+          <Box>{region}</Box>
         </div>
         <div>
           <Box variant="small" color="text-label">Versioning</Box>
@@ -121,7 +280,14 @@ export default function S3BucketDetailPage() {
 
   const propertiesContent = (
     <SpaceBetween size="l" direction="vertical">
-      <Container header={<Header variant="h2">Versioning</Header>}>
+      <Container header={
+        <SpaceBetween direction="horizontal" size="xs">
+          <Header variant="h2">Versioning</Header>
+          <Button variant="link" onClick={openVersioningEdit} disabled={versioningSaving}>
+            Edit
+          </Button>
+        </SpaceBetween>
+      }>
         <ColumnLayout columns={2} variant="default">
           <div>
             <Box variant="small" color="text-label">Status</Box>
@@ -183,7 +349,12 @@ export default function S3BucketDetailPage() {
     <Container header={<Header variant="h2">Permissions</Header>}>
       <SpaceBetween size="l" direction="vertical">
         <div>
-          <Header variant="h3">Bucket Policy</Header>
+          <SpaceBetween direction="horizontal" size="xs">
+            <Header variant="h3">Bucket Policy</Header>
+            <Button variant="link" onClick={openPolicyEdit} disabled={policySaving}>
+              Edit
+            </Button>
+          </SpaceBetween>
           <Box>
             {policy ? (
               <CodeView content={JSON.stringify(policy, null, 2)} lineNumbers wrapLines />
@@ -193,8 +364,66 @@ export default function S3BucketDetailPage() {
           </Box>
         </div>
         <div>
-          <Header variant="h3">Public Access Block</Header>
-          <Box>Public access settings are managed through the bucket creation wizard and permissions tab.</Box>
+          <SpaceBetween direction="horizontal" size="xs">
+            <Header variant="h3">Public Access Block</Header>
+            <Button variant="link" onClick={openPublicAccessBlockEdit} disabled={publicAccessBlockSaving}>
+              Edit
+            </Button>
+          </SpaceBetween>
+          <Box>
+            {publicAccessBlock ? (
+              <ColumnLayout columns={4} variant="default">
+                <div>
+                  <Box variant="small" color="text-label">Block public access to buckets and objects granted through new access control lists (ACLs)</Box>
+                  <StatusIndicator type={publicAccessBlock.BlockPublicAcls ? "success" : "info"}>
+                    {publicAccessBlock.BlockPublicAcls ? "On" : "Off"}
+                  </StatusIndicator>
+                </div>
+                <div>
+                  <Box variant="small" color="text-label">Block public access to buckets and objects granted through any access control lists (ACLs)</Box>
+                  <StatusIndicator type={publicAccessBlock.IgnorePublicAcls ? "success" : "info"}>
+                    {publicAccessBlock.IgnorePublicAcls ? "On" : "Off"}
+                  </StatusIndicator>
+                </div>
+                <div>
+                  <Box variant="small" color="text-label">Block public access to buckets and objects granted through new public bucket or access point policies</Box>
+                  <StatusIndicator type={publicAccessBlock.BlockPublicPolicy ? "success" : "info"}>
+                    {publicAccessBlock.BlockPublicPolicy ? "On" : "Off"}
+                  </StatusIndicator>
+                </div>
+                <div>
+                  <Box variant="small" color="text-label">Block public and cross-account access to buckets and objects through any public bucket or access point policies</Box>
+                  <StatusIndicator type={publicAccessBlock.RestrictPublicBuckets ? "success" : "info"}>
+                    {publicAccessBlock.RestrictPublicBuckets ? "On" : "Off"}
+                  </StatusIndicator>
+                </div>
+              </ColumnLayout>
+            ) : (
+              <Box>Public access block not configured.</Box>
+            )}
+          </Box>
+        </div>
+        <div>
+          <SpaceBetween direction="horizontal" size="xs">
+            <Header variant="h3">Access Control List (ACL)</Header>
+            <Button variant="link" onClick={openAclEdit} disabled={aclSaving}>
+              Edit
+            </Button>
+          </SpaceBetween>
+          <Box>
+            {acl?.Grants && acl.Grants.length > 0 ? (
+              <Table
+                columnDefinitions={[
+                  { header: "Grantee", cell: (item: any) => item.Grantee?.DisplayName || item.Grantee?.ID || item.Grantee?.URI || "—" },
+                  { header: "Permission", cell: (item: any) => item.Permission },
+                ]}
+                items={acl.Grants}
+                empty={<Box>No ACL grants</Box>}
+              />
+            ) : (
+              <Box>No ACL grants configured.</Box>
+            )}
+          </Box>
         </div>
       </SpaceBetween>
     </Container>
@@ -220,6 +449,201 @@ export default function S3BucketDetailPage() {
         <Box>No tags assigned.</Box>
       )}
     </Container>
+  );
+
+  // Modals
+  const policyModal = (
+    <Modal
+      visible={policyEditModal}
+      onDismiss={() => setPolicyEditModal(false)}
+      header="Edit Bucket Policy"
+      footer={
+        <SpaceBetween direction="horizontal" size="xs">
+          <Button onClick={() => setPolicyEditModal(false)} formAction="none" disabled={policySaving}>Cancel</Button>
+          <Button variant="primary" onClick={savePolicy} loading={policySaving}>Save policy</Button>
+        </SpaceBetween>
+      }
+    >
+      <Box>
+        <Alert type="info">
+          Enter a valid JSON bucket policy. See <Link href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-policies.html" external>AWS documentation</Link> for policy structure.
+        </Alert>
+        <Textarea
+          value={policyText}
+          onChange={(e) => setPolicyText(e.detail.value)}
+          rows={20}
+        />
+      </Box>
+    </Modal>
+  );
+
+  const versioningModalComponent = (
+    <Modal
+      visible={versioningModal}
+      onDismiss={() => setVersioningModal(false)}
+      header="Edit Versioning"
+      footer={
+        <SpaceBetween direction="horizontal" size="xs">
+          <Button onClick={() => setVersioningModal(false)} formAction="none" disabled={versioningSaving}>Cancel</Button>
+          <Button variant="primary" onClick={saveVersioning} loading={versioningSaving}>Save</Button>
+        </SpaceBetween>
+      }
+    >
+      <Box>
+        <FormField label="Versioning status">
+          <Select
+            selectedOption={{ value: versioningTarget.value, label: versioningTarget.value }}
+            options={[
+              { value: "Enabled", label: "Enabled" },
+              { value: "Suspended", label: "Suspended" },
+            ]}
+            onChange={({ detail }) => {
+              const val = detail.selectedOption?.value || "Suspended";
+              setVersioningTarget({ label: val, value: val });
+            }}
+          />
+        </FormField>
+        <Box variant="small" color="text-body-secondary" margin={{ top: "m" }}>
+          Suspending versioning stops new object versions from being created but retains existing versions.
+        </Box>
+      </Box>
+    </Modal>
+  );
+
+  // Public Access Block Modal
+  const publicAccessBlockModalComponent = (
+    <Modal
+      visible={publicAccessBlockModal}
+      onDismiss={() => setPublicAccessBlockModal(false)}
+      header="Edit Public Access Block"
+      footer={
+        <SpaceBetween direction="horizontal" size="xs">
+          <Button onClick={() => setPublicAccessBlockModal(false)} formAction="none" disabled={publicAccessBlockSaving}>Cancel</Button>
+          <Button variant="primary" onClick={savePublicAccessBlock} loading={publicAccessBlockSaving}>Save</Button>
+        </SpaceBetween>
+      }
+    >
+      <Box>
+        <Alert type="info">
+          Public access block settings help you prevent public access to your bucket and its objects. 
+          Turning these settings on overrides any existing policies or ACLs that allow public access.
+        </Alert>
+        <FormField label="Block public access to buckets and objects granted through new access control lists (ACLs)">
+          <Checkbox checked={publicAccessBlockConfig.BlockPublicAcls} onChange={({ detail }) => setPublicAccessBlockConfig({ ...publicAccessBlockConfig, BlockPublicAcls: detail.checked })} />
+        </FormField>
+        <FormField label="Block public access to buckets and objects granted through any access control lists (ACLs)">
+          <Checkbox checked={publicAccessBlockConfig.IgnorePublicAcls} onChange={({ detail }) => setPublicAccessBlockConfig({ ...publicAccessBlockConfig, IgnorePublicAcls: detail.checked })} />
+        </FormField>
+        <FormField label="Block public access to buckets and objects granted through new public bucket or access point policies">
+          <Checkbox checked={publicAccessBlockConfig.BlockPublicPolicy} onChange={({ detail }) => setPublicAccessBlockConfig({ ...publicAccessBlockConfig, BlockPublicPolicy: detail.checked })} />
+        </FormField>
+        <FormField label="Block public and cross-account access to buckets and objects through any public bucket or access point policies">
+          <Checkbox checked={publicAccessBlockConfig.RestrictPublicBuckets} onChange={({ detail }) => setPublicAccessBlockConfig({ ...publicAccessBlockConfig, RestrictPublicBuckets: detail.checked })} />
+        </FormField>
+      </Box>
+    </Modal>
+  );
+
+  // ACL Modal
+  const aclModalComponent = (
+    <Modal
+      visible={aclModal}
+      onDismiss={() => setAclModal(false)}
+      header="Edit Access Control List (ACL)"
+      footer={
+        <SpaceBetween direction="horizontal" size="xs">
+          <Button onClick={() => setAclModal(false)} formAction="none" disabled={aclSaving}>Cancel</Button>
+          <Button variant="primary" onClick={saveAcl} loading={aclSaving}>Save</Button>
+        </SpaceBetween>
+      }
+    >
+      <Box>
+        <Alert type="info">
+          ACLs are legacy access control mechanisms. For most use cases, we recommend using bucket policies instead.
+          Each grant specifies a grantee and a permission.
+        </Alert>
+        <SpaceBetween size="xs">
+          <Button variant="link" onClick={() => setAclConfig([...aclConfig, { Grantee: { Type: "CanonicalUser", ID: "", DisplayName: "" }, Permission: "READ" }])} formAction="none">Add grant</Button>
+        </SpaceBetween>
+        <Table
+          columnDefinitions={[
+            { header: "Grantee Type", cell: (item: any) => {
+              const idx = aclConfig.indexOf(item);
+              return (
+              <Select
+                selectedOption={{ value: item.Grantee?.Type || "CanonicalUser", label: item.Grantee?.Type || "CanonicalUser" }}
+                options={[
+                  { value: "CanonicalUser", label: "Canonical User (AWS Account)" },
+                  { value: "AmazonCustomerByEmail", label: "Amazon Customer by Email" },
+                  { value: "Group", label: "Group (All Authenticated Users / All Users)" },
+                ]}
+                onChange={({ detail }) => {
+                  const newGrants = [...aclConfig];
+                  newGrants[idx] = { ...newGrants[idx], Grantee: { ...newGrants[idx].Grantee, Type: detail.selectedOption.value } };
+                  setAclConfig(newGrants);
+                }}
+              />
+            )}},
+            { header: "Grantee ID / Email / URI", cell: (item: any) => {
+              const idx = aclConfig.indexOf(item);
+              return (
+              <Input
+                value={item.Grantee?.ID || item.Grantee?.EmailAddress || item.Grantee?.URI || ""}
+                onChange={({ detail }) => {
+                  const newGrants = [...aclConfig];
+                  const grantee = { ...newGrants[idx].Grantee };
+                  if (grantee.Type === "Group") grantee.URI = detail.value;
+                  else if (grantee.Type === "AmazonCustomerByEmail") grantee.EmailAddress = detail.value;
+                  else grantee.ID = detail.value;
+                  newGrants[idx] = { ...newGrants[idx], Grantee: grantee };
+                  setAclConfig(newGrants);
+                }}
+                placeholder={item.Grantee?.Type === "Group" ? "URI (e.g., http://acs.amazonaws.com/groups/global/AllUsers)" : item.Grantee?.Type === "AmazonCustomerByEmail" ? "Email address" : "Canonical User ID"}
+              />
+            )}},
+            { header: "Display Name", cell: (item: any) => {
+              const idx = aclConfig.indexOf(item);
+              return (
+              <Input
+                value={item.Grantee?.DisplayName || ""}
+                onChange={({ detail }) => {
+                  const newGrants = [...aclConfig];
+                  newGrants[idx] = { ...newGrants[idx], Grantee: { ...newGrants[idx].Grantee, DisplayName: detail.value } };
+                  setAclConfig(newGrants);
+                }}
+                placeholder="Display name"
+              />
+            )}},
+            { header: "Permission", cell: (item: any) => {
+              const idx = aclConfig.indexOf(item);
+              return (
+              <Select
+                selectedOption={{ value: item.Permission || "READ", label: item.Permission || "READ" }}
+                options={[
+                  { value: "READ", label: "READ" },
+                  { value: "WRITE", label: "WRITE" },
+                  { value: "READ_ACP", label: "READ_ACP" },
+                  { value: "WRITE_ACP", label: "WRITE_ACP" },
+                  { value: "FULL_CONTROL", label: "FULL_CONTROL" },
+                ]}
+                onChange={({ detail }) => {
+                  const newGrants = [...aclConfig];
+                  newGrants[idx] = { ...newGrants[idx], Permission: detail.selectedOption.value };
+                  setAclConfig(newGrants);
+                }}
+              />
+            )}},
+            { header: "Actions", cell: (item: any) => {
+              const idx = aclConfig.indexOf(item);
+              return (
+              <Button variant="inline-link" onClick={() => setAclConfig(aclConfig.filter((_, i) => i !== idx))} formAction="none">Remove</Button>
+            )}},
+          ]}
+          items={aclConfig}
+          empty={<Box>No grants configured. Add a grant to begin.</Box>}
+        />
+      </Box>
+    </Modal>
   );
 
   return (
@@ -277,6 +701,10 @@ export default function S3BucketDetailPage() {
             ]}
           />
         )}
+        {policyModal}
+        {versioningModalComponent}
+        {publicAccessBlockModalComponent}
+        {aclModalComponent}
       </SpaceBetween>
     </ServiceLayout>
   );

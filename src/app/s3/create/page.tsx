@@ -26,6 +26,7 @@ import Button from "@cloudscape-design/components/button";
 import Box from "@cloudscape-design/components/box";
 import Alert from "@cloudscape-design/components/alert";
 import { S3_REGION_OPTIONS, S3_ENCRYPTION_OPTIONS, S3_VERSIONING_OPTIONS, S3_BUCKET_RULES } from "@/constants/s3-constants";
+import { apiFetch } from "@/lib/api-client";
 
 export default function S3BucketCreatePage() {
   const router = useRouter();
@@ -65,28 +66,28 @@ export default function S3BucketCreatePage() {
     setError(null);
     try {
       // Create bucket
-      await fetch("/api/s3?action=create-bucket", {
+      await apiFetch("/api/s3?action=create-bucket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bucket: name, region, name: name }),
       });
 
       // Apply versioning
-      await fetch("/api/s3?action=versioning", {
+      await apiFetch("/api/s3?action=versioning", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bucket: name, status: versioning }),
       });
 
       // Apply encryption
-      await fetch("/api/s3?action=encryption", {
+      await apiFetch("/api/s3?action=encryption", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bucket: name, algorithm: encryption }),
       });
 
       // Apply tags
-      await fetch("/api/s3?action=tags", {
+      await apiFetch("/api/s3?action=tags", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bucket: name, tags: tags.filter((t) => t.Key) }),

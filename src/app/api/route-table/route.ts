@@ -3,6 +3,7 @@
 // CreateRoute, DeleteRoute, AssociateRouteTable)
 import { NextResponse } from "next/server";
 import {
+  EC2Client,
   DescribeRouteTablesCommand,
   CreateRouteTableCommand,
   DeleteRouteTableCommand,
@@ -10,11 +11,16 @@ import {
   DeleteRouteCommand,
   AssociateRouteTableCommand,
 } from "@aws-sdk/client-ec2";
-import { ec2 } from "@/lib/aws-clients";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await ec2.send(new DescribeRouteTablesCommand({}));
+    const ec2Client = getUserClientFromRequest(EC2Client, request);
+    const res = await ec2Client.send(new DescribeRouteTablesCommand({}));
     return NextResponse.json({ routeTables: res.RouteTables || [] });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -22,9 +28,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const ec2Client = getUserClientFromRequest(EC2Client, request);
     const body = await request.json();
-    const res = await ec2.send(new CreateRouteTableCommand({ VpcId: body.vpcId }));
+    const res = await ec2Client.send(new CreateRouteTableCommand({ VpcId: body.vpcId }));
     return NextResponse.json({ routeTable: res.RouteTable });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -32,11 +42,15 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const denied = await requirePermission(request, "PUT");
+  if (denied) return denied;
+
   try {
+    const ec2Client = getUserClientFromRequest(EC2Client, request);
     const body = await request.json();
     // Create a route in a route table
     if (body.action === "create-route" && body.routeTableId) {
-      await ec2.send(
+      await ec2Client.send(
         new CreateRouteCommand({
           RouteTableId: body.routeTableId,
           DestinationCidrBlock: body.destinationCidrBlock || "0.0.0.0/0",
@@ -50,7 +64,7 @@ export async function PUT(request: Request) {
     }
     // Delete a route
     if (body.action === "delete-route" && body.routeTableId) {
-      await ec2.send(
+      await ec2Client.send(
         new DeleteRouteCommand({
           RouteTableId: body.routeTableId,
           DestinationCidrBlock: body.destinationCidrBlock || "0.0.0.0/0",
@@ -60,7 +74,7 @@ export async function PUT(request: Request) {
     }
     // Associate route table with subnet
     if (body.action === "associate-route-table" && body.subnetId && body.routeTableId) {
-      await ec2.send(
+      await ec2Client.send(
         new AssociateRouteTableCommand({
           RouteTableId: body.routeTableId,
           SubnetId: body.subnetId,
@@ -75,9 +89,13 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const ec2Client = getUserClientFromRequest(EC2Client, request);
     const { searchParams } = new URL(request.url);
-    await ec2.send(new DeleteRouteTableCommand({ RouteTableId: searchParams.get("routeTableId")! }));
+    await ec2Client.send(new DeleteRouteTableCommand({ RouteTableId: searchParams.get("routeTableId")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

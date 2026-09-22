@@ -3,11 +3,17 @@ import {
   GetAccountPasswordPolicyCommand,
   UpdateAccountPasswordPolicyCommand,
 } from "@aws-sdk/client-iam";
-import { iam } from "@/lib/aws-clients";
+import { IAMClient } from "@aws-sdk/client-iam";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await iam.send(new GetAccountPasswordPolicyCommand({}));
+    const iamClient = getUserClientFromRequest(IAMClient, request);
+    const res = await iamClient.send(new GetAccountPasswordPolicyCommand({}));
     return NextResponse.json({ passwordPolicy: res.PasswordPolicy });
   } catch {
     // If no policy exists, return defaults
@@ -24,9 +30,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const iamClient = getUserClientFromRequest(IAMClient, request);
     const body = await request.json();
-    await iam.send(
+    await iamClient.send(
       new UpdateAccountPasswordPolicyCommand({
         MinimumPasswordLength: body.minLength || 8,
         RequireUppercaseCharacters: body.requireUppercase || false,

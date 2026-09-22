@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 import {
+  ServiceDiscoveryClient,
   ListNamespacesCommand,
   CreateHttpNamespaceCommand,
   DeleteNamespaceCommand,
   CreateServiceCommand,
 } from "@aws-sdk/client-servicediscovery";
-import { servicediscovery } from "@/lib/aws-clients";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await servicediscovery.send(new ListNamespacesCommand({}));
+    const servicediscoveryClient = getUserClientFromRequest(ServiceDiscoveryClient, request);
+    const res = await servicediscoveryClient.send(new ListNamespacesCommand({}));
     return NextResponse.json({ namespaces: res.Namespaces || [] });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -17,13 +23,17 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const servicediscoveryClient = getUserClientFromRequest(ServiceDiscoveryClient, request);
     const body = await request.json();
     if (body.action === "createService") {
-      const res = await servicediscovery.send(new CreateServiceCommand({ Name: body.name, NamespaceId: body.namespaceId }));
+      const res = await servicediscoveryClient.send(new CreateServiceCommand({ Name: body.name, NamespaceId: body.namespaceId }));
       return NextResponse.json({ service: res.Service });
     }
-    const res = await servicediscovery.send(new CreateHttpNamespaceCommand({ Name: body.name }));
+    const res = await servicediscoveryClient.send(new CreateHttpNamespaceCommand({ Name: body.name }));
     return NextResponse.json({ namespace: res });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -31,10 +41,14 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const servicediscoveryClient = getUserClientFromRequest(ServiceDiscoveryClient, request);
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id")!;
-    await servicediscovery.send(new DeleteNamespaceCommand({ Id: id }));
+    await servicediscoveryClient.send(new DeleteNamespaceCommand({ Id: id }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

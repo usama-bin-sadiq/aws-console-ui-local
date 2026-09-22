@@ -1,8 +1,3 @@
-/**
- * Phase 10 — SQS + SNS (Complete) Verification Gate
- * See docs/verification-gate-phase10-sqs-sns.md
- * Adapter SDK: api/sns uses sns from @/lib/aws-clients
- */
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -17,19 +12,27 @@ import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
 import Select from "@cloudscape-design/components/select";
+import Alert from "@cloudscape-design/components/alert";
 import TruncatedText from "@/components/TruncatedText";
+import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 
-interface Topic { TopicArn?: string; }
+interface TopicInfo {
+  arn: string;
+  name: string;
+  subscriptionCount: number;
+}
 
 export default function SNSPage() {
-  const [topics, setTopics] = useState<Topic[]>([]);
+  const [topics, setTopics] = useState<TopicInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [createModal, setCreateModal] = useState(false);
   const [newTopic, setNewTopic] = useState("");
 
   const [publishModal, setPublishModal] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState("");
+  const [selectedTopicName, setSelectedTopicName] = useState("");
   const [message, setMessage] = useState("");
   const [subject, setSubject] = useState("");
   const [messageAttributesText, setMessageAttributesText] = useState("{}");
@@ -41,75 +44,157 @@ export default function SNSPage() {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [subLoading, setSubLoading] = useState(false);
 
+  const [detailModal, setDetailModal] = useState(false);
+  const [detailSub, setDetailSub] = useState<any>(null);
+
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleteTopicArn, setDeleteTopicArn] = useState("");
+  const [deleteTopicName, setDeleteTopicName] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
   const fetchTopics = async () => {
     setLoading(true);
+    setError("");
     try {
       const res = await fetch("/api/sns");
       const data = await res.json();
-      setTopics(data.topics || []);
-    } catch { }
+      if (data.error) {
+        setError(data.error);
+        setLoading(false);
+        return;
+      }
+      const rawTopics: { TopicArn?: string }[] = data.topics || [];
+      const topicInfos: TopicInfo[] = await Promise.all(
+        rawTopics.map(async (t) => {
+          const arn = t.TopicArn || "";
+          const name = arn.split(":").pop() || arn;
+          let subscriptionCount = 0;
+          try {
+            const attrRes = await fetch(`/api/sns?action=getAttributes&topicArn=${encodeURIComponent(arn)}`);
+            const attrData = await attrRes.json();
+            subscriptionCount = parseInt(attrData.attributes?.SubscriptionsConfirmed || "0", 10);
+          } catch {}
+          return { arn, name, subscriptionCount };
+        })
+      );
+      setTopics(topicInfos);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to fetch topics");
+    }
     setLoading(false);
   };
 
   useEffect(() => { fetchTopics(); }, []);
 
   const createTopic = async () => {
-    await fetch("/api/sns", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newTopic }),
-    });
-    setCreateModal(false);
-    setNewTopic("");
-    fetchTopics();
+    setError("");
+    try {
+      const res = await fetch("/api/sns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newTopic }),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setCreateModal(false);
+      setNewTopic("");
+      fetchTopics();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create topic");
+    }
   };
 
   const publishMessage = async () => {
     let attrs: Record<string, any> = {};
-    try { attrs = JSON.parse(messageAttributesText); } catch { }
-    await fetch("/api/sns", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "publish", topicArn: selectedTopic, message, subject, messageAttributes: attrs }),
-    });
-    setPublishModal(false);
-    setMessage("");
-    setSubject("");
-    setMessageAttributesText("{}");
+    try { attrs = JSON.parse(messageAttributesText); } catch (e) { setError(e instanceof Error ? e.message : "Invalid message attributes JSON"); return; }
+    setError("");
+    try {
+      const res = await fetch("/api/sns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "publish", topicArn: selectedTopic, message, subject, messageAttributes: attrs }),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setPublishModal(false);
+      setMessage("");
+      setSubject("");
+      setMessageAttributesText("{}");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to publish message");
+    }
   };
 
   const deleteTopic = async (arn: string) => {
-    await fetch(`/api/sns?topicArn=${encodeURIComponent(arn)}`, { method: "DELETE" });
-    fetchTopics();
-    setSubscriptions([]);
+    setError("");
+    try {
+      const res = await fetch(`/api/sns?topicArn=${encodeURIComponent(arn)}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setDeleteModal(false);
+      setDeleteTopicArn("");
+      setDeleteTopicName("");
+      setDeleteConfirmText("");
+      fetchTopics();
+      setSubscriptions([]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete topic");
+    }
   };
 
   const subscribeToTopic = async () => {
-    await fetch("/api/sns", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "subscribe", topicArn: selectedTopic, protocol: subscribeProtocol, endpoint: subscribeEndpoint }),
-    });
-    setSubscribeModal(false);
-    setSubscribeProtocol("https");
-    setSubscribeEndpoint("");
-    loadSubscriptions();
+    setError("");
+    try {
+      const res = await fetch("/api/sns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "subscribe", topicArn: selectedTopic, protocol: subscribeProtocol, endpoint: subscribeEndpoint }),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setSubscribeModal(false);
+      setSubscribeProtocol("https");
+      setSubscribeEndpoint("");
+      loadSubscriptions();
+      fetchTopics();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to subscribe");
+    }
   };
 
   const unsubscribeSubscription = async (subArn: string) => {
-    await fetch(`/api/sns?subscriptionArn=${encodeURIComponent(subArn)}`, { method: "DELETE" });
-    loadSubscriptions();
+    setError("");
+    try {
+      const res = await fetch(`/api/sns?subscriptionArn=${encodeURIComponent(subArn)}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      loadSubscriptions();
+      fetchTopics();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to unsubscribe");
+    }
   };
 
   const loadSubscriptions = async () => {
     if (!selectedTopic) return;
     setSubLoading(true);
+    setError("");
     try {
       const res = await fetch(`/api/sns?action=listSubscriptions&topicArn=${encodeURIComponent(selectedTopic)}`);
       const data = await res.json();
+      if (data.error) { setError(data.error); return; }
       setSubscriptions(data.subscriptions || []);
-    } catch { }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load subscriptions");
+    }
     setSubLoading(false);
+  };
+
+  const openDeleteModal = (t: TopicInfo) => {
+    setDeleteTopicArn(t.arn);
+    setDeleteTopicName(t.name);
+    setDeleteConfirmText("");
+    setDeleteModal(true);
   };
 
   return (
@@ -126,15 +211,33 @@ export default function SNSPage() {
           SNS - Simple Notification Service
         </Header>
 
+        {error && <Alert type="error" dismissible onDismiss={() => setError("")}>{error}</Alert>}
+
         <Container>
           <Table
             header={<Header variant="h2">Topics ({topics.length})</Header>}
             items={topics}
             columnDefinitions={[
-              { header: "ARN", cell: (item: Topic) => <TruncatedText>{String(item.TopicArn)}</TruncatedText> },
+              {
+                header: "Topic Name",
+                cell: (item: TopicInfo) => (
+                  <Button
+                    formAction="none"
+                    variant="link"
+                    onClick={() => {
+                      setSelectedTopic(item.arn);
+                      setSelectedTopicName(item.name);
+                      loadSubscriptions();
+                    }}
+                  >
+                    {item.name}
+                  </Button>
+                ),
+              },
+              { header: "Subscriptions", cell: (item: TopicInfo) => String(item.subscriptionCount) },
               {
                 header: "Actions",
-                cell: (item: Topic) => (
+                cell: (item: TopicInfo) => (
                   <ButtonDropdown
                     items={[
                       { id: "publish", text: "Publish" },
@@ -142,13 +245,14 @@ export default function SNSPage() {
                       { id: "subscriptions", text: "View subscriptions" },
                       { id: "delete", text: "Delete topic" },
                     ]}
-                    ariaLabel={`Actions for topic ${item.TopicArn}`}
+                    ariaLabel={`Actions for topic ${item.name}`}
                     onItemClick={({ detail }) => {
-                      setSelectedTopic(item.TopicArn || "");
+                      setSelectedTopic(item.arn);
+                      setSelectedTopicName(item.name);
                       if (detail.id === "publish") setPublishModal(true);
                       if (detail.id === "subscribe") setSubscribeModal(true);
                       if (detail.id === "subscriptions") loadSubscriptions();
-                      if (detail.id === "delete") deleteTopic(item.TopicArn!);
+                      if (detail.id === "delete") openDeleteModal(item);
                     }}
                   >
                     Actions
@@ -164,7 +268,7 @@ export default function SNSPage() {
         {selectedTopic && (
           <Container>
             <Table
-              header={<Header variant="h2">Subscriptions for {selectedTopic}</Header>}
+              header={<Header variant="h2">Subscriptions for {selectedTopicName || selectedTopic}</Header>}
               items={subscriptions.map((s: any) => ({ ...s, SubscriptionArn: s.SubscriptionArn || s.Protocol || "pending" }))}
               columnDefinitions={[
                 { header: "Subscription ARN", cell: (item: any) => <TruncatedText>{item.SubscriptionArn}</TruncatedText> },
@@ -173,9 +277,14 @@ export default function SNSPage() {
                 {
                   header: "Actions",
                   cell: (item: any) => (
-                    <Button onClick={() => unsubscribeSubscription(item.SubscriptionArn)} formAction="none" ariaLabel={`Unsubscribe ${item.SubscriptionArn}`}>
-                      Unsubscribe
-                    </Button>
+                    <SpaceBetween direction="horizontal" size="xs">
+                      <Button onClick={() => { setDetailSub(item); setDetailModal(true); }} formAction="none" ariaLabel={`View details for ${item.SubscriptionArn}`}>
+                        Details
+                      </Button>
+                      <Button onClick={() => unsubscribeSubscription(item.SubscriptionArn)} formAction="none" ariaLabel={`Unsubscribe ${item.SubscriptionArn}`}>
+                        Unsubscribe
+                      </Button>
+                    </SpaceBetween>
                   ),
                 },
               ]}
@@ -246,7 +355,68 @@ export default function SNSPage() {
             <Input value={subscribeEndpoint} onChange={(e: any) => setSubscribeEndpoint(e.detail.value)} ariaLabel="Subscribe endpoint input" />
           </FormField>
         </Modal>
+
+        <Modal
+          visible={detailModal}
+          onDismiss={() => { setDetailModal(false); setDetailSub(null); }}
+          header="Subscription Details"
+          footer={
+            <Button onClick={() => { setDetailModal(false); setDetailSub(null); }} ariaLabel="Close details">Close</Button>
+          }
+        >
+          {detailSub && (
+            <SpaceBetween size="m">
+              <FormField label="Subscription ARN">
+                <Box>{detailSub.SubscriptionArn || "-"}</Box>
+              </FormField>
+              <FormField label="Protocol">
+                <Box>{detailSub.Protocol || "-"}</Box>
+              </FormField>
+              <FormField label="Endpoint">
+                <Box>{detailSub.Endpoint || "-"}</Box>
+              </FormField>
+              <FormField label="Filter Policy">
+                <Box>{detailSub.FilterPolicy || "-"}</Box>
+              </FormField>
+              <FormField label="Redrive Policy">
+                <Box>{detailSub.RedrivePolicy || "-"}</Box>
+              </FormField>
+            </SpaceBetween>
+          )}
+        </Modal>
+
+        <Modal
+          visible={deleteModal}
+          onDismiss={() => { setDeleteModal(false); setDeleteTopicArn(""); setDeleteTopicName(""); setDeleteConfirmText(""); }}
+          header="Delete Topic"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => { setDeleteModal(false); setDeleteTopicArn(""); setDeleteTopicName(""); setDeleteConfirmText(""); }} ariaLabel="Cancel delete">Cancel</Button>
+              <Button
+                variant="primary"
+                onClick={() => deleteTopic(deleteTopicArn)}
+                disabled={deleteConfirmText !== deleteTopicName}
+                ariaLabel="Confirm delete"
+              >
+                Delete
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          <Box variant="p">
+            To confirm deletion, type the topic name <b>{deleteTopicName}</b> below.
+          </Box>
+          <FormField label="Topic Name">
+            <Input
+              value={deleteConfirmText}
+              onChange={(e: any) => setDeleteConfirmText(e.detail.value)}
+              ariaLabel="Delete confirmation input"
+            />
+          </FormField>
+        </Modal>
       </SpaceBetween>
+
+      <CrossServiceLinks links={CROSS_SERVICE_LINKS["/sns"] || []} />
     </div>
   );
 }

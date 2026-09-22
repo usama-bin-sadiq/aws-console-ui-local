@@ -6,19 +6,8 @@
 import { EndpointResolution } from '@/types/adapter';
 import { ADAPTER_CONFIG } from '@/config/adapter-config';
 
-export function resolveEndpoint(adapterMode?: 'localstack' | 'ministack' | 'real'): EndpointResolution {
+export function resolveEndpoint(adapterMode?: 'localstack' | 'ministack'): EndpointResolution {
   const mode = adapterMode || ADAPTER_CONFIG.adapterMode;
-
-  if (mode === 'real') {
-    const url = ADAPTER_CONFIG.endpointConfig.realEndpointUrl || 'https://amazonaws.com';
-    return {
-      protocol: url.startsWith('https') ? 'https' : 'http',
-      hostname: url.replace(/^https?:\/\//, '').split(':')[0],
-      port: url.includes(':') ? parseInt(url.split(':').pop() || '443', 10) : 443,
-      url,
-      sslEnabled: url.startsWith('https'),
-    };
-  }
 
   if (mode === 'ministack') {
     const host = ADAPTER_CONFIG.endpointConfig.minstackHostname;

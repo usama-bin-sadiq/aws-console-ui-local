@@ -13,16 +13,22 @@ import {
   PutScheduledUpdateGroupActionCommand,
   DeleteScheduledActionCommand,
 } from "@aws-sdk/client-auto-scaling";
-import { autoscaling } from "@/lib/aws-clients";
+import { AutoScalingClient } from "@aws-sdk/client-auto-scaling";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
 export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
+    const autoscalingClient = getUserClientFromRequest(AutoScalingClient, request);
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
     const groupName = searchParams.get("groupName");
 
     if (action === "launchConfigurations") {
-      const res = await autoscaling.send(
+      const res = await autoscalingClient.send(
         new DescribeLaunchConfigurationsCommand({})
       );
       return NextResponse.json({
@@ -31,7 +37,7 @@ export async function GET(request: Request) {
     }
 
     if (action === "scalingPolicies" && groupName) {
-      const res = await autoscaling.send(
+      const res = await autoscalingClient.send(
         new DescribePoliciesCommand({
           AutoScalingGroupName: groupName,
         })
@@ -40,7 +46,7 @@ export async function GET(request: Request) {
     }
 
     if (action === "scheduledActions" && groupName) {
-      const res = await autoscaling.send(
+      const res = await autoscalingClient.send(
         new DescribeScheduledActionsCommand({
           AutoScalingGroupName: groupName,
         })
@@ -51,7 +57,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const res = await autoscaling.send(
+    const res = await autoscalingClient.send(
       new DescribeAutoScalingGroupsCommand({})
     );
     return NextResponse.json({
@@ -66,11 +72,15 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const autoscalingClient = getUserClientFromRequest(AutoScalingClient, request);
     const body = await request.json();
 
     if (body.action === "updateGroup") {
-      await autoscaling.send(
+      await autoscalingClient.send(
         new UpdateAutoScalingGroupCommand({
           AutoScalingGroupName: body.groupName,
           MinSize: body.minSize,
@@ -82,7 +92,7 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "createLaunchConfiguration") {
-      await autoscaling.send(
+      await autoscalingClient.send(
         new CreateLaunchConfigurationCommand({
           LaunchConfigurationName: body.launchConfigurationName || "my-launch-config",
           ImageId: body.imageId || "ami-123456",
@@ -93,7 +103,7 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "createScalingPolicy") {
-      await autoscaling.send(
+      await autoscalingClient.send(
         new PutScalingPolicyCommand({
           AutoScalingGroupName: body.groupName,
           PolicyName: body.policyName || "ScaleUp",
@@ -106,7 +116,7 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "createScheduledAction") {
-      await autoscaling.send(
+      await autoscalingClient.send(
         new PutScheduledUpdateGroupActionCommand({
           AutoScalingGroupName: body.groupName,
           ScheduledActionName: body.scheduledActionName || "scheduled-action",
@@ -120,7 +130,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    await autoscaling.send(
+    await autoscalingClient.send(
       new CreateAutoScalingGroupCommand({
         AutoScalingGroupName: body.groupName,
         MinSize: body.minSize || 1,
@@ -140,14 +150,18 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const autoscalingClient = getUserClientFromRequest(AutoScalingClient, request);
     const { searchParams } = new URL(request.url);
     const groupName = searchParams.get("groupName");
     const policyName = searchParams.get("policyName");
     const actionName = searchParams.get("scheduledActionName");
 
     if (policyName && groupName) {
-      await autoscaling.send(
+      await autoscalingClient.send(
         new DeletePolicyCommand({
           AutoScalingGroupName: groupName,
           PolicyName: policyName,
@@ -157,7 +171,7 @@ export async function DELETE(request: Request) {
     }
 
     if (actionName && groupName) {
-      await autoscaling.send(
+      await autoscalingClient.send(
         new DeleteScheduledActionCommand({
           AutoScalingGroupName: groupName,
           ScheduledActionName: actionName,
@@ -167,7 +181,7 @@ export async function DELETE(request: Request) {
     }
 
     if (groupName) {
-      await autoscaling.send(
+      await autoscalingClient.send(
         new DeleteAutoScalingGroupCommand({
           AutoScalingGroupName: groupName,
           ForceDelete: true,

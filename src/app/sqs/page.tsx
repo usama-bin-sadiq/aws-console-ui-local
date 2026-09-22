@@ -1,8 +1,3 @@
-/**
- * Phase 10 — SQS + SNS (Complete) Verification Gate
- * See docs/verification-gate-phase10-sqs-sns.md
- * Adapter SDK: api/sqs uses sqs from @/lib/aws-clients
- */
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -15,16 +10,26 @@ import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
+import Alert from "@cloudscape-design/components/alert";
+import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+
+interface QueueInfo {
+  url: string;
+  name: string;
+  approximateNumberOfMessages: number;
+}
 
 export default function SQSPage() {
-  const [queues, setQueues] = useState<string[]>([]);
+  const [queues, setQueues] = useState<QueueInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [createModal, setCreateModal] = useState(false);
   const [newQueue, setNewQueue] = useState("");
 
   const [sendModal, setSendModal] = useState(false);
   const [selectedQueue, setSelectedQueue] = useState("");
+  const [selectedQueueName, setSelectedQueueName] = useState("");
   const [messageBody, setMessageBody] = useState("");
   const [messageAttributesText, setMessageAttributesText] = useState("{}");
 
@@ -35,74 +40,181 @@ export default function SQSPage() {
   const [receivedMessages, setReceivedMessages] = useState<any[]>([]);
   const [maxMessages, setMaxMessages] = useState("10");
 
+  const [purgeModal, setPurgeModal] = useState(false);
+  const [purgeQueueUrl, setPurgeQueueUrl] = useState("");
+  const [purgeQueueName, setPurgeQueueName] = useState("");
+
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleteQueueUrl, setDeleteQueueUrl] = useState("");
+  const [deleteQueueName, setDeleteQueueName] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
   const fetchQueues = async () => {
     setLoading(true);
+    setError("");
     try {
       const res = await fetch("/api/sqs");
       const data = await res.json();
-      setQueues(data.queues || []);
-    } catch {}
+      if (data.error) {
+        setError(data.error);
+        setLoading(false);
+        return;
+      }
+      const urls: string[] = data.queues || [];
+      const queueInfos: QueueInfo[] = await Promise.all(
+        urls.map(async (url) => {
+          const name = url.split("/").pop() || url;
+          let approximateNumberOfMessages = 0;
+          try {
+            const attrRes = await fetch(`/api/sqs?action=getAttributes&queueUrl=${encodeURIComponent(url)}`);
+            const attrData = await attrRes.json();
+            approximateNumberOfMessages = parseInt(attrData.attributes?.ApproximateNumberOfMessages || "0", 10);
+          } catch {}
+          return { url, name, approximateNumberOfMessages };
+        })
+      );
+      setQueues(queueInfos);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to fetch queues");
+    }
     setLoading(false);
   };
 
   useEffect(() => { fetchQueues(); }, []);
 
   const createQueue = async () => {
-    await fetch("/api/sqs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ queueName: newQueue }),
-    });
-    setCreateModal(false);
-    setNewQueue("");
-    fetchQueues();
+    setError("");
+    try {
+      const res = await fetch("/api/sqs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ queueName: newQueue }),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setCreateModal(false);
+      setNewQueue("");
+      fetchQueues();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create queue");
+    }
   };
 
   const sendMessage = async () => {
     let attrs: Record<string, any> = {};
-    try { attrs = JSON.parse(messageAttributesText); } catch {}
-    await fetch("/api/sqs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "send", queueUrl: selectedQueue, messageBody, messageAttributes: attrs }),
-    });
-    setSendModal(false);
-    setMessageBody("");
-    setMessageAttributesText("{}");
+    try { attrs = JSON.parse(messageAttributesText); } catch (e) { setError(e instanceof Error ? e.message : "Invalid message attributes JSON"); return; }
+    setError("");
+    try {
+      const res = await fetch("/api/sqs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send", queueUrl: selectedQueue, messageBody, messageAttributes: attrs }),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setSendModal(false);
+      setMessageBody("");
+      setMessageAttributesText("{}");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to send message");
+    }
   };
 
   const sendBatch = async () => {
-    await fetch("/api/sqs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "sendBatch", queueUrl: selectedQueue, entries: batchEntries }),
-    });
-    setBatchModal(false);
-    setBatchEntries([{ id: "1", body: "" }]);
+    setError("");
+    try {
+      const res = await fetch("/api/sqs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sendBatch", queueUrl: selectedQueue, entries: batchEntries }),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setBatchModal(false);
+      setBatchEntries([{ id: "1", body: "" }]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to send batch");
+    }
   };
 
   const receiveMessages = async () => {
-    const res = await fetch("/api/sqs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "receive", queueUrl: selectedQueue, maxMessages: parseInt(maxMessages) || 10 }),
-    });
-    const data = await res.json();
-    setReceivedMessages(data.messages || []);
+    setError("");
+    try {
+      const res = await fetch("/api/sqs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "receive", queueUrl: selectedQueue, maxMessages: parseInt(maxMessages) || 10 }),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setReceivedMessages(data.messages || []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to receive messages");
+    }
   };
 
   const purgeQueue = async (url: string) => {
-    await fetch("/api/sqs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "purge", queueUrl: url }),
-    });
-    fetchQueues();
+    setError("");
+    try {
+      const res = await fetch("/api/sqs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "purge", queueUrl: url }),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setPurgeModal(false);
+      setPurgeQueueUrl("");
+      setPurgeQueueName("");
+      fetchQueues();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to purge queue");
+    }
   };
 
   const deleteQueue = async (url: string) => {
-    await fetch(`/api/sqs?queueUrl=${encodeURIComponent(url)}`, { method: "DELETE" });
-    fetchQueues();
+    setError("");
+    try {
+      const res = await fetch(`/api/sqs?queueUrl=${encodeURIComponent(url)}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setDeleteModal(false);
+      setDeleteQueueUrl("");
+      setDeleteQueueName("");
+      setDeleteConfirmText("");
+      fetchQueues();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete queue");
+    }
+  };
+
+  const deleteMessage = async (receiptHandle: string) => {
+    setError("");
+    try {
+      const res = await fetch("/api/sqs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "deleteMessage", queueUrl: selectedQueue, receiptHandle }),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setReceivedMessages((prev) => prev.filter((m) => m.ReceiptHandle !== receiptHandle));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete message");
+    }
+  };
+
+  const openPurgeModal = (q: QueueInfo) => {
+    setPurgeQueueUrl(q.url);
+    setPurgeQueueName(q.name);
+    setPurgeModal(true);
+  };
+
+  const openDeleteModal = (q: QueueInfo) => {
+    setDeleteQueueUrl(q.url);
+    setDeleteQueueName(q.name);
+    setDeleteConfirmText("");
+    setDeleteModal(true);
   };
 
   return (
@@ -119,29 +231,43 @@ export default function SQSPage() {
           SQS - Simple Queue Service
         </Header>
 
+        {error && <Alert type="error" dismissible onDismiss={() => setError("")}>{error}</Alert>}
+
         <Container>
           <Table
             header={<Header variant="h2">Queues ({queues.length})</Header>}
-            items={queues.map((q) => ({ url: q }))}
+            items={queues}
             columnDefinitions={[
-              { header: "Queue URL", cell: (item: any) => item.url },
+              {
+                header: "Queue Name",
+                cell: (item: QueueInfo) => (
+                  <Button
+                    formAction="none"
+                    variant="link"
+                    onClick={() => { setSelectedQueue(item.url); setSelectedQueueName(item.name); setReceiveModal(true); receiveMessages(); }}
+                  >
+                    {item.name}
+                  </Button>
+                ),
+              },
+              { header: "Approximate Number of Messages", cell: (item: QueueInfo) => String(item.approximateNumberOfMessages) },
               {
                 header: "Actions",
-                cell: (item: any) => (
+                cell: (item: QueueInfo) => (
                   <SpaceBetween direction="horizontal" size="xs">
-                    <Button onClick={() => { setSelectedQueue(item.url); setSendModal(true); }} formAction="none" ariaLabel={`Send message to ${item.url}`}>
+                    <Button onClick={() => { setSelectedQueue(item.url); setSelectedQueueName(item.name); setSendModal(true); }} formAction="none" ariaLabel={`Send message to ${item.name}`}>
                       Send
                     </Button>
-                    <Button onClick={() => { setSelectedQueue(item.url); setBatchModal(true); }} formAction="none" ariaLabel={`Batch send to ${item.url}`}>
+                    <Button onClick={() => { setSelectedQueue(item.url); setSelectedQueueName(item.name); setBatchModal(true); }} formAction="none" ariaLabel={`Batch send to ${item.name}`}>
                       Batch
                     </Button>
-                    <Button onClick={() => { setSelectedQueue(item.url); setReceiveModal(true); receiveMessages(); }} formAction="none" ariaLabel={`Receive from ${item.url}`}>
+                    <Button onClick={() => { setSelectedQueue(item.url); setSelectedQueueName(item.name); setReceiveModal(true); receiveMessages(); }} formAction="none" ariaLabel={`Receive from ${item.name}`}>
                       Receive
                     </Button>
-                    <Button onClick={() => purgeQueue(item.url)} formAction="none" ariaLabel={`Purge ${item.url}`}>
+                    <Button onClick={() => openPurgeModal(item)} formAction="none" ariaLabel={`Purge ${item.name}`}>
                       Purge
                     </Button>
-                    <Button onClick={() => deleteQueue(item.url)} formAction="none" ariaLabel={`Delete ${item.url}`}>
+                    <Button onClick={() => openDeleteModal(item)} formAction="none" ariaLabel={`Delete ${item.name}`}>
                       Delete
                     </Button>
                   </SpaceBetween>
@@ -232,17 +358,83 @@ export default function SQSPage() {
           <FormField label="Max Number of Messages">
             <Input value={maxMessages} onChange={(e: any) => setMaxMessages(e.detail.value)} ariaLabel="Max messages input" />
           </FormField>
+          <Button onClick={receiveMessages} ariaLabel="Refresh received messages">Refresh</Button>
           <Table
             header={<Header variant="h3">Received Messages</Header>}
             items={receivedMessages.map((m: any, i: number) => ({ ...m, index: i }))}
             columnDefinitions={[
               { header: "Body", cell: (item: any) => item.Body || item.MessageBody || "" },
               { header: "Receipt Handle", cell: (item: any) => item.ReceiptHandle || "" },
+              {
+                header: "Actions",
+                cell: (item: any) => (
+                  <Button
+                    onClick={() => deleteMessage(item.ReceiptHandle)}
+                    formAction="none"
+                    ariaLabel={`Delete message ${item.index}`}
+                  >
+                    Delete
+                  </Button>
+                ),
+              },
             ]}
             empty={<Box textAlign="center">No messages received.</Box>}
           />
         </Modal>
+
+        <Modal
+          visible={purgeModal}
+          onDismiss={() => { setPurgeModal(false); setPurgeQueueUrl(""); setPurgeQueueName(""); }}
+          header="Purge Queue"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => { setPurgeModal(false); setPurgeQueueUrl(""); setPurgeQueueName(""); }} ariaLabel="Cancel purge">Cancel</Button>
+              <Button variant="primary" onClick={() => purgeQueue(purgeQueueUrl)} disabled={purgeQueueName === ""} ariaLabel="Confirm purge">
+                Purge
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          <Box variant="p">
+            Are you sure you want to purge all messages in queue <b>{purgeQueueName}</b>?
+          </Box>
+          <Box variant="p" color="text-status-error">
+            This action cannot be undone.
+          </Box>
+        </Modal>
+
+        <Modal
+          visible={deleteModal}
+          onDismiss={() => { setDeleteModal(false); setDeleteQueueUrl(""); setDeleteQueueName(""); setDeleteConfirmText(""); }}
+          header="Delete Queue"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => { setDeleteModal(false); setDeleteQueueUrl(""); setDeleteQueueName(""); setDeleteConfirmText(""); }} ariaLabel="Cancel delete">Cancel</Button>
+              <Button
+                variant="primary"
+                onClick={() => deleteQueue(deleteQueueUrl)}
+                disabled={deleteConfirmText !== deleteQueueName}
+                ariaLabel="Confirm delete"
+              >
+                Delete
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          <Box variant="p">
+            To confirm deletion, type the queue name <b>{deleteQueueName}</b> below.
+          </Box>
+          <FormField label="Queue Name">
+            <Input
+              value={deleteConfirmText}
+              onChange={(e: any) => setDeleteConfirmText(e.detail.value)}
+              ariaLabel="Delete confirmation input"
+            />
+          </FormField>
+        </Modal>
       </SpaceBetween>
+
+      <CrossServiceLinks links={CROSS_SERVICE_LINKS["/sqs"] || []} />
     </div>
   );
 }

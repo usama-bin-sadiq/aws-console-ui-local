@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
     const res = await fetch("http://localhost:4566/_ministack/health");
     if (res.ok) {

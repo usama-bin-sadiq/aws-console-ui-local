@@ -133,8 +133,14 @@ import { IoTAnalyticsClient } from "@aws-sdk/client-iotanalytics";
 export interface AwsClientConfig {
   endpoint: string;
   region: string;
-  credentials: { accessKeyId: string; secretAccessKey: string };
+  credentials: { accessKeyId: string; secretAccessKey: string; sessionToken?: string };
   forcePathStyle?: boolean;
+}
+
+export interface UserCredentials {
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken?: string;
 }
 
 // ─── Client factory ───────────────────────────────────────────────────────────
@@ -178,6 +184,89 @@ export function getClient<T>(
   }
 
   return clientCache.get(key) as T;
+}
+
+// ─── User-scoped client factory ──────────────────────────────────────────────
+
+const userClientCache = new Map<string, unknown>();
+
+/**
+ * Creates a client using the user's credentials from the request.
+ * These clients are NOT cached across requests (each user may have different creds).
+ *
+ * @param ClientClass - AWS SDK v3 client constructor
+ * @param userCreds   - User credentials extracted from request headers
+ * @param region      - AWS region string
+ */
+export function getUserClient<T>(
+  ClientClass: new (config: AwsClientConfig) => T,
+  userCreds: UserCredentials,
+  region: string = process.env.AWS_DEFAULT_REGION ?? "us-east-1"
+): T {
+  const key = `${ClientClass.name}::${region}::${userCreds.accessKeyId}`;
+
+  if (!userClientCache.has(key)) {
+    const config: AwsClientConfig = {
+      endpoint: ADAPTER_CONFIG.adapterMode === "ministack"
+        ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
+        : ADAPTER_CONFIG.endpointConfig.localstackEndpoint,
+      region,
+      credentials: {
+        accessKeyId: userCreds.accessKeyId,
+        secretAccessKey: userCreds.secretAccessKey,
+        ...(userCreds.sessionToken ? { sessionToken: userCreds.sessionToken } : {}),
+      },
+      forcePathStyle: ClientClass.name === "S3Client" ? true : undefined,
+    };
+    userClientCache.set(key, new ClientClass(config));
+  }
+
+  return userClientCache.get(key) as T;
+}
+
+/**
+ * Extracts user credentials and identity from request headers.
+ * Falls back to default adapter credentials if no user creds are present.
+ *
+ * Expected headers:
+ *   x-aws-access-key-id
+ *   x-aws-secret-access-key
+ *   x-aws-session-token (optional)
+ *   x-aws-region (optional)
+ *   x-aws-username (optional — for data isolation)
+ *   x-aws-is-super-admin (optional — for permission checks)
+ */
+export function extractUserCredentials(request: Request): {
+  credentials: UserCredentials;
+  region: string;
+  username: string;
+  isSuperAdmin: boolean;
+} {
+  const accessKeyId = request.headers.get("x-aws-access-key-id") || ADAPTER_CONFIG.authConfig.accessKeyId;
+  const secretAccessKey = request.headers.get("x-aws-secret-access-key") || ADAPTER_CONFIG.authConfig.secretAccessKey;
+  const sessionToken = request.headers.get("x-aws-session-token") || undefined;
+  const region = request.headers.get("x-aws-region") || process.env.AWS_DEFAULT_REGION || "us-east-1";
+  const username = request.headers.get("x-aws-username") || "anonymous";
+  const isSuperAdmin = request.headers.get("x-aws-is-super-admin") === "true";
+
+  return {
+    credentials: { accessKeyId, secretAccessKey, sessionToken },
+    region,
+    username,
+    isSuperAdmin,
+  };
+}
+
+/**
+ * Creates a client for the user extracted from request headers.
+ * Convenience wrapper combining extractUserCredentials + getUserClient.
+ */
+export function getUserClientFromRequest<T>(
+  ClientClass: new (config: AwsClientConfig) => T,
+  request: Request
+): T {
+  const { credentials, region } = extractUserCredentials(request);
+  return getUserClient(ClientClass, credentials, region);
 }
 
 // ─── Provider detection ───────────────────────────────────────────────────────

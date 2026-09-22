@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { ListGroupsCommand, CreateGroupCommand, DeleteGroupCommand, ListGroupResourcesCommand } from "@aws-sdk/client-resource-groups";
-import { resourceGroups } from "@/lib/aws-clients";
+import { ListGroupsCommand, CreateGroupCommand, DeleteGroupCommand, ListGroupResourcesCommand, ResourceGroupsClient } from "@aws-sdk/client-resource-groups";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
-    const res = await resourceGroups.send(new ListGroupsCommand({}));
+    const resourceGroupsClient = getUserClientFromRequest(ResourceGroupsClient, request);
+    const res = await resourceGroupsClient.send(new ListGroupsCommand({}));
     return NextResponse.json({ groups: res.Groups || [] });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
@@ -12,13 +17,17 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
+    const resourceGroupsClient = getUserClientFromRequest(ResourceGroupsClient, request);
     const body = await request.json();
     if (body.action === "listResources") {
-      const res = await resourceGroups.send(new ListGroupResourcesCommand({ GroupName: body.groupName }));
+      const res = await resourceGroupsClient.send(new ListGroupResourcesCommand({ GroupName: body.groupName }));
       return NextResponse.json({ resources: res.Resources || [] });
     }
-    const res = await resourceGroups.send(new CreateGroupCommand({
+    const res = await resourceGroupsClient.send(new CreateGroupCommand({
       Name: body.name,
       ResourceQuery: body.resourceQuery || {
         Type: "TAG_FILTERS_1_0",
@@ -32,9 +41,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
+    const resourceGroupsClient = getUserClientFromRequest(ResourceGroupsClient, request);
     const { searchParams } = new URL(request.url);
-    await resourceGroups.send(new DeleteGroupCommand({ GroupName: searchParams.get("name")! }));
+    await resourceGroupsClient.send(new DeleteGroupCommand({ GroupName: searchParams.get("name")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });

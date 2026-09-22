@@ -36,25 +36,37 @@ import {
   PutBucketTaggingCommand,
   GetBucketLifecycleConfigurationCommand,
   PutBucketLifecycleConfigurationCommand,
+  GetBucketLocationCommand,
+  CopyObjectCommand,
+  GetPublicAccessBlockCommand,
+  PutPublicAccessBlockCommand,
+  GetBucketAclCommand,
+  PutBucketAclCommand,
 } from "@aws-sdk/client-s3";
-import { s3 } from "@/lib/aws-clients";
+import { getUserClientFromRequest } from "@/lib/aws-clients";
+import { requirePermission } from "@/lib/data-isolation";
 
-// ─── Helper to resolve SDK instance ─────────────────────────────────────────────
-function getS3Client(): S3Client {
-  return s3 as S3Client;
+// ─── Helper to resolve SDK instance using user credentials ──────────────────────
+function getS3Client(request: Request): S3Client {
+  return getUserClientFromRequest(S3Client, request);
 }
 
 // ─── GET ────────────────────────────────────────────────────────────────────────
 export async function GET(request: Request) {
+  const denied = await requirePermission(request, "GET");
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const bucket = searchParams.get("bucket");
     const key = searchParams.get("key");
     const action = searchParams.get("action") || "list";
 
+    const client = getS3Client(request);
+
     // Object download
     if (bucket && key && action === "download") {
-      const res = await getS3Client().send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+      const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
       const body = await res.Body?.transformToByteArray();
       return new NextResponse(body ? Buffer.from(body) : null, {
         status: 200,
@@ -67,43 +79,43 @@ export async function GET(request: Request) {
 
     // List objects in bucket
     if (bucket && !key && action === "list") {
-      const res = await getS3Client().send(new ListObjectsV2Command({ Bucket: bucket }));
+      const res = await client.send(new ListObjectsV2Command({ Bucket: bucket }));
       return NextResponse.json({ objects: res.Contents || [], prefixes: res.CommonPrefixes || [] });
     }
 
     // Bucket versioning
     if (bucket && action === "versioning") {
-      const res = await getS3Client().send(new GetBucketVersioningCommand({ Bucket: bucket }));
+      const res = await client.send(new GetBucketVersioningCommand({ Bucket: bucket }));
       return NextResponse.json({ versioning: res.Status, mfaDelete: res.MFADelete });
     }
 
     // Bucket encryption
     if (bucket && action === "encryption") {
-      const res = await getS3Client().send(new GetBucketEncryptionCommand({ Bucket: bucket }));
+      const res = await client.send(new GetBucketEncryptionCommand({ Bucket: bucket }));
       return NextResponse.json({ encryption: res.ServerSideEncryptionConfiguration });
     }
 
     // Bucket policy
     if (bucket && action === "policy") {
-      const res = await getS3Client().send(new GetBucketPolicyCommand({ Bucket: bucket }));
+      const res = await client.send(new GetBucketPolicyCommand({ Bucket: bucket }));
       return NextResponse.json({ policy: res.Policy ? JSON.parse(res.Policy) : null });
     }
 
     // Bucket tagging
     if (bucket && action === "tags") {
-      const res = await getS3Client().send(new GetBucketTaggingCommand({ Bucket: bucket }));
+      const res = await client.send(new GetBucketTaggingCommand({ Bucket: bucket }));
       return NextResponse.json({ tags: res.TagSet || [] });
     }
 
     // Bucket lifecycle
     if (bucket && action === "lifecycle") {
-      const res = await getS3Client().send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
+      const res = await client.send(new GetBucketLifecycleConfigurationCommand({ Bucket: bucket }));
       return NextResponse.json({ rules: res.Rules || [] });
     }
 
     // Bucket website
     if (bucket && action === "website") {
-      const res = await getS3Client().send(new GetBucketWebsiteCommand({ Bucket: bucket }));
+      const res = await client.send(new GetBucketWebsiteCommand({ Bucket: bucket }));
       return NextResponse.json({
         website: {
           IndexDocument: res.IndexDocument,
@@ -113,8 +125,26 @@ export async function GET(request: Request) {
       });
     }
 
+    // Bucket location
+    if (bucket && action === "location") {
+      const res = await client.send(new GetBucketLocationCommand({ Bucket: bucket }));
+      return NextResponse.json({ location: res.LocationConstraint || "us-east-1" });
+    }
+
+    // Bucket public access block
+    if (bucket && action === "public-access-block") {
+      const res = await client.send(new GetPublicAccessBlockCommand({ Bucket: bucket }));
+      return NextResponse.json({ publicAccessBlock: res.PublicAccessBlockConfiguration });
+    }
+
+    // Bucket ACL
+    if (bucket && action === "acl") {
+      const res = await client.send(new GetBucketAclCommand({ Bucket: bucket }));
+      return NextResponse.json({ acl: res });
+    }
+
     // List all buckets
-    const res = await getS3Client().send(new ListBucketsCommand({}));
+    const res = await client.send(new ListBucketsCommand({}));
     return NextResponse.json({ buckets: res.Buckets || [] });
   } catch (error: any) {
     const adapter = getAdapterStatus();
@@ -124,6 +154,9 @@ export async function GET(request: Request) {
 
 // ─── POST ──────────────────────────────────────────────────────────────────────
 export async function POST(request: Request) {
+  const denied = await requirePermission(request, "POST");
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const actionParam = searchParams.get("action");
@@ -149,11 +182,12 @@ export async function POST(request: Request) {
 
     const action = actionParam || body.action || "";
     const bucket = body.bucket || searchParams.get("bucket") || "";
+    const client = getS3Client(request);
 
     // Upload object (via form data or JSON)
     if ((body.file || body.fileName || (body.key && body.buffer)) && !action) {
       const buffer = body.buffer ? Buffer.from(body.buffer, body.encoding || "base64") : (body.content ? Buffer.from(String(body.content)) : null);
-      await getS3Client().send(new PutObjectCommand({
+      await client.send(new PutObjectCommand({
         Bucket: String(body.bucketName || body.bucket || bucket || ""),
         Key: String(body.fileName || body.key || body.file?.name || "unknown"),
         Body: buffer || body.content || "",
@@ -165,13 +199,13 @@ export async function POST(request: Request) {
     if (action === "create-bucket" || (!action && bucket)) {
       const regionVal = body.region || 'us-east-1';
       const config = regionVal === 'us-east-1' ? undefined : { LocationConstraint: regionVal };
-      await getS3Client().send(new CreateBucketCommand({ Bucket: String(bucket || body.bucket || body.name || ""), ...(config ? { CreateBucketConfiguration: config } : {}) }));
+      await client.send(new CreateBucketCommand({ Bucket: String(bucket || body.bucket || body.name || ""), ...(config ? { CreateBucketConfiguration: config } : {}) }));
       return NextResponse.json({ success: true, bucket: String(bucket || body.bucket || body.name || "") });
     }
 
     // Put bucket versioning
     if (action === "versioning" && bucket) {
-      await getS3Client().send(new PutBucketVersioningCommand({
+      await client.send(new PutBucketVersioningCommand({
         Bucket: String(bucket),
         VersioningConfiguration: { Status: body.status || body.versioning || "Enabled" },
       }));
@@ -183,7 +217,7 @@ export async function POST(request: Request) {
       const config = body.encryption || body.config || {
         Rules: [{ ApplyServerSideEncryptionByDefault: { SSEAlgorithm: body.algorithm || "AES256" } }],
       };
-      await getS3Client().send(new PutBucketEncryptionCommand({
+      await client.send(new PutBucketEncryptionCommand({
         Bucket: String(bucket),
         ServerSideEncryptionConfiguration: config,
       }));
@@ -193,7 +227,7 @@ export async function POST(request: Request) {
     // Put bucket policy
     if (action === "policy" && bucket) {
       const policyStr = typeof body.policy === "string" ? body.policy : JSON.stringify(body.policy || {});
-      await getS3Client().send(new PutBucketPolicyCommand({
+      await client.send(new PutBucketPolicyCommand({
         Bucket: String(bucket),
         Policy: policyStr,
       }));
@@ -202,7 +236,7 @@ export async function POST(request: Request) {
 
     // Put bucket tagging
     if (action === "tags" && bucket) {
-      await getS3Client().send(new PutBucketTaggingCommand({
+      await client.send(new PutBucketTaggingCommand({
         Bucket: String(bucket),
         Tagging: { TagSet: body.tags || body.TagSet || [] },
       }));
@@ -211,7 +245,7 @@ export async function POST(request: Request) {
 
     // Put bucket lifecycle
     if (action === "lifecycle" && bucket) {
-      await getS3Client().send(new PutBucketLifecycleConfigurationCommand({
+      await client.send(new PutBucketLifecycleConfigurationCommand({
         Bucket: String(bucket),
         LifecycleConfiguration: { Rules: body.rules || body.Rules || [] },
       }));
@@ -220,9 +254,24 @@ export async function POST(request: Request) {
 
     // Put bucket website
     if (action === "website" && bucket) {
-      await getS3Client().send(new PutBucketWebsiteCommand({
+      await client.send(new PutBucketWebsiteCommand({
         Bucket: String(bucket),
         WebsiteConfiguration: body.website || body.config || body.WebsiteConfiguration || {},
+      }));
+      return NextResponse.json({ success: true });
+    }
+
+    // Copy object
+    if (action === "copy-object" && bucket) {
+      const sourceKey = body.sourceKey || body.source;
+      const destKey = body.destKey || body.destination;
+      if (!sourceKey || !destKey) {
+        return NextResponse.json({ error: "sourceKey and destKey are required" }, { status: 400 });
+      }
+      await client.send(new CopyObjectCommand({
+        Bucket: String(bucket),
+        CopySource: `${bucket}/${sourceKey}`,
+        Key: String(destKey),
       }));
       return NextResponse.json({ success: true });
     }
@@ -236,18 +285,22 @@ export async function POST(request: Request) {
 
 // ─── DELETE ─────────────────────────────────────────────────────────────────────
 export async function DELETE(request: Request) {
+  const denied = await requirePermission(request, "DELETE");
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const bucket = searchParams.get("bucket");
     const key = searchParams.get("key");
     const action = searchParams.get("action") || "";
+    const client = getS3Client(request);
 
     if (key && bucket && action !== "bucket") {
-      await getS3Client().send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+      await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
       return NextResponse.json({ success: true });
     }
     if (bucket) {
-      await getS3Client().send(new DeleteBucketCommand({ Bucket: bucket }));
+      await client.send(new DeleteBucketCommand({ Bucket: bucket }));
       return NextResponse.json({ success: true, bucket });
     }
     return NextResponse.json({ error: "Invalid delete request" }, { status: 400 });

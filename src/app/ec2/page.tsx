@@ -15,7 +15,11 @@ import Pagination from "@cloudscape-design/components/pagination";
 import CollectionPreferences from "@cloudscape-design/components/collection-preferences";
 import Modal from "@cloudscape-design/components/modal";
 import Alert from "@cloudscape-design/components/alert";
+import Image from "next/image";
 import TruncatedText from "@/components/TruncatedText";
+import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { apiFetch } from "@/lib/api-client";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 import { EC2Instance, EC2InstanceState } from "@/types/ec2";
 
 const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<EC2Instance>[] = [
@@ -131,7 +135,7 @@ export default function EC2Page() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/ec2");
+      const res = await apiFetch("/api/ec2");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -149,7 +153,7 @@ export default function EC2Page() {
 
   const executeAction = useCallback(async (action: string, instanceIds: string[], extra?: Record<string, unknown>) => {
     try {
-      const res = await fetch("/api/ec2", {
+      const res = await apiFetch("/api/ec2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, instanceIds, ...extra }),
@@ -277,8 +281,15 @@ export default function EC2Page() {
           counter={`(${instances.length})`}
           actions={headerActions}
         >
-          EC2 - Elastic Compute Cloud
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {SERVICE_ICONS["/ec2"] && (
+              <Image src={SERVICE_ICONS["/ec2"].large} alt="" width={32} height={32} />
+            )}
+            EC2 - Elastic Compute Cloud
+          </div>
         </Header>
+
+        <CrossServiceLinks links={CROSS_SERVICE_LINKS["/ec2"] || []} />
 
         {error && (
           <Alert
@@ -290,7 +301,6 @@ export default function EC2Page() {
           </Alert>
         )}
 
-        <Container>
           <Table
             columnDefinitions={COLUMN_DEFINITIONS}
             items={pagedItems}
@@ -385,7 +395,6 @@ export default function EC2Page() {
               </Box>
             }
           />
-        </Container>
       </SpaceBetween>
 
       <Modal

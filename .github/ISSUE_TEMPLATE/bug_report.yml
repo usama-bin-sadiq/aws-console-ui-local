@@ -1,0 +1,64 @@
+name: Bug Report
+about: Report a bug to help us improve
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees: []
+body:
+  type: markdown
+  attributes:
+    overview: |
+      Please fill out this form to report a bug.
+  type: textarea
+  attributes:
+    description:
+      label: Bug Description
+      description: A clear and concise description of the bug.
+      placeholder: |
+        When I [action], [unexpected behavior] occurs.
+      required: true
+    steps_to_reproduce:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Run `pnpm dev:localstack`
+        2. Go to [URL]
+        3. Click on [element]
+        4. See error
+      required: true
+    expected_behavior:
+      label: Expected Behavior
+      description: A clear description of what you expected to happen.
+      placeholder: The service should load and display resources.
+      required: true
+    actual_behavior:
+      label: Actual Behavior
+      description: What actually happened.
+      placeholder: Error message or unexpected UI.
+    screenshots:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain the problem.
+    environment:
+      label: Environment
+      description: |
+        Please fill in the following information:
+      placeholder: |
+        - Backend: LocalStack / MiniStack
+        - Backend version: e.g., localstack 3.5.0
+        - Node.js version: e.g., 22.0.0
+        - OS: e.g., macOS 15.0
+      required: true
+    console_errors:
+      label: Console Errors
+      description: Any browser console errors or server logs.
+      placeholder: Paste relevant error output here.
+    additional_context:
+      label: Additional Context
+      description: Any other context about the problem.
+      placeholder: Links, related issues, etc.
+  type: checkboxes
+  attributes:
+    checks:
+      - label: I have searched the existing issues
+        required: true
+      - label: I have checked the backend service compatibility
+        required: false

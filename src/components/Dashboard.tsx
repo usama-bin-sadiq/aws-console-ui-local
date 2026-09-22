@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import Cards from "@cloudscape-design/components/cards";
@@ -11,7 +12,6 @@ import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Link from "@cloudscape-design/components/link";
-import { useRouter } from "next/navigation";
 import { AdapterMode, EmulatorHealthStatus, findServiceCompatibility, getServiceAvailability } from "@/constants/service-compatibility";
 import { SERVICE_ICONS } from "@/constants/service-icons";
 

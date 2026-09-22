@@ -11,7 +11,7 @@ import { ADAPTER_HEADER_ADAPTER_MODE, ADAPTER_HEADER_ADAPTER_SERVICE, ADAPTER_SE
 
 export function mapRequest(
   originalRequest: { protocol?: string; hostname?: string; port?: number; path?: string; headers?: Record<string, string>; body?: unknown; method?: string },
-  adapterMode?: 'localstack' | 'ministack' | 'real'
+  adapterMode?: 'localstack' | 'ministack'
 ): MappedRequest {
   const endpoint: EndpointResolution = resolveEndpoint(adapterMode);
   const auth = injectAuth(adapterMode);

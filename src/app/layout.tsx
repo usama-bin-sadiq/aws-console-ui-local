@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "@cloudscape-design/global-styles/index.css";
 import "./globals-resp.css";
-import AppShell from "@/components/AppShell";
+import { Providers } from "@/components/Providers";
+import { RootLayoutClient } from "@/components/RootLayoutClient";
 import { NotificationProvider } from "@/context/NotificationContext";
 
 export const metadata: Metadata = {
@@ -14,9 +15,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="aws-console">
       <body>
-        <NotificationProvider>
-          <AppShell>{children}</AppShell>
-        </NotificationProvider>
+        <Providers>
+          <NotificationProvider>
+            <RootLayoutClient>{children}</RootLayoutClient>
+          </NotificationProvider>
+        </Providers>
       </body>
     </html>
   );

@@ -1,0 +1,157 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-localstack:
+    name: E2E Tests (LocalStack)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start LocalStack
+        uses: localstack/action@latest
+        with:
+          startup-timeout: 120
+        env:
+          SERVICES: ec2,s3,lambda,dynamodb,iam,rds,cloudformation,cloudwatch,apigateway,eventbridge,secretsmanager,ssm,cognito
+          DEFAULT_REGION: us-east-1
+          DEBUG: 1
+
+      - name: Wait for LocalStack
+        run: |
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:4566/_localstack/health | grep -q '"status": "running"'; then
+              echo "LocalStack is ready"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Start application
+        run: |
+          export ACTIVE_BACKEND=localstack
+          export LOCALSTACK_HOSTNAME=localhost
+          export LOCALSTACK_EDGE_PORT=4566
+          export LOCALSTACK_ENDPOINT=http://localhost:4566
+          export AWS_ACCESS_KEY_ID=test
+          export AWS_SECRET_ACCESS_KEY=test
+          export AWS_DEFAULT_REGION=us-east-1
+          pnpm dev &
+          sleep 15
+
+      - name: Run E2E tests
+        uses: microsoft/playwright-github-action@v1
+        with:
+          config: playwright.config.ts
+          reporter: html,json
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-results-localstack
+          path: test-results/
+          retention-days: 7
+
+  e2e-responsive:
+    name: E2E Responsive Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run responsive E2E tests
+        uses: microsoft/playwright-github-action@v1
+        with:
+          config: playwright.responsive.config.ts
+          reporter: html
+
+      - name: Upload responsive test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-responsive-results
+          path: test-results/
+          retention-days: 7
+
+  visual-regression:
+    name: Visual Regression Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Update VRT baselines
+        run: pnpm test:vrt:baseline
+
+      - name: Run VRT
+        uses: microsoft/playwright-github-action@v1
+        with:
+          config: playwright.vrt.config.ts
+
+      - name: Upload VRT results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vrt-results
+          path: test-results/
+          retention-days: 7

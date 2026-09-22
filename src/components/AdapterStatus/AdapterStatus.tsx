@@ -37,7 +37,7 @@ export function AdapterStatus({ status = 'checking', endpointUrl }: AdapterStatu
     <div className="adapter-status-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
       <StatusIndicator type={statusType}>{statusText}</StatusIndicator>
       {endpointUrl ? (
-        <span style={{ fontSize: '12px', color: '#666' }}>
+        <span style={{ fontSize: '12px', color: 'var(--awsui-color-text-body-secondary)' }}>
           {endpointUrl} | Mode: {currentStatus === 'connected' ? provider : currentStatus === 'disconnected' ? 'unreachable' : 'checking'}
         </span>
       ) : null}

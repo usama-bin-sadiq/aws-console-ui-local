@@ -5,9 +5,7 @@ export async function GET() {
   const mode = ADAPTER_CONFIG.adapterMode;
   const endpointUrl = mode === "ministack"
     ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
-    : mode === "real"
-      ? ADAPTER_CONFIG.endpointConfig.realEndpointUrl
-      : ADAPTER_CONFIG.endpointConfig.localstackEndpoint;
+    : ADAPTER_CONFIG.endpointConfig.localstackEndpoint;
 
   if (!endpointUrl) {
     return NextResponse.json({ status: "unreachable", provider: mode, error: "No endpoint configured" }, { status: 503 });
@@ -15,9 +13,7 @@ export async function GET() {
 
   const healthCheckUrl = mode === "ministack"
     ? `${endpointUrl}/_ministack/health`
-    : mode === "real"
-      ? `${endpointUrl}/health`
-      : `${endpointUrl}/_localstack/health`;
+    : `${endpointUrl}/_localstack/health`;
 
   try {
     const response = await fetch(healthCheckUrl, {
