@@ -1,43 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
-import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Button from "@cloudscape-design/components/button";
-import { LambdaFunctionWizard, LambdaFunctionWizardConfig } from "@/components/lambda/LambdaFunctionWizard";
+import { LambdaFunctionCreateForm } from "@/components/lambda/LambdaFunctionCreateForm";
 
 export default function LambdaCreatePage() {
   const router = useRouter();
-  const [showWizard, setShowWizard] = useState(true);
-
-  const handleCreate = (config: LambdaFunctionWizardConfig) => {
-    setShowWizard(false);
-    router.push("/lambda");
-  };
 
   return (
-    <div style={{ padding: "16px" }}>
-      <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          actions={
-            <Button onClick={() => router.push("/lambda")} formAction="none">
-              Back to Lambda
-            </Button>
-          }
-        >
-          Create function
-        </Header>
-        <Container>
-          <LambdaFunctionWizard
-            visible={showWizard}
-            onCreate={handleCreate}
-            onCancel={() => router.push("/lambda")}
-          />
-        </Container>
-      </SpaceBetween>
-    </div>
+    <SpaceBetween size="l">
+      <Header
+        variant="h1"
+        actions={
+          <Button onClick={() => router.push("/lambda")} formAction="none">
+            Back to Lambda
+          </Button>
+        }
+      >
+        Create function
+      </Header>
+      <LambdaFunctionCreateForm onCancel={() => router.push("/lambda")} />
+    </SpaceBetween>
   );
 }
