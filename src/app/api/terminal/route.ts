@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { spawn } from "child_process";
-import { addTerminalHistory, getTerminalHistory } from "@/lib/db";
+import { addTerminalHistoryAsync, getTerminalHistoryAsync } from "@/lib/db";
 import { requirePermission } from "@/lib/data-isolation";
 
 /**
@@ -79,7 +79,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get("sessionId") || "default";
     const limit = parseInt(searchParams.get("limit") || "100", 10);
-    const history = getTerminalHistory(sessionId, limit);
+    const history = await getTerminalHistoryAsync(sessionId, limit);
     return NextResponse.json({ history });
   } catch (error: unknown) {
     return NextResponse.json(
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     const output = stdout + (stderr ? `\n${stderr}` : "");
 
     // Persist to history
-    addTerminalHistory(sessionId, command, output, exitCode);
+    await addTerminalHistoryAsync(sessionId, command, output, exitCode);
 
     return NextResponse.json({ output, exitCode });
   } catch (error: unknown) {

@@ -1,151 +1,24 @@
-import Database from "better-sqlite3";
-import path from "path";
+/**
+ * Database layer - Drizzle ORM + libSQL (Next.js compatible, no native compilation)
+ * Maintains backward-compatible API with the old better-sqlite3 implementation
+ */
+
+import { db, initializeDatabase, schema } from "./db/client";
+import { eq, desc, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
-const dbPath = path.join(process.cwd(), "data", "console.db");
 const BCRYPT_ROUNDS = 12;
 
-// Singleton database instance
-let db: Database.Database | null = null;
-
-export function getDatabase() {
-  if (!db) {
-    db = new Database(dbPath);
-    db.pragma("journal_mode = WAL");
-    initializeDatabase(db);
-  }
-  return db;
-}
-
-function initializeDatabase(database: Database.Database) {
-  // Create users table for auth
-  database.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL,
-      email TEXT NOT NULL,
-      account_name TEXT,
-      permissions TEXT NOT NULL DEFAULT '["*"]',
-      is_root INTEGER NOT NULL DEFAULT 0,
-      access_key_id TEXT NOT NULL,
-      secret_access_key TEXT NOT NULL,
-      mfa_enabled INTEGER NOT NULL DEFAULT 0,
-      mfa_secret TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_login DATETIME
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-  `);
-
-  // Seed default users if empty
-  const userCount = (database.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number }).count;
-  if (userCount === 0) {
-    const insertUser = database.prepare(`
-      INSERT INTO users (username, password, email, account_name, permissions, is_root, access_key_id, secret_access_key)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    insertUser.run("root", bcrypt.hashSync("root123", BCRYPT_ROUNDS), "root@localhost", "root-account", JSON.stringify(["*"]), 1, "test", "test");
-    insertUser.run("admin", bcrypt.hashSync("admin123", BCRYPT_ROUNDS), "admin@localhost", "admin-account", JSON.stringify(["*"]), 0, "AKIAADMIN000000000", "admin_secret_key_000");
-    insertUser.run("readonly", bcrypt.hashSync("readonly123", BCRYPT_ROUNDS), "readonly@localhost", "readonly-account", JSON.stringify(["s3:GetObject", "ec2:Describe*", "rds:Describe*", "lambda:List*", "iam:Get*"]), 0, "AKIAREADONLY000000", "readonly_secret_key_00");
-  }
-
-  // Create widget_config table
-  database.exec(`
-    CREATE TABLE IF NOT EXISTS widget_config (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id TEXT NOT NULL DEFAULT 'default',
-      widget_id TEXT NOT NULL,
-      position_x INTEGER NOT NULL DEFAULT 0,
-      position_y INTEGER NOT NULL DEFAULT 0,
-      width INTEGER NOT NULL DEFAULT 1,
-      height INTEGER NOT NULL DEFAULT 1,
-      visible INTEGER NOT NULL DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id, widget_id)
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_widget_config_user 
-    ON widget_config(user_id);
-
-    CREATE INDEX IF NOT EXISTS idx_widget_config_visible 
-    ON widget_config(user_id, visible);
-  `);
-
-  // Create favorites table
-  database.exec(`
-    CREATE TABLE IF NOT EXISTS favorites (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id TEXT NOT NULL DEFAULT 'default',
-      service_id TEXT NOT NULL,
-      service_name TEXT NOT NULL,
-      service_href TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id, service_id)
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_favorites_user 
-    ON favorites(user_id);
-  `);
-
-  // Create recently_visited table
-  database.exec(`
-    CREATE TABLE IF NOT EXISTS recently_visited (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id TEXT NOT NULL DEFAULT 'default',
-      service_id TEXT NOT NULL,
-      service_name TEXT NOT NULL,
-      service_href TEXT NOT NULL,
-      visited_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_recently_visited_user 
-    ON recently_visited(user_id, visited_at DESC);
-  `);
-
-  // Create terminal_history table
-  database.exec(`
-    CREATE TABLE IF NOT EXISTS terminal_history (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      session_id  TEXT    NOT NULL,
-      command     TEXT    NOT NULL,
-      output      TEXT    NOT NULL DEFAULT '',
-      exit_code   INTEGER NOT NULL DEFAULT 0,
-      executed_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_terminal_history_session
-      ON terminal_history(session_id, executed_at DESC);
-  `);
-
-  // Insert default widget configuration if not exists
-  const count = database.prepare("SELECT COUNT(*) as count FROM widget_config WHERE user_id = 'default'").get() as { count: number };
-  
-  if (count.count === 0) {
-    const insertWidget = database.prepare(`
-      INSERT INTO widget_config (user_id, widget_id, position_x, position_y, width, height, visible)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    // Default layout: 2-column grid
-    const defaultWidgets = [
-      { id: "aws-health", x: 0, y: 0, w: 1, h: 1 },
-      { id: "cost-usage", x: 1, y: 0, w: 1, h: 1 },
-      { id: "favorites", x: 0, y: 1, w: 1, h: 1 },
-      { id: "recently-visited", x: 1, y: 1, w: 1, h: 1 },
-      { id: "trusted-advisor", x: 0, y: 2, w: 2, h: 1 },
-      { id: "welcome", x: 0, y: 3, w: 1, h: 1 },
-      { id: "build-solution", x: 1, y: 3, w: 1, h: 1 },
-      { id: "explore-aws", x: 0, y: 4, w: 2, h: 1 },
-    ];
-
-    for (const widget of defaultWidgets) {
-      insertWidget.run("default", widget.id, widget.x, widget.y, widget.w, widget.h, 1);
-    }
+// Initialize on first import (lazy initialization)
+let initialized = false;
+async function ensureInitialized() {
+  if (!initialized) {
+    await initializeDatabase();
+    initialized = true;
   }
 }
+
+// ─── Type exports (backward compatible - snake_case for old API) ──────────────
 
 export interface WidgetConfig {
   id: number;
@@ -178,85 +51,6 @@ export interface RecentlyVisited {
   visited_at: string;
 }
 
-// Widget config operations
-export function getWidgetConfig(userId: string = "default"): WidgetConfig[] {
-  const db = getDatabase();
-  return db.prepare("SELECT * FROM widget_config WHERE user_id = ? ORDER BY position_y, position_x").all(userId) as WidgetConfig[];
-}
-
-export function updateWidgetConfig(
-  userId: string,
-  widgetId: string,
-  updates: Partial<Pick<WidgetConfig, "position_x" | "position_y" | "width" | "height" | "visible">>
-) {
-  const db = getDatabase();
-  const fields = Object.keys(updates).map(key => `${key} = @${key}`).join(", ");
-  const stmt = db.prepare(`
-    UPDATE widget_config 
-    SET ${fields}, updated_at = CURRENT_TIMESTAMP
-    WHERE user_id = @userId AND widget_id = @widgetId
-  `);
-  stmt.run({ userId, widgetId, ...updates });
-}
-
-export function resetWidgetConfig(userId: string = "default") {
-  const db = getDatabase();
-  db.prepare("DELETE FROM widget_config WHERE user_id = ?").run(userId);
-  // Re-initialize will insert defaults
-  initializeDatabase(db);
-}
-
-// Favorites operations
-export function getFavorites(userId: string = "default"): Favorite[] {
-  const db = getDatabase();
-  return db.prepare("SELECT * FROM favorites WHERE user_id = ? ORDER BY created_at DESC").all(userId) as Favorite[];
-}
-
-export function addFavorite(userId: string, serviceId: string, serviceName: string, serviceHref: string) {
-  const db = getDatabase();
-  const stmt = db.prepare(`
-    INSERT OR REPLACE INTO favorites (user_id, service_id, service_name, service_href)
-    VALUES (?, ?, ?, ?)
-  `);
-  stmt.run(userId, serviceId, serviceName, serviceHref);
-}
-
-export function removeFavorite(userId: string, serviceId: string) {
-  const db = getDatabase();
-  db.prepare("DELETE FROM favorites WHERE user_id = ? AND service_id = ?").run(userId, serviceId);
-}
-
-// Recently visited operations
-export function getRecentlyVisited(userId: string = "default", limit: number = 5): RecentlyVisited[] {
-  const db = getDatabase();
-  return db.prepare(`
-    SELECT * FROM recently_visited 
-    WHERE user_id = ? 
-    ORDER BY visited_at DESC 
-    LIMIT ?
-  `).all(userId, limit) as RecentlyVisited[];
-}
-
-export function addRecentlyVisited(userId: string, serviceId: string, serviceName: string, serviceHref: string) {
-  const db = getDatabase();
-  const stmt = db.prepare(`
-    INSERT INTO recently_visited (user_id, service_id, service_name, service_href, visited_at)
-    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-  `);
-  stmt.run(userId, serviceId, serviceName, serviceHref);
-
-  // Keep only last 50 entries per user
-  db.prepare(`
-    DELETE FROM recently_visited 
-    WHERE user_id = ? AND id NOT IN (
-      SELECT id FROM recently_visited 
-      WHERE user_id = ? 
-      ORDER BY visited_at DESC 
-      LIMIT 50
-    )
-  `).run(userId, userId);
-}
-
 export interface TerminalHistoryEntry {
   id: number;
   session_id: string;
@@ -265,46 +59,6 @@ export interface TerminalHistoryEntry {
   exit_code: number;
   executed_at: string;
 }
-
-// Terminal history operations
-export function addTerminalHistory(
-  sessionId: string,
-  command: string,
-  output: string,
-  exitCode: number
-): void {
-  const db = getDatabase();
-  db.prepare(`
-    INSERT INTO terminal_history (session_id, command, output, exit_code)
-    VALUES (?, ?, ?, ?)
-  `).run(sessionId, command, output, exitCode);
-
-  // Keep only last 500 entries per session
-  db.prepare(`
-    DELETE FROM terminal_history
-    WHERE session_id = ? AND id NOT IN (
-      SELECT id FROM terminal_history
-      WHERE session_id = ?
-      ORDER BY executed_at DESC
-      LIMIT 500
-    )
-  `).run(sessionId, sessionId);
-}
-
-export function getTerminalHistory(
-  sessionId: string,
-  limit: number = 100
-): TerminalHistoryEntry[] {
-  const db = getDatabase();
-  return db.prepare(`
-    SELECT * FROM terminal_history
-    WHERE session_id = ?
-    ORDER BY executed_at DESC
-    LIMIT ?
-  `).all(sessionId, limit) as TerminalHistoryEntry[];
-}
-
-// ─── User operations ──────────────────────────────────────────────────────────
 
 export interface UserRecord {
   id: number;
@@ -322,19 +76,408 @@ export interface UserRecord {
   last_login: string | null;
 }
 
+// ─── Conversion helpers (camelCase from Drizzle -> snake_case for old API) ─────
+
+function toWidgetConfig(row: any): WidgetConfig {
+  return {
+    id: row.id,
+    user_id: row.userId,
+    widget_id: row.widgetId,
+    position_x: row.positionX,
+    position_y: row.positionY,
+    width: row.width,
+    height: row.height,
+    visible: row.visible ? 1 : 0,
+    created_at: row.createdAt,
+    updated_at: row.updatedAt,
+  };
+}
+
+function toFavorite(row: any): Favorite {
+  return {
+    id: row.id,
+    user_id: row.userId,
+    service_id: row.serviceId,
+    service_name: row.serviceName,
+    service_href: row.serviceHref,
+    created_at: row.createdAt,
+  };
+}
+
+function toRecentlyVisited(row: any): RecentlyVisited {
+  return {
+    id: row.id,
+    user_id: row.userId,
+    service_id: row.serviceId,
+    service_name: row.serviceName,
+    service_href: row.serviceHref,
+    visited_at: row.visitedAt,
+  };
+}
+
+function toTerminalHistory(row: any): TerminalHistoryEntry {
+  return {
+    id: row.id,
+    session_id: row.sessionId,
+    command: row.command,
+    output: row.output,
+    exit_code: row.exitCode,
+    executed_at: row.executedAt,
+  };
+}
+
+function toUserRecord(row: any): UserRecord {
+  return {
+    id: row.id,
+    username: row.username,
+    password: row.password,
+    email: row.email,
+    account_name: row.accountName || "",
+    permissions: row.permissions,
+    is_root: row.isRoot ? 1 : 0,
+    access_key_id: row.accessKeyId,
+    secret_access_key: row.secretAccessKey,
+    mfa_enabled: row.mfaEnabled ? 1 : 0,
+    mfa_secret: row.mfaSecret || null,
+    created_at: row.createdAt,
+    last_login: row.lastLogin || null,
+  };
+}
+
+// ─── Async API (new, preferred) ────────────────────────────────────────────────
+
+export async function getWidgetConfigAsync(userId: string = "default"): Promise<WidgetConfig[]> {
+  await ensureInitialized();
+  const rows = await db
+    .select()
+    .from(schema.widgetConfig)
+    .where(eq(schema.widgetConfig.userId, userId))
+    .orderBy(schema.widgetConfig.positionY, schema.widgetConfig.positionX);
+  return rows.map(toWidgetConfig);
+}
+
+export async function updateWidgetConfigAsync(
+  userId: string,
+  widgetId: string,
+  updates: Partial<Pick<WidgetConfig, "position_x" | "position_y" | "width" | "height" | "visible">>
+) {
+  await ensureInitialized();
+  const setClause: Record<string, unknown> = { updatedAt: sql`CURRENT_TIMESTAMP` };
+  if (updates.position_x !== undefined) setClause.positionX = updates.position_x;
+  if (updates.position_y !== undefined) setClause.positionY = updates.position_y;
+  if (updates.width !== undefined) setClause.width = updates.width;
+  if (updates.height !== undefined) setClause.height = updates.height;
+  if (updates.visible !== undefined) setClause.visible = updates.visible === 1;
+
+  await db
+    .update(schema.widgetConfig)
+    .set(setClause)
+    .where(and(
+      eq(schema.widgetConfig.userId, userId),
+      eq(schema.widgetConfig.widgetId, widgetId)
+    ));
+}
+
+export async function resetWidgetConfigAsync(userId: string = "default") {
+  await ensureInitialized();
+  await db.delete(schema.widgetConfig).where(eq(schema.widgetConfig.userId, userId));
+  await initializeDatabase();
+}
+
+export async function getFavoritesAsync(userId: string = "default"): Promise<Favorite[]> {
+  await ensureInitialized();
+  const rows = await db
+    .select()
+    .from(schema.favorites)
+    .where(eq(schema.favorites.userId, userId))
+    .orderBy(desc(schema.favorites.createdAt));
+  return rows.map(toFavorite);
+}
+
+export async function addFavoriteAsync(userId: string, serviceId: string, serviceName: string, serviceHref: string) {
+  await ensureInitialized();
+  await db.insert(schema.favorites)
+    .values({ userId, serviceId, serviceName, serviceHref })
+    .onConflictDoUpdate({
+      target: [schema.favorites.userId, schema.favorites.serviceId],
+      set: { serviceName, serviceHref },
+    });
+}
+
+export async function removeFavoriteAsync(userId: string, serviceId: string) {
+  await ensureInitialized();
+  await db.delete(schema.favorites)
+    .where(and(
+      eq(schema.favorites.userId, userId),
+      eq(schema.favorites.serviceId, serviceId)
+    ));
+}
+
+export async function getRecentlyVisitedAsync(userId: string = "default", limit: number = 5): Promise<RecentlyVisited[]> {
+  await ensureInitialized();
+  const rows = await db
+    .select()
+    .from(schema.recentlyVisited)
+    .where(eq(schema.recentlyVisited.userId, userId))
+    .orderBy(desc(schema.recentlyVisited.visitedAt))
+    .limit(limit);
+  return rows.map(toRecentlyVisited);
+}
+
+export async function addRecentlyVisitedAsync(userId: string, serviceId: string, serviceName: string, serviceHref: string) {
+  await ensureInitialized();
+  await db.insert(schema.recentlyVisited)
+    .values({ userId, serviceId, serviceName, serviceHref, visitedAt: sql`CURRENT_TIMESTAMP` });
+
+  await db.delete(schema.recentlyVisited)
+    .where(and(
+      eq(schema.recentlyVisited.userId, userId),
+      sql`${schema.recentlyVisited.id} NOT IN (
+        SELECT ${schema.recentlyVisited.id} FROM ${schema.recentlyVisited}
+        WHERE ${schema.recentlyVisited.userId} = ${userId}
+        ORDER BY ${schema.recentlyVisited.visitedAt} DESC
+        LIMIT 50
+      )`
+    ));
+}
+
+export async function addTerminalHistoryAsync(
+  sessionId: string,
+  command: string,
+  output: string,
+  exitCode: number
+): Promise<void> {
+  await ensureInitialized();
+  await db.insert(schema.terminalHistory)
+    .values({ sessionId, command, output, exitCode });
+
+  await db.delete(schema.terminalHistory)
+    .where(and(
+      eq(schema.terminalHistory.sessionId, sessionId),
+      sql`${schema.terminalHistory.id} NOT IN (
+        SELECT ${schema.terminalHistory.id} FROM ${schema.terminalHistory}
+        WHERE ${schema.terminalHistory.sessionId} = ${sessionId}
+        ORDER BY ${schema.terminalHistory.executedAt} DESC
+        LIMIT 500
+      )`
+    ));
+}
+
+export async function getTerminalHistoryAsync(
+  sessionId: string,
+  limit: number = 100
+): Promise<TerminalHistoryEntry[]> {
+  await ensureInitialized();
+  const rows = await db
+    .select()
+    .from(schema.terminalHistory)
+    .where(eq(schema.terminalHistory.sessionId, sessionId))
+    .orderBy(desc(schema.terminalHistory.executedAt))
+    .limit(limit);
+  return rows.map(toTerminalHistory);
+}
+
+// ─── User operations (async) ──────────────────────────────────────────────────
+
+export async function getUserByUsernameAsync(username: string): Promise<UserRecord | undefined> {
+  await ensureInitialized();
+  const rows = await db
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.username, username))
+    .limit(1);
+  return rows[0] ? toUserRecord(rows[0]) : undefined;
+}
+
+export async function getUserByIdAsync(id: number): Promise<UserRecord | undefined> {
+  await ensureInitialized();
+  const rows = await db
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.id, id))
+    .limit(1);
+  return rows[0] ? toUserRecord(rows[0]) : undefined;
+}
+
+export async function getAllUsersAsync(): Promise<Omit<UserRecord, "password" | "mfa_secret">[]> {
+  await ensureInitialized();
+  const rows = await db
+    .select({
+      id: schema.users.id,
+      username: schema.users.username,
+      email: schema.users.email,
+      accountName: schema.users.accountName,
+      permissions: schema.users.permissions,
+      isRoot: schema.users.isRoot,
+      accessKeyId: schema.users.accessKeyId,
+      secretAccessKey: schema.users.secretAccessKey,
+      mfaEnabled: schema.users.mfaEnabled,
+      createdAt: schema.users.createdAt,
+      lastLogin: schema.users.lastLogin,
+    })
+    .from(schema.users);
+  return rows.map(r => ({
+    id: r.id,
+    username: r.username,
+    email: r.email,
+    account_name: r.accountName || "",
+    permissions: r.permissions,
+    is_root: r.isRoot ? 1 : 0,
+    access_key_id: r.accessKeyId,
+    secret_access_key: r.secretAccessKey,
+    mfa_enabled: r.mfaEnabled ? 1 : 0,
+    created_at: r.createdAt,
+    last_login: r.lastLogin || null,
+  }));
+}
+
+export async function createUserAsync(data: {
+  username: string;
+  password: string;
+  email: string;
+  accountName?: string;
+  permissions?: string[];
+  isRoot?: boolean;
+}): Promise<UserRecord> {
+  await ensureInitialized();
+  const accessKeyId = `AKIA${data.username.toUpperCase().slice(0, 12).padEnd(12, "X")}0002`;
+  const secretAccessKey = `wJalrXUtnFEMI/${data.username}/${Date.now()}/secret`;
+  const passwordHash = bcrypt.hashSync(data.password, BCRYPT_ROUNDS);
+
+  await db.insert(schema.users).values({
+    username: data.username,
+    password: passwordHash,
+    email: data.email,
+    accountName: data.accountName || `${data.username}-account`,
+    permissions: JSON.stringify(data.permissions || ["*"]),
+    isRoot: data.isRoot ?? false,
+    accessKeyId,
+    secretAccessKey,
+  });
+
+  const user = await getUserByUsernameAsync(data.username);
+  if (!user) throw new Error("Failed to create user");
+  return user;
+}
+
+export async function updateUserLastLoginAsync(username: string): Promise<void> {
+  await ensureInitialized();
+  await db
+    .update(schema.users)
+    .set({ lastLogin: sql`CURRENT_TIMESTAMP` })
+    .where(eq(schema.users.username, username));
+}
+
+export async function updateUserMFAAsync(username: string, mfaEnabled: boolean, mfaSecret?: string | null): Promise<void> {
+  await ensureInitialized();
+  await db
+    .update(schema.users)
+    .set({ mfaEnabled, mfaSecret: mfaSecret || null })
+    .where(eq(schema.users.username, username));
+}
+
+export async function updateUserPasswordAsync(username: string, newPassword: string): Promise<void> {
+  await ensureInitialized();
+  const passwordHash = bcrypt.hashSync(newPassword, BCRYPT_ROUNDS);
+  await db
+    .update(schema.users)
+    .set({ password: passwordHash })
+    .where(eq(schema.users.username, username));
+}
+
+export async function deleteUserAsync(username: string): Promise<boolean> {
+  await ensureInitialized();
+  const result = await db
+    .delete(schema.users)
+    .where(eq(schema.users.username, username));
+  return (result as any).changes > 0 || (result as any).rowsAffected > 0;
+}
+
+export async function validateUserAsync(username: string, password: string): Promise<UserRecord | undefined> {
+  const user = await getUserByUsernameAsync(username);
+  if (user && bcrypt.compareSync(password, user.password)) {
+    return user;
+  }
+  return undefined;
+}
+
+export async function getUserPermissionsAsync(username: string): Promise<string[]> {
+  const user = await getUserByUsernameAsync(username);
+  if (!user) return ["*"];
+  try {
+    const parsed = JSON.parse(user.permissions);
+    if (Array.isArray(parsed)) return parsed;
+    return ["*"];
+  } catch {
+    return ["*"];
+  }
+}
+
+// ─── Synchronous backward-compatible API (deprecated, will be removed) ─────────
+// These throw errors directing callers to use async versions
+
+export function getWidgetConfig(userId: string = "default"): WidgetConfig[] {
+  throw new Error("getWidgetConfig is now async. Use getWidgetConfigAsync instead.");
+}
+
+export function updateWidgetConfig(
+  userId: string,
+  widgetId: string,
+  updates: Partial<Pick<WidgetConfig, "position_x" | "position_y" | "width" | "height" | "visible">>
+) {
+  throw new Error("updateWidgetConfig is now async. Use updateWidgetConfigAsync instead.");
+}
+
+export function resetWidgetConfig(userId: string = "default") {
+  throw new Error("resetWidgetConfig is now async. Use resetWidgetConfigAsync instead.");
+}
+
+export function getFavorites(userId: string = "default"): Favorite[] {
+  throw new Error("getFavorites is now async. Use getFavoritesAsync instead.");
+}
+
+export function addFavorite(userId: string, serviceId: string, serviceName: string, serviceHref: string) {
+  throw new Error("addFavorite is now async. Use addFavoriteAsync instead.");
+}
+
+export function removeFavorite(userId: string, serviceId: string) {
+  throw new Error("removeFavorite is now async. Use removeFavoriteAsync instead.");
+}
+
+export function getRecentlyVisited(userId: string = "default", limit: number = 5): RecentlyVisited[] {
+  throw new Error("getRecentlyVisited is now async. Use getRecentlyVisitedAsync instead.");
+}
+
+export function addRecentlyVisited(userId: string, serviceId: string, serviceName: string, serviceHref: string) {
+  throw new Error("addRecentlyVisited is now async. Use addRecentlyVisitedAsync instead.");
+}
+
+export function addTerminalHistory(
+  sessionId: string,
+  command: string,
+  output: string,
+  exitCode: number
+): void {
+  throw new Error("addTerminalHistory is now async. Use addTerminalHistoryAsync instead.");
+}
+
+export function getTerminalHistory(
+  sessionId: string,
+  limit: number = 100
+): TerminalHistoryEntry[] {
+  throw new Error("getTerminalHistory is now async. Use getTerminalHistoryAsync instead.");
+}
+
 export function getUserByUsername(username: string): UserRecord | undefined {
-  const db = getDatabase();
-  return db.prepare("SELECT * FROM users WHERE username = ?").get(username) as UserRecord | undefined;
+  throw new Error("getUserByUsername is now async. Use getUserByUsernameAsync instead.");
 }
 
 export function getUserById(id: number): UserRecord | undefined {
-  const db = getDatabase();
-  return db.prepare("SELECT * FROM users WHERE id = ?").get(id) as UserRecord | undefined;
+  throw new Error("getUserById is now async. Use getUserByIdAsync instead.");
 }
 
 export function getAllUsers(): Omit<UserRecord, "password" | "mfa_secret">[] {
-  const db = getDatabase();
-  return db.prepare("SELECT id, username, email, account_name, permissions, is_root, access_key_id, created_at, last_login FROM users").all() as any[];
+  throw new Error("getAllUsers is now async. Use getAllUsersAsync instead.");
 }
 
 export function createUser(data: {
@@ -345,73 +488,29 @@ export function createUser(data: {
   permissions?: string[];
   isRoot?: boolean;
 }): UserRecord {
-  const db = getDatabase();
-  const accessKeyId = `AKIA${data.username.toUpperCase().slice(0, 12).padEnd(12, "X")}0002`;
-  const secretAccessKey = `wJalrXUtnFEMI/${data.username}/${Date.now()}/secret`;
-  const passwordHash = bcrypt.hashSync(data.password, BCRYPT_ROUNDS);
-  const stmt = db.prepare(`
-    INSERT INTO users (username, password, email, account_name, permissions, is_root, access_key_id, secret_access_key)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  stmt.run(
-    data.username,
-    passwordHash,
-    data.email,
-    data.accountName || `${data.username}-account`,
-    JSON.stringify(data.permissions || ["*"]),
-    data.isRoot ? 1 : 0,
-    accessKeyId,
-    secretAccessKey
-  );
-  return getUserByUsername(data.username)!;
+  throw new Error("createUser is now async. Use createUserAsync instead.");
 }
 
 export function updateUserLastLogin(username: string): void {
-  const db = getDatabase();
-  db.prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE username = ?").run(username);
+  throw new Error("updateUserLastLogin is now async. Use updateUserLastLoginAsync instead.");
 }
 
 export function updateUserMFA(username: string, mfaEnabled: boolean, mfaSecret?: string | null): void {
-  const db = getDatabase();
-  db.prepare("UPDATE users SET mfa_enabled = ?, mfa_secret = ? WHERE username = ?").run(
-    mfaEnabled ? 1 : 0,
-    mfaSecret || null,
-    username
-  );
+  throw new Error("updateUserMFA is now async. Use updateUserMFAAsync instead.");
 }
 
 export function updateUserPassword(username: string, newPassword: string): void {
-  const db = getDatabase();
-  const passwordHash = bcrypt.hashSync(newPassword, BCRYPT_ROUNDS);
-  db.prepare("UPDATE users SET password = ? WHERE username = ?").run(passwordHash, username);
+  throw new Error("updateUserPassword is now async. Use updateUserPasswordAsync instead.");
 }
 
 export function deleteUser(username: string): boolean {
-  const db = getDatabase();
-  const result = db.prepare("DELETE FROM users WHERE username = ?").run(username);
-  return result.changes > 0;
+  throw new Error("deleteUser is now async. Use deleteUserAsync instead.");
 }
 
 export function validateUser(username: string, password: string): UserRecord | undefined {
-  const user = getUserByUsername(username);
-  if (user && bcrypt.compareSync(password, user.password)) {
-    return user;
-  }
-  return undefined;
+  throw new Error("validateUser is now async. Use validateUserAsync instead.");
 }
 
-/**
- * Returns the parsed permissions array for a given user.
- * Falls back to ["*"] if the user is not found or has invalid JSON.
- */
 export function getUserPermissions(username: string): string[] {
-  const user = getUserByUsername(username);
-  if (!user) return ["*"];
-  try {
-    const parsed = JSON.parse(user.permissions);
-    if (Array.isArray(parsed)) return parsed;
-    return ["*"];
-  } catch {
-    return ["*"];
-  }
+  throw new Error("getUserPermissions is now async. Use getUserPermissionsAsync instead.");
 }

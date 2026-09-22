@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRecentlyVisited, addRecentlyVisited } from "@/lib/db";
+import { getRecentlyVisitedAsync, addRecentlyVisitedAsync } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get("userId") || "default";
     const limit = parseInt(searchParams.get("limit") || "5");
     
-    const recentlyVisited = getRecentlyVisited(userId, limit);
+    const recentlyVisited = await getRecentlyVisitedAsync(userId, limit);
     
     return NextResponse.json({ recentlyVisited });
   } catch (error) {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    addRecentlyVisited(userId, serviceId, serviceName, serviceHref);
+    await addRecentlyVisitedAsync(userId, serviceId, serviceName, serviceHref);
     
     return NextResponse.json({ success: true });
   } catch (error) {

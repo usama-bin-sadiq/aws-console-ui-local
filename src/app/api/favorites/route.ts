@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFavorites, addFavorite, removeFavorite } from "@/lib/db";
+import { getFavoritesAsync, addFavoriteAsync, removeFavoriteAsync } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId") || "default";
     
-    const favorites = getFavorites(userId);
+    const favorites = await getFavoritesAsync(userId);
     
     return NextResponse.json({ favorites });
   } catch (error) {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    addFavorite(userId, serviceId, serviceName, serviceHref);
+    await addFavoriteAsync(userId, serviceId, serviceName, serviceHref);
     
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -55,7 +55,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    removeFavorite(userId, serviceId);
+    await removeFavoriteAsync(userId, serviceId);
     
     return NextResponse.json({ success: true });
   } catch (error) {

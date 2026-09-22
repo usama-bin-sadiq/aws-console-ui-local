@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { validateUser, createUser, getUserByUsername, getAllUsers } from '@/lib/db';
+import { validateUserAsync, createUserAsync, getUserByUsernameAsync, getAllUsersAsync } from '@/lib/db';
 
 describe('Database Operations', () => {
   let counter = 0;
@@ -17,9 +17,9 @@ describe('Database Operations', () => {
   }
 
   describe('User Creation', () => {
-    it('should create a user with hashed password', () => {
+    it('should create a user with hashed password', async () => {
       const { username, email } = uniqueUser();
-      const user = createUser({
+      const user = await createUserAsync({
         username,
         password: 'testpass123',
         email,
@@ -35,48 +35,48 @@ describe('Database Operations', () => {
   });
 
   describe('User Validation', () => {
-    it('should validate correct password', () => {
+    it('should validate correct password', async () => {
       const { username, password } = uniqueUser();
-      createUser({ username, password, email: 'validate@example.com' });
+      await createUserAsync({ username, password, email: 'validate@example.com' });
 
-      const isValid = validateUser(username, password);
+      const isValid = await validateUserAsync(username, password);
       expect(isValid).toBeDefined();
       expect(isValid?.username).toBe(username);
     });
 
-    it('should reject incorrect password', () => {
+    it('should reject incorrect password', async () => {
       const { username } = uniqueUser();
-      createUser({ username, password: 'correctpass', email: 'validate@example.com' });
+      await createUserAsync({ username, password: 'correctpass', email: 'validate@example.com' });
 
-      const result = validateUser(username, 'wrongpass');
+      const result = await validateUserAsync(username, 'wrongpass');
       expect(result).toBeUndefined();
     });
 
-    it('should reject nonexistent user', () => {
-      const result = validateUser('nonexistent_user_xyz', 'any');
+    it('should reject nonexistent user', async () => {
+      const result = await validateUserAsync('nonexistent_user_xyz', 'any');
       expect(result).toBeUndefined();
     });
   });
 
   describe('Get User By Username', () => {
-    it('should find existing user', () => {
+    it('should find existing user', async () => {
       const { username, email } = uniqueUser();
-      createUser({ username, password: 'findpass', email });
+      await createUserAsync({ username, password: 'findpass', email });
 
-      const user = getUserByUsername(username);
+      const user = await getUserByUsernameAsync(username);
       expect(user).toBeDefined();
       expect(user?.email).toBe(email);
     });
 
-    it('should return undefined for nonexistent user', () => {
-      const user = getUserByUsername('nonexistent_user_xyz');
+    it('should return undefined for nonexistent user', async () => {
+      const user = await getUserByUsernameAsync('nonexistent_user_xyz');
       expect(user).toBeUndefined();
     });
   });
 
   describe('Get All Users', () => {
-    it('should return all users without passwords', () => {
-      const users = getAllUsers();
+    it('should return all users without passwords', async () => {
+      const users = await getAllUsersAsync();
       expect(Array.isArray(users)).toBe(true);
       users.forEach((user: any) => {
         expect('password' in user).toBe(false);

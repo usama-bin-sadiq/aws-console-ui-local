@@ -4,7 +4,7 @@
  */
 
 import { extractUserCredentials } from "@/lib/aws-clients";
-import { getUserByUsername, getUserPermissions } from "@/lib/db";
+import { getUserPermissionsAsync } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export interface UserContext {
@@ -224,7 +224,7 @@ export async function requirePermission(
   const requiredPermission = `${service}:${permissionType}`;
 
   // Get permissions from DB
-  const permissions = getUserPermissions(user.username);
+  const permissions = await getUserPermissionsAsync(user.username);
 
   // Wildcard check
   if (permissions.includes("*")) return null;

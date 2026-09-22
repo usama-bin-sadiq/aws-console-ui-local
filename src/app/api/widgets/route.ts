@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getWidgetConfig, updateWidgetConfig, resetWidgetConfig } from "@/lib/db";
+import { getWidgetConfigAsync, updateWidgetConfigAsync, resetWidgetConfigAsync } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId") || "default";
     
-    const widgets = getWidgetConfig(userId);
+    const widgets = await getWidgetConfigAsync(userId);
     
     return NextResponse.json({ widgets });
   } catch (error) {
@@ -30,7 +30,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    updateWidgetConfig(userId, widgetId, updates);
+    await updateWidgetConfigAsync(userId, widgetId, updates);
     
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
     const { action, userId = "default" } = body;
 
     if (action === "reset") {
-      resetWidgetConfig(userId);
-      const widgets = getWidgetConfig(userId);
+      await resetWidgetConfigAsync(userId);
+      const widgets = await getWidgetConfigAsync(userId);
       return NextResponse.json({ widgets });
     }
 
