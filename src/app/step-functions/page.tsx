@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
@@ -55,8 +56,13 @@ interface ExecutionHistoryEvent {
 }
 
 const DEFAULT_DEFINITION = JSON.stringify(
-  { Comment: "A simple state machine", StartAt: "HelloWorld", States: { HelloWorld: { Type: "Pass", End: true } } },
-  null, 2
+  {
+    Comment: "A simple state machine",
+    StartAt: "HelloWorld",
+    States: { HelloWorld: { Type: "Pass", End: true } },
+  },
+  null,
+  2,
 );
 
 const TYPE_OPTIONS = [
@@ -93,7 +99,7 @@ export default function StepFunctionsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/sfn");
+      const res = await apiFetch("/api/sfn");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch state machines");
       setMachines(data.stateMachines || []);
@@ -110,7 +116,7 @@ export default function StepFunctionsPage() {
 
   const fetchExecutions = async (arn: string) => {
     try {
-      const res = await fetch(`/api/sfn?arn=${encodeURIComponent(arn)}&action=listExecutions`);
+      const res = await apiFetch(`/api/sfn?arn=${encodeURIComponent(arn)}&action=listExecutions`);
       const data = await res.json();
       if (res.ok) {
         setExecutions(data.executions || []);
@@ -123,7 +129,7 @@ export default function StepFunctionsPage() {
 
   const describeExecution = async (executionArn: string) => {
     try {
-      const res = await fetch(`/api/sfn`, {
+      const res = await apiFetch(`/api/sfn`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "describeExecution", executionArn }),
@@ -142,7 +148,9 @@ export default function StepFunctionsPage() {
   const fetchExecutionHistory = async (executionArn: string) => {
     setHistoryLoading(true);
     try {
-      const res = await fetch(`/api/sfn?arn=${encodeURIComponent(executionArn)}&action=getExecutionHistory`);
+      const res = await apiFetch(
+        `/api/sfn?arn=${encodeURIComponent(executionArn)}&action=getExecutionHistory`,
+      );
       const data = await res.json();
       if (res.ok) {
         setExecutionHistory(data.events || []);
@@ -167,7 +175,7 @@ export default function StepFunctionsPage() {
     if (hasError) return;
 
     try {
-      const res = await fetch("/api/sfn", {
+      const res = await apiFetch("/api/sfn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: smName, definition, roleArn: smRoleArn, type: smType.value }),
@@ -203,7 +211,7 @@ export default function StepFunctionsPage() {
     const machine = machines.find((m) => m.name === machineToDelete);
     const arn = machine?.stateMachineArn || machineToDelete;
     try {
-      const res = await fetch(`/api/sfn?arn=${encodeURIComponent(arn)}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/sfn?arn=${encodeURIComponent(arn)}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to delete state machine");
@@ -228,7 +236,7 @@ export default function StepFunctionsPage() {
       return;
     }
     try {
-      const res = await fetch("/api/sfn", {
+      const res = await apiFetch("/api/sfn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -251,7 +259,7 @@ export default function StepFunctionsPage() {
 
   const stopExecution = async (executionArn: string) => {
     try {
-      const res = await fetch("/api/sfn", {
+      const res = await apiFetch("/api/sfn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "stopExecution", executionArn }),
@@ -270,10 +278,14 @@ export default function StepFunctionsPage() {
   };
 
   const getEventDetail = (event: ExecutionHistoryEvent) => {
-    if (event.executionStartedEventDetails) return `Input: ${event.executionStartedEventDetails.input || "{}"}`;
-    if (event.executionSucceededEventDetails) return `Output: ${event.executionSucceededEventDetails.output || "{}"}`;
-    if (event.executionFailedEventDetails) return `Error: ${event.executionFailedEventDetails.error || ""} Cause: ${event.executionFailedEventDetails.cause || ""}`;
-    if (event.executionStoppedEventDetails) return `Error: ${event.executionStoppedEventDetails.error || ""} Cause: ${event.executionStoppedEventDetails.cause || ""}`;
+    if (event.executionStartedEventDetails)
+      return `Input: ${event.executionStartedEventDetails.input || "{}"}`;
+    if (event.executionSucceededEventDetails)
+      return `Output: ${event.executionSucceededEventDetails.output || "{}"}`;
+    if (event.executionFailedEventDetails)
+      return `Error: ${event.executionFailedEventDetails.error || ""} Cause: ${event.executionFailedEventDetails.cause || ""}`;
+    if (event.executionStoppedEventDetails)
+      return `Error: ${event.executionStoppedEventDetails.error || ""} Cause: ${event.executionStoppedEventDetails.cause || ""}`;
     if (event.stateMachineEventDetails) {
       const d = event.stateMachineEventDetails;
       return d.input ? `Input: ${d.input}` : d.output ? `Output: ${d.output}` : "\u2014";
@@ -282,7 +294,7 @@ export default function StepFunctionsPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Step Functions</Header>
         {error && (
@@ -290,12 +302,19 @@ export default function StepFunctionsPage() {
             {error}
           </Alert>
         )}
-        <Container>
+        <Container className="aws-table-card">
           <SpaceBetween size="l">
             <div>
               <Table
                 header={
-                  <Header variant="h2" actions={<Button variant="primary" onClick={() => setCreateModal(true)}>Create state machine</Button>}>
+                  <Header
+                    variant="h2"
+                    actions={
+                      <Button variant="primary" onClick={() => setCreateModal(true)}>
+                        Create state machine
+                      </Button>
+                    }
+                  >
                     State Machines ({machines.length})
                   </Header>
                 }
@@ -304,16 +323,48 @@ export default function StepFunctionsPage() {
                 columnDefinitions={[
                   { header: "Name", cell: (i: StateMachine) => i.name || "\u2014" },
                   { header: "Type", cell: (i: StateMachine) => i.type || "\u2014" },
-                  { header: "Status", cell: (i: StateMachine) => (i.status === "ACTIVE" ? <StatusIndicator type="success">Active</StatusIndicator> : <StatusIndicator type="warning">Inactive</StatusIndicator>) },
-                  { header: "Created", cell: (i: StateMachine) => i.creationDate ? new Date(i.creationDate).toLocaleString() : "\u2014" },
-                  { header: "ARN", cell: (i: StateMachine) => <TruncatedText>{i.stateMachineArn || "\u2014"}</TruncatedText> },
+                  {
+                    header: "Status",
+                    cell: (i: StateMachine) =>
+                      i.status === "ACTIVE" ? (
+                        <StatusIndicator type="success">Active</StatusIndicator>
+                      ) : (
+                        <StatusIndicator type="warning">Inactive</StatusIndicator>
+                      ),
+                  },
+                  {
+                    header: "Created",
+                    cell: (i: StateMachine) =>
+                      i.creationDate ? new Date(i.creationDate).toLocaleString() : "\u2014",
+                  },
+                  {
+                    header: "ARN",
+                    cell: (i: StateMachine) => (
+                      <TruncatedText>{i.stateMachineArn || "\u2014"}</TruncatedText>
+                    ),
+                  },
                   {
                     header: "Actions",
                     cell: (i: StateMachine) => (
                       <SpaceBetween direction="horizontal" size="xs">
-                        <Button onClick={() => { setSelectedMachine(i.stateMachineArn || ""); fetchExecutions(i.stateMachineArn || ""); }} formAction="none">Executions</Button>
-                        <Button onClick={() => setStartModal(true)} formAction="none">Start</Button>
-                        <Button onClick={() => openDeleteModal(i.stateMachineArn || "")} formAction="none">Delete</Button>
+                        <Button
+                          onClick={() => {
+                            setSelectedMachine(i.stateMachineArn || "");
+                            fetchExecutions(i.stateMachineArn || "");
+                          }}
+                          formAction="none"
+                        >
+                          Executions
+                        </Button>
+                        <Button onClick={() => setStartModal(true)} formAction="none">
+                          Start
+                        </Button>
+                        <Button
+                          onClick={() => openDeleteModal(i.stateMachineArn || "")}
+                          formAction="none"
+                        >
+                          Delete
+                        </Button>
                       </SpaceBetween>
                     ),
                   },
@@ -324,20 +375,56 @@ export default function StepFunctionsPage() {
 
             {selectedMachine && (
               <div>
-                <Header variant="h2">Execution History &mdash; {machines.find((m) => m.stateMachineArn === selectedMachine)?.name || selectedMachine}</Header>
+                <Header variant="h2">
+                  Execution History &mdash;{" "}
+                  {machines.find((m) => m.stateMachineArn === selectedMachine)?.name ||
+                    selectedMachine}
+                </Header>
                 <Table
                   items={executions}
                   columnDefinitions={[
                     { header: "Name", cell: (e: Execution) => e.name || "\u2014" },
-                    { header: "Status", cell: (e: Execution) => (e.status === "RUNNING" ? <StatusIndicator type="in-progress">Running</StatusIndicator> : e.status === "SUCCEEDED" ? <StatusIndicator type="success">Succeeded</StatusIndicator> : e.status === "FAILED" ? <StatusIndicator type="error">Failed</StatusIndicator> : <StatusIndicator type="stopped">Stopped</StatusIndicator>) },
-                    { header: "Started", cell: (e: Execution) => e.startDate ? new Date(e.startDate).toLocaleString() : "\u2014" },
-                    { header: "Stopped", cell: (e: Execution) => e.stopDate ? new Date(e.stopDate).toLocaleString() : "\u2014" },
+                    {
+                      header: "Status",
+                      cell: (e: Execution) =>
+                        e.status === "RUNNING" ? (
+                          <StatusIndicator type="in-progress">Running</StatusIndicator>
+                        ) : e.status === "SUCCEEDED" ? (
+                          <StatusIndicator type="success">Succeeded</StatusIndicator>
+                        ) : e.status === "FAILED" ? (
+                          <StatusIndicator type="error">Failed</StatusIndicator>
+                        ) : (
+                          <StatusIndicator type="stopped">Stopped</StatusIndicator>
+                        ),
+                    },
+                    {
+                      header: "Started",
+                      cell: (e: Execution) =>
+                        e.startDate ? new Date(e.startDate).toLocaleString() : "\u2014",
+                    },
+                    {
+                      header: "Stopped",
+                      cell: (e: Execution) =>
+                        e.stopDate ? new Date(e.stopDate).toLocaleString() : "\u2014",
+                    },
                     {
                       header: "Actions",
                       cell: (e: Execution) => (
                         <SpaceBetween direction="horizontal" size="xs">
-                          <Button onClick={() => describeExecution(e.executionArn || "")} formAction="none">Describe</Button>
-                          {e.status === "RUNNING" && <Button onClick={() => stopExecution(e.executionArn || "")} formAction="none">Stop</Button>}
+                          <Button
+                            onClick={() => describeExecution(e.executionArn || "")}
+                            formAction="none"
+                          >
+                            Describe
+                          </Button>
+                          {e.status === "RUNNING" && (
+                            <Button
+                              onClick={() => stopExecution(e.executionArn || "")}
+                              formAction="none"
+                            >
+                              Stop
+                            </Button>
+                          )}
                         </SpaceBetween>
                       ),
                     },
@@ -355,7 +442,11 @@ export default function StepFunctionsPage() {
                             id: "details",
                             label: "Details",
                             content: (
-                              <CodeView content={JSON.stringify(executionDetail, null, 2)} lineNumbers wrapLines />
+                              <CodeView
+                                content={JSON.stringify(executionDetail, null, 2)}
+                                lineNumbers
+                                wrapLines
+                              />
                             ),
                           },
                           {
@@ -368,7 +459,10 @@ export default function StepFunctionsPage() {
                                 columnDefinitions={[
                                   {
                                     header: "Timestamp",
-                                    cell: (ev: ExecutionHistoryEvent) => ev.timestamp ? new Date(ev.timestamp).toLocaleString() : "\u2014",
+                                    cell: (ev: ExecutionHistoryEvent) =>
+                                      ev.timestamp
+                                        ? new Date(ev.timestamp).toLocaleString()
+                                        : "\u2014",
                                   },
                                   {
                                     header: "Type",
@@ -386,7 +480,11 @@ export default function StepFunctionsPage() {
                                   },
                                   {
                                     header: "Event ID",
-                                    cell: (ev: ExecutionHistoryEvent) => <span style={{ fontFamily: "monospace", fontSize: "12px" }}>{ev.id || "\u2014"}</span>,
+                                    cell: (ev: ExecutionHistoryEvent) => (
+                                      <span style={{ fontFamily: "monospace", fontSize: "12px" }}>
+                                        {ev.id || "\u2014"}
+                                      </span>
+                                    ),
                                   },
                                 ]}
                                 empty={<Box textAlign="center">No execution history found.</Box>}
@@ -403,55 +501,133 @@ export default function StepFunctionsPage() {
           </SpaceBetween>
         </Container>
 
-        <Modal visible={createModal} onDismiss={() => setCreateModal(false)} header="Create state machine" footer={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={createMachine}>Create</Button>
-          </SpaceBetween>
-        }>
+        <Modal
+          visible={createModal}
+          onDismiss={() => setCreateModal(false)}
+          header="Create state machine"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
+              <Button variant="primary" onClick={createMachine}>
+                Create
+              </Button>
+            </SpaceBetween>
+          }
+        >
           <SpaceBetween size="m">
-            <FormField label={<>Name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={smNameError}>
-              <Input value={smName} onChange={e => { setSmName(e.detail.value); setSmNameError(null); }} placeholder="my-state-machine" />
+            <FormField
+              label={
+                <>
+                  Name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={smNameError}
+            >
+              <Input
+                value={smName}
+                onChange={(e) => {
+                  setSmName(e.detail.value);
+                  setSmNameError(null);
+                }}
+                placeholder="my-state-machine"
+              />
             </FormField>
-            <FormField label={<>IAM Role ARN <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={smRoleArnError}>
-              <Input value={smRoleArn} onChange={e => { setSmRoleArn(e.detail.value); setSmRoleArnError(null); }} placeholder="arn:aws:iam::123456789012:role/my-role" />
+            <FormField
+              label={
+                <>
+                  IAM Role ARN <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={smRoleArnError}
+            >
+              <Input
+                value={smRoleArn}
+                onChange={(e) => {
+                  setSmRoleArn(e.detail.value);
+                  setSmRoleArnError(null);
+                }}
+                placeholder="arn:aws:iam::123456789012:role/my-role"
+              />
             </FormField>
             <FormField label="Type">
               <Select
                 selectedOption={smType}
-                onChange={e => setSmType(e.detail.selectedOption as { label: string; value: string })}
+                onChange={(e) =>
+                  setSmType(e.detail.selectedOption as { label: string; value: string })
+                }
                 options={TYPE_OPTIONS}
               />
             </FormField>
-            <FormField label="Definition (JSON)"><Textarea value={definition} onChange={e => setDefinition(e.detail.value)} rows={10} /></FormField>
+            <FormField label="Definition (JSON)">
+              <Textarea
+                value={definition}
+                onChange={(e) => setDefinition(e.detail.value)}
+                rows={10}
+              />
+            </FormField>
           </SpaceBetween>
         </Modal>
 
-        <Modal visible={startModal} onDismiss={() => setStartModal(false)} header="Start execution" footer={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setStartModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={startExecution}>Start</Button>
-          </SpaceBetween>
-        }>
+        <Modal
+          visible={startModal}
+          onDismiss={() => setStartModal(false)}
+          header="Start execution"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => setStartModal(false)}>Cancel</Button>
+              <Button variant="primary" onClick={startExecution}>
+                Start
+              </Button>
+            </SpaceBetween>
+          }
+        >
           <SpaceBetween size="m">
-            <FormField label="Execution name (optional)"><Input value={executionName} onChange={e => setExecutionName(e.detail.value)} /></FormField>
-            <FormField label="Input (JSON)"><Textarea value={executionInput} onChange={e => setExecutionInput(e.detail.value)} rows={6} /></FormField>
+            <FormField label="Execution name (optional)">
+              <Input value={executionName} onChange={(e) => setExecutionName(e.detail.value)} />
+            </FormField>
+            <FormField label="Input (JSON)">
+              <Textarea
+                value={executionInput}
+                onChange={(e) => setExecutionInput(e.detail.value)}
+                rows={6}
+              />
+            </FormField>
           </SpaceBetween>
         </Modal>
 
-        <Modal visible={deleteModal} onDismiss={() => setDeleteModal(false)} header="Delete state machine" footer={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setDeleteModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={deleteMachine} disabled={deleteConfirmName !== machineToDelete}>Delete</Button>
-          </SpaceBetween>
-        }>
+        <Modal
+          visible={deleteModal}
+          onDismiss={() => setDeleteModal(false)}
+          header="Delete state machine"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => setDeleteModal(false)}>Cancel</Button>
+              <Button
+                variant="primary"
+                onClick={deleteMachine}
+                disabled={deleteConfirmName !== machineToDelete}
+              >
+                Delete
+              </Button>
+            </SpaceBetween>
+          }
+        >
           <SpaceBetween size="m">
             <Box>
               To confirm deletion, type <b>{machineToDelete}</b> in the field below.
             </Box>
             {deleteError && <Alert type="error">{deleteError}</Alert>}
             <FormField label="State machine name">
-              <Input value={deleteConfirmName} onChange={e => { setDeleteConfirmName(e.detail.value); setDeleteError(""); }} placeholder={machineToDelete} />
+              <Input
+                value={deleteConfirmName}
+                onChange={(e) => {
+                  setDeleteConfirmName(e.detail.value);
+                  setDeleteError("");
+                }}
+                placeholder={machineToDelete}
+              />
             </FormField>
           </SpaceBetween>
         </Modal>

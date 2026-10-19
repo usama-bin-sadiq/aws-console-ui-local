@@ -47,19 +47,104 @@ export default function EC2InstanceDetailsPage({
   const [creatingKey, setCreatingKey] = useState(false);
   const [createdKeyMaterial, setCreatedKeyMaterial] = useState<string | null>(null);
   const [modifyingKey, setModifyingKey] = useState(false);
-  const [sgRules, setSgRules] = useState<Array<{ GroupId?: string; GroupName?: string; IpPermissions?: unknown[]; IpPermissionsEgress?: unknown[] }>>([]);
+  const [sgRules, setSgRules] = useState<
+    Array<{
+      GroupId?: string;
+      GroupName?: string;
+      IpPermissions?: unknown[];
+      IpPermissionsEgress?: unknown[];
+    }>
+  >([]);
   const [instanceConnectUrl, setInstanceConnectUrl] = useState<string | null>(null);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [loadingConnect, setLoadingConnect] = useState(false);
-  const [statusChecks, setStatusChecks] = useState<Array<{ InstanceId?: string; InstanceState?: { Name?: string }; SystemStatus?: { Status?: string; Details?: Array<{ Name?: string; Status?: string }> }; InstanceStatus?: { Status?: string; Details?: Array<{ Name?: string; Status?: string }> } }>>([]);
+  const [statusChecks, setStatusChecks] = useState<
+    Array<{
+      InstanceId?: string;
+      InstanceState?: { Name?: string };
+      SystemStatus?: { Status?: string; Details?: Array<{ Name?: string; Status?: string }> };
+      InstanceStatus?: { Status?: string; Details?: Array<{ Name?: string; Status?: string }> };
+    }>
+  >([]);
   const [loadingStatusChecks, setLoadingStatusChecks] = useState(false);
-  const [volumes, setVolumes] = useState<Array<{ VolumeId?: string; Size?: number; VolumeType?: string; State?: string; AvailabilityZone?: string; Iops?: number; Throughput?: number; Encrypted?: boolean; KmsKeyId?: string; Attachments?: Array<{ InstanceId?: string; Device?: string; State?: string; AttachTime?: Date }>; Tags?: Array<{ Key?: string; Value?: string }>; CreateTime?: Date }>>([]);
+  const [volumes, setVolumes] = useState<
+    Array<{
+      VolumeId?: string;
+      Size?: number;
+      VolumeType?: string;
+      State?: string;
+      AvailabilityZone?: string;
+      Iops?: number;
+      Throughput?: number;
+      Encrypted?: boolean;
+      KmsKeyId?: string;
+      Attachments?: Array<{
+        InstanceId?: string;
+        Device?: string;
+        State?: string;
+        AttachTime?: Date;
+      }>;
+      Tags?: Array<{ Key?: string; Value?: string }>;
+      CreateTime?: Date;
+    }>
+  >([]);
   const [loadingVolumes, setLoadingVolumes] = useState(false);
-  const [networkInterfaces, setNetworkInterfaces] = useState<Array<{ NetworkInterfaceId?: string; SubnetId?: string; VpcId?: string; Description?: string; Status?: string; MacAddress?: string; PrivateIpAddress?: string; PrivateDnsName?: string; Groups?: Array<{ GroupId?: string; GroupName?: string }>; Attachment?: { AttachmentId?: string; InstanceId?: string; DeviceIndex?: number; Status?: string; AttachTime?: Date; DeleteOnTermination?: boolean }; Ipv6Addresses?: Array<{ Ipv6Address?: string }>; Tags?: Array<{ Key?: string; Value?: string }> }>>([]);
+  const [networkInterfaces, setNetworkInterfaces] = useState<
+    Array<{
+      NetworkInterfaceId?: string;
+      SubnetId?: string;
+      VpcId?: string;
+      Description?: string;
+      Status?: string;
+      MacAddress?: string;
+      PrivateIpAddress?: string;
+      PrivateDnsName?: string;
+      Groups?: Array<{ GroupId?: string; GroupName?: string }>;
+      Attachment?: {
+        AttachmentId?: string;
+        InstanceId?: string;
+        DeviceIndex?: number;
+        Status?: string;
+        AttachTime?: Date;
+        DeleteOnTermination?: boolean;
+      };
+      Ipv6Addresses?: Array<{ Ipv6Address?: string }>;
+      Tags?: Array<{ Key?: string; Value?: string }>;
+    }>
+  >([]);
   const [loadingNetworkInterfaces, setLoadingNetworkInterfaces] = useState(false);
-  const [amiDetails, setAmiDetails] = useState<{ ImageId?: string; Name?: string; Description?: string; State?: string; Architecture?: string; CreationDate?: string; OwnerId?: string; Platform?: string; RootDeviceType?: string; VirtualizationType?: string; ImageType?: string; Public?: boolean; ProductCodes?: Array<{ ProductCodeId?: string; ProductCodeType?: string }>; Hypervisor?: string; EnaSupport?: boolean; SriovNetSupport?: string; BootMode?: string; DeprecationTime?: string } | null>(null);
+  const [amiDetails, setAmiDetails] = useState<{
+    ImageId?: string;
+    Name?: string;
+    Description?: string;
+    State?: string;
+    Architecture?: string;
+    CreationDate?: string;
+    OwnerId?: string;
+    Platform?: string;
+    RootDeviceType?: string;
+    VirtualizationType?: string;
+    ImageType?: string;
+    Public?: boolean;
+    ProductCodes?: Array<{ ProductCodeId?: string; ProductCodeType?: string }>;
+    Hypervisor?: string;
+    EnaSupport?: boolean;
+    SriovNetSupport?: string;
+    BootMode?: string;
+    DeprecationTime?: string;
+  } | null>(null);
   const [loadingAmi, setLoadingAmi] = useState(false);
-  const [elasticIps, setElasticIps] = useState<Array<{ AllocationId?: string; PublicIp?: string; Domain?: string; InstanceId?: string; AssociationId?: string; NetworkInterfaceId?: string; Tags?: Array<{ Key?: string; Value?: string }> }>>([]);
+  const [elasticIps, setElasticIps] = useState<
+    Array<{
+      AllocationId?: string;
+      PublicIp?: string;
+      Domain?: string;
+      InstanceId?: string;
+      AssociationId?: string;
+      NetworkInterfaceId?: string;
+      Tags?: Array<{ Key?: string; Value?: string }>;
+    }>
+  >([]);
   const [loadingElasticIps, setLoadingElasticIps] = useState(false);
 
   useEffect(() => {
@@ -86,15 +171,10 @@ export default function EC2InstanceDetailsPage({
       }
       if (data.error) throw new Error(data.error);
       const allInstances = data.instances || [];
-      const found = allInstances.find(
-        (i: EC2Instance) => i.InstanceId === instanceId
-      );
+      const found = allInstances.find((i: EC2Instance) => i.InstanceId === instanceId);
       if (!found) {
         const ids = allInstances.map((i: EC2Instance) => i.InstanceId).join(", ");
-        throw new Error(
-          `Instance "${instanceId}" not found. ` +
-          `Available: [${ids || "none"}]`
-        );
+        throw new Error(`Instance "${instanceId}" not found. ` + `Available: [${ids || "none"}]`);
       }
       setInstance(found);
     } catch (err: unknown) {
@@ -128,7 +208,9 @@ export default function EC2InstanceDetailsPage({
       });
       const data = await res.json();
       setKeyPairs(data.keyPairs || []);
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
   }, []);
 
   const fetchSgRules = useCallback(async () => {
@@ -142,7 +224,9 @@ export default function EC2InstanceDetailsPage({
       });
       const data = await res.json();
       setSgRules(data.securityGroups || []);
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
   }, [instance]);
 
   const fetchInstanceConnect = useCallback(async () => {
@@ -179,8 +263,9 @@ export default function EC2InstanceDetailsPage({
       });
       const data = await res.json();
       setStatusChecks(data.instanceStatuses || []);
-    } catch { /* empty */ }
-    finally {
+    } catch {
+      /* empty */
+    } finally {
       setLoadingStatusChecks(false);
     }
   }, [instanceId]);
@@ -189,7 +274,9 @@ export default function EC2InstanceDetailsPage({
     if (!instance?.BlockDeviceMappings?.length) return;
     setLoadingVolumes(true);
     try {
-      const volumeIds = instance.BlockDeviceMappings.map((bdm) => bdm.Ebs?.VolumeId).filter(Boolean);
+      const volumeIds = instance.BlockDeviceMappings.map((bdm) => bdm.Ebs?.VolumeId).filter(
+        Boolean,
+      );
       if (!volumeIds.length) return;
       const res = await apiFetch("/api/ec2", {
         method: "POST",
@@ -198,8 +285,9 @@ export default function EC2InstanceDetailsPage({
       });
       const data = await res.json();
       setVolumes(data.volumes || []);
-    } catch { /* empty */ }
-    finally {
+    } catch {
+      /* empty */
+    } finally {
       setLoadingVolumes(false);
     }
   }, [instance]);
@@ -217,8 +305,9 @@ export default function EC2InstanceDetailsPage({
       });
       const data = await res.json();
       setNetworkInterfaces(data.networkInterfaces || []);
-    } catch { /* empty */ }
-    finally {
+    } catch {
+      /* empty */
+    } finally {
       setLoadingNetworkInterfaces(false);
     }
   }, [instance]);
@@ -234,8 +323,9 @@ export default function EC2InstanceDetailsPage({
       });
       const data = await res.json();
       setAmiDetails(data.images?.[0] || null);
-    } catch { /* empty */ }
-    finally {
+    } catch {
+      /* empty */
+    } finally {
       setLoadingAmi(false);
     }
   }, [instance]);
@@ -250,21 +340,29 @@ export default function EC2InstanceDetailsPage({
       });
       const data = await res.json();
       setElasticIps(data.addresses || []);
-    } catch { /* empty */ }
-    finally {
+    } catch {
+      /* empty */
+    } finally {
       setLoadingElasticIps(false);
     }
   }, []);
 
   const handleChangeInstanceType = useCallback(async () => {
     if (!instanceId || stateName !== "stopped" || !instance) return;
-    const newType = prompt("Enter new instance type (e.g., t3.medium):", instance.InstanceType || "");
+    const newType = prompt(
+      "Enter new instance type (e.g., t3.medium):",
+      instance.InstanceType || "",
+    );
     if (!newType) return;
     try {
       await apiFetch("/api/ec2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "modifyAttribute", instanceId, attributes: { InstanceType: { Value: newType } } }),
+        body: JSON.stringify({
+          action: "modifyAttribute",
+          instanceId,
+          attributes: { InstanceType: { Value: newType } },
+        }),
       });
       fetchInstance();
     } catch (err: unknown) {
@@ -279,7 +377,11 @@ export default function EC2InstanceDetailsPage({
       await apiFetch("/api/ec2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "modifyAttribute", instanceId, attributes: { DisableApiTermination: { Value: newValue } } }),
+        body: JSON.stringify({
+          action: "modifyAttribute",
+          instanceId,
+          attributes: { DisableApiTermination: { Value: newValue } },
+        }),
       });
       fetchInstance();
     } catch (err: unknown) {
@@ -295,7 +397,11 @@ export default function EC2InstanceDetailsPage({
       await apiFetch("/api/ec2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "modifyAttribute", instanceId, attributes: { UserData: { Value: userData } } }),
+        body: JSON.stringify({
+          action: "modifyAttribute",
+          instanceId,
+          attributes: { UserData: { Value: userData } },
+        }),
       });
       fetchInstance();
     } catch (err: unknown) {
@@ -319,49 +425,58 @@ export default function EC2InstanceDetailsPage({
     }
   }, [fetchElasticIps]);
 
-  const handleAssociateAddress = useCallback(async (allocationId: string) => {
-    if (!instanceId) return;
-    try {
-      await apiFetch("/api/ec2", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "associateAddress", allocationId, instanceId }),
-      });
-      fetchInstance();
-      fetchElasticIps();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to associate Elastic IP");
-    }
-  }, [instanceId, fetchInstance, fetchElasticIps]);
+  const handleAssociateAddress = useCallback(
+    async (allocationId: string) => {
+      if (!instanceId) return;
+      try {
+        await apiFetch("/api/ec2", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "associateAddress", allocationId, instanceId }),
+        });
+        fetchInstance();
+        fetchElasticIps();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to associate Elastic IP");
+      }
+    },
+    [instanceId, fetchInstance, fetchElasticIps],
+  );
 
-  const handleReleaseAddress = useCallback(async (allocationId: string) => {
-    if (!confirm("Release this Elastic IP address?")) return;
-    try {
-      await apiFetch("/api/ec2", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "releaseAddress", allocationId }),
-      });
-      fetchElasticIps();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to release Elastic IP");
-    }
-  }, [fetchElasticIps]);
+  const handleReleaseAddress = useCallback(
+    async (allocationId: string) => {
+      if (!confirm("Release this Elastic IP address?")) return;
+      try {
+        await apiFetch("/api/ec2", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "releaseAddress", allocationId }),
+        });
+        fetchElasticIps();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to release Elastic IP");
+      }
+    },
+    [fetchElasticIps],
+  );
 
-  const executeAction = useCallback(async (action: string, extra?: Record<string, unknown>) => {
-    try {
-      const res = await apiFetch("/api/ec2", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, instanceIds: [instanceId], ...extra }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || `Action ${action} failed`);
-      fetchInstance();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : `Failed to ${action}`);
-    }
-  }, [instanceId, fetchInstance]);
+  const executeAction = useCallback(
+    async (action: string, extra?: Record<string, unknown>) => {
+      try {
+        const res = await apiFetch("/api/ec2", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, instanceIds: [instanceId], ...extra }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `Action ${action} failed`);
+        fetchInstance();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : `Failed to ${action}`);
+      }
+    },
+    [instanceId, fetchInstance],
+  );
 
   const handleAssociateKeyPair = useCallback(async () => {
     if (!selectedKeyName || !instanceId) return;
@@ -403,7 +518,10 @@ export default function EC2InstanceDetailsPage({
       if (!res.ok || data.error) throw new Error(data.error || "Failed to create key pair");
       setCreatedKeyMaterial(data.keyPair?.KeyMaterial || "");
       setSelectedKeyName(data.keyPair?.KeyName || newKeyName.trim());
-      setKeyPairs((prev) => [...prev, { KeyName: data.keyPair?.KeyName || newKeyName.trim(), KeyType: "rsa" }]);
+      setKeyPairs((prev) => [
+        ...prev,
+        { KeyName: data.keyPair?.KeyName || newKeyName.trim(), KeyType: "rsa" },
+      ]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create key pair");
     } finally {
@@ -419,7 +537,12 @@ export default function EC2InstanceDetailsPage({
       const res = await apiFetch("/api/ec2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "createVolume", availabilityZone: instance.AvailabilityZone, size: parseInt(size), volumeType: "gp3" }),
+        body: JSON.stringify({
+          action: "createVolume",
+          availabilityZone: instance.AvailabilityZone,
+          size: parseInt(size),
+          volumeType: "gp3",
+        }),
       });
       const data = await res.json();
       if (data.volumeId) {
@@ -430,37 +553,43 @@ export default function EC2InstanceDetailsPage({
     }
   }, [instance, fetchVolumes]);
 
-  const handleAttachVolume = useCallback(async (volumeId: string) => {
-    if (!instanceId) return;
-    const device = prompt("Enter device name (e.g., /dev/xvdf):", "/dev/xvdf");
-    if (!device) return;
-    try {
-      await apiFetch("/api/ec2", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "attachVolume", volumeId, instanceId, device }),
-      });
-      fetchVolumes();
-      fetchInstance();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to attach volume");
-    }
-  }, [instanceId, fetchVolumes, fetchInstance]);
+  const handleAttachVolume = useCallback(
+    async (volumeId: string) => {
+      if (!instanceId) return;
+      const device = prompt("Enter device name (e.g., /dev/xvdf):", "/dev/xvdf");
+      if (!device) return;
+      try {
+        await apiFetch("/api/ec2", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "attachVolume", volumeId, instanceId, device }),
+        });
+        fetchVolumes();
+        fetchInstance();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to attach volume");
+      }
+    },
+    [instanceId, fetchVolumes, fetchInstance],
+  );
 
-  const handleDetachVolume = useCallback(async (volumeId: string) => {
-    if (!confirm("Detach this volume?")) return;
-    try {
-      await apiFetch("/api/ec2", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "detachVolume", volumeId, instanceId }),
-      });
-      fetchVolumes();
-      fetchInstance();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to detach volume");
-    }
-  }, [instanceId, fetchVolumes, fetchInstance]);
+  const handleDetachVolume = useCallback(
+    async (volumeId: string) => {
+      if (!confirm("Detach this volume?")) return;
+      try {
+        await apiFetch("/api/ec2", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "detachVolume", volumeId, instanceId }),
+        });
+        fetchVolumes();
+        fetchInstance();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to detach volume");
+      }
+    },
+    [instanceId, fetchVolumes, fetchInstance],
+  );
 
   useEffect(() => {
     fetchInstance();
@@ -474,16 +603,25 @@ export default function EC2InstanceDetailsPage({
       fetchAmiDetails();
       fetchElasticIps();
     }
-  }, [instance, fetchSgRules, fetchVolumes, fetchNetworkInterfaces, fetchAmiDetails, fetchElasticIps]);
+  }, [
+    instance,
+    fetchSgRules,
+    fetchVolumes,
+    fetchNetworkInterfaces,
+    fetchAmiDetails,
+    fetchElasticIps,
+  ]);
 
   if (loading) {
     return (
-      <div style={{ padding: "16px" }}>
+      <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
-          <Header variant="h1">Instance {instanceId || "Loading..."}</Header>
+          <Header variant="h2">Instance {instanceId || "Loading..."}</Header>
           <Box textAlign="center">
             <Spinner size="large" />
-            <Box variant="p" padding={{ top: "s" }}>Loading instance details...</Box>
+            <Box variant="p" padding={{ top: "s" }}>
+              Loading instance details...
+            </Box>
           </Box>
         </SpaceBetween>
       </div>
@@ -492,12 +630,14 @@ export default function EC2InstanceDetailsPage({
 
   if (error || !instance) {
     return (
-      <div style={{ padding: "16px" }}>
+      <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
-          <Header variant="h1">Instance {instanceId || "Loading..."}</Header>
+          <Header variant="h2">Instance {instanceId || "Loading..."}</Header>
           <Alert type="error">{error || "Instance not found"}</Alert>
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={fetchInstance} iconName="refresh">Retry</Button>
+            <Button onClick={fetchInstance} iconName="refresh">
+              Retry
+            </Button>
             <Button onClick={() => router.push("/ec2")}>Back to EC2</Button>
           </SpaceBetween>
         </SpaceBetween>
@@ -513,7 +653,8 @@ export default function EC2InstanceDetailsPage({
     if (name.includes("ubuntu") || imageId.includes("ubuntu")) return "ubuntu";
     if (name.includes("debian") || imageId.includes("debian")) return "admin";
     if (name.includes("fedora") || imageId.includes("fedora")) return "fedora";
-    if (name.includes("rhel") || name.includes("red hat") || imageId.includes("rhel")) return "ec2-user";
+    if (name.includes("rhel") || name.includes("red hat") || imageId.includes("rhel"))
+      return "ec2-user";
     return "ec2-user";
   }
 
@@ -521,37 +662,53 @@ export default function EC2InstanceDetailsPage({
     <Container header={<Header variant="h2">Details</Header>}>
       <ColumnLayout columns={3} variant="default">
         <div>
-          <Box variant="small" color="text-label">Instance ID</Box>
+          <Box variant="small" color="text-label">
+            Instance ID
+          </Box>
           <Box>{instance.InstanceId}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Name</Box>
+          <Box variant="small" color="text-label">
+            Name
+          </Box>
           <Box>{instance.Name || "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Instance State</Box>
+          <Box variant="small" color="text-label">
+            Instance State
+          </Box>
           <StatusIndicator type={isRunning ? "success" : isStopped ? "warning" : "info"}>
             {stateName}
           </StatusIndicator>
         </div>
         <div>
-          <Box variant="small" color="text-label">Instance Type</Box>
+          <Box variant="small" color="text-label">
+            Instance Type
+          </Box>
           <Box>{instance.InstanceType}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">AMI ID</Box>
+          <Box variant="small" color="text-label">
+            AMI ID
+          </Box>
           <Box>{instance.ImageId || "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Architecture</Box>
+          <Box variant="small" color="text-label">
+            Architecture
+          </Box>
           <Box>{instance.Architecture || "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Platform</Box>
+          <Box variant="small" color="text-label">
+            Platform
+          </Box>
           <Box>{instance.Platform || "Linux/Unix"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Key Pair</Box>
+          <Box variant="small" color="text-label">
+            Key Pair
+          </Box>
           <SpaceBetween direction="horizontal" size="xs">
             <Box>{instance.KeyName || "—"}</Box>
             {isStopped && (
@@ -569,22 +726,30 @@ export default function EC2InstanceDetailsPage({
           </SpaceBetween>
         </div>
         <div>
-          <Box variant="small" color="text-label">Default Username</Box>
+          <Box variant="small" color="text-label">
+            Default Username
+          </Box>
           <Box>{getDefaultUsername(instance)}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">SSH Command</Box>
+          <Box variant="small" color="text-label">
+            SSH Command
+          </Box>
           <Box>
             {instance.PublicIpAddress && instance.KeyName ? (
               <CodeView
                 content={`ssh -i "${instance.KeyName}.pem" ${getDefaultUsername(instance)}@${instance.PublicIpAddress}`}
                 lineNumbers={false}
               />
-            ) : "—"}
+            ) : (
+              "—"
+            )}
           </Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">IAM Role</Box>
+          <Box variant="small" color="text-label">
+            IAM Role
+          </Box>
           <Box>
             {instance.IamInstanceProfile?.Arn ? (
               <CapabilityLink
@@ -592,31 +757,45 @@ export default function EC2InstanceDetailsPage({
                 href={`/iam?resource=${encodeURIComponent(instance.IamInstanceProfile.Arn)}`}
                 enabled
               />
-            ) : "—"}
+            ) : (
+              "—"
+            )}
           </Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Launch Time</Box>
+          <Box variant="small" color="text-label">
+            Launch Time
+          </Box>
           <Box>{instance.LaunchTime ? new Date(instance.LaunchTime).toLocaleString() : "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Root Device Type</Box>
+          <Box variant="small" color="text-label">
+            Root Device Type
+          </Box>
           <Box>{instance.RootDeviceType || "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Virtualization Type</Box>
+          <Box variant="small" color="text-label">
+            Virtualization Type
+          </Box>
           <Box>{instance.VirtualizationType || "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">EBS Optimized</Box>
+          <Box variant="small" color="text-label">
+            EBS Optimized
+          </Box>
           <Box>{instance.EbsOptimized ? "Yes" : "No"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Termination Protection</Box>
+          <Box variant="small" color="text-label">
+            Termination Protection
+          </Box>
           <Box>{instance.DisableApiTermination ? "Enabled" : "Disabled"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Shutdown Behavior</Box>
+          <Box variant="small" color="text-label">
+            Shutdown Behavior
+          </Box>
           <Box>{instance.InstanceInitiatedShutdownBehavior || "stop"}</Box>
         </div>
       </ColumnLayout>
@@ -627,43 +806,83 @@ export default function EC2InstanceDetailsPage({
     <Container header={<Header variant="h2">Networking</Header>}>
       <ColumnLayout columns={3} variant="default">
         <div>
-          <Box variant="small" color="text-label">Public IPv4 Address</Box>
+          <Box variant="small" color="text-label">
+            Public IPv4 Address
+          </Box>
           <Box>{instance.PublicIpAddress || "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Private IPv4 Address</Box>
+          <Box variant="small" color="text-label">
+            Private IPv4 Address
+          </Box>
           <Box>{instance.PrivateIpAddress || "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Public DNS Name</Box>
+          <Box variant="small" color="text-label">
+            Public DNS Name
+          </Box>
           <Box>{instance.PublicDnsName || "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Private DNS Name</Box>
+          <Box variant="small" color="text-label">
+            Private DNS Name
+          </Box>
           <Box>{instance.PrivateDnsName || "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">VPC ID</Box>
-          <Box>{instance.VpcId ? <CapabilityLink label={instance.VpcId} href={`/vpc?resource=${encodeURIComponent(instance.VpcId)}`} enabled /> : "—"}</Box>
+          <Box variant="small" color="text-label">
+            VPC ID
+          </Box>
+          <Box>
+            {instance.VpcId ? (
+              <CapabilityLink
+                label={instance.VpcId}
+                href={`/vpc?resource=${encodeURIComponent(instance.VpcId)}`}
+                enabled
+              />
+            ) : (
+              "—"
+            )}
+          </Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Subnet ID</Box>
-          <Box>{instance.SubnetId ? <CapabilityLink label={instance.SubnetId} href={`/subnet?resource=${encodeURIComponent(instance.SubnetId)}`} enabled /> : "—"}</Box>
+          <Box variant="small" color="text-label">
+            Subnet ID
+          </Box>
+          <Box>
+            {instance.SubnetId ? (
+              <CapabilityLink
+                label={instance.SubnetId}
+                href={`/subnet?resource=${encodeURIComponent(instance.SubnetId)}`}
+                enabled
+              />
+            ) : (
+              "—"
+            )}
+          </Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Availability Zone</Box>
+          <Box variant="small" color="text-label">
+            Availability Zone
+          </Box>
           <Box>{instance.AvailabilityZone || "—"}</Box>
         </div>
       </ColumnLayout>
       {instance.SecurityGroups && instance.SecurityGroups.length > 0 && (
         <div style={{ marginTop: "16px" }}>
-          <Box variant="small" color="text-label">Security Groups</Box>
+          <Box variant="small" color="text-label">
+            Security Groups
+          </Box>
           <SpaceBetween size="xs">
             {instance.SecurityGroups.map((sg, idx) => (
               <Box key={sg.GroupId || sg.GroupName || idx}>
                 <CapabilityLink
                   label={`${sg.GroupName} (${sg.GroupId})`}
-                  href={sg.GroupId ? `/security-group?resource=${encodeURIComponent(sg.GroupId)}` : undefined}
+                  href={
+                    sg.GroupId
+                      ? `/security-group?resource=${encodeURIComponent(sg.GroupId)}`
+                      : undefined
+                  }
                   enabled={Boolean(sg.GroupId)}
                   reason="missing security group identifier"
                 />
@@ -676,15 +895,25 @@ export default function EC2InstanceDetailsPage({
   );
 
   const storageContent = (
-    <Container header={<Header variant="h2">Storage</Header>}>
+    <Container header={<Header variant="h2">Storage</Header>} className="aws-table-card">
       {instance.BlockDeviceMappings && instance.BlockDeviceMappings.length > 0 ? (
         <Table
           columnDefinitions={[
             { header: "Device Name", cell: (item) => item.DeviceName },
             { header: "Volume ID", cell: (item) => item.Ebs?.VolumeId },
-            { header: "Status", cell: (item) => <StatusIndicator type="info">{item.Ebs?.Status}</StatusIndicator> },
-            { header: "Delete on Termination", cell: (item) => item.Ebs?.DeleteOnTermination ? "Yes" : "No" },
-            { header: "Attach Time", cell: (item) => item.Ebs?.AttachTime ? new Date(item.Ebs.AttachTime).toLocaleString() : "—" },
+            {
+              header: "Status",
+              cell: (item) => <StatusIndicator type="info">{item.Ebs?.Status}</StatusIndicator>,
+            },
+            {
+              header: "Delete on Termination",
+              cell: (item) => (item.Ebs?.DeleteOnTermination ? "Yes" : "No"),
+            },
+            {
+              header: "Attach Time",
+              cell: (item) =>
+                item.Ebs?.AttachTime ? new Date(item.Ebs.AttachTime).toLocaleString() : "—",
+            },
           ]}
           items={instance.BlockDeviceMappings}
           header={<Header variant="h3">Block Device Mappings</Header>}
@@ -696,7 +925,7 @@ export default function EC2InstanceDetailsPage({
   );
 
   const tagsContent = (
-    <Container header={<Header variant="h2">Tags</Header>}>
+    <Container header={<Header variant="h2">Tags</Header>} className="aws-table-card">
       {instance.Tags && instance.Tags.length > 0 ? (
         <Table
           columnDefinitions={[
@@ -716,11 +945,15 @@ export default function EC2InstanceDetailsPage({
     <Container header={<Header variant="h2">Monitoring</Header>}>
       <ColumnLayout columns={2} variant="default">
         <div>
-          <Box variant="small" color="text-label">Monitoring</Box>
+          <Box variant="small" color="text-label">
+            Monitoring
+          </Box>
           <Box>{instance.Monitoring?.State || "disabled"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Console Output</Box>
+          <Box variant="small" color="text-label">
+            Console Output
+          </Box>
           {loadingConsole ? (
             <Spinner size="normal" />
           ) : (
@@ -732,7 +965,9 @@ export default function EC2InstanceDetailsPage({
       </ColumnLayout>
       {consoleOutput && (
         <div style={{ marginTop: "16px" }}>
-          <Box variant="small" color="text-label">Last Console Output</Box>
+          <Box variant="small" color="text-label">
+            Last Console Output
+          </Box>
           <CodeView content={consoleOutput} lineNumbers wrapLines />
         </div>
       )}
@@ -740,33 +975,46 @@ export default function EC2InstanceDetailsPage({
   );
 
   const securityContent = (
-    <Container header={<Header variant="h2">Security Groups</Header>}>
+    <Container header={<Header variant="h2">Security Groups</Header>} className="aws-table-card">
       {sgRules.length > 0 ? (
         <SpaceBetween size="l">
           {sgRules.map((sg) => (
             <SpaceBetween key={sg.GroupId} size="m">
-              <Box variant="h3">{sg.GroupName} ({sg.GroupId})</Box>
+              <Box variant="h3">
+                {sg.GroupName} ({sg.GroupId})
+              </Box>
               <Box variant="h4">Inbound Rules</Box>
               <Table
                 columnDefinitions={[
-                  { header: "Protocol", cell: (item: Record<string, unknown>) => (item.IpProtocol as string) || "All" },
-                  { header: "Port Range", cell: (item: Record<string, unknown>) => {
-                    const from = item.FromPort as number;
-                    const to = item.ToPort as number;
-                    if (from === -1 && to === -1) return "All";
-                    if (from === to) return String(from);
-                    return `${from} - ${to}`;
-                  }},
-                  { header: "Source", cell: (item: Record<string, unknown>) => {
-                    const ipRanges = item.IpRanges as Array<{ CidrIp?: string }> | undefined;
-                    const ipv6 = item.Ipv6Ranges as Array<{ CidrIpv6?: string }> | undefined;
-                    const userIdPairs = item.UserIdGroupPairs as Array<{ GroupId?: string }> | undefined;
-                    const parts: string[] = [];
-                    if (ipRanges) parts.push(...ipRanges.map((r) => r.CidrIp || ""));
-                    if (ipv6) parts.push(...ipv6.map((r) => r.CidrIpv6 || ""));
-                    if (userIdPairs) parts.push(...userIdPairs.map((r) => r.GroupId || ""));
-                    return parts.join(", ") || "—";
-                  }},
+                  {
+                    header: "Protocol",
+                    cell: (item: Record<string, unknown>) => (item.IpProtocol as string) || "All",
+                  },
+                  {
+                    header: "Port Range",
+                    cell: (item: Record<string, unknown>) => {
+                      const from = item.FromPort as number;
+                      const to = item.ToPort as number;
+                      if (from === -1 && to === -1) return "All";
+                      if (from === to) return String(from);
+                      return `${from} - ${to}`;
+                    },
+                  },
+                  {
+                    header: "Source",
+                    cell: (item: Record<string, unknown>) => {
+                      const ipRanges = item.IpRanges as Array<{ CidrIp?: string }> | undefined;
+                      const ipv6 = item.Ipv6Ranges as Array<{ CidrIpv6?: string }> | undefined;
+                      const userIdPairs = item.UserIdGroupPairs as
+                        | Array<{ GroupId?: string }>
+                        | undefined;
+                      const parts: string[] = [];
+                      if (ipRanges) parts.push(...ipRanges.map((r) => r.CidrIp || ""));
+                      if (ipv6) parts.push(...ipv6.map((r) => r.CidrIpv6 || ""));
+                      if (userIdPairs) parts.push(...userIdPairs.map((r) => r.GroupId || ""));
+                      return parts.join(", ") || "—";
+                    },
+                  },
                 ]}
                 items={(sg.IpPermissions as Record<string, unknown>[]) || []}
                 empty={<Box>No inbound rules</Box>}
@@ -774,24 +1022,35 @@ export default function EC2InstanceDetailsPage({
               <Box variant="h4">Outbound Rules</Box>
               <Table
                 columnDefinitions={[
-                  { header: "Protocol", cell: (item: Record<string, unknown>) => (item.IpProtocol as string) || "All" },
-                  { header: "Port Range", cell: (item: Record<string, unknown>) => {
-                    const from = item.FromPort as number;
-                    const to = item.ToPort as number;
-                    if (from === -1 && to === -1) return "All";
-                    if (from === to) return String(from);
-                    return `${from} - ${to}`;
-                  }},
-                  { header: "Destination", cell: (item: Record<string, unknown>) => {
-                    const ipRanges = item.IpRanges as Array<{ CidrIp?: string }> | undefined;
-                    const ipv6 = item.Ipv6Ranges as Array<{ CidrIpv6?: string }> | undefined;
-                    const userIdPairs = item.UserIdGroupPairs as Array<{ GroupId?: string }> | undefined;
-                    const parts: string[] = [];
-                    if (ipRanges) parts.push(...ipRanges.map((r) => r.CidrIp || ""));
-                    if (ipv6) parts.push(...ipv6.map((r) => r.CidrIpv6 || ""));
-                    if (userIdPairs) parts.push(...userIdPairs.map((r) => r.GroupId || ""));
-                    return parts.join(", ") || "—";
-                  }},
+                  {
+                    header: "Protocol",
+                    cell: (item: Record<string, unknown>) => (item.IpProtocol as string) || "All",
+                  },
+                  {
+                    header: "Port Range",
+                    cell: (item: Record<string, unknown>) => {
+                      const from = item.FromPort as number;
+                      const to = item.ToPort as number;
+                      if (from === -1 && to === -1) return "All";
+                      if (from === to) return String(from);
+                      return `${from} - ${to}`;
+                    },
+                  },
+                  {
+                    header: "Destination",
+                    cell: (item: Record<string, unknown>) => {
+                      const ipRanges = item.IpRanges as Array<{ CidrIp?: string }> | undefined;
+                      const ipv6 = item.Ipv6Ranges as Array<{ CidrIpv6?: string }> | undefined;
+                      const userIdPairs = item.UserIdGroupPairs as
+                        | Array<{ GroupId?: string }>
+                        | undefined;
+                      const parts: string[] = [];
+                      if (ipRanges) parts.push(...ipRanges.map((r) => r.CidrIp || ""));
+                      if (ipv6) parts.push(...ipv6.map((r) => r.CidrIpv6 || ""));
+                      if (userIdPairs) parts.push(...userIdPairs.map((r) => r.GroupId || ""));
+                      return parts.join(", ") || "—";
+                    },
+                  },
                 ]}
                 items={(sg.IpPermissionsEgress as Record<string, unknown>[]) || []}
                 empty={<Box>No outbound rules</Box>}
@@ -811,29 +1070,41 @@ export default function EC2InstanceDetailsPage({
       <SpaceBetween size="l">
         <ColumnLayout columns={2} variant="default">
           <div>
-            <Box variant="small" color="text-label">Instance ID</Box>
+            <Box variant="small" color="text-label">
+              Instance ID
+            </Box>
             <Box>{instance.InstanceId}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Instance State</Box>
+            <Box variant="small" color="text-label">
+              Instance State
+            </Box>
             <StatusIndicator type={isRunning ? "success" : isStopped ? "warning" : "info"}>
               {stateName}
             </StatusIndicator>
           </div>
           <div>
-            <Box variant="small" color="text-label">Public IP</Box>
+            <Box variant="small" color="text-label">
+              Public IP
+            </Box>
             <Box>{instance.PublicIpAddress || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Private IP</Box>
+            <Box variant="small" color="text-label">
+              Private IP
+            </Box>
             <Box>{instance.PrivateIpAddress || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Default Username</Box>
+            <Box variant="small" color="text-label">
+              Default Username
+            </Box>
             <Box>{getDefaultUsername(instance)}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Key Pair</Box>
+            <Box variant="small" color="text-label">
+              Key Pair
+            </Box>
             <Box>{instance.KeyName || "—"}</Box>
           </div>
         </ColumnLayout>
@@ -841,16 +1112,26 @@ export default function EC2InstanceDetailsPage({
           <SpaceBetween size="xs">
             <Box>
               <Box variant="strong">EC2 Instance Connect</Box>
-              <Box variant="p" color="text-body-secondary">Connect to your instance using a browser-based SSH client. This requires the instance to be running and have a public IP address.</Box>
+              <Box variant="p" color="text-body-secondary">
+                Connect to your instance using a browser-based SSH client. This requires the
+                instance to be running and have a public IP address.
+              </Box>
             </Box>
-            <Button variant="primary" loading={loadingConnect} onClick={fetchInstanceConnect} disabled={!isRunning || !instance.PublicIpAddress}>
+            <Button
+              variant="primary"
+              loading={loadingConnect}
+              onClick={fetchInstanceConnect}
+              disabled={!isRunning || !instance.PublicIpAddress}
+            >
               Connect
             </Button>
           </SpaceBetween>
         </Alert>
         {instanceConnectUrl && (
           <Box margin={{ top: "m" }}>
-            <Box variant="p" color="text-body-secondary">Opening connection in new tab...</Box>
+            <Box variant="p" color="text-body-secondary">
+              Opening connection in new tab...
+            </Box>
           </Box>
         )}
       </SpaceBetween>
@@ -859,61 +1140,107 @@ export default function EC2InstanceDetailsPage({
 
   // ─── Status Checks Tab ───
   const statusChecksContent = (
-    <Container header={<Header variant="h2">Status Checks</Header>}>
+    <Container header={<Header variant="h2">Status Checks</Header>} className="aws-table-card">
       <SpaceBetween size="l">
         <ColumnLayout columns={2} variant="default">
           <div>
-            <Box variant="small" color="text-label">Instance Status</Box>
-            <Box>{statusChecks[0]?.InstanceStatus?.Status === "ok" ? (
-              <StatusIndicator type="success">2/2 checks passed</StatusIndicator>
-            ) : statusChecks[0]?.InstanceStatus?.Status === "impaired" ? (
-              <StatusIndicator type="error">1/2 checks failed</StatusIndicator>
-            ) : (
-              <StatusIndicator type="warning">Initializing...</StatusIndicator>
-            )}</Box>
+            <Box variant="small" color="text-label">
+              Instance Status
+            </Box>
+            <Box>
+              {statusChecks[0]?.InstanceStatus?.Status === "ok" ? (
+                <StatusIndicator type="success">2/2 checks passed</StatusIndicator>
+              ) : statusChecks[0]?.InstanceStatus?.Status === "impaired" ? (
+                <StatusIndicator type="error">1/2 checks failed</StatusIndicator>
+              ) : (
+                <StatusIndicator type="warning">Initializing...</StatusIndicator>
+              )}
+            </Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">System Status</Box>
-            <Box>{statusChecks[0]?.SystemStatus?.Status === "ok" ? (
-              <StatusIndicator type="success">OK</StatusIndicator>
-            ) : statusChecks[0]?.SystemStatus?.Status === "impaired" ? (
-              <StatusIndicator type="error">Impaired</StatusIndicator>
-            ) : (
-              <StatusIndicator type="warning">Initializing...</StatusIndicator>
-            )}</Box>
+            <Box variant="small" color="text-label">
+              System Status
+            </Box>
+            <Box>
+              {statusChecks[0]?.SystemStatus?.Status === "ok" ? (
+                <StatusIndicator type="success">OK</StatusIndicator>
+              ) : statusChecks[0]?.SystemStatus?.Status === "impaired" ? (
+                <StatusIndicator type="error">Impaired</StatusIndicator>
+              ) : (
+                <StatusIndicator type="warning">Initializing...</StatusIndicator>
+              )}
+            </Box>
           </div>
         </ColumnLayout>
         {loadingStatusChecks ? (
-          <Box textAlign="center" padding="l"><Spinner size="normal" /></Box>
+          <Box textAlign="center" padding="l">
+            <Spinner size="normal" />
+          </Box>
         ) : statusChecks.length > 0 ? (
           <Box margin={{ top: "l" }}>
             <SpaceBetween size="m">
-              <Container header={<Header variant="h3">System Status Details</Header>}>
-              <Table
-                columnDefinitions={[
-                  { header: "Status Check", cell: (item: any) => item.Name },
-                  { header: "Status", cell: (item: any) => item.Status === "ok" ? <StatusIndicator type="success">Passed</StatusIndicator> : item.Status === "impaired" ? <StatusIndicator type="error">Failed</StatusIndicator> : <StatusIndicator type="warning">Initializing</StatusIndicator> },
-                  { header: "Impaired Since", cell: (item: any) => item.ImpairedSince ? new Date(item.ImpairedSince).toLocaleString() : "—" },
-                ]}
-                items={statusChecks[0]?.SystemStatus?.Details || []}
-                empty={<Box>No system status details</Box>}
-              />
-            </Container>
-            <Container header={<Header variant="h3">Instance Status Details</Header>}>
-              <Table
-                columnDefinitions={[
-                  { header: "Status Check", cell: (item: any) => item.Name },
-                  { header: "Status", cell: (item: any) => item.Status === "ok" ? <StatusIndicator type="success">Passed</StatusIndicator> : item.Status === "impaired" ? <StatusIndicator type="error">Failed</StatusIndicator> : <StatusIndicator type="warning">Initializing</StatusIndicator> },
-                  { header: "Impaired Since", cell: (item: any) => item.ImpairedSince ? new Date(item.ImpairedSince).toLocaleString() : "—" },
-                ]}
-                items={statusChecks[0]?.InstanceStatus?.Details || []}
-                empty={<Box>No instance status details</Box>}
-              />
-</Container>
+              <Container
+                header={<Header variant="h3">System Status Details</Header>}
+                className="aws-table-card"
+              >
+                <Table
+                  columnDefinitions={[
+                    { header: "Status Check", cell: (item: any) => item.Name },
+                    {
+                      header: "Status",
+                      cell: (item: any) =>
+                        item.Status === "ok" ? (
+                          <StatusIndicator type="success">Passed</StatusIndicator>
+                        ) : item.Status === "impaired" ? (
+                          <StatusIndicator type="error">Failed</StatusIndicator>
+                        ) : (
+                          <StatusIndicator type="warning">Initializing</StatusIndicator>
+                        ),
+                    },
+                    {
+                      header: "Impaired Since",
+                      cell: (item: any) =>
+                        item.ImpairedSince ? new Date(item.ImpairedSince).toLocaleString() : "—",
+                    },
+                  ]}
+                  items={statusChecks[0]?.SystemStatus?.Details || []}
+                  empty={<Box>No system status details</Box>}
+                />
+              </Container>
+              <Container
+                header={<Header variant="h3">Instance Status Details</Header>}
+                className="aws-table-card"
+              >
+                <Table
+                  columnDefinitions={[
+                    { header: "Status Check", cell: (item: any) => item.Name },
+                    {
+                      header: "Status",
+                      cell: (item: any) =>
+                        item.Status === "ok" ? (
+                          <StatusIndicator type="success">Passed</StatusIndicator>
+                        ) : item.Status === "impaired" ? (
+                          <StatusIndicator type="error">Failed</StatusIndicator>
+                        ) : (
+                          <StatusIndicator type="warning">Initializing</StatusIndicator>
+                        ),
+                    },
+                    {
+                      header: "Impaired Since",
+                      cell: (item: any) =>
+                        item.ImpairedSince ? new Date(item.ImpairedSince).toLocaleString() : "—",
+                    },
+                  ]}
+                  items={statusChecks[0]?.InstanceStatus?.Details || []}
+                  empty={<Box>No instance status details</Box>}
+                />
+              </Container>
             </SpaceBetween>
           </Box>
         ) : (
-          <Button onClick={fetchStatusChecks} formAction="none">Refresh Status Checks</Button>
+          <Button onClick={fetchStatusChecks} formAction="none">
+            Refresh Status Checks
+          </Button>
         )}
       </SpaceBetween>
     </Container>
@@ -921,43 +1248,94 @@ export default function EC2InstanceDetailsPage({
 
   // ─── Volumes Tab ───
   const volumesContent = (
-    <Container header={<Header variant="h2">Volumes</Header>}>
+    <Container header={<Header variant="h2">Volumes</Header>} className="aws-table-card">
       <SpaceBetween size="l">
         <Box margin={{ bottom: "m" }}>
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={handleCreateVolume} formAction="none">Create Volume</Button>
-            <Button onClick={fetchVolumes} formAction="none" loading={loadingVolumes}>Refresh</Button>
+            <Button onClick={handleCreateVolume} formAction="none">
+              Create Volume
+            </Button>
+            <Button onClick={fetchVolumes} formAction="none" loading={loadingVolumes}>
+              Refresh
+            </Button>
           </SpaceBetween>
         </Box>
         {loadingVolumes ? (
-          <Box textAlign="center" padding="l"><Spinner size="normal" /></Box>
+          <Box textAlign="center" padding="l">
+            <Spinner size="normal" />
+          </Box>
         ) : volumes.length > 0 ? (
           <Table
             columnDefinitions={[
               { header: "Volume ID", cell: (item: any) => item.VolumeId },
               { header: "Size (GiB)", cell: (item: any) => item.Size },
               { header: "Type", cell: (item: any) => item.VolumeType },
-              { header: "State", cell: (item: any) => <StatusIndicator type={item.State === "in-use" ? "success" : item.State === "available" ? "info" : "warning"}>{item.State}</StatusIndicator> },
+              {
+                header: "State",
+                cell: (item: any) => (
+                  <StatusIndicator
+                    type={
+                      item.State === "in-use"
+                        ? "success"
+                        : item.State === "available"
+                          ? "info"
+                          : "warning"
+                    }
+                  >
+                    {item.State}
+                  </StatusIndicator>
+                ),
+              },
               { header: "IOPS", cell: (item: any) => item.Iops || "—" },
               { header: "Throughput (MiB/s)", cell: (item: any) => item.Throughput || "—" },
-              { header: "Encrypted", cell: (item: any) => item.Encrypted ? "Yes" : "No" },
+              { header: "Encrypted", cell: (item: any) => (item.Encrypted ? "Yes" : "No") },
               { header: "AZ", cell: (item: any) => item.AvailabilityZone },
-              { header: "Attached To", cell: (item: any) => item.Attachments?.[0]?.InstanceId || "—" },
+              {
+                header: "Attached To",
+                cell: (item: any) => item.Attachments?.[0]?.InstanceId || "—",
+              },
               { header: "Device", cell: (item: any) => item.Attachments?.[0]?.Device || "—" },
-              { header: "Created", cell: (item: any) => item.CreateTime ? new Date(item.CreateTime).toLocaleString() : "—" },
-              { header: "Actions", cell: (item: any) => (
-                <SpaceBetween direction="horizontal" size="xs">
-                  {item.State === "available" && <Button variant="inline-link" onClick={() => handleAttachVolume(item.VolumeId!)} formAction="none">Attach</Button>}
-                  {item.State === "in-use" && <Button variant="inline-link" onClick={() => handleDetachVolume(item.VolumeId!)} formAction="none">Detach</Button>}
-                  <Button variant="inline-link" onClick={() => {}} formAction="none">Create Snapshot</Button>
-                </SpaceBetween>
-              )},
+              {
+                header: "Created",
+                cell: (item: any) =>
+                  item.CreateTime ? new Date(item.CreateTime).toLocaleString() : "—",
+              },
+              {
+                header: "Actions",
+                cell: (item: any) => (
+                  <SpaceBetween direction="horizontal" size="xs">
+                    {item.State === "available" && (
+                      <Button
+                        variant="inline-link"
+                        onClick={() => handleAttachVolume(item.VolumeId!)}
+                        formAction="none"
+                      >
+                        Attach
+                      </Button>
+                    )}
+                    {item.State === "in-use" && (
+                      <Button
+                        variant="inline-link"
+                        onClick={() => handleDetachVolume(item.VolumeId!)}
+                        formAction="none"
+                      >
+                        Detach
+                      </Button>
+                    )}
+                    <Button variant="inline-link" onClick={() => {}} formAction="none">
+                      Create Snapshot
+                    </Button>
+                  </SpaceBetween>
+                ),
+              },
             ]}
             items={volumes}
             empty={<Box>No volumes found</Box>}
           />
         ) : (
-          <Box textAlign="center" padding="l">No volumes found</Box>
+          <Box textAlign="center" padding="l">
+            No volumes found
+          </Box>
         )}
       </SpaceBetween>
     </Container>
@@ -965,10 +1343,12 @@ export default function EC2InstanceDetailsPage({
 
   // ─── Network Interfaces Tab ───
   const networkInterfacesContent = (
-    <Container header={<Header variant="h2">Network Interfaces</Header>}>
+    <Container header={<Header variant="h2">Network Interfaces</Header>} className="aws-table-card">
       <SpaceBetween size="l">
         {loadingNetworkInterfaces ? (
-          <Box textAlign="center" padding="l"><Spinner size="normal" /></Box>
+          <Box textAlign="center" padding="l">
+            <Spinner size="normal" />
+          </Box>
         ) : networkInterfaces.length > 0 ? (
           <Table
             columnDefinitions={[
@@ -978,17 +1358,48 @@ export default function EC2InstanceDetailsPage({
               { header: "VPC", cell: (item: any) => item.VpcId },
               { header: "Private IP", cell: (item: any) => item.PrivateIpAddress },
               { header: "Public IP", cell: (item: any) => item.Association?.PublicIp || "—" },
-              { header: "Status", cell: (item: any) => <StatusIndicator type={item.Status === "in-use" ? "success" : item.Status === "available" ? "info" : "warning"}>{item.Status}</StatusIndicator> },
-              { header: "Security Groups", cell: (item: any) => item.Groups?.map((g: any) => `${g.GroupName} (${g.GroupId})`).join(", ") || "—" },
-              { header: "Attachment", cell: (item: any) => item.Attachment ? `${item.Attachment.InstanceId} (${item.Attachment.DeviceIndex})` : "—" },
+              {
+                header: "Status",
+                cell: (item: any) => (
+                  <StatusIndicator
+                    type={
+                      item.Status === "in-use"
+                        ? "success"
+                        : item.Status === "available"
+                          ? "info"
+                          : "warning"
+                    }
+                  >
+                    {item.Status}
+                  </StatusIndicator>
+                ),
+              },
+              {
+                header: "Security Groups",
+                cell: (item: any) =>
+                  item.Groups?.map((g: any) => `${g.GroupName} (${g.GroupId})`).join(", ") || "—",
+              },
+              {
+                header: "Attachment",
+                cell: (item: any) =>
+                  item.Attachment
+                    ? `${item.Attachment.InstanceId} (${item.Attachment.DeviceIndex})`
+                    : "—",
+              },
               { header: "MAC Address", cell: (item: any) => item.MacAddress || "—" },
-              { header: "IPv6 Addresses", cell: (item: any) => item.Ipv6Addresses?.map((ip: any) => ip.Ipv6Address).join(", ") || "—" },
+              {
+                header: "IPv6 Addresses",
+                cell: (item: any) =>
+                  item.Ipv6Addresses?.map((ip: any) => ip.Ipv6Address).join(", ") || "—",
+              },
             ]}
             items={networkInterfaces}
             empty={<Box>No network interfaces</Box>}
           />
         ) : (
-          <Box textAlign="center" padding="l">No network interfaces</Box>
+          <Box textAlign="center" padding="l">
+            No network interfaces
+          </Box>
         )}
       </SpaceBetween>
     </Container>
@@ -998,75 +1409,113 @@ export default function EC2InstanceDetailsPage({
   const amiContent = (
     <Container header={<Header variant="h2">AMI Details</Header>}>
       {loadingAmi ? (
-        <Box textAlign="center" padding="l"><Spinner size="normal" /></Box>
+        <Box textAlign="center" padding="l">
+          <Spinner size="normal" />
+        </Box>
       ) : amiDetails ? (
         <ColumnLayout columns={2} variant="default">
           <div>
-            <Box variant="small" color="text-label">AMI ID</Box>
+            <Box variant="small" color="text-label">
+              AMI ID
+            </Box>
             <Box>{amiDetails.ImageId}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Name</Box>
+            <Box variant="small" color="text-label">
+              Name
+            </Box>
             <Box>{amiDetails.Name || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Description</Box>
+            <Box variant="small" color="text-label">
+              Description
+            </Box>
             <Box>{amiDetails.Description || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">State</Box>
-            <StatusIndicator type={amiDetails.State === "available" ? "success" : "warning"}>{amiDetails.State}</StatusIndicator>
+            <Box variant="small" color="text-label">
+              State
+            </Box>
+            <StatusIndicator type={amiDetails.State === "available" ? "success" : "warning"}>
+              {amiDetails.State}
+            </StatusIndicator>
           </div>
           <div>
-            <Box variant="small" color="text-label">Architecture</Box>
+            <Box variant="small" color="text-label">
+              Architecture
+            </Box>
             <Box>{amiDetails.Architecture || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Platform</Box>
+            <Box variant="small" color="text-label">
+              Platform
+            </Box>
             <Box>{amiDetails.Platform || "Linux/Unix"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Root Device Type</Box>
+            <Box variant="small" color="text-label">
+              Root Device Type
+            </Box>
             <Box>{amiDetails.RootDeviceType || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Virtualization Type</Box>
+            <Box variant="small" color="text-label">
+              Virtualization Type
+            </Box>
             <Box>{amiDetails.VirtualizationType || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Image Type</Box>
+            <Box variant="small" color="text-label">
+              Image Type
+            </Box>
             <Box>{amiDetails.ImageType || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Public</Box>
+            <Box variant="small" color="text-label">
+              Public
+            </Box>
             <Box>{amiDetails.Public ? "Yes" : "No"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Owner ID</Box>
+            <Box variant="small" color="text-label">
+              Owner ID
+            </Box>
             <Box>{amiDetails.OwnerId || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Creation Date</Box>
+            <Box variant="small" color="text-label">
+              Creation Date
+            </Box>
             <Box>{amiDetails.CreationDate || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Hypervisor</Box>
+            <Box variant="small" color="text-label">
+              Hypervisor
+            </Box>
             <Box>{amiDetails.Hypervisor || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">ENA Support</Box>
+            <Box variant="small" color="text-label">
+              ENA Support
+            </Box>
             <Box>{amiDetails.EnaSupport ? "Yes" : "No"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">SR-IOV Net Support</Box>
+            <Box variant="small" color="text-label">
+              SR-IOV Net Support
+            </Box>
             <Box>{amiDetails.SriovNetSupport || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Boot Mode</Box>
+            <Box variant="small" color="text-label">
+              Boot Mode
+            </Box>
             <Box>{amiDetails.BootMode || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Deprecation Time</Box>
+            <Box variant="small" color="text-label">
+              Deprecation Time
+            </Box>
             <Box>{amiDetails.DeprecationTime || "—"}</Box>
           </div>
         </ColumnLayout>
@@ -1078,51 +1527,88 @@ export default function EC2InstanceDetailsPage({
 
   // ─── Elastic IPs Tab ───
   const elasticIpsContent = (
-    <Container header={<Header variant="h2">Elastic IPs</Header>}>
+    <Container header={<Header variant="h2">Elastic IPs</Header>} className="aws-table-card">
       <SpaceBetween size="l">
         <Box margin={{ bottom: "m" }}>
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={handleAllocateAddress} formAction="none" loading={loadingElasticIps}>Allocate Elastic IP</Button>
-            <Button onClick={fetchElasticIps} formAction="none" loading={loadingElasticIps}>Refresh</Button>
+            <Button onClick={handleAllocateAddress} formAction="none" loading={loadingElasticIps}>
+              Allocate Elastic IP
+            </Button>
+            <Button onClick={fetchElasticIps} formAction="none" loading={loadingElasticIps}>
+              Refresh
+            </Button>
           </SpaceBetween>
         </Box>
         {loadingElasticIps ? (
-          <Box textAlign="center" padding="l"><Spinner size="normal" /></Box>
+          <Box textAlign="center" padding="l">
+            <Spinner size="normal" />
+          </Box>
         ) : elasticIps.length > 0 ? (
           <Table
             columnDefinitions={[
               { header: "Allocation ID", cell: (item: any) => item.AllocationId },
               { header: "Public IP", cell: (item: any) => item.PublicIp },
               { header: "Domain", cell: (item: any) => item.Domain },
-              { header: "Instance ID", cell: (item: any) => item.InstanceId ? <CapabilityLink label={item.InstanceId!} href={`/ec2/${item.InstanceId}`} enabled /> : "—" },
+              {
+                header: "Instance ID",
+                cell: (item: any) =>
+                  item.InstanceId ? (
+                    <CapabilityLink
+                      label={item.InstanceId!}
+                      href={`/ec2/${item.InstanceId}`}
+                      enabled
+                    />
+                  ) : (
+                    "—"
+                  ),
+              },
               { header: "Association ID", cell: (item: any) => item.AssociationId || "—" },
               { header: "Network Interface", cell: (item: any) => item.NetworkInterfaceId || "—" },
-              { header: "Actions", cell: (item: any) => (
-                <SpaceBetween direction="horizontal" size="xs">
-                  {item.InstanceId ? (
-                    <Button variant="inline-link" onClick={() => {}} formAction="none">Disassociate</Button>
-                  ) : (
-                    <Button variant="inline-link" onClick={() => handleAssociateAddress(item.AllocationId!)} formAction="none">Associate</Button>
-                  )}
-                  <Button variant="inline-link" onClick={() => handleReleaseAddress(item.AllocationId!)} formAction="none">Release</Button>
-                </SpaceBetween>
-              )},
+              {
+                header: "Actions",
+                cell: (item: any) => (
+                  <SpaceBetween direction="horizontal" size="xs">
+                    {item.InstanceId ? (
+                      <Button variant="inline-link" onClick={() => {}} formAction="none">
+                        Disassociate
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="inline-link"
+                        onClick={() => handleAssociateAddress(item.AllocationId!)}
+                        formAction="none"
+                      >
+                        Associate
+                      </Button>
+                    )}
+                    <Button
+                      variant="inline-link"
+                      onClick={() => handleReleaseAddress(item.AllocationId!)}
+                      formAction="none"
+                    >
+                      Release
+                    </Button>
+                  </SpaceBetween>
+                ),
+              },
             ]}
             items={elasticIps}
             empty={<Box>No Elastic IPs</Box>}
           />
         ) : (
-          <Box textAlign="center" padding="l">No Elastic IPs allocated</Box>
+          <Box textAlign="center" padding="l">
+            No Elastic IPs allocated
+          </Box>
         )}
       </SpaceBetween>
     </Container>
   );
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
-          variant="h1"
+          variant="h2"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
               {isRunning && (
@@ -1185,7 +1671,11 @@ export default function EC2InstanceDetailsPage({
             { label: "Connect", id: "connect", content: connectContent },
             { label: "Status Checks", id: "status-checks", content: statusChecksContent },
             { label: "Volumes", id: "volumes", content: volumesContent },
-            { label: "Network Interfaces", id: "network-interfaces", content: networkInterfacesContent },
+            {
+              label: "Network Interfaces",
+              id: "network-interfaces",
+              content: networkInterfacesContent,
+            },
             { label: "AMI", id: "ami", content: amiContent },
             { label: "Elastic IPs", id: "elastic-ips", content: elasticIpsContent },
           ]}
@@ -1205,12 +1695,16 @@ export default function EC2InstanceDetailsPage({
         footer={
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => {
-                setShowKeyPairModal(false);
-                setSelectedKeyName("");
-                setNewKeyName("");
-                setCreatedKeyMaterial(null);
-              }}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setShowKeyPairModal(false);
+                  setSelectedKeyName("");
+                  setNewKeyName("");
+                  setCreatedKeyMaterial(null);
+                }}
+              >
+                Cancel
+              </Button>
               <Button
                 variant="primary"
                 loading={modifyingKey}
@@ -1225,10 +1719,17 @@ export default function EC2InstanceDetailsPage({
       >
         <SpaceBetween size="m">
           <Alert type="info">
-            Instance must be stopped to change the key pair. Current state: <strong>{stateName}</strong>
+            Instance must be stopped to change the key pair. Current state:{" "}
+            <strong>{stateName}</strong>
           </Alert>
           <RadioGroup
-            value={selectedKeyName ? (keyPairs.some((kp) => kp.KeyName === selectedKeyName) ? "existing" : "new") : "none"}
+            value={
+              selectedKeyName
+                ? keyPairs.some((kp) => kp.KeyName === selectedKeyName)
+                  ? "existing"
+                  : "new"
+                : "none"
+            }
             items={[
               { value: "existing", label: "Select existing key pair" },
               { value: "new", label: "Create new key pair" },
@@ -1240,13 +1741,22 @@ export default function EC2InstanceDetailsPage({
             }}
           />
           {(() => {
-            const mode = selectedKeyName ? (keyPairs.some((kp) => kp.KeyName === selectedKeyName) ? "existing" : "new") : "none";
+            const mode = selectedKeyName
+              ? keyPairs.some((kp) => kp.KeyName === selectedKeyName)
+                ? "existing"
+                : "new"
+              : "none";
             if (mode === "existing" || (!selectedKeyName && !newKeyName)) {
               return (
                 <FormField label="Key pair">
                   <Select
-                    selectedOption={selectedKeyName ? { value: selectedKeyName, label: selectedKeyName } : null}
-                    options={keyPairs.map((kp) => ({ value: kp.KeyName || "", label: `${kp.KeyName || ""} (${kp.KeyType || "rsa"})` }))}
+                    selectedOption={
+                      selectedKeyName ? { value: selectedKeyName, label: selectedKeyName } : null
+                    }
+                    options={keyPairs.map((kp) => ({
+                      value: kp.KeyName || "",
+                      label: `${kp.KeyName || ""} (${kp.KeyType || "rsa"})`,
+                    }))}
                     placeholder="Choose a key pair"
                     onChange={({ detail }) => setSelectedKeyName(detail.selectedOption.value || "")}
                   />

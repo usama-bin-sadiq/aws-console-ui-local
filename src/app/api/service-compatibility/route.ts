@@ -1,31 +1,22 @@
 import { NextResponse } from "next/server";
-import { ADAPTER_CONFIG } from "@/config/adapter-config";
+import { ADAPTER_CONFIG, getAdapterEndpoint } from "@/config/adapter-config";
 import {
   SERVICE_REGISTRY,
-  ServiceCompatibilityEntry,
   AdapterMode,
-  AdapterStatus,
+  EmulatorHealthStatus,
+  getHealthPathForMode,
+  getServiceAvailability,
 } from "@/constants/service-compatibility";
 import { requirePermission } from "@/lib/data-isolation";
 
-const normalizeServiceKey = (value: string): string =>
-  value.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-const healthValueIsEnabled = (value: unknown): boolean =>
-  value === true ||
-  value === "available" ||
-  value === "healthy" ||
-  value === "running" ||
-  value === "true";
-
-async function fetchEmulatorHealth(endpointUrl: string, mode: AdapterMode): Promise<{
+async function fetchEmulatorHealth(
+  endpointUrl: string,
+  mode: AdapterMode,
+): Promise<{
   status: string;
   services: Record<string, unknown>;
 } | null> {
-  const healthCheckUrl =
-    mode === AdapterMode.MINSTACK
-      ? `${endpointUrl}/_ministack/health`
-      : `${endpointUrl}/_localstack/health`;
+  const healthCheckUrl = `${endpointUrl}${getHealthPathForMode(mode)}`;
 
   try {
     const response = await fetch(healthCheckUrl, {
@@ -34,9 +25,20 @@ async function fetchEmulatorHealth(endpointUrl: string, mode: AdapterMode): Prom
 
     if (response.ok) {
       const data = await response.json();
+      const services = data.services || {};
+      const values = Object.values(services);
+      const hasUnavailable = values.some((value) => {
+        if (value && typeof value === "object") {
+          const status = (value as { status?: unknown }).status;
+          return status === false || status === "unavailable" || status === "error";
+        }
+        return value === false || value === "unavailable" || value === "error";
+      });
       return {
-        status: data.status || "unknown",
-        services: data.services || {},
+        status:
+          data.status ||
+          (values.length > 0 ? (hasUnavailable ? "degraded" : "healthy") : "unknown"),
+        services,
       };
     }
   } catch {
@@ -46,98 +48,30 @@ async function fetchEmulatorHealth(endpointUrl: string, mode: AdapterMode): Prom
   return null;
 }
 
-function determineServiceStatus(
-  service: ServiceCompatibilityEntry,
-  mode: AdapterMode,
-  healthStatus: string,
-  healthServices: Record<string, unknown>,
-): { available: boolean; status: AdapterStatus | "unknown" | "not-supported"; reason: string } {
-  if (healthStatus === "unreachable") {
-    return {
-      available: false,
-      status: "unknown",
-      reason: "Emulator endpoint is unreachable",
-    };
-  }
-
-  const compatibility =
-    mode === AdapterMode.MINSTACK
-      ? service.adapterStatusMinStack
-      : service.adapterStatusLocalStack;
-
-  const healthKeys = Object.keys(healthServices);
-  const matchingHealthKey = healthKeys.find((key) => {
-    const normalizedKey = normalizeServiceKey(key);
-    return (
-      normalizedKey === normalizeServiceKey(service.routeDir) ||
-      normalizedKey === normalizeServiceKey(service.serviceName)
-    );
-  });
-
-  const healthEnabled = matchingHealthKey
-    ? healthValueIsEnabled(healthServices[matchingHealthKey])
-    : false;
-
-  if (matchingHealthKey === undefined) {
-    return {
-      available: false,
-      status: "unknown",
-      reason: "Not reported by emulator health endpoint",
-    };
-  }
-
-  if (!healthEnabled) {
-    return {
-      available: false,
-      status: "not-supported",
-      reason: "Emulator reports this service as unavailable",
-    };
-  }
-
-  if (compatibility === AdapterStatus.NOT_SUPPORTED) {
-    return {
-      available: false,
-      status: compatibility,
-      reason: `${mode} does not support this service`,
-    };
-  }
-
-  return {
-    available: true,
-    status: compatibility,
-    reason:
-      compatibility === AdapterStatus.PARTIAL
-        ? `${mode} provides partial support for this service`
-        : "Service is fully supported by the active emulator",
-  };
-}
-
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
   if (denied) return denied;
 
   const mode = ADAPTER_CONFIG.adapterMode as AdapterMode;
-  const endpointUrl =
-    mode === AdapterMode.MINSTACK
-      ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
-      : ADAPTER_CONFIG.endpointConfig.localstackEndpoint;
+  const endpointUrl = getAdapterEndpoint(mode);
 
   const healthData = await fetchEmulatorHealth(endpointUrl, mode);
   const healthStatus = healthData?.status || "unreachable";
   const healthServices = healthData?.services || {};
 
   const services = SERVICE_REGISTRY.map((service) => {
-    const result = determineServiceStatus(
+    const result = getServiceAvailability(
       service,
       mode,
-      healthStatus,
+      healthStatus as EmulatorHealthStatus,
       healthServices,
     );
+    const status = result.status === "unavailable" ? "unknown" : result.status;
     return {
       routeDir: service.routeDir,
       serviceName: service.serviceName,
-      available: result.available,
-      status: result.status,
+      available: result.enabled,
+      status,
       reason: result.reason,
     };
   });

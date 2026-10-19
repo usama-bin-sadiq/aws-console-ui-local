@@ -60,7 +60,12 @@ interface StackDetail {
   DriftInformation?: { StackDriftStatus?: string };
   Tags?: Array<{ Key?: string; Value?: string }>;
   Outputs?: StackOutput[];
-  Parameters?: Array<{ ParameterKey?: string; ParameterValue?: string; UsePreviousValue?: boolean; ResolvedValue?: string; }>;
+  Parameters?: Array<{
+    ParameterKey?: string;
+    ParameterValue?: string;
+    UsePreviousValue?: boolean;
+    ResolvedValue?: string;
+  }>;
   TemplateDescription?: string;
   NotificationARNs?: string[];
 }
@@ -106,7 +111,7 @@ export default function StackDetailPage() {
     {
       id: "timestamp",
       header: "Timestamp",
-      cell: (item) => item.Timestamp ? new Date(item.Timestamp).toLocaleString() : "—",
+      cell: (item) => (item.Timestamp ? new Date(item.Timestamp).toLocaleString() : "—"),
       sortingField: "Timestamp",
     },
     {
@@ -182,7 +187,8 @@ export default function StackDetailPage() {
     {
       id: "lastUpdated",
       header: "Last updated",
-      cell: (item) => (item.LastUpdatedTimestamp ? new Date(item.LastUpdatedTimestamp).toLocaleString() : "—"),
+      cell: (item) =>
+        item.LastUpdatedTimestamp ? new Date(item.LastUpdatedTimestamp).toLocaleString() : "—",
       sortingField: "LastUpdatedTimestamp",
     },
   ];
@@ -192,62 +198,93 @@ export default function StackDetailPage() {
       <Container header={<Header variant="h2">Stack details</Header>}>
         <ColumnLayout columns={3} variant="default">
           <div>
-            <Box variant="small" color="text-label">Stack name</Box>
+            <Box variant="small" color="text-label">
+              Stack name
+            </Box>
             <Box variant="strong">{stack?.StackName || "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Status</Box>
+            <Box variant="small" color="text-label">
+              Status
+            </Box>
             <StatusIndicator
               type={
                 stack?.StackStatus?.includes("COMPLETE")
                   ? "success"
                   : stack?.StackStatus?.includes("FAILED")
-                  ? "error"
-                  : stack?.StackStatus?.includes("IN_PROGRESS") || stack?.StackStatus?.includes("REVIEW")
-                  ? "warning"
-                  : "info"
+                    ? "error"
+                    : stack?.StackStatus?.includes("IN_PROGRESS") ||
+                        stack?.StackStatus?.includes("REVIEW")
+                      ? "warning"
+                      : "info"
               }
             >
               {stack?.StackStatus || "—"}
             </StatusIndicator>
           </div>
           <div>
-            <Box variant="small" color="text-label">Drift status</Box>
+            <Box variant="small" color="text-label">
+              Drift status
+            </Box>
             <StatusIndicator
               type={
                 stack?.DriftInformation?.StackDriftStatus === "DRIFTED"
                   ? "warning"
                   : stack?.DriftInformation?.StackDriftStatus === "IN_SYNC"
-                  ? "success"
-                  : "info"
+                    ? "success"
+                    : "info"
               }
             >
               {stack?.DriftInformation?.StackDriftStatus || "NOT_CHECKED"}
             </StatusIndicator>
           </div>
           <div>
-            <Box variant="small" color="text-label">Created</Box>
+            <Box variant="small" color="text-label">
+              Created
+            </Box>
             <Box>{stack?.CreationTime ? new Date(stack.CreationTime).toLocaleString() : "—"}</Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Updated</Box>
-            <Box>{stack?.LastUpdatedTime ? new Date(stack.LastUpdatedTime).toLocaleString() : "—"}</Box>
+            <Box variant="small" color="text-label">
+              Updated
+            </Box>
+            <Box>
+              {stack?.LastUpdatedTime ? new Date(stack.LastUpdatedTime).toLocaleString() : "—"}
+            </Box>
           </div>
           <div>
-            <Box variant="small" color="text-label">Status reason</Box>
+            <Box variant="small" color="text-label">
+              Status reason
+            </Box>
             <Box>{stack?.StackStatusReason || "—"}</Box>
           </div>
         </ColumnLayout>
       </Container>
 
       {stack?.Outputs && stack.Outputs.length > 0 && (
-        <Container header={<Header variant="h2">Outputs</Header>}>
+        <Container header={<Header variant="h2">Outputs</Header>} className="aws-table-card">
           <Table
             columnDefinitions={[
-              { id: "key", header: "Output key", cell: (item: StackOutput) => item.OutputKey || "—" },
-              { id: "value", header: "Output value", cell: (item: StackOutput) => item.OutputValue || "—" },
-              { id: "desc", header: "Description", cell: (item: StackOutput) => item.Description || "—" },
-              { id: "export", header: "Export name", cell: (item: StackOutput) => item.ExportName || "—" },
+              {
+                id: "key",
+                header: "Output key",
+                cell: (item: StackOutput) => item.OutputKey || "—",
+              },
+              {
+                id: "value",
+                header: "Output value",
+                cell: (item: StackOutput) => item.OutputValue || "—",
+              },
+              {
+                id: "desc",
+                header: "Description",
+                cell: (item: StackOutput) => item.Description || "—",
+              },
+              {
+                id: "export",
+                header: "Export name",
+                cell: (item: StackOutput) => item.ExportName || "—",
+              },
             ]}
             items={stack.Outputs}
             header={<Header variant="h3">Outputs ({stack.Outputs.length})</Header>}
@@ -256,7 +293,7 @@ export default function StackDetailPage() {
       )}
 
       {stack?.Parameters && stack.Parameters.length > 0 && (
-        <Container header={<Header variant="h2">Parameters</Header>}>
+        <Container header={<Header variant="h2">Parameters</Header>} className="aws-table-card">
           <Table
             columnDefinitions={[
               {
@@ -268,7 +305,9 @@ export default function StackDetailPage() {
                 id: "paramValue",
                 header: "Parameter value",
                 cell: (item) =>
-                  (item as { ParameterValue?: string; ResolvedValue?: string }).ResolvedValue || (item as { ParameterValue?: string }).ParameterValue || "—",
+                  (item as { ParameterValue?: string; ResolvedValue?: string }).ResolvedValue ||
+                  (item as { ParameterValue?: string }).ParameterValue ||
+                  "—",
               },
             ]}
             items={stack.Parameters}
@@ -278,11 +317,19 @@ export default function StackDetailPage() {
       )}
 
       {stack?.Tags && stack.Tags.length > 0 && (
-        <Container header={<Header variant="h2">Tags</Header>}>
+        <Container header={<Header variant="h2">Tags</Header>} className="aws-table-card">
           <Table
             columnDefinitions={[
-              { id: "key", header: "Key", cell: (item: { Key?: string; Value?: string }) => item.Key || "—" },
-              { id: "value", header: "Value", cell: (item: { Key?: string; Value?: string }) => item.Value || "—" },
+              {
+                id: "key",
+                header: "Key",
+                cell: (item: { Key?: string; Value?: string }) => item.Key || "—",
+              },
+              {
+                id: "value",
+                header: "Value",
+                cell: (item: { Key?: string; Value?: string }) => item.Value || "—",
+              },
             ]}
             items={stack.Tags}
             header={<Header variant="h3">Tags ({stack.Tags.length})</Header>}
@@ -293,7 +340,7 @@ export default function StackDetailPage() {
   );
 
   const eventsContent = (
-    <Container header={<Header variant="h2">Events</Header>}>
+    <Container header={<Header variant="h2">Events</Header>} className="aws-table-card">
       <Table
         columnDefinitions={eventColumns}
         items={events}
@@ -313,7 +360,7 @@ export default function StackDetailPage() {
   );
 
   const resourcesContent = (
-    <Container header={<Header variant="h2">Resources</Header>}>
+    <Container header={<Header variant="h2">Resources</Header>} className="aws-table-card">
       <Table
         columnDefinitions={resourceColumns}
         items={resources}
@@ -333,14 +380,26 @@ export default function StackDetailPage() {
   );
 
   const outputsContent = (
-    <Container header={<Header variant="h2">Outputs</Header>}>
+    <Container header={<Header variant="h2">Outputs</Header>} className="aws-table-card">
       {stack?.Outputs && stack.Outputs.length > 0 ? (
         <Table
           columnDefinitions={[
             { id: "key", header: "Output key", cell: (item: StackOutput) => item.OutputKey || "—" },
-            { id: "value", header: "Output value", cell: (item: StackOutput) => item.OutputValue || "—" },
-            { id: "desc", header: "Description", cell: (item: StackOutput) => item.Description || "—" },
-            { id: "export", header: "Export name", cell: (item: StackOutput) => item.ExportName || "—" },
+            {
+              id: "value",
+              header: "Output value",
+              cell: (item: StackOutput) => item.OutputValue || "—",
+            },
+            {
+              id: "desc",
+              header: "Description",
+              cell: (item: StackOutput) => item.Description || "—",
+            },
+            {
+              id: "export",
+              header: "Export name",
+              cell: (item: StackOutput) => item.ExportName || "—",
+            },
           ]}
           items={stack.Outputs}
           header={<Header variant="h3">Outputs ({stack.Outputs.length})</Header>}
@@ -353,34 +412,34 @@ export default function StackDetailPage() {
 
   if (loading && !stack) {
     return (
-      <div style={{ padding: "24px" }}>
+      <Box padding="l">
         <SpaceBetween size="l">
           <Header variant="h1">Stack {stackName}</Header>
           <Box textAlign="center">
             <Box>Loading stack details...</Box>
           </Box>
         </SpaceBetween>
-      </div>
+      </Box>
     );
   }
 
   if (error || !stack) {
     return (
-      <div style={{ padding: "24px" }}>
+      <Box padding="l">
         <SpaceBetween size="l">
-          <Header variant="h1">Stack {stackName}</Header>
+          <Header variant="h2">Stack {stackName}</Header>
           <Alert type="error">{error || "Stack not found"}</Alert>
           <Button onClick={() => router.push("/cloudformation")}>Back to stacks</Button>
         </SpaceBetween>
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div style={{ padding: "24px" }}>
+    <Box padding="l">
       <SpaceBetween size="l">
         <Header
-          variant="h1"
+          variant="h2"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={fetchDetail} ariaLabel="Refresh stack details">
@@ -406,6 +465,6 @@ export default function StackDetailPage() {
           onChange={({ detail }) => setActiveTabId(detail.activeTabId)}
         />
       </SpaceBetween>
-    </div>
+    </Box>
   );
 }

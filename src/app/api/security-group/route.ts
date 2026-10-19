@@ -22,7 +22,8 @@ export async function GET(request: Request) {
     const res = await ec2Client.send(new DescribeSecurityGroupsCommand({}));
     return NextResponse.json({ securityGroups: res.SecurityGroups || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
         new AuthorizeSecurityGroupIngressCommand({
           GroupId: body.groupId,
           IpPermissions: body.ipPermissions,
-        })
+        }),
       );
       return NextResponse.json({ success: true, return: res.Return || true });
     }
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
         new AuthorizeSecurityGroupEgressCommand({
           GroupId: body.groupId,
           IpPermissions: body.ipPermissions,
-        })
+        }),
       );
       return NextResponse.json({ success: true, return: res.Return || true });
     }
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
         new RevokeSecurityGroupIngressCommand({
           GroupId: body.groupId,
           IpPermissions: body.ipPermissions,
-        })
+        }),
       );
       return NextResponse.json({ success: true, return: res.Return || true });
     }
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
         new RevokeSecurityGroupEgressCommand({
           GroupId: body.groupId,
           IpPermissions: body.ipPermissions,
-        })
+        }),
       );
       return NextResponse.json({ success: true, return: res.Return || true });
     }
@@ -81,13 +82,13 @@ export async function POST(request: Request) {
         GroupName: body.groupName,
         Description: body.description,
         VpcId: body.vpcId,
-      })
+      }),
     );
     return NextResponse.json({ groupId: res.GroupId });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -102,7 +103,8 @@ export async function DELETE(request: Request) {
     await ec2Client.send(new DeleteSecurityGroupCommand({ GroupId: searchParams.get("groupId")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 

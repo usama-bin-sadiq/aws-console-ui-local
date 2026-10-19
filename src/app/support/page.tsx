@@ -9,7 +9,7 @@ import Alert from "@cloudscape-design/components/alert";
 
 export default function SupportPage() {
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Support</Header>
         <Alert type="info" header="Support">

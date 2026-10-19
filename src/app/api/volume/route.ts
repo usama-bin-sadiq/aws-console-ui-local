@@ -37,19 +37,25 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     if (body.action === "create") {
-      const res = await ec2Client.send(new CreateVolumeCommand({
-        AvailabilityZone: body.availabilityZone || "us-east-1a",
-        Size: body.size || 20,
-        VolumeType: body.volumeType || "gp3",
-        Iops: body.iops,
-        Throughput: body.throughput,
-        Encrypted: body.encrypted ?? false,
-        KmsKeyId: body.kmsKeyId,
-        TagSpecifications: body.tags?.length ? [{
-          ResourceType: "volume",
-          Tags: body.tags,
-        }] : undefined,
-      }));
+      const res = await ec2Client.send(
+        new CreateVolumeCommand({
+          AvailabilityZone: body.availabilityZone || "us-east-1a",
+          Size: body.size || 20,
+          VolumeType: body.volumeType || "gp3",
+          Iops: body.iops,
+          Throughput: body.throughput,
+          Encrypted: body.encrypted ?? false,
+          KmsKeyId: body.kmsKeyId,
+          TagSpecifications: body.tags?.length
+            ? [
+                {
+                  ResourceType: "volume",
+                  Tags: body.tags,
+                },
+              ]
+            : undefined,
+        }),
+      );
       return NextResponse.json({ volume: res });
     }
 
@@ -59,38 +65,46 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "attach") {
-      const res = await ec2Client.send(new AttachVolumeCommand({
-        VolumeId: body.volumeId,
-        InstanceId: body.instanceId,
-        Device: body.device || "/dev/xvdf",
-      }));
+      const res = await ec2Client.send(
+        new AttachVolumeCommand({
+          VolumeId: body.volumeId,
+          InstanceId: body.instanceId,
+          Device: body.device || "/dev/xvdf",
+        }),
+      );
       return NextResponse.json({ success: true, attachment: res });
     }
 
     if (body.action === "detach") {
-      const res = await ec2Client.send(new DetachVolumeCommand({
-        VolumeId: body.volumeId,
-        Force: body.force ?? false,
-      }));
+      const res = await ec2Client.send(
+        new DetachVolumeCommand({
+          VolumeId: body.volumeId,
+          Force: body.force ?? false,
+        }),
+      );
       return NextResponse.json({ success: true, detachment: res });
     }
 
     if (body.action === "modify") {
-      const res = await ec2Client.send(new ModifyVolumeCommand({
-        VolumeId: body.volumeId,
-        Size: body.size,
-        VolumeType: body.volumeType,
-        Iops: body.iops,
-        Throughput: body.throughput,
-      }));
+      const res = await ec2Client.send(
+        new ModifyVolumeCommand({
+          VolumeId: body.volumeId,
+          Size: body.size,
+          VolumeType: body.volumeType,
+          Iops: body.iops,
+          Throughput: body.throughput,
+        }),
+      );
       return NextResponse.json({ success: true, modification: res });
     }
 
     if (body.action === "createTags") {
-      await ec2Client.send(new CreateTagsCommand({
-        Resources: [body.volumeId],
-        Tags: body.tags,
-      }));
+      await ec2Client.send(
+        new CreateTagsCommand({
+          Resources: [body.volumeId],
+          Tags: body.tags,
+        }),
+      );
       return NextResponse.json({ success: true });
     }
 

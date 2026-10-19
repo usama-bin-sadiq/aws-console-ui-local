@@ -33,11 +33,11 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<RDSInstance>[] = [
         {String(
           <Button
             variant="link"
-            onClick={() => window.location.href = `/rds/${item.DBInstanceIdentifier}`}
+            onClick={() => (window.location.href = `/rds/${item.DBInstanceIdentifier}`)}
             formAction="none"
           >
             {item.DBInstanceIdentifier || "—"}
-          </Button>
+          </Button>,
         )}
       </TruncatedText>
     ),
@@ -56,11 +56,7 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<RDSInstance>[] = [
     cell: (item) => {
       const status = item.DBInstanceStatus || "—";
       const isAvailable = status === "available";
-      return (
-        <StatusIndicator type={isAvailable ? "success" : "warning"}>
-          {status}
-        </StatusIndicator>
-      );
+      return <StatusIndicator type={isAvailable ? "success" : "warning"}>{status}</StatusIndicator>;
     },
     sortingField: "DBInstanceStatus",
   },
@@ -90,12 +86,22 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<RDSInstance>[] = [
   {
     id: "created",
     header: "Created",
-    cell: (item) => (item.InstanceCreateTime ? new Date(item.InstanceCreateTime).toLocaleString() : "—"),
+    cell: (item) =>
+      item.InstanceCreateTime ? new Date(item.InstanceCreateTime).toLocaleString() : "—",
     sortingField: "InstanceCreateTime",
   },
 ];
 
-const VISIBLE_COLUMNS = ["identifier", "engine", "status", "class", "endpoint", "multiAZ", "storage", "created"];
+const VISIBLE_COLUMNS = [
+  "identifier",
+  "engine",
+  "status",
+  "class",
+  "endpoint",
+  "multiAZ",
+  "storage",
+  "created",
+];
 
 export default function RDSPage() {
   const router = useRouter();
@@ -115,7 +121,7 @@ export default function RDSPage() {
     title: string;
     onConfirm: () => void;
     content: React.ReactNode;
-  }>({ visible: false, title: "", onConfirm: () => { }, content: null });
+  }>({ visible: false, title: "", onConfirm: () => {}, content: null });
 
   // Create instance modal state
   const [showCreate, setShowCreate] = useState(false);
@@ -157,21 +163,24 @@ export default function RDSPage() {
   const executeInstanceAction = useCallback(
     async (action: string, dbInstanceIdentifiers: string[], extra?: Record<string, unknown>) => {
       try {
-        await Promise.all(dbInstanceIdentifiers.map(async (dbInstanceIdentifier) => {
-          const res = await apiFetch("/api/rds", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action, dbInstanceIdentifier, ...extra }),
-          });
-          const data = await res.json();
-          if (!res.ok || data.error) throw new Error(data.error || `Action ${action} failed for ${dbInstanceIdentifier}`);
-        }));
+        await Promise.all(
+          dbInstanceIdentifiers.map(async (dbInstanceIdentifier) => {
+            const res = await apiFetch("/api/rds", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action, dbInstanceIdentifier, ...extra }),
+            });
+            const data = await res.json();
+            if (!res.ok || data.error)
+              throw new Error(data.error || `Action ${action} failed for ${dbInstanceIdentifier}`);
+          }),
+        );
         fetchInstances();
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : `Failed to ${action}`);
       }
     },
-    [fetchInstances]
+    [fetchInstances],
   );
 
   const handleStart = useCallback(() => {
@@ -216,23 +225,33 @@ export default function RDSPage() {
       visible: true,
       title: `Delete ${ids.length} DB instance(s)?`,
       onConfirm: () => {
-        void Promise.all(ids.map(async (id) => {
-          const response = await apiFetch("/api/rds", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "deleteInstance", dbInstanceIdentifier: id, skipFinalSnapshot: true }),
-          });
-          const data = await response.json();
-          if (!response.ok || data.error) throw new Error(data.error || `Failed to delete ${id}`);
-        })).then(() => fetchInstances()).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Failed to delete DB instances"));
+        void Promise.all(
+          ids.map(async (id) => {
+            const response = await apiFetch("/api/rds", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "deleteInstance",
+                dbInstanceIdentifier: id,
+                skipFinalSnapshot: true,
+              }),
+            });
+            const data = await response.json();
+            if (!response.ok || data.error) throw new Error(data.error || `Failed to delete ${id}`);
+          }),
+        )
+          .then(() => fetchInstances())
+          .catch((cause: unknown) =>
+            setError(cause instanceof Error ? cause.message : "Failed to delete DB instances"),
+          );
         setSelectedItems([]);
         setConfirmModal((prev) => ({ ...prev, visible: false }));
       },
       content: (
         <Box>
           <StatusIndicator type="error">
-            Deleting DB instances is permanent and will remove the database.
-            This action cannot be undone.
+            Deleting DB instances is permanent and will remove the database. This action cannot be
+            undone.
           </StatusIndicator>
         </Box>
       ),
@@ -294,7 +313,14 @@ export default function RDSPage() {
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || "Create instance failed");
       setShowCreate(false);
-      setCreateForm({ DBInstanceIdentifier: "", Engine: "mysql", DBInstanceClass: "db.t3.micro", MasterUsername: "admin", MasterUserPassword: "", AllocatedStorage: 20 });
+      setCreateForm({
+        DBInstanceIdentifier: "",
+        Engine: "mysql",
+        DBInstanceClass: "db.t3.micro",
+        MasterUsername: "admin",
+        MasterUserPassword: "",
+        AllocatedStorage: 20,
+      });
       fetchInstances();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create instance");
@@ -323,9 +349,24 @@ export default function RDSPage() {
       <Button iconName="refresh" onClick={fetchInstances} ariaLabel="Refresh" />
       <ButtonDropdown
         items={[
-          { text: "Start instance", id: "start", disabled: selectedItems.length !== 1 || selectedItems[0]?.DBInstanceStatus === "available" },
-          { text: "Stop instance", id: "stop", disabled: selectedItems.length !== 1 || selectedItems[0]?.DBInstanceStatus !== "available" },
-          { text: "Reboot instance", id: "reboot", disabled: selectedItems.length !== 1 || selectedItems[0]?.DBInstanceStatus !== "available" },
+          {
+            text: "Start instance",
+            id: "start",
+            disabled:
+              selectedItems.length !== 1 || selectedItems[0]?.DBInstanceStatus === "available",
+          },
+          {
+            text: "Stop instance",
+            id: "stop",
+            disabled:
+              selectedItems.length !== 1 || selectedItems[0]?.DBInstanceStatus !== "available",
+          },
+          {
+            text: "Reboot instance",
+            id: "reboot",
+            disabled:
+              selectedItems.length !== 1 || selectedItems[0]?.DBInstanceStatus !== "available",
+          },
           { text: "Create DB snapshot", id: "snapshot", disabled: selectedItems.length === 0 },
           { text: "Delete instance", id: "delete", disabled: selectedItems.length === 0 },
         ]}
@@ -348,7 +389,7 @@ export default function RDSPage() {
   );
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1" counter={`(${instances.length})`} actions={headerActions}>
           RDS — Relational Database Service
@@ -360,96 +401,100 @@ export default function RDSPage() {
           </Alert>
         )}
 
-          <Table
-            columnDefinitions={COLUMN_DEFINITIONS}
-            items={pagedItems}
-            loading={loading}
-            loadingText="Loading DB instances..."
-            selectionType="multi"
-            selectedItems={selectedItems}
-            onSelectionChange={({ detail }) => setSelectedItems(detail.selectedItems as RDSInstance[])}
-            trackBy="DBInstanceIdentifier"
-            sortingColumn={COLUMN_DEFINITIONS[0]}
-            sortingDescending
-            filter={
-              <TextFilter
-                filteringText={filteringText}
-                filteringPlaceholder="Filter DB instances"
-                filteringAriaLabel="Filter DB instances"
-                onChange={({ detail }) => {
-                  setFilteringText(detail.filteringText);
-                  setCurrentPage(1);
-                }}
-                countText={
-                  filteringText
-                    ? `${filteredItems.length} match${filteredItems.length !== 1 ? "es" : ""}`
-                    : `${instances.length} DB instances`
-                }
-              />
-            }
-            pagination={
-              <Pagination
-                currentPageIndex={currentPage}
-                pagesCount={Math.ceil(filteredItems.length / pageSize)}
-                onChange={({ detail }) => setCurrentPage(detail.currentPageIndex)}
-                ariaLabels={{
-                  nextPageLabel: "Next page",
-                  previousPageLabel: "Previous page",
-                  pageLabel: (n) => `Page ${n}`,
-                }}
-              />
-            }
-            preferences={
-              <CollectionPreferences
-                title="Preferences"
-                confirmLabel="Confirm"
-                cancelLabel="Cancel"
-                preferences={preferences}
-                pageSizePreference={{
-                  title: "Page size",
-                  options: [
-                    { value: 10, label: "10 instances" },
-                    { value: 25, label: "25 instances" },
-                    { value: 50, label: "50 instances" },
-                    { value: 100, label: "100 instances" },
-                  ],
-                }}
-                visibleContentPreference={{
-                  title: "Select visible columns",
-                  options: [
-                    {
-                      label: "Columns",
-                      options: COLUMN_DEFINITIONS.map((col) => ({
-                        id: col.id!,
-                        label: col.header?.toString() ?? col.id!,
-                        editable: true,
-                      })),
-                    },
-                  ],
-                }}
-                onConfirm={({ detail }) => {
-                  setPageSize(detail.pageSize ?? 25);
-                  setPreferences({
-                    pageSize: detail.pageSize ?? 25,
-                    visibleContent: (detail.visibleContent as string[]) ?? VISIBLE_COLUMNS,
-                  });
-                }}
-              />
-            }
-            empty={
-              <Box textAlign="center" color="inherit">
-                <Box variant="strong" textAlign="center" color="inherit">
-                  No DB instances found
-                </Box>
-                <Box variant="p" padding={{ bottom: "s" }} color="inherit">
-                  {filteringText
-                    ? "No instances match your filter. Try a different search."
-                    : "To get started, create a DB instance."}
-                </Box>
-                {!filteringText && <Button onClick={() => setShowCreate(true)}>Create DB instance</Button>}
+        <Table
+          columnDefinitions={COLUMN_DEFINITIONS}
+          items={pagedItems}
+          loading={loading}
+          loadingText="Loading DB instances..."
+          selectionType="multi"
+          selectedItems={selectedItems}
+          onSelectionChange={({ detail }) =>
+            setSelectedItems(detail.selectedItems as RDSInstance[])
+          }
+          trackBy="DBInstanceIdentifier"
+          sortingColumn={COLUMN_DEFINITIONS[0]}
+          sortingDescending
+          filter={
+            <TextFilter
+              filteringText={filteringText}
+              filteringPlaceholder="Filter DB instances"
+              filteringAriaLabel="Filter DB instances"
+              onChange={({ detail }) => {
+                setFilteringText(detail.filteringText);
+                setCurrentPage(1);
+              }}
+              countText={
+                filteringText
+                  ? `${filteredItems.length} match${filteredItems.length !== 1 ? "es" : ""}`
+                  : `${instances.length} DB instances`
+              }
+            />
+          }
+          pagination={
+            <Pagination
+              currentPageIndex={currentPage}
+              pagesCount={Math.ceil(filteredItems.length / pageSize)}
+              onChange={({ detail }) => setCurrentPage(detail.currentPageIndex)}
+              ariaLabels={{
+                nextPageLabel: "Next page",
+                previousPageLabel: "Previous page",
+                pageLabel: (n) => `Page ${n}`,
+              }}
+            />
+          }
+          preferences={
+            <CollectionPreferences
+              title="Preferences"
+              confirmLabel="Confirm"
+              cancelLabel="Cancel"
+              preferences={preferences}
+              pageSizePreference={{
+                title: "Page size",
+                options: [
+                  { value: 10, label: "10 instances" },
+                  { value: 25, label: "25 instances" },
+                  { value: 50, label: "50 instances" },
+                  { value: 100, label: "100 instances" },
+                ],
+              }}
+              visibleContentPreference={{
+                title: "Select visible columns",
+                options: [
+                  {
+                    label: "Columns",
+                    options: COLUMN_DEFINITIONS.map((col) => ({
+                      id: col.id!,
+                      label: col.header?.toString() ?? col.id!,
+                      editable: true,
+                    })),
+                  },
+                ],
+              }}
+              onConfirm={({ detail }) => {
+                setPageSize(detail.pageSize ?? 25);
+                setPreferences({
+                  pageSize: detail.pageSize ?? 25,
+                  visibleContent: (detail.visibleContent as string[]) ?? VISIBLE_COLUMNS,
+                });
+              }}
+            />
+          }
+          empty={
+            <Box textAlign="center" color="inherit">
+              <Box variant="strong" textAlign="center" color="inherit">
+                No DB instances found
               </Box>
-            }
-          />
+              <Box variant="p" padding={{ bottom: "s" }} color="inherit">
+                {filteringText
+                  ? "No instances match your filter. Try a different search."
+                  : "To get started, create a DB instance."}
+              </Box>
+              {!filteringText && (
+                <Button onClick={() => setShowCreate(true)}>Create DB instance</Button>
+              )}
+            </Box>
+          }
+        />
       </SpaceBetween>
 
       <CrossServiceLinks links={CROSS_SERVICE_LINKS["/rds"] || []} />
@@ -461,7 +506,10 @@ export default function RDSPage() {
         header={confirmModal.title}
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setConfirmModal((prev) => ({ ...prev, visible: false }))} formAction="none">
+            <Button
+              onClick={() => setConfirmModal((prev) => ({ ...prev, visible: false }))}
+              formAction="none"
+            >
               Cancel
             </Button>
             <Button variant="primary" onClick={confirmModal.onConfirm}>
@@ -480,8 +528,15 @@ export default function RDSPage() {
         header="Create DB instance"
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setShowCreate(false)} formAction="none">Cancel</Button>
-            <Button variant="primary" loading={creating} onClick={handleCreateInstance} formAction="none">
+            <Button onClick={() => setShowCreate(false)} formAction="none">
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              loading={creating}
+              onClick={handleCreateInstance}
+              formAction="none"
+            >
               Create DB instance
             </Button>
           </SpaceBetween>
@@ -491,7 +546,9 @@ export default function RDSPage() {
           <FormField label="DB instance identifier">
             <Input
               value={createForm.DBInstanceIdentifier}
-              onChange={({ detail }) => setCreateForm({ ...createForm, DBInstanceIdentifier: detail.value })}
+              onChange={({ detail }) =>
+                setCreateForm({ ...createForm, DBInstanceIdentifier: detail.value })
+              }
               placeholder="my-db-instance"
             />
           </FormField>
@@ -499,20 +556,26 @@ export default function RDSPage() {
             <Select
               selectedOption={{ label: createForm.Engine, value: createForm.Engine }}
               options={RDS_ENGINE_OPTIONS.map((e) => ({ label: e, value: e }))}
-              onChange={({ detail }) => setCreateForm({ ...createForm, Engine: detail.selectedOption.value as string })}
+              onChange={({ detail }) =>
+                setCreateForm({ ...createForm, Engine: detail.selectedOption.value as string })
+              }
             />
           </FormField>
           <FormField label="DB instance class">
             <Input
               value={createForm.DBInstanceClass}
-              onChange={({ detail }) => setCreateForm({ ...createForm, DBInstanceClass: detail.value })}
+              onChange={({ detail }) =>
+                setCreateForm({ ...createForm, DBInstanceClass: detail.value })
+              }
               placeholder="db.t3.micro"
             />
           </FormField>
           <FormField label="Master username">
             <Input
               value={createForm.MasterUsername}
-              onChange={({ detail }) => setCreateForm({ ...createForm, MasterUsername: detail.value })}
+              onChange={({ detail }) =>
+                setCreateForm({ ...createForm, MasterUsername: detail.value })
+              }
               placeholder="admin"
             />
           </FormField>
@@ -520,14 +583,21 @@ export default function RDSPage() {
             <Input
               value={createForm.MasterUserPassword}
               type="password"
-              onChange={({ detail }) => setCreateForm({ ...createForm, MasterUserPassword: detail.value })}
+              onChange={({ detail }) =>
+                setCreateForm({ ...createForm, MasterUserPassword: detail.value })
+              }
               placeholder="Enter password"
             />
           </FormField>
           <FormField label="Allocated storage (GB)">
             <Input
               value={String(createForm.AllocatedStorage)}
-              onChange={({ detail }) => setCreateForm({ ...createForm, AllocatedStorage: parseInt(detail.value || "20", 10) })}
+              onChange={({ detail }) =>
+                setCreateForm({
+                  ...createForm,
+                  AllocatedStorage: parseInt(detail.value || "20", 10),
+                })
+              }
               placeholder="20"
             />
           </FormField>
@@ -537,12 +607,28 @@ export default function RDSPage() {
       {/* Snapshot Modal */}
       <Modal
         visible={showSnapshot}
-        onDismiss={() => { setShowSnapshot(false); setSnapshotId(""); }}
+        onDismiss={() => {
+          setShowSnapshot(false);
+          setSnapshotId("");
+        }}
         header="Create DB snapshot"
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => { setShowSnapshot(false); setSnapshotId(""); }} formAction="none">Cancel</Button>
-            <Button variant="primary" loading={creatingSnapshot} onClick={confirmSnapshot} formAction="none">
+            <Button
+              onClick={() => {
+                setShowSnapshot(false);
+                setSnapshotId("");
+              }}
+              formAction="none"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              loading={creatingSnapshot}
+              onClick={confirmSnapshot}
+              formAction="none"
+            >
               Create snapshot
             </Button>
           </SpaceBetween>
@@ -550,8 +636,15 @@ export default function RDSPage() {
       >
         <SpaceBetween size="m">
           <Box>
-            <Box variant="small" color="text-label">DB Instance</Box>
-            <Box>{selectedItems.map((i) => i.DBInstanceIdentifier).filter(Boolean).join(", ")}</Box>
+            <Box variant="small" color="text-label">
+              DB Instance
+            </Box>
+            <Box>
+              {selectedItems
+                .map((i) => i.DBInstanceIdentifier)
+                .filter(Boolean)
+                .join(", ")}
+            </Box>
           </Box>
           <FormField label="Snapshot identifier">
             <Input

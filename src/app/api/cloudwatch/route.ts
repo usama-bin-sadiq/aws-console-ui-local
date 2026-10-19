@@ -38,18 +38,31 @@ export async function GET(request: Request) {
     const metricName = searchParams.get("metricName");
 
     // Alarms
-    if (action === "describeAlarms" || (!action && !searchParams.has("logGroup") && !searchParams.has("metric"))) {
+    if (
+      action === "describeAlarms" ||
+      (!action && !searchParams.has("logGroup") && !searchParams.has("metric"))
+    ) {
       const alarmNames = alarmNamesParam ? alarmNamesParam.split(",") : undefined;
       const res = await cloudwatchClient.send(
-        new DescribeAlarmsCommand({ AlarmNames: alarmNames || undefined })
+        new DescribeAlarmsCommand({ AlarmNames: alarmNames || undefined }),
       );
-      return NextResponse.json({ alarms: res.MetricAlarms || [], state: res.MetricAlarms?.map((a: any) => ({ AlarmName: a.AlarmName, AlarmState: a.StateValue })) || [] });
+      return NextResponse.json({
+        alarms: res.MetricAlarms || [],
+        state:
+          res.MetricAlarms?.map((a: any) => ({
+            AlarmName: a.AlarmName,
+            AlarmState: a.StateValue,
+          })) || [],
+      });
     }
 
     // Metrics
     if (action === "listMetrics" || searchParams.has("metric")) {
       const res = await cloudwatchClient.send(
-        new ListMetricsCommand({ Namespace: namespace || undefined, MetricName: metricName || undefined })
+        new ListMetricsCommand({
+          Namespace: namespace || undefined,
+          MetricName: metricName || undefined,
+        }),
       );
       return NextResponse.json({ metrics: res.Metrics || [] });
     }
@@ -63,7 +76,7 @@ export async function GET(request: Request) {
     // Log Streams
     if (action === "describeLogStreams" || searchParams.has("stream")) {
       const res = await cloudwatchLogsClient.send(
-        new DescribeLogStreamsCommand({ logGroupName: logGroupName || undefined })
+        new DescribeLogStreamsCommand({ logGroupName: logGroupName || undefined }),
       );
       return NextResponse.json({ logStreams: res.logStreams || [] });
     }
@@ -83,7 +96,10 @@ export async function GET(request: Request) {
       const logGroupNameParam = searchParams.get("logGroupName");
       const logStreamName = searchParams.get("logStreamName");
       if (!logGroupNameParam || !logStreamName) {
-        return NextResponse.json({ error: "logGroupName and logStreamName required" }, { status: 400 });
+        return NextResponse.json(
+          { error: "logGroupName and logStreamName required" },
+          { status: 400 },
+        );
       }
       const limit = Number(searchParams.get("limit")) || 100;
       const nextToken = searchParams.get("nextToken") || undefined;
@@ -93,7 +109,7 @@ export async function GET(request: Request) {
           logStreamName,
           limit,
           nextToken,
-        })
+        }),
       );
       return NextResponse.json({
         events: (res.events || []).map((e) => ({ timestamp: e.timestamp, message: e.message })),
@@ -138,7 +154,8 @@ export async function POST(request: Request) {
         Statistic: body.Statistic || body.statistic || "Average",
         Period: body.Period || body.period || 300,
         Threshold: body.Threshold || body.threshold || 80,
-        ComparisonOperator: body.ComparisonOperator || body.comparisonOperator || "GreaterThanThreshold",
+        ComparisonOperator:
+          body.ComparisonOperator || body.comparisonOperator || "GreaterThanThreshold",
         EvaluationPeriods: body.EvaluationPeriods || body.evaluationPeriods || 1,
         TreatMissingData: body.TreatMissingData || body.treatMissingData,
         ActionsEnabled: body.ActionsEnabled !== undefined ? body.ActionsEnabled : true,
@@ -153,7 +170,7 @@ export async function POST(request: Request) {
     // Log group creation
     if (action === "createLogGroup") {
       await cloudwatchLogsClient.send(
-        new CreateLogGroupCommand({ logGroupName: body.logGroupName || body.name })
+        new CreateLogGroupCommand({ logGroupName: body.logGroupName || body.name }),
       );
       return NextResponse.json({ success: true, logGroupName: body.logGroupName || body.name });
     }
@@ -165,9 +182,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "logGroupName required" }, { status: 400 });
       }
       if (body.retentionInDays === 0 || body.retentionInDays === undefined) {
-        await cloudwatchLogsClient.send(new DeleteRetentionPolicyCommand({ logGroupName: logGroupNameRP }));
+        await cloudwatchLogsClient.send(
+          new DeleteRetentionPolicyCommand({ logGroupName: logGroupNameRP }),
+        );
       } else {
-        await cloudwatchLogsClient.send(new PutRetentionPolicyCommand({ logGroupName: logGroupNameRP, retentionInDays: body.retentionInDays }));
+        await cloudwatchLogsClient.send(
+          new PutRetentionPolicyCommand({
+            logGroupName: logGroupNameRP,
+            retentionInDays: body.retentionInDays,
+          }),
+        );
       }
       return NextResponse.json({ success: true });
     }
@@ -176,18 +200,32 @@ export async function POST(request: Request) {
     if (action === "startQuery") {
       const res = await cloudwatchLogsClient.send(
         new StartQueryCommand({
-          logGroupNames: (body.logGroupNames && body.logGroupNames.length > 0) ? body.logGroupNames : (body.logGroupName ? [body.logGroupName] : ["/aws/ec2/default"]),
+          logGroupNames:
+            body.logGroupNames && body.logGroupNames.length > 0
+              ? body.logGroupNames
+              : body.logGroupName
+                ? [body.logGroupName]
+                : ["/aws/ec2/default"],
           startTime: body.startTime || Date.now() - 3600000,
           endTime: body.endTime || Date.now(),
           queryString: body.queryString || body.query,
           limit: body.limit || 100,
-        })
+        }),
       );
-      return NextResponse.json({ queryId: res.queryId, status: (res as any).status || "Scheduled" });
+      return NextResponse.json({
+        queryId: res.queryId,
+        status: (res as any).status || "Scheduled",
+      });
     }
 
     // Default alarm creation
-    await cloudwatchClient.send(new PutMetricAlarmCommand({ ...body, Statistic: body.Statistic || "Average", Period: body.Period || 300 }));
+    await cloudwatchClient.send(
+      new PutMetricAlarmCommand({
+        ...body,
+        Statistic: body.Statistic || "Average",
+        Period: body.Period || 300,
+      }),
+    );
     return NextResponse.json({ success: true });
   } catch (error: any) {
     const adapter = getAdapterStatus();
@@ -213,7 +251,8 @@ export async function PUT(request: Request) {
         Statistic: body.Statistic || body.statistic || "Average",
         Period: body.Period || body.period || 300,
         Threshold: body.Threshold || body.threshold || 80,
-        ComparisonOperator: body.ComparisonOperator || body.comparisonOperator || "GreaterThanThreshold",
+        ComparisonOperator:
+          body.ComparisonOperator || body.comparisonOperator || "GreaterThanThreshold",
         EvaluationPeriods: body.EvaluationPeriods || body.evaluationPeriods || 1,
         TreatMissingData: body.TreatMissingData || body.treatMissingData,
         ActionsEnabled: body.ActionsEnabled !== undefined ? body.ActionsEnabled : true,

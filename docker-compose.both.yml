@@ -17,7 +17,13 @@ services:
       - ./data/localstack/state:/var/lib/localstack
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4566/_localstack/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:4566/_localstack/health')",
+        ]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -42,7 +48,13 @@ services:
       - ./data/ministack/s3:/tmp/ministack-data/s3
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4566/_ministack/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:4566/_ministack/health')",
+        ]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -54,7 +66,12 @@ services:
     container_name: aws-console-localstack-health
     depends_on:
       - localstack
-    command: ["/bin/sh", "-c", "while ! curl -f http://localstack:4566/_localstack/health; do sleep 1; done"]
+    command:
+      [
+        "/bin/sh",
+        "-c",
+        "while ! curl -f http://localstack:4566/_localstack/health; do sleep 1; done",
+      ]
     restart: unless-stopped
 
   ministack-health:
@@ -62,7 +79,8 @@ services:
     container_name: aws-console-ministack-health
     depends_on:
       - ministack
-    command: ["/bin/sh", "-c", "while ! curl -f http://ministack:4566/_ministack/health; do sleep 1; done"]
+    command:
+      ["/bin/sh", "-c", "while ! curl -f http://ministack:4566/_ministack/health; do sleep 1; done"]
     restart: unless-stopped
 
   aws-console:

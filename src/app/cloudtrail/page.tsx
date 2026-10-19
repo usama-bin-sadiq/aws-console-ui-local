@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -58,7 +59,7 @@ export default function CloudTrailPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/cloudtrail");
+      const res = await apiFetch("/api/cloudtrail");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch trails");
       setTrails(data.trails || []);
@@ -73,7 +74,7 @@ export default function CloudTrailPage() {
     setEventsLoading(true);
     setEventsError("");
     try {
-      const res = await fetch("/api/cloudtrail?action=lookupEvents");
+      const res = await apiFetch("/api/cloudtrail?action=lookupEvents");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch events");
       setEvents(data.events || []);
@@ -102,7 +103,7 @@ export default function CloudTrailPage() {
     setTrailNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/cloudtrail", {
+      const res = await apiFetch("/api/cloudtrail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -131,7 +132,7 @@ export default function CloudTrailPage() {
 
   const toggleLogging = async (name: string, isLogging: boolean) => {
     try {
-      const res = await fetch("/api/cloudtrail", {
+      const res = await apiFetch("/api/cloudtrail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: isLogging ? "stopLogging" : "startLogging", name }),
@@ -159,7 +160,9 @@ export default function CloudTrailPage() {
       return;
     }
     try {
-      const res = await fetch(`/api/cloudtrail?name=${encodeURIComponent(trailToDelete)}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/cloudtrail?name=${encodeURIComponent(trailToDelete)}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to delete trail");
@@ -172,7 +175,7 @@ export default function CloudTrailPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS CloudTrail</Header>
 
@@ -190,86 +193,98 @@ export default function CloudTrailPage() {
               id: "trails",
               label: "Trails",
               content: (
-                <Container>
-                  <Table
-                    header={
-                      <Header
-                        variant="h2"
-                        actions={
-                          <Button variant="primary" onClick={() => setCreateModal(true)}>
-                            Create trail
-                          </Button>
-                        }
-                      >
-                        Trails ({trails.length})
-                      </Header>
-                    }
-                    items={trails}
-                    columnDefinitions={[
-                      { header: "Name", cell: (item) => item.Name },
-                      { header: "S3 bucket", cell: (item) => item.S3BucketName || "—" },
-                      { header: "Home region", cell: (item) => item.HomeRegion || "—" },
-                      {
-                        header: "Multi-region",
-                        cell: (item) => (item.IsMultiRegionTrail ? "Yes" : "No"),
-                      },
-                      {
-                        header: "Log file validation",
-                        cell: (item) => (item.LogFileValidationEnabled ? "Yes" : "No"),
-                      },
-                      {
-                        header: "Status",
-                        cell: (item) =>
-                          item.IsLogging ? (
-                            <StatusIndicator type="success">Logging</StatusIndicator>
-                          ) : (
-                            <StatusIndicator type="stopped">Not logging</StatusIndicator>
-                          ),
-                      },
-                      {
-                        header: "Actions",
-                        cell: (item) => (
-                          <SpaceBetween direction="horizontal" size="xs">
-                            <Button onClick={() => toggleLogging(item.Name, item.IsLogging ?? false)} formAction="none">
-                              {item.IsLogging ? "Stop" : "Start"}
-                            </Button>
-                            <Button onClick={() => openDeleteModal(item.Name)} formAction="none">
-                              Delete
-                            </Button>
-                          </SpaceBetween>
+                <Table
+                  header={
+                    <Header
+                      variant="h2"
+                      actions={
+                        <Button variant="primary" onClick={() => setCreateModal(true)}>
+                          Create trail
+                        </Button>
+                      }
+                    >
+                      Trails ({trails.length})
+                    </Header>
+                  }
+                  items={trails}
+                  columnDefinitions={[
+                    { header: "Name", cell: (item) => item.Name },
+                    { header: "S3 bucket", cell: (item) => item.S3BucketName || "—" },
+                    { header: "Home region", cell: (item) => item.HomeRegion || "—" },
+                    {
+                      header: "Multi-region",
+                      cell: (item) => (item.IsMultiRegionTrail ? "Yes" : "No"),
+                    },
+                    {
+                      header: "Log file validation",
+                      cell: (item) => (item.LogFileValidationEnabled ? "Yes" : "No"),
+                    },
+                    {
+                      header: "Status",
+                      cell: (item) =>
+                        item.IsLogging ? (
+                          <StatusIndicator type="success">Logging</StatusIndicator>
+                        ) : (
+                          <StatusIndicator type="stopped">Not logging</StatusIndicator>
                         ),
-                      },
-                    ]}
-                    loading={loading}
-                    empty={<Box textAlign="center">No trails found.</Box>}
-                  />
-                </Container>
+                    },
+                    {
+                      header: "Actions",
+                      cell: (item) => (
+                        <SpaceBetween direction="horizontal" size="xs">
+                          <Button
+                            onClick={() => toggleLogging(item.Name, item.IsLogging ?? false)}
+                            formAction="none"
+                          >
+                            {item.IsLogging ? "Stop" : "Start"}
+                          </Button>
+                          <Button onClick={() => openDeleteModal(item.Name)} formAction="none">
+                            Delete
+                          </Button>
+                        </SpaceBetween>
+                      ),
+                    },
+                  ]}
+                  loading={loading}
+                  empty={<Box textAlign="center">No trails found.</Box>}
+                />
               ),
             },
             {
               id: "events",
               label: "Event history",
               content: (
-                <Container>
+                <Container className="aws-table-card">
                   {eventsError && (
                     <Alert type="error" onDismiss={() => setEventsError("")}>
                       {eventsError}
                     </Alert>
                   )}
                   <Table
-                    header={<Header variant="h2">Recent CloudTrail Events ({events.length})</Header>}
+                    header={
+                      <Header variant="h2">Recent CloudTrail Events ({events.length})</Header>
+                    }
                     items={events}
                     columnDefinitions={[
                       { header: "Event name", cell: (e) => e.EventName || "—" },
-                      { header: "Event time", cell: (e) => (e.EventTime ? new Date(e.EventTime).toLocaleString() : "—") },
+                      {
+                        header: "Event time",
+                        cell: (e) => (e.EventTime ? new Date(e.EventTime).toLocaleString() : "—"),
+                      },
                       { header: "Username", cell: (e) => e.Username || "—" },
                       { header: "Event source", cell: (e) => e.EventSource || "—" },
                       {
                         header: "Resources",
-                        cell: (e) =>
-                          e.Resources?.map((r) => r.ResourceName).join(", ") || "—",
+                        cell: (e) => e.Resources?.map((r) => r.ResourceName).join(", ") || "—",
                       },
-                      { header: "Event ID", cell: (e) => <span style={{ fontFamily: "monospace", fontSize: "12px" }}>{e.EventId || "—"}</span> },
+                      {
+                        header: "Event ID",
+                        cell: (e) => (
+                          <span style={{ fontFamily: "monospace", fontSize: "12px" }}>
+                            {e.EventId || "—"}
+                          </span>
+                        ),
+                      },
                     ]}
                     loading={eventsLoading}
                     empty={<Box textAlign="center">No events found.</Box>}
@@ -294,10 +309,21 @@ export default function CloudTrailPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Trail name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={trailNameError}>
+            <FormField
+              label={
+                <>
+                  Trail name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={trailNameError}
+            >
               <Input
                 value={trailName}
-                onChange={(e) => { setTrailName(e.detail.value); setTrailNameError(null); }}
+                onChange={(e) => {
+                  setTrailName(e.detail.value);
+                  setTrailNameError(null);
+                }}
                 placeholder="my-trail"
               />
             </FormField>
@@ -308,10 +334,7 @@ export default function CloudTrailPage() {
                 placeholder="cloudtrail-logs"
               />
             </FormField>
-            <Checkbox
-              checked={isMultiRegion}
-              onChange={(e) => setIsMultiRegion(e.detail.checked)}
-            >
+            <Checkbox checked={isMultiRegion} onChange={(e) => setIsMultiRegion(e.detail.checked)}>
               Multi-region trail
             </Checkbox>
             <Checkbox
@@ -330,7 +353,11 @@ export default function CloudTrailPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setDeleteModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={deleteTrail} disabled={deleteConfirmName !== trailToDelete}>
+              <Button
+                variant="primary"
+                onClick={deleteTrail}
+                disabled={deleteConfirmName !== trailToDelete}
+              >
                 Delete
               </Button>
             </SpaceBetween>
@@ -344,7 +371,10 @@ export default function CloudTrailPage() {
             <FormField label="Trail name">
               <Input
                 value={deleteConfirmName}
-                onChange={(e) => { setDeleteConfirmName(e.detail.value); setDeleteError(""); }}
+                onChange={(e) => {
+                  setDeleteConfirmName(e.detail.value);
+                  setDeleteError("");
+                }}
                 placeholder={trailToDelete}
               />
             </FormField>

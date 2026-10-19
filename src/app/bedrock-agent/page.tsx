@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -32,7 +33,7 @@ export default function BedrockAgentPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/bedrock-agent");
+      const res = await apiFetch("/api/bedrock-agent");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch agents");
       setAgents(data.agentSummaries || []);
@@ -50,7 +51,7 @@ export default function BedrockAgentPage() {
   const createAgent = async () => {
     setCreating(true);
     try {
-      const res = await fetch("/api/bedrock-agent", {
+      const res = await apiFetch("/api/bedrock-agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create", agentName, foundationModel }),
@@ -70,7 +71,7 @@ export default function BedrockAgentPage() {
 
   const deleteAgent = async (agentId: string) => {
     try {
-      const res = await fetch(`/api/bedrock-agent?agentId=${encodeURIComponent(agentId)}`, {
+      const res = await apiFetch(`/api/bedrock-agent?agentId=${encodeURIComponent(agentId)}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -82,7 +83,7 @@ export default function BedrockAgentPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon Bedrock Agents</Header>
 
@@ -92,48 +93,43 @@ export default function BedrockAgentPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Create agent
-                  </Button>
-                }
-              >
-                Agents ({agents.length})
-              </Header>
-            }
-            items={agents}
-            columnDefinitions={[
-              { header: "Name", cell: (item) => item.agentName },
-              { header: "Agent ID", cell: (item) => item.agentId },
-              {
-                header: "Status",
-                cell: (item) => (
-                  <StatusIndicator type={item.agentStatus === "AVAILABLE" ? "success" : "pending"}>
-                    {item.agentStatus}
-                  </StatusIndicator>
-                ),
-              },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button
-                    onClick={() => deleteAgent(item.agentId)}
-                    formAction="none"
-                  >
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No agents found.</Box>}
-          />
-        </Container>
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button variant="primary" onClick={() => setCreateModal(true)}>
+                  Create agent
+                </Button>
+              }
+            >
+              Agents ({agents.length})
+            </Header>
+          }
+          items={agents}
+          columnDefinitions={[
+            { header: "Name", cell: (item) => item.agentName },
+            { header: "Agent ID", cell: (item) => item.agentId },
+            {
+              header: "Status",
+              cell: (item) => (
+                <StatusIndicator type={item.agentStatus === "AVAILABLE" ? "success" : "pending"}>
+                  {item.agentStatus}
+                </StatusIndicator>
+              ),
+            },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button onClick={() => deleteAgent(item.agentId)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No agents found.</Box>}
+        />
 
         <Modal
           visible={createModal}

@@ -23,11 +23,13 @@ export async function GET(request: Request) {
     const action = searchParams.get("action");
 
     if (action === "getWebAcl") {
-      const res = await wafv2Client.send(new GetWebACLCommand({
-        Name: searchParams.get("name")!,
-        Scope: "REGIONAL",
-        Id: searchParams.get("id") || undefined,
-      }));
+      const res = await wafv2Client.send(
+        new GetWebACLCommand({
+          Name: searchParams.get("name")!,
+          Scope: "REGIONAL",
+          Id: searchParams.get("id") || undefined,
+        }),
+      );
       return NextResponse.json({ webAcl: res.WebACL || {} });
     }
 
@@ -52,32 +54,50 @@ export async function POST(request: Request) {
     const wafv2Client = getUserClientFromRequest(WAFV2Client, request);
     const body = await request.json();
     if (body.action === "create") {
-      const res = await wafv2Client.send(new CreateWebACLCommand({
-        Name: body.name,
-        Scope: "REGIONAL",
-        DefaultAction: body.defaultAction || { Allow: {} },
-        VisibilityConfig: body.visibilityConfig || { SampledRequestsEnabled: true, CloudWatchMetricsEnabled: true, MetricName: body.name },
-      }));
+      const res = await wafv2Client.send(
+        new CreateWebACLCommand({
+          Name: body.name,
+          Scope: "REGIONAL",
+          DefaultAction: body.defaultAction || { Allow: {} },
+          VisibilityConfig: body.visibilityConfig || {
+            SampledRequestsEnabled: true,
+            CloudWatchMetricsEnabled: true,
+            MetricName: body.name,
+          },
+        }),
+      );
       return NextResponse.json({ webAcl: res.Summary });
     }
     if (body.action === "updateWebAcl") {
-      const res = await wafv2Client.send(new UpdateWebACLCommand({
-        Name: body.name,
-        Scope: "REGIONAL",
-        Id: body.id,
-        DefaultAction: body.defaultAction || { Allow: {} },
-        Rules: body.rules || [],
-        VisibilityConfig: body.visibilityConfig || { SampledRequestsEnabled: true, CloudWatchMetricsEnabled: true, MetricName: body.name },
-        LockToken: body.lockToken || "dummy",
-      }));
+      const res = await wafv2Client.send(
+        new UpdateWebACLCommand({
+          Name: body.name,
+          Scope: "REGIONAL",
+          Id: body.id,
+          DefaultAction: body.defaultAction || { Allow: {} },
+          Rules: body.rules || [],
+          VisibilityConfig: body.visibilityConfig || {
+            SampledRequestsEnabled: true,
+            CloudWatchMetricsEnabled: true,
+            MetricName: body.name,
+          },
+          LockToken: body.lockToken || "dummy",
+        }),
+      );
       return NextResponse.json({ success: true, nextLockToken: res.NextLockToken });
     }
-    const res = await wafv2Client.send(new CreateWebACLCommand({
-      Name: body.name,
-      Scope: "REGIONAL",
-      DefaultAction: body.defaultAction || { Allow: {} },
-      VisibilityConfig: body.visibilityConfig || { SampledRequestsEnabled: true, CloudWatchMetricsEnabled: true, MetricName: body.name },
-    }));
+    const res = await wafv2Client.send(
+      new CreateWebACLCommand({
+        Name: body.name,
+        Scope: "REGIONAL",
+        DefaultAction: body.defaultAction || { Allow: {} },
+        VisibilityConfig: body.visibilityConfig || {
+          SampledRequestsEnabled: true,
+          CloudWatchMetricsEnabled: true,
+          MetricName: body.name,
+        },
+      }),
+    );
     return NextResponse.json({ webAcl: res.Summary });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();
@@ -95,7 +115,9 @@ export async function DELETE(request: Request) {
     const name = searchParams.get("name")!;
     const id = searchParams.get("id")!;
     const lockToken = searchParams.get("lockToken")!;
-    await wafv2Client.send(new DeleteWebACLCommand({ Name: name, Scope: "REGIONAL", Id: id, LockToken: lockToken }));
+    await wafv2Client.send(
+      new DeleteWebACLCommand({ Name: name, Scope: "REGIONAL", Id: id, LockToken: lockToken }),
+    );
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();

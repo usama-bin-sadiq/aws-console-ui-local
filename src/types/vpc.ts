@@ -3,6 +3,6 @@
  */
 export interface VPCConfig {
   CidrBlock?: string;
-  Tenancy?: 'default' | 'dedicated';
+  Tenancy?: "default" | "dedicated";
   Tags?: Array<{ Key?: string; Value?: string }>;
 }

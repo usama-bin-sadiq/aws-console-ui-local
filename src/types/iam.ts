@@ -5,7 +5,7 @@
 export interface IAMUserConfig {
   UserName?: string;
   Path?: string;
-  Tags?: Array<{ Key?: string; Value?: string }>; 
+  Tags?: Array<{ Key?: string; Value?: string }>;
   PermissionsBoundary?: string;
 }
 
@@ -37,8 +37,8 @@ export interface IAMUserDetail {
   CreateDate: string;
   Path: string;
   Tags?: Array<{ Key?: string; Value?: string }>;
-  AttachedPolicies?: Array<{ PolicyName: string; PolicyArn: string }>
-  Groups?: Array<{ GroupName: string; Arn?: string }>
+  AttachedPolicies?: Array<{ PolicyName: string; PolicyArn: string }>;
+  Groups?: Array<{ GroupName: string; Arn?: string }>;
 }
 
 export interface IAMRoleDetail {
@@ -50,7 +50,7 @@ export interface IAMRoleDetail {
   AssumeRolePolicyDocument?: string;
   Description?: string;
   Tags?: Array<{ Key?: string; Value?: string }>;
-  AttachedPolicies?: Array<{ PolicyName: string; PolicyArn: string }>
+  AttachedPolicies?: Array<{ PolicyName: string; PolicyArn: string }>;
 }
 
 export interface IAMPolicyDetail {
@@ -71,6 +71,6 @@ export interface IAMGroupDetail {
   Arn?: string;
   Path: string;
   CreateDate?: string;
-  AttachedPolicies?: Array<{ PolicyName: string; PolicyArn: string }>
-  Users?: Array<{ UserName: string; UserId?: string }>
+  AttachedPolicies?: Array<{ PolicyName: string; PolicyArn: string }>;
+  Users?: Array<{ UserName: string; UserId?: string }>;
 }

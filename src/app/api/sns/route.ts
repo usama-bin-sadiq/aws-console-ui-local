@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     const snsClient = getUserClientFromRequest(SNSClient, request);
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
-    const topicArn = searchParams.get("topicArn");
+    const topicArn = searchParams.get("TopicArn") || searchParams.get("topicArn");
     if (action === "listSubscriptions" && topicArn) {
       const res = await snsClient.send(new ListSubscriptionsByTopicCommand({ TopicArn: topicArn }));
       return NextResponse.json({ subscriptions: res.Subscriptions || [] });
@@ -39,7 +39,8 @@ export async function GET(request: Request) {
     const res = await snsClient.send(new ListTopicsCommand({}));
     return NextResponse.json({ topics: res.Topics || [] });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -51,34 +52,76 @@ export async function POST(request: Request) {
     const snsClient = getUserClientFromRequest(SNSClient, request);
     const body = await request.json();
     if (body.action === "publish") {
-      await snsClient.send(new PublishCommand({
-        TopicArn: body.topicArn,
-        Message: body.message,
-        Subject: body.subject,
-        MessageAttributes: body.messageAttributes ? parseMessageAttributes(body.messageAttributes) : undefined,
-      }));
+      await snsClient.send(
+        new PublishCommand({
+          TopicArn: body.TopicArn || body.topicArn,
+          TargetArn: body.TargetArn,
+          PhoneNumber: body.PhoneNumber,
+          Message: body.Message ?? body.message,
+          Subject: body.Subject ?? body.subject,
+          MessageStructure: body.MessageStructure,
+          MessageAttributes:
+            body.MessageAttributes || body.messageAttributes
+              ? parseMessageAttributes(body.MessageAttributes || body.messageAttributes)
+              : undefined,
+          MessageDeduplicationId: body.MessageDeduplicationId,
+          MessageGroupId: body.MessageGroupId,
+        }),
+      );
       return NextResponse.json({ success: true });
     }
     if (body.action === "subscribe") {
-      const res = await snsClient.send(new SubscribeCommand({
-        TopicArn: body.topicArn,
-        Protocol: body.protocol,
-        Endpoint: body.endpoint,
-      }));
-      return NextResponse.json({ subscriptionArn: res.SubscriptionArn || "pending" });
+      const res = await snsClient.send(
+        new SubscribeCommand({
+          TopicArn: body.TopicArn || body.topicArn,
+          Protocol: body.Protocol || body.protocol,
+          Endpoint: body.Endpoint || body.endpoint,
+          Attributes: body.Attributes || body.attributes,
+          ReturnSubscriptionArn: body.ReturnSubscriptionArn ?? body.returnSubscriptionArn,
+        }),
+      );
+      return NextResponse.json({
+        success: true,
+        subscriptionArn: res.SubscriptionArn || "pending",
+      });
     }
     if (body.action === "unsubscribe") {
-      await snsClient.send(new UnsubscribeCommand({ SubscriptionArn: body.subscriptionArn }));
+      await snsClient.send(
+        new UnsubscribeCommand({ SubscriptionArn: body.SubscriptionArn || body.subscriptionArn }),
+      );
       return NextResponse.json({ success: true });
     }
     if (body.action === "getAttributes") {
-      const res = await snsClient.send(new GetTopicAttributesCommand({ TopicArn: body.topicArn }));
+      const res = await snsClient.send(
+        new GetTopicAttributesCommand({ TopicArn: body.TopicArn || body.topicArn }),
+      );
       return NextResponse.json({ attributes: res.Attributes || {} });
     }
-    await snsClient.send(new CreateTopicCommand({ Name: body.name }));
-    return NextResponse.json({ success: true });
+
+    // ─── CreateTopic ───────────────────────────────────────────────────────────
+    // CreateTopicInput (SNS API reference): Name, Attributes, Tags,
+    // DataProtectionPolicy. The documented `Name` is accepted alongside the
+    // console's `name`; Attributes/Tags are forwarded rather than dropped.
+    const name = body.Name ?? body.name;
+    if (!name) {
+      return NextResponse.json({ error: "Name is required to create a topic" }, { status: 400 });
+    }
+    const res = await snsClient.send(
+      new CreateTopicCommand({
+        Name: name,
+        Attributes: body.Attributes || body.attributes,
+        Tags: body.Tags || body.tags,
+        DataProtectionPolicy: body.DataProtectionPolicy,
+      }),
+    );
+    return NextResponse.json({
+      success: true,
+      topicArn: res.TopicArn,
+      topic: { TopicArn: res.TopicArn },
+    });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -103,8 +146,9 @@ export async function DELETE(request: Request) {
   try {
     const snsClient = getUserClientFromRequest(SNSClient, request);
     const { searchParams } = new URL(request.url);
-    const topicArn = searchParams.get("topicArn");
-    const subscriptionArn = searchParams.get("subscriptionArn");
+    const topicArn = searchParams.get("TopicArn") || searchParams.get("topicArn");
+    const subscriptionArn =
+      searchParams.get("SubscriptionArn") || searchParams.get("subscriptionArn");
     if (subscriptionArn) {
       await snsClient.send(new UnsubscribeCommand({ SubscriptionArn: subscriptionArn }));
       return NextResponse.json({ success: true });
@@ -112,6 +156,7 @@ export async function DELETE(request: Request) {
     await snsClient.send(new DeleteTopicCommand({ TopicArn: topicArn! }));
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

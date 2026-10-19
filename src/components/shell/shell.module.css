@@ -1,0 +1,635 @@
+/*
+ * Console shell.
+ *
+ * Values are transcribed from the supplied design (Home & Services and the
+ * open-dropdown frames). The layout is a flex row — fixed 260px side nav beside
+ * a fluid content column — with a dark top band that stays dark in both visual
+ * modes, which is what the design does.
+ *
+ * Breakpoints are container queries on `.shell`, so the shell responds to the
+ * space it is given rather than the window. Below 760px the side nav becomes a
+ * toggle and the search field takes the full width.
+ */
+
+.shell {
+  --bg: #f2f3f3;
+  --surface: #ffffff;
+  --text: #0f141a;
+  --muted: #5f6b7a;
+  --border: #d5dbdb;
+  --border2: #e9ebed;
+  --link: #0972d3;
+  --linkh: #033160;
+  --hl: #f0f8ff;
+  --accent: #006ce0;
+  --pri: #006ce0;
+  --prih: #1853b0;
+  --err: #d91515;
+  --ok: #037f0c;
+  --warn: #855900;
+  --brand: #ff9900;
+  --brandText: #161d26;
+  --navBg: #161d26;
+  --navText: #fff;
+  --navBorder: #414d5c;
+  --navHover: #2e3947;
+  --searchBg: #0f141a;
+  --fieldBorder: #8c97a5;
+  --footBg: #161d26;
+  --footText: #d1d5db;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  line-height: normal;
+  container-type: inline-size;
+}
+
+.shell.dark {
+  --bg: #0f141a;
+  --surface: #161d26;
+  --text: #e9ebed;
+  --muted: #a1acba;
+  --border: #354150;
+  --border2: #2a3441;
+  --link: #6cb6ff;
+  --linkh: #a8d4ff;
+  --hl: #1f2d40;
+  --accent: #7bbcff;
+  --pri: #006ce0;
+  --prih: #1a7de8;
+  --err: #ff8a8a;
+  --ok: #2ea043;
+  --warn: #e0a30c;
+  --navBorder: #2a3441;
+  --footText: #d1d5db;
+  color-scheme: dark;
+}
+
+.shell :where(*) {
+  box-sizing: border-box;
+}
+
+.shell :where(h1, h2, h3, p, ul, ol) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── Top band ──────────────────────────────────────────────────────────── */
+
+.nav {
+  background: var(--navBg);
+  color: var(--navText);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--navBorder);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.5px;
+  color: var(--navText);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.brand:hover {
+  color: var(--navText);
+  text-decoration: none;
+}
+
+.brandMark {
+  background: var(--brand);
+  color: var(--brandText);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 15px;
+}
+
+.navbtn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--navText);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.navbtn:hover {
+  background: var(--navHover);
+  text-decoration: none;
+}
+
+.search {
+  flex: 1 1 280px;
+  min-width: 0;
+  position: relative;
+  max-width: 620px;
+}
+.search input {
+  width: 100%;
+  height: 36px;
+  border-radius: 2px;
+  border: 1px solid var(--fieldBorder);
+  background: var(--searchBg);
+  color: var(--navText);
+  padding: 0 56px 0 36px;
+  font:
+    14px "Open Sans",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
+.search input::placeholder {
+  color: #b6bec9;
+}
+.search svg {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+}
+.search kbd {
+  position: absolute;
+  right: 8px;
+  top: 7px;
+  font:
+    12px "Open Sans",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  color: #d1d5db;
+  border: 1px solid var(--fieldBorder);
+  border-radius: 3px;
+  padding: 1px 6px;
+  pointer-events: none;
+}
+
+.navRight {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 4px;
+  margin-left: auto;
+}
+.navDivider {
+  width: 1px;
+  height: 20px;
+  background: var(--navBorder);
+  margin: 0 12px;
+}
+
+.navLabel {
+  color: var(--navText);
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  min-height: 44px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.navLabel:hover {
+  background: var(--navHover);
+}
+
+/* Unread-notification dot, pinned to the bell's top-right corner. */
+.navBadge {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--err);
+}
+
+/* ── Body: side nav + content ──────────────────────────────────────────── */
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  width: 100%;
+  align-items: stretch;
+}
+
+.side {
+  flex: 0 0 272px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 12px 12px 24px;
+  min-width: 0;
+}
+.sidehead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 12px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border2);
+  font-size: 16px;
+  font-weight: 700;
+}
+.sidehead i {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #006ce0;
+  color: #fff;
+  font-style: normal;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.side h3 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 16px 12px 6px;
+  margin: 0;
+}
+.sideLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  min-height: 36px;
+  font-size: 14px;
+  color: var(--text);
+  border-radius: 8px;
+  margin: 1px 0;
+}
+.sideLink:hover {
+  background: var(--bg);
+  text-decoration: none;
+}
+.sideLinkOn {
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--hl);
+}
+.sideDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  flex: none;
+}
+.sideLinkOn .sideDot {
+  background: var(--accent);
+}
+.side hr {
+  border: 0;
+  border-top: 1px solid var(--border2);
+  margin: 10px 8px;
+}
+
+/* Stats cards (from new canvas) */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.stats .card {
+  margin: 0 !important;
+  padding: 14px 18px;
+}
+.stats b {
+  display: block;
+  font-size: 26px;
+  line-height: 1.2;
+}
+.stats span {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Pager */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border2);
+  font-size: 14px;
+  color: var(--muted);
+}
+.pager nav {
+  display: flex;
+  gap: 4px;
+}
+.pager a {
+  min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--text);
+}
+.pager a.on {
+  background: var(--hl);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── Dropdown menus ────────────────────────────────────────────────────── */
+
+.dd {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  min-width: 240px;
+  max-width: 320px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 7, 22, 0.25);
+  padding: 6px 0;
+  text-align: left;
+}
+.ddRight {
+  left: auto;
+  right: 0;
+}
+.ddItem {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  width: 100%;
+  padding: 0 16px;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  font:
+    400 14px "Open Sans",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.ddItem:hover {
+  background: var(--hl);
+}
+.ddItemSel {
+  font-weight: 700;
+}
+
+.skipNav {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: 0 0 8px 0;
+}
+.skipNav:focus {
+  left: 0;
+}
+.sideSection {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.sideCaret {
+  transition: transform 0.12s ease;
+}
+.sideCaretOpen {
+  transform: rotate(90deg);
+}
+
+.content {
+  flex: 1 1 560px;
+  min-width: 0;
+  padding: 20px 24px 40px;
+}
+
+/* Holds the content column and the optional terminal side by side. */
+.mainRow {
+  display: flex;
+  /* Zero basis, not auto: an auto basis resolves from the content width, which
+     exceeds the space beside the 260px rail and wraps the row onto a new line.
+     A zero basis lets the row shrink to whatever the rail leaves behind. */
+  flex: 1 1 0;
+  min-width: 0;
+  align-items: stretch;
+}
+
+/* The notice strip sits directly under the band, full bleed. */
+.notices {
+  flex: 0 0 auto;
+}
+
+/*
+ * Terminal panel. It docks to the right at desktop widths and drops below the
+ * content on narrow ones, matching how the AWS console reflows the split view.
+ */
+.terminal {
+  flex: 0 0 520px;
+  min-width: 0;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+}
+
+.crumbs {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+}
+.crumbs a {
+  /*
+   * The design's --link (#0972d3) on --bg (#f2f3f3) measures 4.30:1, just under
+   * the 4.5:1 AA floor, and breadcrumbs are 14px body text so "large text" does
+   * not apply. --linkh is the design's own darker link token and clears it at
+   * 10.7:1.
+   */
+  color: var(--linkh);
+}
+.crumbsCurrent {
+  color: var(--text);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.head h1 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.head h1 small {
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sideToggle {
+  display: none;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text);
+  font:
+    600 14px "Open Sans",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  cursor: pointer;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.foot {
+  background: var(--footBg);
+  color: var(--footText);
+  font-size: 12px;
+  padding: 12px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  align-items: center;
+}
+.foot a {
+  color: #fff;
+}
+.footRight {
+  display: flex;
+  gap: 16px;
+}
+
+/* ── Narrow ────────────────────────────────────────────────────────────── */
+
+@container (max-width: 1024px) {
+  .content {
+    padding: 16px 16px 32px;
+  }
+  .head h1 {
+    font-size: 24px;
+  }
+}
+
+@container (max-width: 760px) {
+  .nav {
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .search {
+    order: 5;
+    flex: 1 1 100%;
+    max-width: none;
+  }
+  .side {
+    flex: 1 1 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 8px 0;
+  }
+  .sideToggle {
+    display: inline-flex;
+  }
+  .btns {
+    width: 100%;
+  }
+  .btns > * {
+    flex: 1 1 140px;
+  }
+  .foot {
+    padding: 12px 16px;
+  }
+  .mainRow {
+    flex-direction: column;
+  }
+  .terminal {
+    flex: 1 1 auto;
+    width: 100%;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* The terminal mount point. Fills the panel so xterm can measure itself. */
+.terminalHost {
+  flex: 1 1 auto;
+  min-height: 320px;
+  padding: 10px;
+}

@@ -13,7 +13,7 @@ export default function LambdaCreatePage() {
   return (
     <SpaceBetween size="l">
       <Header
-        variant="h1"
+        variant="h2"
         actions={
           <Button onClick={() => router.push("/lambda")} formAction="none">
             Back to Lambda

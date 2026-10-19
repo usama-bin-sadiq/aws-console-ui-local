@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -28,7 +29,7 @@ export default function BackupPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/backup");
+      const res = await apiFetch("/api/backup");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setVaults(data.backupVaults || []);
@@ -44,7 +45,7 @@ export default function BackupPage() {
   }, []);
 
   const createVault = async () => {
-    await fetch("/api/backup", {
+    await apiFetch("/api/backup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "createVault", vaultName }),
@@ -55,14 +56,14 @@ export default function BackupPage() {
   };
 
   const deleteVault = async (name: string) => {
-    await fetch(`/api/backup?vaultName=${encodeURIComponent(name)}`, {
+    await apiFetch(`/api/backup?vaultName=${encodeURIComponent(name)}`, {
       method: "DELETE",
     });
     fetchVaults();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Backup</Header>
         {error && (
@@ -70,50 +71,42 @@ export default function BackupPage() {
             {error}
           </Alert>
         )}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button onClick={() => setCreateModal(true)}>
-                    Create backup vault
-                  </Button>
-                }
-              >
-                Backup Vaults ({vaults.length})
-              </Header>
-            }
-            items={vaults}
-            loading={loading}
-            columnDefinitions={[
-              {
-                header: "Vault Name",
-                cell: (i) => i.BackupVaultName,
-              },
-              {
-                header: "Recovery Points",
-                cell: (i) => i.NumberOfRecoveryPoints,
-              },
-              {
-                header: "ARN",
-                cell: (i) => i.BackupVaultArn,
-              },
-              {
-                header: "Actions",
-                cell: (i) => (
-                  <Button
-                    onClick={() => deleteVault(i.BackupVaultName)}
-                    formAction="none"
-                  >
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No backup vaults found.</Box>}
-          />
-        </Container>
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create backup vault</Button>}
+            >
+              Backup Vaults ({vaults.length})
+            </Header>
+          }
+          items={vaults}
+          loading={loading}
+          columnDefinitions={[
+            {
+              header: "Vault Name",
+              cell: (i) => i.BackupVaultName,
+            },
+            {
+              header: "Recovery Points",
+              cell: (i) => i.NumberOfRecoveryPoints,
+            },
+            {
+              header: "ARN",
+              cell: (i) => i.BackupVaultArn,
+            },
+            {
+              header: "Actions",
+              cell: (i) => (
+                <Button onClick={() => deleteVault(i.BackupVaultName)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No backup vaults found.</Box>}
+        />
+
         <Modal
           visible={createModal}
           onDismiss={() => setCreateModal(false)}
@@ -121,11 +114,7 @@ export default function BackupPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button
-                variant="primary"
-                onClick={createVault}
-                disabled={!vaultName.trim()}
-              >
+              <Button variant="primary" onClick={createVault} disabled={!vaultName.trim()}>
                 Create
               </Button>
             </SpaceBetween>

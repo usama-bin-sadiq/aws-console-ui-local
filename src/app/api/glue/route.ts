@@ -17,6 +17,7 @@ import {
 import { GlueClient } from "@aws-sdk/client-glue";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -26,7 +27,9 @@ export async function GET(request: Request) {
     const glueClient = getUserClientFromRequest(GlueClient, request);
     const [dbRes, tableRes, crawlerRes, jobRes] = await Promise.all([
       glueClient.send(new GetDatabasesCommand({})),
-      glueClient.send(new GetTablesCommand({ DatabaseName: "default" })).catch(() => ({ TableList: [] })),
+      glueClient
+        .send(new GetTablesCommand({ DatabaseName: "default" }))
+        .catch(() => ({ TableList: [] })),
       glueClient.send(new GetCrawlersCommand({})).catch(() => ({ CrawlerNames: [] })),
       glueClient.send(new GetJobsCommand({})).catch(() => ({ Jobs: [] })),
     ]);
@@ -37,7 +40,8 @@ export async function GET(request: Request) {
       jobs: jobRes.Jobs || [],
     });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -54,7 +58,7 @@ export async function POST(request: Request) {
           Name: body.name,
           Role: body.role || "arn:aws:iam::000000000000:role/glue-role",
           Command: body.command || { Name: "glueetl", ScriptLocation: "s3://bucket/script.py" },
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -69,7 +73,7 @@ export async function POST(request: Request) {
           Role: body.role || "arn:aws:iam::000000000000:role/glue-crawler-role",
           DatabaseName: body.databaseName || "default",
           Targets: { S3Targets: [{ Path: body.s3Path || "s3://bucket/" }] },
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -80,7 +84,8 @@ export async function POST(request: Request) {
     await glueClient.send(new CreateDatabaseCommand({ DatabaseInput: { Name: body.name } }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -102,6 +107,7 @@ export async function DELETE(request: Request) {
     }
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

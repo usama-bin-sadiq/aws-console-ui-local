@@ -31,13 +31,13 @@ export default function InfiniteScrollSelect({
       (item) =>
         item.label?.toLowerCase().includes(lower) ||
         item.value?.toLowerCase().includes(lower) ||
-        item.description?.toLowerCase().includes(lower)
+        item.description?.toLowerCase().includes(lower),
     );
   }, [items, filteringText]);
 
   const visibleItems = useMemo(
     () => filteredItems.slice(0, visibleCount),
-    [filteredItems, visibleCount]
+    [filteredItems, visibleCount],
   );
 
   useEffect(() => {

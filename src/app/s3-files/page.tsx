@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -40,8 +41,8 @@ export default function S3FilesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/s3-files?bucket=${encodeURIComponent(b)}&prefix=${encodeURIComponent(p)}`
+      const res = await apiFetch(
+        `/api/s3-files?bucket=${encodeURIComponent(b)}&prefix=${encodeURIComponent(p)}`,
       );
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -58,9 +59,9 @@ export default function S3FilesPage() {
 
   const deleteObject = async (key: string) => {
     if (!bucket) return;
-    await fetch(
+    await apiFetch(
       `/api/s3-files?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
     listObjects(bucket, prefix);
   };
@@ -76,7 +77,7 @@ export default function S3FilesPage() {
   ];
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">S3 — Object Browser</Header>
         {error && (
@@ -93,10 +94,7 @@ export default function S3FilesPage() {
                   onChange={(e) => setBucketInput(e.detail.value)}
                   placeholder="my-bucket"
                 />
-                <Button
-                  onClick={() => listObjects(bucketInput, "")}
-                  loading={loading}
-                >
+                <Button onClick={() => listObjects(bucketInput, "")} loading={loading}>
                   Browse
                 </Button>
               </SpaceBetween>
@@ -104,48 +102,39 @@ export default function S3FilesPage() {
           </SpaceBetween>
         </Container>
         {bucket && (
-          <Container>
-            <Table
-              header={
-                <Header variant="h2">
-                  Objects in {bucket}/{prefix} ({objects.length + prefixes.length})
-                </Header>
-              }
-              items={items}
-              loading={loading}
-              columnDefinitions={[
-                {
-                  header: "Key",
-                  cell: (i) => (i.isPrefix ? `📁 ${i.Key}` : i.Key),
-                },
-                {
-                  header: "Size",
-                  cell: (i) =>
-                    i.Size != null ? i.Size.toLocaleString() + " B" : "—",
-                },
-                {
-                  header: "Last modified",
-                  cell: (i) =>
-                    i.LastModified
-                      ? new Date(i.LastModified).toLocaleDateString()
-                      : "—",
-                },
-                {
-                  header: "Actions",
-                  cell: (i) =>
-                    !i.isPrefix ? (
-                      <Button
-                        onClick={() => deleteObject(i.Key)}
-                        formAction="none"
-                      >
-                        Delete
-                      </Button>
-                    ) : null,
-                },
-              ]}
-              empty={<Box textAlign="center">No objects found.</Box>}
-            />
-          </Container>
+          <Table
+            header={
+              <Header variant="h2">
+                Objects in {bucket}/{prefix} ({objects.length + prefixes.length})
+              </Header>
+            }
+            items={items}
+            loading={loading}
+            columnDefinitions={[
+              {
+                header: "Key",
+                cell: (i) => (i.isPrefix ? `📁 ${i.Key}` : i.Key),
+              },
+              {
+                header: "Size",
+                cell: (i) => (i.Size != null ? i.Size.toLocaleString() + " B" : "—"),
+              },
+              {
+                header: "Last modified",
+                cell: (i) => (i.LastModified ? new Date(i.LastModified).toLocaleDateString() : "—"),
+              },
+              {
+                header: "Actions",
+                cell: (i) =>
+                  !i.isPrefix ? (
+                    <Button onClick={() => deleteObject(i.Key)} formAction="none">
+                      Delete
+                    </Button>
+                  ) : null,
+              },
+            ]}
+            empty={<Box textAlign="center">No objects found.</Box>}
+          />
         )}
       </SpaceBetween>
     </div>

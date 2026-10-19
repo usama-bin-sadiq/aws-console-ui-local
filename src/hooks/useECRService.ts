@@ -2,10 +2,10 @@
  * useECRService — ECR adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { ecr } from '@/lib/aws-clients'
-import { DescribeRepositoriesCommand } from '@aws-sdk/client-ecr';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { ecr } from "@/lib/aws-clients";
+import { DescribeRepositoriesCommand } from "@aws-sdk/client-ecr";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface ECRServiceState {
   repos: unknown[];

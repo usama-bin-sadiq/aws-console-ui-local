@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/client-iam";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -16,8 +17,9 @@ export async function GET(request: Request) {
     const iamClient = getUserClientFromRequest(IAMClient, request);
     const res = await iamClient.send(new ListVirtualMFADevicesCommand({}));
     return NextResponse.json({ mfaDevices: res.VirtualMFADevices || [] });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -28,10 +30,13 @@ export async function POST(request: Request) {
   try {
     const iamClient = getUserClientFromRequest(IAMClient, request);
     const body = await request.json();
-    const res = await iamClient.send(new CreateVirtualMFADeviceCommand({ VirtualMFADeviceName: body.name }));
+    const res = await iamClient.send(
+      new CreateVirtualMFADeviceCommand({ VirtualMFADeviceName: body.name }),
+    );
     return NextResponse.json({ device: res.VirtualMFADevice });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -42,9 +47,12 @@ export async function DELETE(request: Request) {
   try {
     const iamClient = getUserClientFromRequest(IAMClient, request);
     const { searchParams } = new URL(request.url);
-    await iamClient.send(new DeleteVirtualMFADeviceCommand({ SerialNumber: searchParams.get("serialNumber")! }));
+    await iamClient.send(
+      new DeleteVirtualMFADeviceCommand({ SerialNumber: searchParams.get("serialNumber")! }),
+    );
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

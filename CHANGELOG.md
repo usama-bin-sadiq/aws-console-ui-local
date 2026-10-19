@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - bcrypt password hashing (12 rounds) for all user credentials
 - In-memory rate limiting for auth endpoints (5 attempts/15min)
 - Comprehensive README with architecture overview and quick start
@@ -27,12 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CHANGELOG.md with Keep a Changelog format
 
 ### Changed
+
 - Updated package.json with bcryptjs dependency
 - Updated db.ts to use bcrypt hashSync/compareSync for password hashing
 - Updated auth/route.ts with rate limiting middleware
 - README updated from minimal to comprehensive open-source documentation
 
 ### Security
+
 - Passwords now hashed with bcrypt (12 rounds) instead of plaintext storage
 - Rate limiting applied to sign-in, sign-up, and password reset endpoints
 - Rate limit headers included in HTTP responses (429)
@@ -40,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2024-09-21
 
 ### Added
+
 - Initial project structure with Next.js 15 + React 19
 - Cloudscape Design System integration
 - LocalStack and MiniStack adapter architecture

@@ -6,6 +6,7 @@ import {
 import { IAMClient } from "@aws-sdk/client-iam";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -43,10 +44,11 @@ export async function POST(request: Request) {
         RequireLowercaseCharacters: body.requireLowercase || false,
         RequireNumbers: body.requireNumbers || false,
         RequireSymbols: body.requireSymbols || false,
-      })
+      }),
     );
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

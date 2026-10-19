@@ -9,6 +9,7 @@ import {
 import { CloudFrontClient } from "@aws-sdk/client-cloudfront";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -20,7 +21,8 @@ export async function GET(request: Request) {
     const distributions = res.DistributionList?.Items || [];
     return NextResponse.json({ distributions });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -33,7 +35,31 @@ export async function POST(request: Request) {
     const body = await request.json();
     if (body.action === "create") {
       const res = await cloudfrontClient.send(
-        new CreateDistributionCommand({ DistributionConfig: body.distributionConfig || { CallerReference: String(Date.now()), Origins: { Quantity: 1, Items: [{ Id: "origin1", DomainName: "example.com", CustomOriginConfig: { HTTPPort: 80, HTTPSPort: 443, OriginProtocolPolicy: "https-only" } }] }, DefaultCacheBehavior: { TargetOriginId: "origin1", ViewerProtocolPolicy: "redirect-to-https" }, Enabled: true, Comment: body.comment || "" } })
+        new CreateDistributionCommand({
+          DistributionConfig: body.distributionConfig || {
+            CallerReference: String(Date.now()),
+            Origins: {
+              Quantity: 1,
+              Items: [
+                {
+                  Id: "origin1",
+                  DomainName: "example.com",
+                  CustomOriginConfig: {
+                    HTTPPort: 80,
+                    HTTPSPort: 443,
+                    OriginProtocolPolicy: "https-only",
+                  },
+                },
+              ],
+            },
+            DefaultCacheBehavior: {
+              TargetOriginId: "origin1",
+              ViewerProtocolPolicy: "redirect-to-https",
+            },
+            Enabled: true,
+            Comment: body.comment || "",
+          },
+        }),
       );
       return NextResponse.json({ distribution: res.Distribution, action: "create" });
     }
@@ -43,7 +69,7 @@ export async function POST(request: Request) {
           DistributionConfig: body.distributionConfig,
           Id: body.id,
           IfMatch: body.etag || body.ifMatch,
-        })
+        }),
       );
       return NextResponse.json({ distribution: res.Distribution, action: "update" });
     }
@@ -58,13 +84,17 @@ export async function POST(request: Request) {
               Items: body.paths || ["/*"],
             },
           },
-        })
+        }),
       );
       return NextResponse.json({ invalidation: res.Invalidation, action: "invalidation" });
     }
-    return NextResponse.json({ error: "Unknown action. Supported: create, update, invalidation" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unknown action. Supported: create, update, invalidation" },
+      { status: 400 },
+    );
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -80,6 +110,7 @@ export async function DELETE(request: Request) {
     await cloudfrontClient.send(new DeleteDistributionCommand({ Id: id, IfMatch: etag }));
     return NextResponse.json({ success: true, action: "delete" });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

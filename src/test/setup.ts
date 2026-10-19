@@ -3,7 +3,7 @@
  * Global test configuration, mocks, and utilities
  */
 
-import { vi } from "vitest";
+import { vi } from "vite-plus/test";
 
 // Mock next/navigation
 vi.mock("next/navigation", () => ({
@@ -28,23 +28,6 @@ vi.mock("next/headers", () => ({
   }),
   headers: () => new Headers(),
 }));
-
-// Mock better-sqlite3 for unit tests
-vi.mock("better-sqlite3", () => {
-  const mockDb = {
-    prepare: vi.fn(() => ({
-      run: vi.fn(),
-      get: vi.fn(),
-      all: vi.fn(),
-    })),
-    exec: vi.fn(),
-    pragma: vi.fn(),
-    close: vi.fn(),
-  };
-  return {
-    default: vi.fn(() => mockDb),
-  };
-});
 
 // Mock bcryptjs for unit tests
 vi.mock("bcryptjs", () => ({
@@ -80,19 +63,19 @@ const localStorageMock = {
 Object.defineProperty(global, "localStorage", { value: localStorageMock, writable: true });
 
 // Mock window.addEventListener/removeEventListener for hooks
-const eventListeners = new Map<string, Set<Function>>();
+const eventListeners = new Map<string, Set<EventListenerOrEventListenerObject>>();
 vi.spyOn(window, "addEventListener").mockImplementation((event, handler) => {
   if (!eventListeners.has(event)) {
     eventListeners.set(event, new Set());
   }
-  eventListeners.get(event)!.add(handler as Function);
+  eventListeners.get(event)!.add(handler as EventListenerOrEventListenerObject);
 });
 vi.spyOn(window, "removeEventListener").mockImplementation((event, handler) => {
-  eventListeners.get(event)?.delete(handler as Function);
+  eventListeners.get(event)?.delete(handler as EventListenerOrEventListenerObject);
 });
 
 // Clean up after each test
-import { afterEach } from "vitest";
+import { afterEach } from "vite-plus/test";
 afterEach(() => {
   vi.clearAllMocks();
   localStorageMock.getItem.mockReset();
@@ -101,7 +84,7 @@ afterEach(() => {
 });
 
 // Extend matchers
-import { expect } from "vitest";
+import { expect } from "vite-plus/test";
 
 expect.extend({
   toBeWithinRange(received: number, floor: number, ceiling: number) {
@@ -115,7 +98,9 @@ expect.extend({
 });
 
 declare module "vitest" {
-  interface Assertion<T = any> {
-    toBeWithinRange(floor: number, ceiling: number): T;
+  // Signature must match vitest's own `Assertion<R, T>` (R defaults to void,
+  // T to unknown) or TS rejects the augmentation with TS2428.
+  interface Assertion<R = void, T = unknown> {
+    toBeWithinRange(floor: number, ceiling: number): R;
   }
 }

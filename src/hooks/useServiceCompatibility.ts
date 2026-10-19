@@ -52,8 +52,7 @@ export function useServiceCompatibility(): UseServiceCompatibilityResult {
       const result = await response.json();
       setData(result);
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An error occurred";
+      const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -93,9 +92,7 @@ export function useServiceAvailability(serviceRouteDir: string): {
     };
   }
 
-  const service = data.services.find(
-    (s) => s.routeDir === serviceRouteDir,
-  );
+  const service = data.services.find((s) => s.routeDir === serviceRouteDir);
 
   if (!service) {
     return {

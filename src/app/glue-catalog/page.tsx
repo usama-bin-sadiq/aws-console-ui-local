@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -65,7 +66,7 @@ export default function GlueCatalogPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/glue");
+      const res = await apiFetch("/api/glue");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch Glue data");
       setDatabases(data.databases || []);
@@ -74,9 +75,9 @@ export default function GlueCatalogPage() {
       setCrawlers(
         Array.isArray(crawlerList)
           ? crawlerList.map((c: string | { Name?: string; State?: string }) =>
-              typeof c === "string" ? { Name: c, State: "READY" } : c
+              typeof c === "string" ? { Name: c, State: "READY" } : c,
             )
-          : []
+          : [],
       );
       setJobs(data.jobs || []);
     } catch (err) {
@@ -98,7 +99,7 @@ export default function GlueCatalogPage() {
     setDbNameError(null);
     setCreatingDb(true);
     try {
-      const res = await fetch("/api/glue", {
+      const res = await apiFetch("/api/glue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "createDatabase", name: dbName }),
@@ -125,10 +126,14 @@ export default function GlueCatalogPage() {
     setCrawlerNameError(null);
     setCreatingCrawler(true);
     try {
-      const res = await fetch("/api/glue", {
+      const res = await apiFetch("/api/glue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "createCrawler", name: crawlerName, role: crawlerRole || "arn:aws:iam::000000000000:role/glue-crawler-role" }),
+        body: JSON.stringify({
+          action: "createCrawler",
+          name: crawlerName,
+          role: crawlerRole || "arn:aws:iam::000000000000:role/glue-crawler-role",
+        }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -162,7 +167,7 @@ export default function GlueCatalogPage() {
     if (hasError) return;
     setCreatingJob(true);
     try {
-      const res = await fetch("/api/glue", {
+      const res = await apiFetch("/api/glue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "createJob", name: jobName, role: jobRole }),
@@ -183,7 +188,7 @@ export default function GlueCatalogPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Glue Data Catalog</Header>
 
@@ -193,7 +198,7 @@ export default function GlueCatalogPage() {
           </Alert>
         )}
 
-        <Container>
+        <Container className="aws-table-card">
           <Tabs
             tabs={[
               {
@@ -216,7 +221,10 @@ export default function GlueCatalogPage() {
                     items={databases}
                     columnDefinitions={[
                       { header: "Name", cell: (item: GlueDatabase) => item.Name },
-                      { header: "Description", cell: (item: GlueDatabase) => item.Description || "—" },
+                      {
+                        header: "Description",
+                        cell: (item: GlueDatabase) => item.Description || "—",
+                      },
                     ]}
                     loading={loading}
                     empty={<Box textAlign="center">No databases found.</Box>}
@@ -228,9 +236,7 @@ export default function GlueCatalogPage() {
                 id: "tables",
                 content: (
                   <Table
-                    header={
-                      <Header variant="h2">Tables ({tables.length})</Header>
-                    }
+                    header={<Header variant="h2">Tables ({tables.length})</Header>}
                     items={tables}
                     columnDefinitions={[
                       { header: "Name", cell: (item: GlueTable) => item.Name || "—" },
@@ -290,7 +296,10 @@ export default function GlueCatalogPage() {
                     items={jobs}
                     columnDefinitions={[
                       { header: "Name", cell: (item: GlueJob) => item.Name },
-                      { header: "Last run state", cell: (item: GlueJob) => item.JobRunState || "—" },
+                      {
+                        header: "Last run state",
+                        cell: (item: GlueJob) => item.JobRunState || "—",
+                      },
                     ]}
                     loading={loading}
                     empty={<Box textAlign="center">No jobs found.</Box>}
@@ -315,8 +324,23 @@ export default function GlueCatalogPage() {
             </SpaceBetween>
           }
         >
-          <FormField label={<>Database name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={dbNameError}>
-            <Input value={dbName} onChange={(e) => { setDbName(e.detail.value); setDbNameError(null); }} placeholder="my-database" />
+          <FormField
+            label={
+              <>
+                Database name <span style={{ color: "red" }}>*</span>
+              </>
+            }
+            constraintText="Required"
+            errorText={dbNameError}
+          >
+            <Input
+              value={dbName}
+              onChange={(e) => {
+                setDbName(e.detail.value);
+                setDbNameError(null);
+              }}
+              placeholder="my-database"
+            />
           </FormField>
         </Modal>
 
@@ -347,8 +371,23 @@ export default function GlueCatalogPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Crawler name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={crawlerNameError}>
-              <Input value={crawlerName} onChange={(e) => { setCrawlerName(e.detail.value); setCrawlerNameError(null); }} placeholder="my-crawler" />
+            <FormField
+              label={
+                <>
+                  Crawler name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={crawlerNameError}
+            >
+              <Input
+                value={crawlerName}
+                onChange={(e) => {
+                  setCrawlerName(e.detail.value);
+                  setCrawlerNameError(null);
+                }}
+                placeholder="my-crawler"
+              />
             </FormField>
             <FormField label="IAM role">
               <Input
@@ -387,13 +426,39 @@ export default function GlueCatalogPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Job name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={jobNameError}>
-              <Input value={jobName} onChange={(e) => { setJobName(e.detail.value); setJobNameError(null); }} placeholder="my-job" />
+            <FormField
+              label={
+                <>
+                  Job name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={jobNameError}
+            >
+              <Input
+                value={jobName}
+                onChange={(e) => {
+                  setJobName(e.detail.value);
+                  setJobNameError(null);
+                }}
+                placeholder="my-job"
+              />
             </FormField>
-            <FormField label={<>IAM role <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={jobRoleError}>
+            <FormField
+              label={
+                <>
+                  IAM role <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={jobRoleError}
+            >
               <Input
                 value={jobRole}
-                onChange={(e) => { setJobRole(e.detail.value); setJobRoleError(null); }}
+                onChange={(e) => {
+                  setJobRole(e.detail.value);
+                  setJobRoleError(null);
+                }}
                 placeholder="arn:aws:iam::123456789012:role/GlueRole"
               />
             </FormField>

@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -28,7 +29,9 @@ export default function IAMPoliciesPage() {
   const [loading, setLoading] = useState(true);
   const [createModal, setCreateModal] = useState(false);
   const [policyName, setPolicyName] = useState("");
-  const [policyDoc, setPolicyDoc] = useState(JSON.stringify({ Version: "2012-10-17", Statement: [] }, null, 2));
+  const [policyDoc, setPolicyDoc] = useState(
+    JSON.stringify({ Version: "2012-10-17", Statement: [] }, null, 2),
+  );
   const [selectedPolicy, setSelectedPolicy] = useState<string | null>(null);
   const [policyDocument, setPolicyDocument] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PolicyItem | null>(null);
@@ -37,30 +40,48 @@ export default function IAMPoliciesPage() {
   const fetchPolicies = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/iam");
-      const data = await res.json();
-      setPolicies((data.policies || []).map((p: any) => ({
-        PolicyName: p.PolicyName || "",
-        PolicyArn: p.Arn || "",
-        Arn: p.Arn || "",
-        Path: p.Path || "/",
-        CreateDate: p.CreateDate || "",
-      })));
-    } catch { }
+      const res = await apiFetch("/api/iam");
+      const data = await res.json().catch(() => null);
+      if (data === null || !res.ok || data.error) {
+        throw new Error(data?.message || data?.error || `Request failed (HTTP ${res.status})`);
+      }
+      const list = Array.isArray(data.policies)
+        ? data.policies
+        : Array.isArray(data.Policies)
+          ? data.Policies
+          : Array.isArray(data.items)
+            ? data.items
+            : [];
+      setPolicies(
+        list.map((p: any) => ({
+          PolicyName: p.PolicyName || "",
+          PolicyArn: p.Arn || "",
+          Arn: p.Arn || "",
+          Path: p.Path || "/",
+          CreateDate: p.CreateDate || "",
+        })),
+      );
+      setError(null);
+    } catch (e) {
+      setPolicies([]);
+      setError(e instanceof Error ? e.message : "Failed to load policies");
+    }
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchPolicies(); }, [fetchPolicies]);
+  useEffect(() => {
+    fetchPolicies();
+  }, [fetchPolicies]);
 
   const createPolicy = async () => {
     if (!policyName.trim()) return;
-    const response = await fetch("/api/iam", {
+    const response = await apiFetch("/api/iam", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "createPolicy", policyName, policyDocument: policyDoc }),
     });
     if (!response.ok) {
-      const result = await response.json() as { error?: string };
+      const result = (await response.json()) as { error?: string };
       setError(result.error || "Failed to create policy");
       return;
     }
@@ -72,8 +93,14 @@ export default function IAMPoliciesPage() {
 
   const loadPolicy = async (arn: string) => {
     setSelectedPolicy(arn);
-    const response = await fetch(`/api/iam?action=getPolicy&policyArn=${encodeURIComponent(arn)}`);
-    const result = await response.json() as { policy?: { DefaultVersionId?: string }; document?: string; error?: string };
+    const response = await apiFetch(
+      `/api/iam?action=getPolicy&policyArn=${encodeURIComponent(arn)}`,
+    );
+    const result = (await response.json()) as {
+      policy?: { DefaultVersionId?: string };
+      document?: string;
+      error?: string;
+    };
     if (!response.ok || result.error) {
       setError(result.error || "Failed to load policy");
       return;
@@ -84,9 +111,12 @@ export default function IAMPoliciesPage() {
 
   const deletePolicy = async () => {
     if (!deleteTarget) return;
-    const response = await fetch(`/api/iam?type=policy&name=${encodeURIComponent(deleteTarget.Arn || deleteTarget.PolicyArn)}`, { method: "DELETE" });
+    const response = await apiFetch(
+      `/api/iam?type=policy&name=${encodeURIComponent(deleteTarget.Arn || deleteTarget.PolicyArn)}`,
+      { method: "DELETE" },
+    );
     if (!response.ok) {
-      const result = await response.json() as { error?: string };
+      const result = (await response.json()) as { error?: string };
       setError(result.error || "Failed to delete policy");
       return;
     }
@@ -101,14 +131,31 @@ export default function IAMPoliciesPage() {
   return (
     <Box padding="m" className="service-content">
       <SpaceBetween size="l">
-        <Header variant="h1" actions={<Button iconName="refresh" onClick={fetchPolicies}>Refresh</Button>}>IAM Policies</Header>
-        {error ? <Alert type="error" dismissible onDismiss={() => setError(null)}>{error}</Alert> : null}
+        <Header
+          variant="h1"
+          actions={
+            <Button iconName="refresh" onClick={fetchPolicies}>
+              Refresh
+            </Button>
+          }
+        >
+          IAM Policies
+        </Header>
+        {error ? (
+          <Alert type="error" dismissible onDismiss={() => setError(null)}>
+            {error}
+          </Alert>
+        ) : null}
         <Container
           header={
-            <Header variant="h2" actions={<Button onClick={() => setCreateModal(true)}>Create Policy</Button>}>
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create Policy</Button>}
+            >
               Managed Policies
             </Header>
           }
+          className="aws-table-card"
         >
           <Table
             items={policies}
@@ -123,7 +170,10 @@ export default function IAMPoliciesPage() {
                 cell: (item: PolicyItem) => (
                   <SpaceBetween direction="horizontal" size="xs">
                     <ButtonDropdown
-                      items={[{ id: "view", text: "View policy" }, { id: "delete", text: "Delete policy" }]}
+                      items={[
+                        { id: "view", text: "View policy" },
+                        { id: "delete", text: "Delete policy" },
+                      ]}
                       ariaLabel={`Actions for policy ${item.PolicyName}`}
                       onItemClick={({ detail }) => {
                         if (detail.id === "view") void loadPolicy(item.PolicyArn);
@@ -158,15 +208,24 @@ export default function IAMPoliciesPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createPolicy}>Create</Button>
+              <Button variant="primary" onClick={createPolicy}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
           <SpaceBetween size="m">
             <FormField label="Policy Name">
-              <Input value={policyName} onChange={(e) => setPolicyName((e as any).detail?.value || "")} />
+              <Input
+                value={policyName}
+                onChange={(e) => setPolicyName((e as any).detail?.value || "")}
+              />
             </FormField>
-            <IamPolicyEditor label="Policy Document (JSON)" value={policyDoc} onChange={setPolicyDoc} />
+            <IamPolicyEditor
+              label="Policy Document (JSON)"
+              value={policyDoc}
+              onChange={setPolicyDoc}
+            />
           </SpaceBetween>
         </Modal>
 
@@ -174,12 +233,18 @@ export default function IAMPoliciesPage() {
           visible={Boolean(deleteTarget)}
           onDismiss={() => setDeleteTarget(null)}
           header="Delete managed policy"
-          footer={<SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void deletePolicy()}>Delete policy</Button>
-          </SpaceBetween>}
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
+              <Button variant="primary" onClick={() => void deletePolicy()}>
+                Delete policy
+              </Button>
+            </SpaceBetween>
+          }
         >
-          <Box>Delete {deleteTarget?.PolicyName || "this policy"}? This action cannot be undone.</Box>
+          <Box>
+            Delete {deleteTarget?.PolicyName || "this policy"}? This action cannot be undone.
+          </Box>
         </Modal>
       </SpaceBetween>
     </Box>

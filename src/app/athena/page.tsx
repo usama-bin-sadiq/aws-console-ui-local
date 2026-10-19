@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
@@ -59,7 +60,7 @@ export default function AthenaPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/athena");
+      const res = await apiFetch("/api/athena");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch Athena data");
       setWorkgroups(data.workgroups || []);
@@ -85,7 +86,7 @@ export default function AthenaPage() {
     setRunningQuery(true);
     setQueryResult("");
     try {
-      const res = await fetch("/api/athena", {
+      const res = await apiFetch("/api/athena", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -121,7 +122,7 @@ export default function AthenaPage() {
     if (hasError) return;
     setCreatingQuery(true);
     try {
-      const res = await fetch("/api/athena", {
+      const res = await apiFetch("/api/athena", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -146,7 +147,7 @@ export default function AthenaPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon Athena</Header>
 
@@ -156,7 +157,7 @@ export default function AthenaPage() {
           </Alert>
         )}
 
-        <Container>
+        <Container className="aws-table-card">
           <Tabs
             tabs={[
               {
@@ -180,7 +181,10 @@ export default function AthenaPage() {
                     columnDefinitions={[
                       { header: "Name", cell: (item: AthenaWorkgroup) => item.Name },
                       { header: "State", cell: (item: AthenaWorkgroup) => item.State || "—" },
-                      { header: "Description", cell: (item: AthenaWorkgroup) => item.Description || "—" },
+                      {
+                        header: "Description",
+                        cell: (item: AthenaWorkgroup) => item.Description || "—",
+                      },
                     ]}
                     loading={loading}
                     empty={<Box textAlign="center">No workgroups found.</Box>}
@@ -220,16 +224,15 @@ export default function AthenaPage() {
                 id: "catalogs",
                 content: (
                   <Table
-                    header={
-                      <Header variant="h2">
-                        Data catalogs ({catalogs.length})
-                      </Header>
-                    }
+                    header={<Header variant="h2">Data catalogs ({catalogs.length})</Header>}
                     items={catalogs}
                     columnDefinitions={[
                       { header: "Catalog name", cell: (item: AthenaCatalog) => item.CatalogName },
                       { header: "Type", cell: (item: AthenaCatalog) => item.Type || "—" },
-                      { header: "Description", cell: (item: AthenaCatalog) => item.Description || "—" },
+                      {
+                        header: "Description",
+                        cell: (item: AthenaCatalog) => item.Description || "—",
+                      },
                     ]}
                     loading={loading}
                     empty={<Box textAlign="center">No data catalogs found.</Box>}
@@ -246,7 +249,13 @@ export default function AthenaPage() {
                         Open query editor
                       </Button>
                     </Box>
-                    <div style={{ padding: "48px 16px", textAlign: "center", color: "var(--awsui-color-text-body-secondary)" }}>
+                    <div
+                      style={{
+                        padding: "48px 16px",
+                        textAlign: "center",
+                        color: "var(--awsui-color-text-body-secondary)",
+                      }}
+                    >
                       Use the query editor to run SQL queries against your Athena workgroups.
                     </div>
                   </SpaceBetween>
@@ -283,10 +292,21 @@ export default function AthenaPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Query string <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={queryStringError}>
+            <FormField
+              label={
+                <>
+                  Query string <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={queryStringError}
+            >
               <Textarea
                 value={queryString}
-                onChange={(e) => { setQueryString(e.detail.value); setQueryStringError(null); }}
+                onChange={(e) => {
+                  setQueryString(e.detail.value);
+                  setQueryStringError(null);
+                }}
                 placeholder="SELECT * FROM my_table LIMIT 10"
                 rows={6}
               />
@@ -333,17 +353,39 @@ export default function AthenaPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Query name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={newQueryNameError}>
+            <FormField
+              label={
+                <>
+                  Query name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={newQueryNameError}
+            >
               <Input
                 value={newQueryName}
-                onChange={(e) => { setNewQueryName(e.detail.value); setNewQueryNameError(null); }}
+                onChange={(e) => {
+                  setNewQueryName(e.detail.value);
+                  setNewQueryNameError(null);
+                }}
                 placeholder="my-query"
               />
             </FormField>
-            <FormField label={<>Query string <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={newQueryStringError}>
+            <FormField
+              label={
+                <>
+                  Query string <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={newQueryStringError}
+            >
               <Textarea
                 value={newQueryString}
-                onChange={(e) => { setNewQueryString(e.detail.value); setNewQueryStringError(null); }}
+                onChange={(e) => {
+                  setNewQueryString(e.detail.value);
+                  setNewQueryStringError(null);
+                }}
                 placeholder="SELECT * FROM my_table LIMIT 10"
                 rows={6}
               />

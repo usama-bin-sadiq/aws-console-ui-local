@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -49,7 +50,7 @@ export default function EKSPPage() {
     setLoadingClusters(true);
     setError(null);
     try {
-      const res = await fetch("/api/eks");
+      const res = await apiFetch("/api/eks");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setClusters(data.clusters || []);
@@ -64,20 +65,27 @@ export default function EKSPPage() {
     if (!selectedCluster) return;
     setLoadingNodegroups(true);
     try {
-      const res = await fetch("/api/eks", {
+      const res = await apiFetch("/api/eks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "listNodegroups", clusterName: selectedCluster }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      const groups: NodegroupSummary[] = (data.nodegroups || []).map((ng: { nodegroupName?: string; status?: string; scalingConfig?: { desiredSize?: number; minSize?: number; maxSize?: number }; instanceTypes?: string[] }) => ({
-        nodegroupName: ng.nodegroupName,
-        clusterName: selectedCluster,
-        status: ng.status,
-        scalingConfig: ng.scalingConfig,
-        instanceTypes: ng.instanceTypes,
-      }));
+      const groups: NodegroupSummary[] = (data.nodegroups || []).map(
+        (ng: {
+          nodegroupName?: string;
+          status?: string;
+          scalingConfig?: { desiredSize?: number; minSize?: number; maxSize?: number };
+          instanceTypes?: string[];
+        }) => ({
+          nodegroupName: ng.nodegroupName,
+          clusterName: selectedCluster,
+          status: ng.status,
+          scalingConfig: ng.scalingConfig,
+          instanceTypes: ng.instanceTypes,
+        }),
+      );
       setNodegroups(groups);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load nodegroups");
@@ -93,7 +101,7 @@ export default function EKSPPage() {
     }
     setNodegroupNameError(null);
     try {
-      await fetch("/api/eks", {
+      await apiFetch("/api/eks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -119,10 +127,14 @@ export default function EKSPPage() {
   const deleteNodegroup = async (name: string) => {
     if (!selectedCluster) return;
     try {
-      await fetch("/api/eks", {
+      await apiFetch("/api/eks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "deleteNodegroup", clusterName: selectedCluster, nodegroupName: name }),
+        body: JSON.stringify({
+          action: "deleteNodegroup",
+          clusterName: selectedCluster,
+          nodegroupName: name,
+        }),
       });
       fetchNodegroups();
     } catch (err: unknown) {
@@ -136,7 +148,7 @@ export default function EKSPPage() {
   }, []);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon EKS — Kubernetes Clusters</Header>
         {error && (
@@ -145,76 +157,104 @@ export default function EKSPPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={<Header variant="h2">Clusters</Header>}
-            items={clusters}
-            loading={loadingClusters}
-            columnDefinitions={[
-              { header: "Name", cell: (i: EKSCluster) => i.name },
-              { header: "Version", cell: (i: EKSCluster) => i.version || "—" },
-              {
-                header: "Status",
-                cell: (i: EKSCluster) => (
-                  <StatusIndicator type={i.status === "ACTIVE" ? "success" : i.status === "FAILED" ? "error" : "warning"}>
-                    {i.status || "—"}
-                  </StatusIndicator>
-                ),
-              },
-              {
-                header: "Actions",
-                cell: (i: EKSCluster) => (
-                  <Button
-                    variant="link"
-                    formAction="none"
-                    onClick={() => {
-                      setSelectedCluster(i.name);
-                      fetchNodegroups();
-                    }}
-                  >
-                    View nodegroups
-                  </Button>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No clusters found.</Box>}
-          />
-        </Container>
+        <Table
+          header={<Header variant="h2">Clusters</Header>}
+          items={clusters}
+          loading={loadingClusters}
+          columnDefinitions={[
+            { header: "Name", cell: (i: EKSCluster) => i.name },
+            { header: "Version", cell: (i: EKSCluster) => i.version || "—" },
+            {
+              header: "Status",
+              cell: (i: EKSCluster) => (
+                <StatusIndicator
+                  type={
+                    i.status === "ACTIVE" ? "success" : i.status === "FAILED" ? "error" : "warning"
+                  }
+                >
+                  {i.status || "—"}
+                </StatusIndicator>
+              ),
+            },
+            {
+              header: "Actions",
+              cell: (i: EKSCluster) => (
+                <Button
+                  variant="link"
+                  formAction="none"
+                  onClick={() => {
+                    setSelectedCluster(i.name);
+                    fetchNodegroups();
+                  }}
+                >
+                  View nodegroups
+                </Button>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No clusters found.</Box>}
+        />
 
         {/* Nodegroups Section */}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setNodegroupModal(true)} disabled={!selectedCluster}>
-                    Create nodegroup
-                  </Button>
-                }
-              >
-                Nodegroups {selectedCluster ? `— ${selectedCluster}` : ""}
-              </Header>
-            }
-            items={nodegroups}
-            loading={loadingNodegroups}
-            columnDefinitions={[
-              { header: "Nodegroup name", cell: (i: NodegroupSummary) => i.nodegroupName || "—" },
-              { header: "Status", cell: (i: NodegroupSummary) => <StatusIndicator type={i.status === "ACTIVE" ? "success" : "warning"}>{i.status || "—"}</StatusIndicator> },
-              { header: "Instance types", cell: (i: NodegroupSummary) => (i.instanceTypes || []).join(", ") || "—" },
-              { header: "Desired / Min / Max", cell: (i: NodegroupSummary) => `${i.scalingConfig?.desiredSize ?? "—"} / ${i.scalingConfig?.minSize ?? "—"} / ${i.scalingConfig?.maxSize ?? "—"}` },
-              {
-                header: "Actions",
-                cell: (i: NodegroupSummary) => (
-                  <Button onClick={() => deleteNodegroup(i.nodegroupName || "")} formAction="none" disabled={!selectedCluster}>
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">{selectedCluster ? "No nodegroups found." : "Select a cluster above to view nodegroups."}</Box>}
-          />
-        </Container>
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button
+                  variant="primary"
+                  onClick={() => setNodegroupModal(true)}
+                  disabled={!selectedCluster}
+                >
+                  Create nodegroup
+                </Button>
+              }
+            >
+              Nodegroups {selectedCluster ? `— ${selectedCluster}` : ""}
+            </Header>
+          }
+          items={nodegroups}
+          loading={loadingNodegroups}
+          columnDefinitions={[
+            { header: "Nodegroup name", cell: (i: NodegroupSummary) => i.nodegroupName || "—" },
+            {
+              header: "Status",
+              cell: (i: NodegroupSummary) => (
+                <StatusIndicator type={i.status === "ACTIVE" ? "success" : "warning"}>
+                  {i.status || "—"}
+                </StatusIndicator>
+              ),
+            },
+            {
+              header: "Instance types",
+              cell: (i: NodegroupSummary) => (i.instanceTypes || []).join(", ") || "—",
+            },
+            {
+              header: "Desired / Min / Max",
+              cell: (i: NodegroupSummary) =>
+                `${i.scalingConfig?.desiredSize ?? "—"} / ${i.scalingConfig?.minSize ?? "—"} / ${i.scalingConfig?.maxSize ?? "—"}`,
+            },
+            {
+              header: "Actions",
+              cell: (i: NodegroupSummary) => (
+                <Button
+                  onClick={() => deleteNodegroup(i.nodegroupName || "")}
+                  formAction="none"
+                  disabled={!selectedCluster}
+                >
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          empty={
+            <Box textAlign="center">
+              {selectedCluster
+                ? "No nodegroups found."
+                : "Select a cluster above to view nodegroups."}
+            </Box>
+          }
+        />
 
         <Modal
           visible={nodegroupModal}
@@ -223,7 +263,9 @@ export default function EKSPPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setNodegroupModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createNodegroup}>Create</Button>
+              <Button variant="primary" onClick={createNodegroup}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
@@ -231,14 +273,37 @@ export default function EKSPPage() {
             <FormField label="Cluster" description="Auto-selected">
               <Input value={selectedCluster} disabled />
             </FormField>
-            <FormField label={<>Nodegroup name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={nodegroupNameError}>
-              <Input value={nodegroupName} onChange={(e) => { setNodegroupName(e.detail.value); setNodegroupNameError(null); }} placeholder="my-nodegroup" />
+            <FormField
+              label={
+                <>
+                  Nodegroup name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={nodegroupNameError}
+            >
+              <Input
+                value={nodegroupName}
+                onChange={(e) => {
+                  setNodegroupName(e.detail.value);
+                  setNodegroupNameError(null);
+                }}
+                placeholder="my-nodegroup"
+              />
             </FormField>
             <FormField label="Instance type">
-              <Input value={nodegroupInstance} onChange={(e) => setNodegroupInstance(e.detail.value)} placeholder="t3.medium" />
+              <Input
+                value={nodegroupInstance}
+                onChange={(e) => setNodegroupInstance(e.detail.value)}
+                placeholder="t3.medium"
+              />
             </FormField>
             <FormField label="Desired size">
-              <Input value={nodegroupDesired} onChange={(e) => setNodegroupDesired(e.detail.value)} placeholder="2" />
+              <Input
+                value={nodegroupDesired}
+                onChange={(e) => setNodegroupDesired(e.detail.value)}
+                placeholder="2"
+              />
             </FormField>
           </SpaceBetween>
         </Modal>

@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -63,7 +64,7 @@ export default function CodeDeployPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/code-deploy");
+      const res = await apiFetch("/api/code-deploy");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch applications");
       setApplications(data.applications || []);
@@ -86,7 +87,7 @@ export default function CodeDeployPage() {
     setAppNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/code-deploy", {
+      const res = await apiFetch("/api/code-deploy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: appName }),
@@ -107,7 +108,9 @@ export default function CodeDeployPage() {
 
   const deleteApplication = async (name: string) => {
     try {
-      const res = await fetch(`/api/code-deploy?appName=${encodeURIComponent(name)}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/code-deploy?appName=${encodeURIComponent(name)}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to delete application");
@@ -123,7 +126,9 @@ export default function CodeDeployPage() {
     setGroupsLoading(true);
     setGroupsError("");
     try {
-      const res = await fetch(`/api/code-deploy?action=deploymentGroups&appName=${encodeURIComponent(appName)}`);
+      const res = await apiFetch(
+        `/api/code-deploy?action=deploymentGroups&appName=${encodeURIComponent(appName)}`,
+      );
       const data = await res.json();
       setDeploymentGroups(data.deploymentGroups || []);
     } catch (err) {
@@ -137,7 +142,9 @@ export default function CodeDeployPage() {
     setDeploymentsLoading(true);
     setDeploymentsError("");
     try {
-      const res = await fetch(`/api/code-deploy?action=deployments&appName=${encodeURIComponent(appName)}`);
+      const res = await apiFetch(
+        `/api/code-deploy?action=deployments&appName=${encodeURIComponent(appName)}`,
+      );
       const data = await res.json();
       setDeployments(data.deployments || []);
     } catch (err) {
@@ -155,7 +162,7 @@ export default function CodeDeployPage() {
     setGroupNameError(null);
     setGroupCreating(true);
     try {
-      const res = await fetch("/api/code-deploy", {
+      const res = await apiFetch("/api/code-deploy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -181,7 +188,7 @@ export default function CodeDeployPage() {
   const createDeployment = async () => {
     setDeployCreating(true);
     try {
-      const res = await fetch("/api/code-deploy", {
+      const res = await apiFetch("/api/code-deploy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -208,65 +215,75 @@ export default function CodeDeployPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS CodeDeploy</Header>
 
         {error && (
-          <Alert type="error" onDismiss={() => setError("")}>{error}</Alert>
+          <Alert type="error" onDismiss={() => setError("")}>
+            {error}
+          </Alert>
         )}
 
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Create application
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button variant="primary" onClick={() => setCreateModal(true)}>
+                  Create application
+                </Button>
+              }
+            >
+              Applications ({applications.length})
+            </Header>
+          }
+          items={applications}
+          columnDefinitions={[
+            { header: "Application name", cell: (item) => item.applicationName },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button
+                    onClick={() => fetchDeploymentGroups(item.applicationName)}
+                    formAction="none"
+                  >
+                    Groups
                   </Button>
-                }
-              >
-                Applications ({applications.length})
-              </Header>
-            }
-            items={applications}
-            columnDefinitions={[
-              { header: "Application name", cell: (item) => item.applicationName },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button onClick={() => fetchDeploymentGroups(item.applicationName)} formAction="none">
-                      Groups
-                    </Button>
-                    <Button onClick={() => {
+                  <Button
+                    onClick={() => {
                       setSelectedApp(item.applicationName);
                       fetchDeploymentGroups(item.applicationName);
                       fetchDeployments(item.applicationName);
-                    }} formAction="none">
-                      Deployments
-                    </Button>
-                    <Button onClick={() => deleteApplication(item.applicationName)} formAction="none">
-                      Delete
-                    </Button>
-                  </SpaceBetween>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No applications found.</Box>}
-          />
-        </Container>
+                    }}
+                    formAction="none"
+                  >
+                    Deployments
+                  </Button>
+                  <Button onClick={() => deleteApplication(item.applicationName)} formAction="none">
+                    Delete
+                  </Button>
+                </SpaceBetween>
+              ),
+            },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No applications found.</Box>}
+        />
 
         {selectedApp && (
           <SpaceBetween size="m">
-            <Container>
+            <Container className="aws-table-card">
               <Header variant="h2">Deployment Groups — {selectedApp}</Header>
               {groupsError && <Alert type="error">{groupsError}</Alert>}
               <SpaceBetween direction="horizontal" size="xs">
-                <Button variant="primary" onClick={() => setGroupModal(true)}>Create group</Button>
-                <Button variant="primary" onClick={() => setDeployModal(true)}>Create deployment</Button>
+                <Button variant="primary" onClick={() => setGroupModal(true)}>
+                  Create group
+                </Button>
+                <Button variant="primary" onClick={() => setDeployModal(true)}>
+                  Create deployment
+                </Button>
               </SpaceBetween>
               <Table
                 items={deploymentGroups}
@@ -279,7 +296,7 @@ export default function CodeDeployPage() {
               />
             </Container>
 
-            <Container>
+            <Container className="aws-table-card">
               <Header variant="h2">Deployments — {selectedApp}</Header>
               {deploymentsError && <Alert type="error">{deploymentsError}</Alert>}
               <Table
@@ -303,14 +320,27 @@ export default function CodeDeployPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createApplication} loading={creating}>Create</Button>
+              <Button variant="primary" onClick={createApplication} loading={creating}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
-          <FormField label={<>Application name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={appNameError}>
+          <FormField
+            label={
+              <>
+                Application name <span style={{ color: "red" }}>*</span>
+              </>
+            }
+            constraintText="Required"
+            errorText={appNameError}
+          >
             <Input
               value={appName}
-              onChange={(e) => { setAppName(e.detail.value); setAppNameError(null); }}
+              onChange={(e) => {
+                setAppName(e.detail.value);
+                setAppNameError(null);
+              }}
               placeholder="my-app"
             />
           </FormField>
@@ -323,14 +353,27 @@ export default function CodeDeployPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setGroupModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createDeploymentGroup} loading={groupCreating}>Create</Button>
+              <Button variant="primary" onClick={createDeploymentGroup} loading={groupCreating}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
-          <FormField label={<>Deployment group name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={groupNameError}>
+          <FormField
+            label={
+              <>
+                Deployment group name <span style={{ color: "red" }}>*</span>
+              </>
+            }
+            constraintText="Required"
+            errorText={groupNameError}
+          >
             <Input
               value={groupName}
-              onChange={(e) => { setGroupName(e.detail.value); setGroupNameError(null); }}
+              onChange={(e) => {
+                setGroupName(e.detail.value);
+                setGroupNameError(null);
+              }}
               placeholder="my-group"
             />
           </FormField>
@@ -343,7 +386,9 @@ export default function CodeDeployPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setDeployModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createDeployment} loading={deployCreating}>Create</Button>
+              <Button variant="primary" onClick={createDeployment} loading={deployCreating}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >

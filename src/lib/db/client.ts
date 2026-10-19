@@ -13,7 +13,7 @@ const BCRYPT_ROUNDS = 12;
 
 const dbUrl = process.env.DATABASE_URL || `file:${path.join(process.cwd(), "data", "console.db")}`;
 
-const client = createClient({ url: dbUrl });
+export const client = createClient({ url: dbUrl });
 export const db = drizzle(client, { schema });
 
 // Initialize database tables and seed data
@@ -26,6 +26,7 @@ export async function initializeDatabase() {
       password TEXT NOT NULL,
       email TEXT NOT NULL,
       account_name TEXT,
+      account_id TEXT,
       permissions TEXT NOT NULL DEFAULT '["*"]',
       is_root INTEGER NOT NULL DEFAULT 0,
       access_key_id TEXT NOT NULL,
@@ -40,6 +41,42 @@ export async function initializeDatabase() {
   await client.execute(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username);
   `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS auth_sessions (
+      token_hash TEXT PRIMARY KEY,
+      username TEXT NOT NULL,
+      csrf_hash TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
+    );
+  `);
+  await client.execute(`
+    CREATE INDEX IF NOT EXISTS idx_auth_sessions_expiry ON auth_sessions(expires_at);
+  `);
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS auth_mfa_challenges (
+      token_hash TEXT PRIMARY KEY,
+      username TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
+    );
+  `);
+  await client.execute(`
+    CREATE INDEX IF NOT EXISTS idx_auth_mfa_challenges_expiry ON auth_mfa_challenges(expires_at);
+  `);
+
+  // Migrate existing databases: add account_id column if it's missing.
+  // Guarded so it's idempotent — never crashes if the column already exists.
+  try {
+    const columns = await client.execute(`PRAGMA table_info(users)`);
+    const hasAccountId = columns.rows.some((row) => row.name === "account_id");
+    if (!hasAccountId) {
+      await client.execute(`ALTER TABLE users ADD COLUMN account_id TEXT`);
+    }
+  } catch {
+    // Column already exists (or PRAGMA unsupported) — safe to ignore.
+  }
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS widget_config (
@@ -111,48 +148,42 @@ export async function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_terminal_history_session ON terminal_history(session_id, executed_at DESC);
   `);
 
-  // Seed default users if empty
+  // Seed default users only if NEXT_PUBLIC_ROOT_PASSWORD env var is set
   const userCount = await db.select({ count: sql<number>`count(*)` }).from(schema.users);
   if (userCount[0]?.count === 0) {
-    await db.insert(schema.users).values([
-      {
-        username: "root",
-        password: bcrypt.hashSync("root123", BCRYPT_ROUNDS),
-        email: "root@localhost",
-        accountName: "root-account",
-        permissions: JSON.stringify(["*"]),
-        isRoot: true,
-        accessKeyId: "test",
-        secretAccessKey: "test",
-      },
-      {
-        username: "admin",
-        password: bcrypt.hashSync("admin123", BCRYPT_ROUNDS),
-        email: "admin@localhost",
-        accountName: "admin-account",
-        permissions: JSON.stringify(["*"]),
-        isRoot: false,
-        accessKeyId: "AKIAADMIN000000000",
-        secretAccessKey: "admin_secret_key_000",
-      },
-      {
-        username: "readonly",
-        password: bcrypt.hashSync("readonly123", BCRYPT_ROUNDS),
-        email: "readonly@localhost",
-        accountName: "readonly-account",
-        permissions: JSON.stringify(["s3:GetObject", "ec2:Describe*", "rds:Describe*", "lambda:List*", "iam:Get*"]),
-        isRoot: false,
-        accessKeyId: "AKIAREADONLY000000",
-        secretAccessKey: "readonly_secret_key_00",
-      },
-    ]);
+    const rootPassword = process.env.NEXT_PUBLIC_ROOT_PASSWORD;
+    if (rootPassword) {
+      await db.insert(schema.users).values([
+        {
+          username: "root",
+          password: bcrypt.hashSync(rootPassword, BCRYPT_ROUNDS),
+          email: "root@localhost",
+          accountName: "root-account",
+          accountId: "631432276713",
+          permissions: JSON.stringify(["*"]),
+          isRoot: true,
+          accessKeyId: "test",
+          secretAccessKey: "test",
+        },
+      ]);
+    } else {
+      console.warn("NEXT_PUBLIC_ROOT_PASSWORD is not set — no default admin user will be seeded");
+    }
   }
 
+  // Backfill existing rows so dev databases created before account_id existed
+  // keep working with the example account id shown in the UI.
+  await db
+    .update(schema.users)
+    .set({ accountId: "631432276713" })
+    .where(sql`${schema.users.accountId} IS NULL`);
+
   // Insert default widget configuration if not exists
-  const widgetCount = await db.select({ count: sql<number>`count(*)` })
+  const widgetCount = await db
+    .select({ count: sql<number>`count(*)` })
     .from(schema.widgetConfig)
     .where(sql`${schema.widgetConfig.userId} = 'default'`);
-  
+
   if (widgetCount[0]?.count === 0) {
     const defaultWidgets = [
       { id: "aws-health", x: 0, y: 0, w: 1, h: 1 },
@@ -166,7 +197,7 @@ export async function initializeDatabase() {
     ];
 
     await db.insert(schema.widgetConfig).values(
-      defaultWidgets.map(w => ({
+      defaultWidgets.map((w) => ({
         userId: "default",
         widgetId: w.id,
         positionX: w.x,
@@ -174,7 +205,7 @@ export async function initializeDatabase() {
         width: w.w,
         height: w.h,
         visible: true,
-      }))
+      })),
     );
   }
 }

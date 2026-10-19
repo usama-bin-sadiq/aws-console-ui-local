@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -30,7 +31,7 @@ export default function CloudWatchLogsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/cloudwatch-logs");
+      const res = await apiFetch("/api/cloudwatch-logs");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setLogGroups(data.logGroups || []);
@@ -47,7 +48,7 @@ export default function CloudWatchLogsPage() {
 
   const createLogGroup = async () => {
     try {
-      await fetch("/api/cloudwatch-logs", {
+      await apiFetch("/api/cloudwatch-logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "createGroup", logGroupName }),
@@ -60,51 +61,54 @@ export default function CloudWatchLogsPage() {
   };
 
   const deleteLogGroup = async (name: string) => {
-    await fetch(`/api/cloudwatch-logs?logGroupName=${encodeURIComponent(name)}`, {
+    await apiFetch(`/api/cloudwatch-logs?logGroupName=${encodeURIComponent(name)}`, {
       method: "DELETE",
     });
     fetchLogGroups();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">CloudWatch Logs</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={<Button onClick={() => setCreateModal(true)}>Create log group</Button>}
-              >
-                Log Groups ({logGroups.length})
-              </Header>
-            }
-            items={logGroups}
-            loading={loading}
-            columnDefinitions={[
-              { header: "Log group name", cell: (item) => item.logGroupName },
-              {
-                header: "Retention (days)",
-                cell: (item) => (item.retentionInDays != null ? String(item.retentionInDays) : "Never expire"),
-              },
-              {
-                header: "Stored bytes",
-                cell: (item) => (item.storedBytes != null ? item.storedBytes.toLocaleString() : "—"),
-              },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button onClick={() => deleteLogGroup(item.logGroupName)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No log groups found.</Box>}
-          />
-        </Container>
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create log group</Button>}
+            >
+              Log Groups ({logGroups.length})
+            </Header>
+          }
+          items={logGroups}
+          loading={loading}
+          columnDefinitions={[
+            { header: "Log group name", cell: (item) => item.logGroupName },
+            {
+              header: "Retention (days)",
+              cell: (item) =>
+                item.retentionInDays != null ? String(item.retentionInDays) : "Never expire",
+            },
+            {
+              header: "Stored bytes",
+              cell: (item) => (item.storedBytes != null ? item.storedBytes.toLocaleString() : "—"),
+            },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button onClick={() => deleteLogGroup(item.logGroupName)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No log groups found.</Box>}
+        />
 
         <Modal
           visible={createModal}
@@ -113,7 +117,9 @@ export default function CloudWatchLogsPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createLogGroup}>Create</Button>
+              <Button variant="primary" onClick={createLogGroup}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >

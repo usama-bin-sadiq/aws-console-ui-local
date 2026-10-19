@@ -2,10 +2,10 @@
  * useS3Service — S3 adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { s3 } from '@/lib/aws-clients'
-import { ListBucketsCommand } from '@aws-sdk/client-s3';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { s3 } from "@/lib/aws-clients";
+import { ListBucketsCommand } from "@aws-sdk/client-s3";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface S3ServiceState {
   buckets: unknown[];

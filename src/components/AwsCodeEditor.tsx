@@ -16,14 +16,25 @@ function detectLanguage(code: string): string {
   const trimmed = code.trim();
   if (!trimmed) return "text";
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-    try { JSON.parse(trimmed); return "json"; } catch { /* not json */ }
+    try {
+      JSON.parse(trimmed);
+      return "json";
+    } catch {
+      /* not json */
+    }
   }
-  if (/^(import |export |from |const |let |var |function |=>|async |await |class |interface |type |enum )/.test(trimmed)) return "javascript";
+  if (
+    /^(import |export |from |const |let |var |function |=>|async |await |class |interface |type |enum )/.test(
+      trimmed,
+    )
+  )
+    return "javascript";
   if (/^(def |class |import |from |print|if __name__)/.test(trimmed)) return "python";
   if (/^(<!DOCTYPE|<html|<div|<span|<head|<body)/.test(trimmed)) return "html";
-  if (/^(CREATE |SELECT |INSERT |UPDATE |DELETE |DROP |ALTER )/.test(trimmed.toUpperCase())) return "sql";
+  if (/^(CREATE |SELECT |INSERT |UPDATE |DELETE |DROP |ALTER )/.test(trimmed.toUpperCase()))
+    return "sql";
   if (/^(#|##|###)/.test(trimmed)) return "markdown";
-  if (/^#!/.test(trimmed)) return "sh";
+  if (trimmed.startsWith("#!")) return "sh";
   return "text";
 }
 
@@ -70,32 +81,34 @@ export default function AwsCodeEditor({
   const detectedLanguage = useMemo(() => language || detectLanguage(value), [language, value]);
 
   React.useEffect(() => {
-    import("ace-builds").then((aceModule) => {
-      Promise.allSettled([
-        import("ace-builds/src-noconflict/mode-javascript"),
-        import("ace-builds/src-noconflict/mode-python"),
-        import("ace-builds/src-noconflict/mode-json"),
-        import("ace-builds/src-noconflict/mode-html"),
-        import("ace-builds/src-noconflict/mode-sql"),
-        import("ace-builds/src-noconflict/mode-sh"),
-        import("ace-builds/src-noconflict/mode-markdown"),
-        import("ace-builds/src-noconflict/mode-text"),
-        import("ace-builds/src-noconflict/theme-dawn"),
-        import("ace-builds/src-noconflict/theme-monokai"),
-      ]).then(() => {
-        setAce(aceModule.default);
+    import("ace-builds")
+      .then((aceModule) => {
+        Promise.allSettled([
+          import("ace-builds/src-noconflict/mode-javascript"),
+          import("ace-builds/src-noconflict/mode-python"),
+          import("ace-builds/src-noconflict/mode-json"),
+          import("ace-builds/src-noconflict/mode-html"),
+          import("ace-builds/src-noconflict/mode-sql"),
+          import("ace-builds/src-noconflict/mode-sh"),
+          import("ace-builds/src-noconflict/mode-markdown"),
+          import("ace-builds/src-noconflict/mode-text"),
+          import("ace-builds/src-noconflict/theme-dawn"),
+          import("ace-builds/src-noconflict/theme-monokai"),
+        ]).then(() => {
+          setAce(aceModule.default);
+          setLoading(false);
+        });
+      })
+      .catch(() => {
         setLoading(false);
       });
-    }).catch(() => {
-      setLoading(false);
-    });
   }, []);
 
   const handleDelayedChange = useCallback(
     (event: { detail: { value: string } }) => {
       onChange?.(event.detail.value);
     },
-    [onChange]
+    [onChange],
   );
 
   const handleRecoveryClick = useCallback(() => {
@@ -104,7 +117,17 @@ export default function AwsCodeEditor({
 
   if (!ace) {
     return (
-      <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--awsui-color-background-container-content)", borderRadius: "4px", border: "1px solid var(--awsui-color-border-default)" }}>
+      <div
+        style={{
+          height,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "var(--awsui-color-background-container-content)",
+          borderRadius: "4px",
+          border: "1px solid var(--awsui-color-border-default)",
+        }}
+      >
         {loading ? "Loading code editor..." : "Code editor unavailable"}
       </div>
     );

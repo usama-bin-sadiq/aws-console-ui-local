@@ -29,6 +29,8 @@ import Modal from "@cloudscape-design/components/modal";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 import { apiFetch } from "@/lib/api-client";
+import { lookupBucket, type BucketState } from "../../bucket-lookup";
+import { BucketNotFound, BucketUnreadable } from "../../BucketNotice";
 
 interface S3ObjectItem {
   Key: string;
@@ -49,6 +51,7 @@ export default function S3BucketObjectsPage() {
   const [prefixes, setPrefixes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bucket, setBucket] = useState<BucketState>({ status: "pending" });
   const [prefix, setPrefix] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -62,14 +65,29 @@ export default function S3BucketObjectsPage() {
   const fetchObjects = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setBucket({ status: "pending" });
     try {
+      // The upload target and the object table are an offer to write into this
+      // bucket, so they need a bucket that is there. A failed lookup stops the
+      // fetch here rather than letting the drop zone outlive its error.
+      const lookup = await lookupBucket(bucketName);
+      if (lookup.status !== "found") {
+        setBucket(lookup);
+        return;
+      }
+      setBucket({ status: "found" });
+
       const res = await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&action=list`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       const objs = (data.objects || []).map((o: any) => ({
         Key: o.Key || o.key || "—",
         Size: o.Size ?? o.size ?? undefined,
-        LastModified: o.LastModified ? new Date(o.LastModified).toLocaleString() : (o.LastModified ? String(o.LastModified) : undefined),
+        LastModified: o.LastModified
+          ? new Date(o.LastModified).toLocaleString()
+          : o.LastModified
+            ? String(o.LastModified)
+            : undefined,
         ETag: o.ETag || o.etag || undefined,
         StorageClass: o.StorageClass || o.storageClass || undefined,
       }));
@@ -86,65 +104,84 @@ export default function S3BucketObjectsPage() {
     if (bucketName) fetchObjects();
   }, [bucketName, fetchObjects]);
 
-  const deleteObject = useCallback(async (key: string) => {
-    try {
-      await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&key=${encodeURIComponent(key)}`, { method: "DELETE" });
-      fetchObjects();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to delete object");
-    }
-  }, [bucketName, fetchObjects]);
+  const deleteObject = useCallback(
+    async (key: string) => {
+      try {
+        await apiFetch(
+          `/api/s3?bucket=${encodeURIComponent(bucketName)}&key=${encodeURIComponent(key)}`,
+          { method: "DELETE" },
+        );
+        fetchObjects();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to delete object");
+      }
+    },
+    [bucketName, fetchObjects],
+  );
 
-  const handleDownload = useCallback((key: string) => {
-    window.open(`/api/s3?bucket=${encodeURIComponent(bucketName)}&key=${encodeURIComponent(key)}&action=download`, "_blank");
-  }, [bucketName]);
+  const handleDownload = useCallback(
+    (key: string) => {
+      window.open(
+        `/api/s3?bucket=${encodeURIComponent(bucketName)}&key=${encodeURIComponent(key)}&action=download`,
+        "_blank",
+      );
+    },
+    [bucketName],
+  );
 
-  const handleUpload = useCallback(async (file: File) => {
-    setUploading(true);
-    setError(null);
-    try {
-      const formData = new FormData();
-      formData.append("bucket", bucketName);
-      formData.append("key", file.name);
-      formData.append("file", file);
-      const res = await fetch("/api/s3", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || "Upload failed");
-      fetchObjects();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  }, [bucketName, fetchObjects]);
-
-  const handleMultipleFiles = useCallback(async (files: FileList) => {
-    setUploading(true);
-    setError(null);
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+  const handleUpload = useCallback(
+    async (file: File) => {
+      setUploading(true);
+      setError(null);
+      try {
         const formData = new FormData();
         formData.append("bucket", bucketName);
         formData.append("key", file.name);
         formData.append("file", file);
-        const res = await fetch("/api/s3", {
+        const res = await apiFetch("/api/s3", {
           method: "POST",
           body: formData,
         });
         const data = await res.json();
-        if (!res.ok || data.error) throw new Error(data.error || `Upload failed for ${file.name}`);
+        if (!res.ok || data.error) throw new Error(data.error || "Upload failed");
+        fetchObjects();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Upload failed");
+      } finally {
+        setUploading(false);
       }
-      fetchObjects();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  }, [bucketName, fetchObjects]);
+    },
+    [bucketName, fetchObjects],
+  );
+
+  const handleMultipleFiles = useCallback(
+    async (files: FileList) => {
+      setUploading(true);
+      setError(null);
+      try {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const formData = new FormData();
+          formData.append("bucket", bucketName);
+          formData.append("key", file.name);
+          formData.append("file", file);
+          const res = await apiFetch("/api/s3", {
+            method: "POST",
+            body: formData,
+          });
+          const data = await res.json();
+          if (!res.ok || data.error)
+            throw new Error(data.error || `Upload failed for ${file.name}`);
+        }
+        fetchObjects();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Upload failed");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [bucketName, fetchObjects],
+  );
 
   const onFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,7 +195,7 @@ export default function S3BucketObjectsPage() {
       }
       e.target.value = "";
     },
-    [handleUpload, handleMultipleFiles]
+    [handleUpload, handleMultipleFiles],
   );
 
   const onDragOver = useCallback((e: React.DragEvent) => {
@@ -173,54 +210,66 @@ export default function S3BucketObjectsPage() {
     setDragActive(false);
   }, []);
 
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      handleMultipleFiles(files);
-    }
-  }, [handleMultipleFiles]);
-
-  const copyObject = useCallback(async (sourceKey: string, targetKey: string) => {
-    setCopying(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/s3", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bucket: bucketName,
-          key: targetKey,
-          copySource: `/${bucketName}/${sourceKey}`,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || "Copy failed");
-      fetchObjects();
-      setCopyModal(null);
-      setCopyTargetKey("");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Copy failed");
-    } finally {
-      setCopying(false);
-    }
-  }, [bucketName, fetchObjects]);
-
-  const deleteMultipleObjects = useCallback(async (keys: string[]) => {
-    setError(null);
-    try {
-      for (const key of keys) {
-        await apiFetch(`/api/s3?bucket=${encodeURIComponent(bucketName)}&key=${encodeURIComponent(key)}`, { method: "DELETE" });
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        handleMultipleFiles(files);
       }
-      fetchObjects();
-      setSelectedObjects([]);
-      setDeleteMultipleModal(false);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to delete objects");
-    }
-  }, [bucketName, fetchObjects]);
+    },
+    [handleMultipleFiles],
+  );
+
+  const copyObject = useCallback(
+    async (sourceKey: string, targetKey: string) => {
+      setCopying(true);
+      setError(null);
+      try {
+        const res = await apiFetch("/api/s3", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bucket: bucketName,
+            key: targetKey,
+            copySource: `/${bucketName}/${sourceKey}`,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || "Copy failed");
+        fetchObjects();
+        setCopyModal(null);
+        setCopyTargetKey("");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Copy failed");
+      } finally {
+        setCopying(false);
+      }
+    },
+    [bucketName, fetchObjects],
+  );
+
+  const deleteMultipleObjects = useCallback(
+    async (keys: string[]) => {
+      setError(null);
+      try {
+        for (const key of keys) {
+          await apiFetch(
+            `/api/s3?bucket=${encodeURIComponent(bucketName)}&key=${encodeURIComponent(key)}`,
+            { method: "DELETE" },
+          );
+        }
+        fetchObjects();
+        setSelectedObjects([]);
+        setDeleteMultipleModal(false);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to delete objects");
+      }
+    },
+    [bucketName, fetchObjects],
+  );
 
   const columnDefinitions: TableProps.ColumnDefinition<S3ObjectItem>[] = [
     {
@@ -232,7 +281,12 @@ export default function S3BucketObjectsPage() {
     {
       id: "size",
       header: "Size",
-      cell: (item) => (item.Size != null ? (item.Size > 1024 ? `${(item.Size / 1024).toFixed(2)} KB` : `${item.Size} B`) : "—"),
+      cell: (item) =>
+        item.Size != null
+          ? item.Size > 1024
+            ? `${(item.Size / 1024).toFixed(2)} KB`
+            : `${item.Size} B`
+          : "—",
       sortingField: "Size",
     },
     {
@@ -271,7 +325,13 @@ export default function S3BucketObjectsPage() {
   ];
 
   const allItems: S3ObjectItem[] = [
-    ...prefixes.map((p) => ({ Key: p + "/", Size: undefined, LastModified: undefined, ETag: undefined, StorageClass: "PREFIX" })),
+    ...prefixes.map((p) => ({
+      Key: p + "/",
+      Size: undefined,
+      LastModified: undefined,
+      ETag: undefined,
+      StorageClass: "PREFIX",
+    })),
     ...objects,
   ];
 
@@ -290,195 +350,255 @@ export default function S3BucketObjectsPage() {
       ]}
       headerActions={
         <SpaceBetween direction="horizontal" size="xs">
-          <Button onClick={() => router.push(`/s3/${encodeURIComponent(bucketName)}`)} formAction="none">
+          <Button
+            onClick={() => router.push(`/s3/${encodeURIComponent(bucketName)}`)}
+            formAction="none"
+          >
             Back to bucket
           </Button>
         </SpaceBetween>
       }
+
+      headingLevel="h2"
     >
       <SpaceBetween size="l" direction="vertical">
-        <Header variant="h1">Objects in {bucketName}</Header>
-        <BreadcrumbGroup items={[
-          { text: "S3", href: "/s3" },
-          { text: bucketName, href: `/s3/${encodeURIComponent(bucketName)}` },
-          { text: "Objects", href: "#" },
-        ]} />
+        <Header variant="h2">Objects in {bucketName}</Header>
+        <BreadcrumbGroup
+          items={[
+            { text: "S3", href: "/s3" },
+            { text: bucketName, href: `/s3/${encodeURIComponent(bucketName)}` },
+            { text: "Objects", href: "#" },
+          ]}
+        />
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>
             {error}
           </Alert>
         )}
-        <Container>
-          <SpaceBetween size="s" direction="vertical">
-            <SpaceBetween direction="horizontal" size="xs">
-              <FormField label="Upload files">
-                <div
-                  ref={dropZoneRef}
-                  onDragOver={onDragOver}
-                  onDragLeave={onDragLeave}
-                  onDrop={onDrop}
-                  style={{
-                    borderStyle: dragActive ? "solid" : "dashed",
-                    borderColor: dragActive ? "var(--color-primary)" : "var(--color-border)",
-                    backgroundColor: dragActive ? "var(--color-primary-lightest)" : "transparent",
-                    padding: "var(--size-xl)",
-                    textAlign: "center",
-                    transition: "all 0.2s ease",
-                    borderWidth: "2px",
-                    borderRadius: "var(--border-radius-medium)",
-                  }}
-                >
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={onFileChange}
-                    multiple
-                    style={{ display: "none" }}
-                  />
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button
-                      onClick={() => fileInputRef.current?.click()}
-                      loading={uploading}
-                      formAction="none"
-                      variant={dragActive ? "primary" : "normal"}
-                    >
-                      {dragActive ? "Drop files here" : "Select files"}
-                    </Button>
-                    <Button
-                      onClick={() => fileInputRef.current?.click()}
-                      loading={uploading}
-                      formAction="none"
-                      variant="link"
-                    >
-                      or browse
-                    </Button>
-                  </SpaceBetween>
-                  <Box variant="small" color="text-body-secondary" margin={{ top: "s" }}>
-                    Drag and drop files here, or click to select multiple files
-                  </Box>
-                </div>
-              </FormField>
-              <Button onClick={fetchObjects} iconName="refresh" ariaLabel="Refresh" formAction="none">
-                Refresh
-              </Button>
-            </SpaceBetween>
-            <Table
-              header={
-                <Header
-                  variant="h2"
-                  counter={`(${objects.length + prefixes.length})`}
-                  actions={
-                    selectedObjects.length > 0 ? (
+        {bucket.status === "missing" ? (
+          <BucketNotFound bucketName={bucketName} />
+        ) : bucket.status === "unavailable" ? (
+          <BucketUnreadable message={bucket.message} onRetry={fetchObjects} />
+        ) : (
+          <Container className="aws-table-card">
+            <SpaceBetween size="s" direction="vertical">
+              <SpaceBetween direction="horizontal" size="xs">
+                <FormField label="Upload files">
+                  <div
+                    ref={dropZoneRef}
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                    style={{
+                      borderStyle: dragActive ? "solid" : "dashed",
+                      borderColor: dragActive ? "var(--color-primary)" : "var(--color-border)",
+                      backgroundColor: dragActive ? "var(--color-primary-lightest)" : "transparent",
+                      padding: "var(--size-xl)",
+                      textAlign: "center",
+                      transition: "all 0.2s ease",
+                      borderWidth: "2px",
+                      borderRadius: "var(--border-radius-medium)",
+                    }}
+                  >
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={onFileChange}
+                      multiple
+                      style={{ display: "none" }}
+                    />
+                    <SpaceBetween direction="horizontal" size="xs">
                       <Button
-                        variant="primary"
-                        onClick={() => setDeleteMultipleModal(true)}
-                        ariaLabel="Delete selected objects"
+                        onClick={() => fileInputRef.current?.click()}
+                        loading={uploading}
+                        formAction="none"
+                        variant={dragActive ? "primary" : "normal"}
                       >
-                        Delete selected ({selectedObjects.length})
+                        {dragActive ? "Drop files here" : "Select files"}
                       </Button>
-                    ) : null
-                  }
+                      <Button
+                        onClick={() => fileInputRef.current?.click()}
+                        loading={uploading}
+                        formAction="none"
+                        variant="link"
+                      >
+                        or browse
+                      </Button>
+                    </SpaceBetween>
+                    <Box variant="small" color="text-body-secondary" margin={{ top: "s" }}>
+                      Drag and drop files here, or click to select multiple files
+                    </Box>
+                  </div>
+                </FormField>
+                <Button
+                  onClick={fetchObjects}
+                  iconName="refresh"
+                  ariaLabel="Refresh"
+                  formAction="none"
                 >
-                  Objects
-                </Header>
-              }
-              items={allItems}
-              selectionType="multi"
-              trackBy="Key"
-              selectedItems={selectedObjects}
-              onSelectionChange={(e) => setSelectedObjects(e.detail.selectedItems)}
-              loading={loading}
-              columnDefinitions={columnDefinitions}
-              empty={<Box textAlign="center">No objects found.</Box>}
-              ariaLabels={{
-                selectionGroupLabel: "Selected objects",
-                itemSelectionLabel: (_selection, item) => `Select ${item.Key || "object"}`,
-              }}
-            />
-          </SpaceBetween>
-        </Container>
-
-        <Modal
-          visible={deleteModal !== null}
-          onDismiss={() => setDeleteModal(null)}
-          header="Delete object"
-          footer={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setDeleteModal(null)} formAction="none">Cancel</Button>
-              <Button variant="primary" onClick={() => { deleteObject(deleteModal!); setDeleteModal(null); }}>
-                Confirm delete
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          <Box>
-            <Alert type="warning">
-              Are you sure you want to permanently delete <Box variant="strong">{deleteModal}</Box>? This action cannot be undone.
-            </Alert>
-          </Box>
-        </Modal>
-
-        <Modal
-          visible={deleteMultipleModal}
-          onDismiss={() => setDeleteMultipleModal(false)}
-          header="Delete multiple objects"
-          footer={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setDeleteMultipleModal(false)} formAction="none">Cancel</Button>
-              <Button variant="primary" onClick={() => deleteMultipleObjects(selectedObjects.map((o) => o.Key))}>
-                Delete {selectedObjects.length} objects
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          <Box>
-            <Alert type="warning">
-              Are you sure you want to permanently delete <Box variant="strong">{selectedObjects.length}</Box> objects? This action cannot be undone.
-            </Alert>
-            <div style={{ maxHeight: "200px", overflow: "auto", marginTop: "16px" }}>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                {selectedObjects.slice(0, 50).map((obj, idx) => (
-                  <li key={idx} style={{ padding: '4px 0', fontFamily: 'monospace', fontSize: '12px' }}>
-                    {obj.Key}
-                  </li>
-                ))}
-                {selectedObjects.length > 50 && (
-                  <li style={{ padding: '4px 0', fontSize: '12px', color: '#666' }}>
-                    ... and {selectedObjects.length - 50} more objects
-                  </li>
-                )}
-              </ul>
-            </div>
-          </Box>
-        </Modal>
-
-        <Modal
-          visible={copyModal !== null}
-          onDismiss={() => { setCopyModal(null); setCopyTargetKey(""); }}
-          header="Copy object"
-          footer={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => { setCopyModal(null); setCopyTargetKey(""); }} formAction="none" disabled={copying}>Cancel</Button>
-              <Button variant="primary" onClick={() => copyObject(copyModal!.key, copyTargetKey)} loading={copying} disabled={!copyTargetKey.trim()}>
-                Copy
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          <Box>
-            <FormField label="Destination key">
-              <Input
-                value={copyTargetKey}
-                onChange={(e) => setCopyTargetKey(e.detail.value)}
-                placeholder="Enter new object key"
-                autoFocus
+                  Refresh
+                </Button>
+              </SpaceBetween>
+              <Table
+                header={
+                  <Header
+                    variant="h2"
+                    counter={`(${objects.length + prefixes.length})`}
+                    actions={
+                      selectedObjects.length > 0 ? (
+                        <Button
+                          variant="primary"
+                          onClick={() => setDeleteMultipleModal(true)}
+                          ariaLabel="Delete selected objects"
+                        >
+                          Delete selected ({selectedObjects.length})
+                        </Button>
+                      ) : null
+                    }
+                  >
+                    Objects
+                  </Header>
+                }
+                items={allItems}
+                selectionType="multi"
+                trackBy="Key"
+                selectedItems={selectedObjects}
+                onSelectionChange={(e) => setSelectedObjects(e.detail.selectedItems)}
+                loading={loading}
+                columnDefinitions={columnDefinitions}
+                empty={<Box textAlign="center">No objects found.</Box>}
+                ariaLabels={{
+                  selectionGroupLabel: "Selected objects",
+                  itemSelectionLabel: (_selection, item) => `Select ${item.Key || "object"}`,
+                }}
               />
-            </FormField>
-            <Box variant="small" color="text-body-secondary" margin={{ top: "m" }}>
-              Copying <Box variant="strong">{copyModal?.key}</Box> to <Box variant="strong">{copyTargetKey || "new key"}</Box>
-            </Box>
-          </Box>
-        </Modal>
+            </SpaceBetween>
+          </Container>
+        )}
+
+        {/* Object dialogs describe writes into a bucket that is not there. */}
+        {bucket.status === "found" && (
+          <>
+            <Modal
+              visible={deleteModal !== null}
+              onDismiss={() => setDeleteModal(null)}
+              header="Delete object"
+              footer={
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button onClick={() => setDeleteModal(null)} formAction="none">
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      deleteObject(deleteModal!);
+                      setDeleteModal(null);
+                    }}
+                  >
+                    Confirm delete
+                  </Button>
+                </SpaceBetween>
+              }
+            >
+              <Box>
+                <Alert type="warning">
+                  Are you sure you want to permanently delete{" "}
+                  <Box variant="strong">{deleteModal}</Box>? This action cannot be undone.
+                </Alert>
+              </Box>
+            </Modal>
+
+            <Modal
+              visible={deleteMultipleModal}
+              onDismiss={() => setDeleteMultipleModal(false)}
+              header="Delete multiple objects"
+              footer={
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button onClick={() => setDeleteMultipleModal(false)} formAction="none">
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => deleteMultipleObjects(selectedObjects.map((o) => o.Key))}
+                  >
+                    Delete {selectedObjects.length} objects
+                  </Button>
+                </SpaceBetween>
+              }
+            >
+              <Box>
+                <Alert type="warning">
+                  Are you sure you want to permanently delete{" "}
+                  <Box variant="strong">{selectedObjects.length}</Box> objects? This action cannot
+                  be undone.
+                </Alert>
+                <div style={{ maxHeight: "200px", overflow: "auto", marginTop: "16px" }}>
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                    {selectedObjects.slice(0, 50).map((obj, idx) => (
+                      <li
+                        key={idx}
+                        style={{ padding: "4px 0", fontFamily: "monospace", fontSize: "12px" }}
+                      >
+                        {obj.Key}
+                      </li>
+                    ))}
+                    {selectedObjects.length > 50 && (
+                      <li style={{ padding: "4px 0", fontSize: "12px", color: "#666" }}>
+                        ... and {selectedObjects.length - 50} more objects
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </Box>
+            </Modal>
+
+            <Modal
+              visible={copyModal !== null}
+              onDismiss={() => {
+                setCopyModal(null);
+                setCopyTargetKey("");
+              }}
+              header="Copy object"
+              footer={
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button
+                    onClick={() => {
+                      setCopyModal(null);
+                      setCopyTargetKey("");
+                    }}
+                    formAction="none"
+                    disabled={copying}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => copyObject(copyModal!.key, copyTargetKey)}
+                    loading={copying}
+                    disabled={!copyTargetKey.trim()}
+                  >
+                    Copy
+                  </Button>
+                </SpaceBetween>
+              }
+            >
+              <Box>
+                <FormField label="Destination key">
+                  <Input
+                    value={copyTargetKey}
+                    onChange={(e) => setCopyTargetKey(e.detail.value)}
+                    placeholder="Enter new object key"
+                    autoFocus
+                  />
+                </FormField>
+                <Box variant="small" color="text-body-secondary" margin={{ top: "m" }}>
+                  Copying <Box variant="strong">{copyModal?.key}</Box> to{" "}
+                  <Box variant="strong">{copyTargetKey || "new key"}</Box>
+                </Box>
+              </Box>
+            </Modal>
+          </>
+        )}
       </SpaceBetween>
     </ServiceLayout>
   );

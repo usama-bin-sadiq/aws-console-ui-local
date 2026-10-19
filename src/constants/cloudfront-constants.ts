@@ -1,4 +1,4 @@
 /**
  * CloudFront Constants
  */
-export const CLOUDFRONT_DEFAULT_PROTOCOL = 'https-only';
+export const CLOUDFRONT_DEFAULT_PROTOCOL = "https-only";

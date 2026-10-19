@@ -7,11 +7,13 @@ import Box from "@cloudscape-design/components/box";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 export default function Page() {
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">AWS Service</Header>
+        <Header variant="h1">Amazon RDS Data API</Header>
         <Container header={<Header variant="h2">Resources</Header>}>
-          <Box><StatusIndicator type="success">Service Available</StatusIndicator></Box>
+          <Box>
+            <StatusIndicator type="success">Service Available</StatusIndicator>
+          </Box>
           <Box>This service is emulated by Ministack / LocalStack.</Box>
         </Container>
       </SpaceBetween>

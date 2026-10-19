@@ -9,6 +9,7 @@ import {
 import { PipesClient } from "@aws-sdk/client-pipes";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -19,7 +20,8 @@ export async function GET(request: Request) {
     const res = await pipesClient.send(new ListPipesCommand({}));
     return NextResponse.json({ pipes: res.Pipes || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -38,15 +40,18 @@ export async function POST(request: Request) {
       await pipesClient.send(new StopPipeCommand({ Name: body.name }));
       return NextResponse.json({ success: true });
     }
-    const res = await pipesClient.send(new CreatePipeCommand({
-      Name: body.name,
-      Source: body.source,
-      Target: body.target,
-      RoleArn: body.roleArn || "arn:aws:iam::000000000000:role/pipes-role",
-    }));
+    const res = await pipesClient.send(
+      new CreatePipeCommand({
+        Name: body.name,
+        Source: body.source,
+        Target: body.target,
+        RoleArn: body.roleArn || "arn:aws:iam::000000000000:role/pipes-role",
+      }),
+    );
     return NextResponse.json({ pipe: res });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -60,6 +65,7 @@ export async function DELETE(request: Request) {
     await pipesClient.send(new DeletePipeCommand({ Name: searchParams.get("name")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

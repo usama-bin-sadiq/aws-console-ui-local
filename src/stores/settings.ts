@@ -14,8 +14,8 @@ interface SettingsState {
   setRegion: (region: string) => void;
   theme: "dark" | "light";
   setTheme: (theme: "dark" | "light") => void;
-  provider: "localstack" | "ministack" | "unknown";
-  setProvider: (provider: "localstack" | "ministack" | "unknown") => void;
+  provider: "localstack" | "ministack" | "localemu" | "unknown";
+  setProvider: (provider: "localstack" | "ministack" | "localemu" | "unknown") => void;
   favorites: FavoriteItem[];
   addFavorite: (item: FavoriteItem) => void;
   removeFavorite: (serviceId: string) => void;
@@ -27,10 +27,13 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       region: "us-east-1",
       setRegion: (region) => set({ region }),
-      theme: "dark",
+      // Light is the design's default and matches the real console; dark stays
+      // available through the header toggle.
+      theme: "light",
       setTheme: (theme) => set({ theme }),
       provider: "unknown",
-      setProvider: (provider) => set({ provider }),
+      setProvider: (provider: "localstack" | "ministack" | "localemu" | "unknown") =>
+        set({ provider }),
       favorites: [],
       addFavorite: (item) =>
         set((state) => {
@@ -47,6 +50,6 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: "aws-console-settings",
       skipHydration: true,
-    }
-  )
+    },
+  ),
 );

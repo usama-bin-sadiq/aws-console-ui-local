@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -66,7 +67,7 @@ export default function ECRPage() {
     setLoadingRepos(true);
     setError("");
     try {
-      const res = await fetch("/api/ecr");
+      const res = await apiFetch("/api/ecr");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch repositories");
       setRepositories(data.repositories || []);
@@ -81,7 +82,9 @@ export default function ECRPage() {
     setSelectedRepo(repoName);
     setLoadingImages(true);
     try {
-      const res = await fetch(`/api/ecr?repositoryName=${encodeURIComponent(repoName)}&action=describeImages`);
+      const res = await apiFetch(
+        `/api/ecr?repositoryName=${encodeURIComponent(repoName)}&action=describeImages`,
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch images");
       setImages(data.imageDetails || []);
@@ -95,7 +98,9 @@ export default function ECRPage() {
   const fetchLifecyclePolicy = async (repoName: string) => {
     setLoadingPolicy(true);
     try {
-      const res = await fetch(`/api/ecr?repositoryName=${encodeURIComponent(repoName)}&action=getLifecyclePolicy`);
+      const res = await apiFetch(
+        `/api/ecr?repositoryName=${encodeURIComponent(repoName)}&action=getLifecyclePolicy`,
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch lifecycle policy");
       setCurrentPolicy(data.lifecyclePolicyText || null);
@@ -111,7 +116,7 @@ export default function ECRPage() {
   const createRepository = async () => {
     setCreatingRepo(true);
     try {
-      const res = await fetch("/api/ecr", {
+      const res = await apiFetch("/api/ecr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ repositoryName: repoName }),
@@ -132,7 +137,7 @@ export default function ECRPage() {
 
   const deleteRepository = async (name: string) => {
     try {
-      const res = await fetch(`/api/ecr?name=${encodeURIComponent(name)}`, {
+      const res = await apiFetch(`/api/ecr?name=${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -149,10 +154,14 @@ export default function ECRPage() {
     if (!selectedRepo) return;
     setSavingPolicy(true);
     try {
-      await fetch("/api/ecr", {
+      await apiFetch("/api/ecr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "putLifecyclePolicy", repositoryName: selectedRepo, lifecyclePolicyText: policyText }),
+        body: JSON.stringify({
+          action: "putLifecyclePolicy",
+          repositoryName: selectedRepo,
+          lifecyclePolicyText: policyText,
+        }),
       });
       setPolicyModal(false);
       fetchLifecyclePolicy(selectedRepo);
@@ -166,7 +175,7 @@ export default function ECRPage() {
   const deleteLifecyclePolicy = async () => {
     if (!selectedRepo) return;
     try {
-      await fetch("/api/ecr", {
+      await apiFetch("/api/ecr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "deleteLifecyclePolicy", repositoryName: selectedRepo }),
@@ -183,7 +192,7 @@ export default function ECRPage() {
   }, []);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon Elastic Container Registry (ECR)</Header>
         {error && (
@@ -193,58 +202,78 @@ export default function ECRPage() {
         )}
 
         {/* Repositories */}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setRepoModal(true)}>
-                    Create repository
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button variant="primary" onClick={() => setRepoModal(true)}>
+                  Create repository
+                </Button>
+              }
+            >
+              Repositories ({repositories.length})
+            </Header>
+          }
+          items={repositories}
+          loading={loadingRepos}
+          columnDefinitions={[
+            { header: "Repository name", cell: (item: Repository) => item.repositoryName },
+            { header: "URI", cell: (item: Repository) => item.repositoryUri || "—" },
+            {
+              header: "Created at",
+              cell: (item: Repository) =>
+                item.createdAt ? new Date(item.createdAt).toLocaleString() : "—",
+            },
+            {
+              header: "Tag mutability",
+              cell: (item: Repository) => item.imageTagMutability || "—",
+            },
+            {
+              header: "Actions",
+              cell: (item: Repository) => (
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button onClick={() => fetchImages(item.repositoryName)} formAction="none">
+                    Images
                   </Button>
-                }
-              >
-                Repositories ({repositories.length})
-              </Header>
-            }
-            items={repositories}
-            loading={loadingRepos}
-            columnDefinitions={[
-              { header: "Repository name", cell: (item: Repository) => item.repositoryName },
-              { header: "URI", cell: (item: Repository) => item.repositoryUri || "—" },
-              { header: "Created at", cell: (item: Repository) => item.createdAt ? new Date(item.createdAt).toLocaleString() : "—" },
-              { header: "Tag mutability", cell: (item: Repository) => item.imageTagMutability || "—" },
-              {
-                header: "Actions",
-                cell: (item: Repository) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button onClick={() => fetchImages(item.repositoryName)} formAction="none">Images</Button>
-                    <Button onClick={() => { setSelectedRepo(item.repositoryName); fetchLifecyclePolicy(item.repositoryName); setPolicyModal(true); }} formAction="none">Lifecycle</Button>
-                    <Button onClick={() => deleteRepository(item.repositoryName)} formAction="none">Delete</Button>
-                  </SpaceBetween>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No repositories found.</Box>}
-          />
-        </Container>
+                  <Button
+                    onClick={() => {
+                      setSelectedRepo(item.repositoryName);
+                      fetchLifecyclePolicy(item.repositoryName);
+                      setPolicyModal(true);
+                    }}
+                    formAction="none"
+                  >
+                    Lifecycle
+                  </Button>
+                  <Button onClick={() => deleteRepository(item.repositoryName)} formAction="none">
+                    Delete
+                  </Button>
+                </SpaceBetween>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No repositories found.</Box>}
+        />
 
         {/* Images Section */}
         {selectedRepo && (
-          <Container>
-            <Table
-              header={<Header variant="h2">Images in {selectedRepo}</Header>}
-              items={images}
-              loading={loadingImages}
-              columnDefinitions={[
-                { header: "Digest", cell: (i: ImageDetail) => i.imageDigest || "—" },
-                { header: "Tags", cell: (i: ImageDetail) => (i.imageTags || []).join(", ") || "—" },
-                { header: "Size (bytes)", cell: (i: ImageDetail) => i.imageSizeInBytes ?? "—" },
-                { header: "Pushed", cell: (i: ImageDetail) => i.pushTime ? new Date(i.pushTime).toLocaleString() : "—" },
-              ]}
-              empty={<Box textAlign="center">No images found for this repository.</Box>}
-            />
-          </Container>
+          <Table
+            header={<Header variant="h2">Images in {selectedRepo}</Header>}
+            items={images}
+            loading={loadingImages}
+            columnDefinitions={[
+              { header: "Digest", cell: (i: ImageDetail) => i.imageDigest || "—" },
+              { header: "Tags", cell: (i: ImageDetail) => (i.imageTags || []).join(", ") || "—" },
+              { header: "Size (bytes)", cell: (i: ImageDetail) => i.imageSizeInBytes ?? "—" },
+              {
+                header: "Pushed",
+                cell: (i: ImageDetail) =>
+                  i.pushTime ? new Date(i.pushTime).toLocaleString() : "—",
+              },
+            ]}
+            empty={<Box textAlign="center">No images found for this repository.</Box>}
+          />
         )}
 
         {/* Lifecycle Policy Section */}
@@ -253,13 +282,26 @@ export default function ECRPage() {
             <SpaceBetween size="s">
               <Header variant="h3">Lifecycle Policy — {selectedRepo}</Header>
               <SpaceBetween direction="horizontal" size="xs">
-                <Button onClick={() => { setPolicyText(currentPolicy || ""); setPolicyModal(true); }}>Edit</Button>
+                <Button
+                  onClick={() => {
+                    setPolicyText(currentPolicy || "");
+                    setPolicyModal(true);
+                  }}
+                >
+                  Edit
+                </Button>
                 <Button onClick={deleteLifecyclePolicy}>Delete</Button>
               </SpaceBetween>
             </SpaceBetween>
-            <div style={{ padding: "16px", background: "var(--awsui-color-grey-50)", borderRadius: "4px", fontFamily: "monospace", fontSize: "12px", whiteSpace: "pre-wrap" }}>
+            <pre
+              style={{
+                background: "var(--awsui-color-grey-50)",
+                padding: "16px",
+                whiteSpace: "pre-wrap",
+              }}
+            >
               {currentPolicy || "No policy set."}
-            </div>
+            </pre>
           </Container>
         )}
 
@@ -271,23 +313,39 @@ export default function ECRPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setRepoModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createRepository} loading={creatingRepo}>Create</Button>
+              <Button variant="primary" onClick={createRepository} loading={creatingRepo}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
           <FormField label="Repository name" constraintText="Required">
-            <Input value={repoName} onChange={(e) => setRepoName(e.detail.value)} placeholder="my-repo" />
+            <Input
+              value={repoName}
+              onChange={(e) => setRepoName(e.detail.value)}
+              placeholder="my-repo"
+            />
           </FormField>
         </Modal>
 
         <Modal
           visible={policyModal}
-          onDismiss={() => { setPolicyModal(false); }}
+          onDismiss={() => {
+            setPolicyModal(false);
+          }}
           header="Lifecycle Policy"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => { setPolicyModal(false); }}>Cancel</Button>
-              <Button variant="primary" onClick={saveLifecyclePolicy} loading={savingPolicy}>Save</Button>
+              <Button
+                onClick={() => {
+                  setPolicyModal(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={saveLifecyclePolicy} loading={savingPolicy}>
+                Save
+              </Button>
             </SpaceBetween>
           }
         >

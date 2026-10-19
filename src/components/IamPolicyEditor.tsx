@@ -93,14 +93,16 @@ export default function IamPolicyEditor({
 
   return (
     <SpaceBetween size="s">
-      {!readOnly ? <FormField label="Load a template (optional)">
-        <ButtonDropdown
-          items={POLICY_TEMPLATES.map((t) => ({ id: t.id, text: t.label }))}
-          onItemClick={(e) => handleTemplateSelect(e.detail.id)}
-        >
-          Choose a policy template
-        </ButtonDropdown>
-      </FormField> : null}
+      {!readOnly ? (
+        <FormField label="Load a template (optional)">
+          <ButtonDropdown
+            items={POLICY_TEMPLATES.map((t) => ({ id: t.id, text: t.label }))}
+            onItemClick={(e) => handleTemplateSelect(e.detail.id)}
+          >
+            Choose a policy template
+          </ButtonDropdown>
+        </FormField>
+      ) : null}
       <JsonEditor label={label} value={value} onChange={onChange} readOnly={readOnly} />
     </SpaceBetween>
   );

@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -33,7 +34,7 @@ export default function VpcPeeringPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/ec2-vpc-peering");
+      const res = await apiFetch("/api/ec2-vpc-peering");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setConnections(data.vpcPeeringConnections || []);
@@ -44,12 +45,14 @@ export default function VpcPeeringPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function handleCreate() {
     setCreating(true);
     try {
-      const res = await fetch("/api/ec2-vpc-peering", {
+      const res = await apiFetch("/api/ec2-vpc-peering", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vpcId, peerVpcId }),
@@ -72,7 +75,10 @@ export default function VpcPeeringPage() {
     setDeleting(true);
     try {
       for (const conn of selected) {
-        const res = await fetch(`/api/ec2-vpc-peering?peeringId=${conn.VpcPeeringConnectionId}`, { method: "DELETE" });
+        const res = await apiFetch(
+          `/api/ec2-vpc-peering?peeringId=${conn.VpcPeeringConnectionId}`,
+          { method: "DELETE" },
+        );
         const data = await res.json();
         if (data.error) throw new Error(data.error);
       }
@@ -86,45 +92,67 @@ export default function VpcPeeringPage() {
   }
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
           variant="h1"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh">Refresh</Button>
-              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>Delete</Button>
-              <Button variant="primary" onClick={() => setShowCreate(true)}>Create Peering Connection</Button>
+              <Button onClick={load} iconName="refresh">
+                Refresh
+              </Button>
+              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>
+                Delete
+              </Button>
+              <Button variant="primary" onClick={() => setShowCreate(true)}>
+                Create Peering Connection
+              </Button>
             </SpaceBetween>
           }
         >
           VPC Peering Connections
         </Header>
 
-        {error && <Alert type="error" dismissible onDismiss={() => setError(null)}>{error}</Alert>}
+        {error && (
+          <Alert type="error" dismissible onDismiss={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-        <Container>
-          <Table
-            loading={loading}
-            loadingText="Loading VPC peering connections..."
-            items={connections}
-            selectionType="multi"
-            selectedItems={selected}
-            onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
-            columnDefinitions={[
-              { id: "peeringId", header: "Peering Connection ID", cell: (item) => item.VpcPeeringConnectionId },
-              { id: "requesterVpc", header: "Requester VPC", cell: (item) => item.RequesterVpcInfo?.VpcId || "—" },
-              { id: "accepterVpc", header: "Accepter VPC", cell: (item) => item.AccepterVpcInfo?.VpcId || "—" },
-              { id: "status", header: "Status", cell: (item) => item.Status?.Code || "—" },
-            ]}
-            empty={
-              <Box textAlign="center" color="inherit">
-                <b>No peering connections</b>
-                <Box variant="p" color="inherit">No VPC peering connections found.</Box>
+        <Table
+          loading={loading}
+          loadingText="Loading VPC peering connections..."
+          items={connections}
+          selectionType="multi"
+          selectedItems={selected}
+          onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
+          columnDefinitions={[
+            {
+              id: "peeringId",
+              header: "Peering Connection ID",
+              cell: (item) => item.VpcPeeringConnectionId,
+            },
+            {
+              id: "requesterVpc",
+              header: "Requester VPC",
+              cell: (item) => item.RequesterVpcInfo?.VpcId || "—",
+            },
+            {
+              id: "accepterVpc",
+              header: "Accepter VPC",
+              cell: (item) => item.AccepterVpcInfo?.VpcId || "—",
+            },
+            { id: "status", header: "Status", cell: (item) => item.Status?.Code || "—" },
+          ]}
+          empty={
+            <Box textAlign="center" color="inherit">
+              <b>No peering connections</b>
+              <Box variant="p" color="inherit">
+                No VPC peering connections found.
               </Box>
-            }
-          />
-        </Container>
+            </Box>
+          }
+        />
       </SpaceBetween>
 
       <Modal
@@ -135,17 +163,27 @@ export default function VpcPeeringPage() {
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button variant="primary" loading={creating} onClick={handleCreate}>Create Peering Connection</Button>
+              <Button variant="primary" loading={creating} onClick={handleCreate}>
+                Create Peering Connection
+              </Button>
             </SpaceBetween>
           </Box>
         }
       >
         <SpaceBetween size="m">
           <FormField label="Requester VPC ID">
-            <Input value={vpcId} onChange={({ detail }) => setVpcId(detail.value)} placeholder="vpc-xxxxxxxx" />
+            <Input
+              value={vpcId}
+              onChange={({ detail }) => setVpcId(detail.value)}
+              placeholder="vpc-xxxxxxxx"
+            />
           </FormField>
           <FormField label="Accepter VPC ID">
-            <Input value={peerVpcId} onChange={({ detail }) => setPeerVpcId(detail.value)} placeholder="vpc-yyyyyyyy" />
+            <Input
+              value={peerVpcId}
+              onChange={({ detail }) => setPeerVpcId(detail.value)}
+              placeholder="vpc-yyyyyyyy"
+            />
           </FormField>
         </SpaceBetween>
       </Modal>

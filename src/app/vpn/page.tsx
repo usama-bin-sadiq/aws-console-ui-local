@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -33,7 +34,7 @@ export default function VpnPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/vpn");
+      const res = await apiFetch("/api/vpn");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setConnections(data.vpnConnections || []);
@@ -44,12 +45,14 @@ export default function VpnPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function handleCreate() {
     setCreating(true);
     try {
-      const res = await fetch("/api/vpn", {
+      const res = await apiFetch("/api/vpn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerGatewayId, vpnGatewayId }),
@@ -72,7 +75,9 @@ export default function VpnPage() {
     setDeleting(true);
     try {
       for (const conn of selected) {
-        const res = await fetch(`/api/vpn?vpnConnectionId=${conn.VpnConnectionId}`, { method: "DELETE" });
+        const res = await apiFetch(`/api/vpn?vpnConnectionId=${conn.VpnConnectionId}`, {
+          method: "DELETE",
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
       }
@@ -86,44 +91,58 @@ export default function VpnPage() {
   }
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
           variant="h1"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh">Refresh</Button>
-              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>Delete</Button>
-              <Button variant="primary" onClick={() => setShowCreate(true)}>Create VPN Connection</Button>
+              <Button onClick={load} iconName="refresh">
+                Refresh
+              </Button>
+              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>
+                Delete
+              </Button>
+              <Button variant="primary" onClick={() => setShowCreate(true)}>
+                Create VPN Connection
+              </Button>
             </SpaceBetween>
           }
         >
           VPN Connections
         </Header>
 
-        {error && <Alert type="error" dismissible onDismiss={() => setError(null)}>{error}</Alert>}
+        {error && (
+          <Alert type="error" dismissible onDismiss={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-        <Container>
-          <Table
-            loading={loading}
-            loadingText="Loading VPN connections..."
-            items={connections}
-            selectionType="multi"
-            selectedItems={selected}
-            onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
-            columnDefinitions={[
-              { id: "vpnConnectionId", header: "VPN Connection ID", cell: (item) => item.VpnConnectionId },
-              { id: "state", header: "State", cell: (item) => item.State },
-              { id: "type", header: "Type", cell: (item) => item.Type },
-            ]}
-            empty={
-              <Box textAlign="center" color="inherit">
-                <b>No VPN connections</b>
-                <Box variant="p" color="inherit">No VPN connections found.</Box>
+        <Table
+          loading={loading}
+          loadingText="Loading VPN connections..."
+          items={connections}
+          selectionType="multi"
+          selectedItems={selected}
+          onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
+          columnDefinitions={[
+            {
+              id: "vpnConnectionId",
+              header: "VPN Connection ID",
+              cell: (item) => item.VpnConnectionId,
+            },
+            { id: "state", header: "State", cell: (item) => item.State },
+            { id: "type", header: "Type", cell: (item) => item.Type },
+          ]}
+          empty={
+            <Box textAlign="center" color="inherit">
+              <b>No VPN connections</b>
+              <Box variant="p" color="inherit">
+                No VPN connections found.
               </Box>
-            }
-          />
-        </Container>
+            </Box>
+          }
+        />
       </SpaceBetween>
 
       <Modal
@@ -134,17 +153,27 @@ export default function VpnPage() {
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button variant="primary" loading={creating} onClick={handleCreate}>Create VPN Connection</Button>
+              <Button variant="primary" loading={creating} onClick={handleCreate}>
+                Create VPN Connection
+              </Button>
             </SpaceBetween>
           </Box>
         }
       >
         <SpaceBetween size="m">
           <FormField label="Customer Gateway ID">
-            <Input value={customerGatewayId} onChange={({ detail }) => setCustomerGatewayId(detail.value)} placeholder="cgw-xxxxxxxx" />
+            <Input
+              value={customerGatewayId}
+              onChange={({ detail }) => setCustomerGatewayId(detail.value)}
+              placeholder="cgw-xxxxxxxx"
+            />
           </FormField>
           <FormField label="VPN Gateway ID">
-            <Input value={vpnGatewayId} onChange={({ detail }) => setVpnGatewayId(detail.value)} placeholder="vgw-xxxxxxxx" />
+            <Input
+              value={vpnGatewayId}
+              onChange={({ detail }) => setVpnGatewayId(detail.value)}
+              placeholder="vgw-xxxxxxxx"
+            />
           </FormField>
         </SpaceBetween>
       </Modal>

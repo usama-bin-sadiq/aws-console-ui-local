@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
-import { ListPipelinesCommand, CreatePipelineCommand, DeletePipelineCommand, StartPipelineExecutionCommand, ListPipelineExecutionsCommand, CodePipelineClient } from "@aws-sdk/client-codepipeline";
+import {
+  ListPipelinesCommand,
+  CreatePipelineCommand,
+  DeletePipelineCommand,
+  StartPipelineExecutionCommand,
+  ListPipelineExecutionsCommand,
+  CodePipelineClient,
+} from "@aws-sdk/client-codepipeline";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -15,7 +23,7 @@ export async function GET(request: Request) {
 
     if (action === "listExecutions" && pipelineName) {
       const res = await codepipelineClient.send(
-        new ListPipelineExecutionsCommand({ pipelineName })
+        new ListPipelineExecutionsCommand({ pipelineName }),
       );
       return NextResponse.json({ executions: res.pipelineExecutionSummaries || [] });
     }
@@ -23,10 +31,8 @@ export async function GET(request: Request) {
     const res = await codepipelineClient.send(new ListPipelinesCommand({}));
     return NextResponse.json({ pipelines: res.pipelines || [] });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -38,17 +44,24 @@ export async function POST(request: Request) {
     const codepipelineClient = getUserClientFromRequest(CodePipelineClient, request);
     const body = await request.json();
     if (body.action === "startExecution") {
-      const res = await codepipelineClient.send(new StartPipelineExecutionCommand({ name: body.name }));
+      const res = await codepipelineClient.send(
+        new StartPipelineExecutionCommand({ name: body.name }),
+      );
       return NextResponse.json({ pipelineExecutionId: res.pipelineExecutionId });
     }
     if (body.action === "listExecutions") {
-      const res = await codepipelineClient.send(new ListPipelineExecutionsCommand({ pipelineName: body.pipelineName }));
+      const res = await codepipelineClient.send(
+        new ListPipelineExecutionsCommand({ pipelineName: body.pipelineName }),
+      );
       return NextResponse.json({ executions: res.pipelineExecutionSummaries || [] });
     }
-    const res = await codepipelineClient.send(new CreatePipelineCommand({ pipeline: body.pipeline }));
+    const res = await codepipelineClient.send(
+      new CreatePipelineCommand({ pipeline: body.pipeline }),
+    );
     return NextResponse.json({ pipeline: res.pipeline });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -62,6 +75,7 @@ export async function DELETE(request: Request) {
     await codepipelineClient.send(new DeletePipelineCommand({ name: searchParams.get("name")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

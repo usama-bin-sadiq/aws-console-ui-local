@@ -3,7 +3,7 @@
  */
 export interface SSMParameterConfig {
   Name?: string;
-  Type?: 'String' | 'StringList' | 'SecureString';
+  Type?: "String" | "StringList" | "SecureString";
   Value?: string;
   Overwrite?: boolean;
 }

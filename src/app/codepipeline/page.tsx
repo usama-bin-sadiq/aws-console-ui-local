@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -41,8 +42,8 @@ export default function CodePipelinePage() {
         },
       },
       null,
-      2
-    )
+      2,
+    ),
   );
 
   const [selectedPipeline, setSelectedPipeline] = useState<string | null>(null);
@@ -54,7 +55,7 @@ export default function CodePipelinePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/codepipeline");
+      const res = await apiFetch("/api/codepipeline");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setPipelines(data.pipelines || []);
@@ -71,7 +72,7 @@ export default function CodePipelinePage() {
 
   const createPipeline = async () => {
     try {
-      await fetch("/api/codepipeline", {
+      await apiFetch("/api/codepipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create", config: JSON.parse(pipelineConfig) }),
@@ -84,7 +85,7 @@ export default function CodePipelinePage() {
 
   const startExecution = async (name: string) => {
     try {
-      await fetch("/api/codepipeline", {
+      await apiFetch("/api/codepipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "startExecution", name }),
@@ -96,7 +97,7 @@ export default function CodePipelinePage() {
   };
 
   const deletePipeline = async (name: string) => {
-    await fetch(`/api/codepipeline?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+    await apiFetch(`/api/codepipeline?name=${encodeURIComponent(name)}`, { method: "DELETE" });
     fetchPipelines();
   };
 
@@ -105,8 +106,8 @@ export default function CodePipelinePage() {
     setExecError(null);
     setSelectedPipeline(pipelineName);
     try {
-      const res = await fetch(
-        `/api/codepipeline?action=listExecutions&pipelineName=${encodeURIComponent(pipelineName)}`
+      const res = await apiFetch(
+        `/api/codepipeline?action=listExecutions&pipelineName=${encodeURIComponent(pipelineName)}`,
       );
       const data = await res.json();
       setExecutions(data.executions || []);
@@ -119,52 +120,58 @@ export default function CodePipelinePage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">CodePipeline</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={<Button onClick={() => setCreateModal(true)}>Create pipeline</Button>}
-              >
-                Pipelines ({pipelines.length})
-              </Header>
-            }
-            items={pipelines}
-            loading={loading}
-            columnDefinitions={[
-              { header: "Name", cell: (item) => item.name },
-              { header: "Version", cell: (item) => String(item.version) },
-              { header: "Created", cell: (item) => item.created || "—" },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button onClick={() => startExecution(item.name)} formAction="none">
-                      Start execution
-                    </Button>
-                    <Button onClick={() => fetchExecutions(item.name)} formAction="none">
-                      View executions
-                    </Button>
-                    <Button onClick={() => deletePipeline(item.name)} formAction="none">
-                      Delete
-                    </Button>
-                  </SpaceBetween>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No pipelines found.</Box>}
-          />
-        </Container>
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create pipeline</Button>}
+            >
+              Pipelines ({pipelines.length})
+            </Header>
+          }
+          items={pipelines}
+          loading={loading}
+          columnDefinitions={[
+            { header: "Name", cell: (item) => item.name },
+            { header: "Version", cell: (item) => String(item.version) },
+            { header: "Created", cell: (item) => item.created || "—" },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button onClick={() => startExecution(item.name)} formAction="none">
+                    Start execution
+                  </Button>
+                  <Button onClick={() => fetchExecutions(item.name)} formAction="none">
+                    View executions
+                  </Button>
+                  <Button onClick={() => deletePipeline(item.name)} formAction="none">
+                    Delete
+                  </Button>
+                </SpaceBetween>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No pipelines found.</Box>}
+        />
 
         {selectedPipeline && (
-          <Container>
+          <Container className="aws-table-card">
             <SpaceBetween size="m">
               <Header variant="h2">Executions for {selectedPipeline}</Header>
-              {execError && <Alert type="error" header="Error">{execError}</Alert>}
+              {execError && (
+                <Alert type="error" header="Error">
+                  {execError}
+                </Alert>
+              )}
               <Table
                 items={executions}
                 loading={execLoading}
@@ -186,7 +193,9 @@ export default function CodePipelinePage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createPipeline}>Create</Button>
+              <Button variant="primary" onClick={createPipeline}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >

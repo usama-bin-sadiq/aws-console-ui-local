@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -28,52 +29,100 @@ export default function ECSClusterPage() {
   const [clusterName, setClusterName] = useState("");
 
   const fetchClusters = async () => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch("/api/ecs");
+      const res = await apiFetch("/api/ecs");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setClusters(data.clusters || []);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unknown error");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchClusters(); }, []);
+  useEffect(() => {
+    fetchClusters();
+  }, []);
 
   const createCluster = async () => {
-    await fetch("/api/ecs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clusterName }) });
-    setCreateModal(false); setClusterName(""); fetchClusters();
+    await apiFetch("/api/ecs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clusterName }),
+    });
+    setCreateModal(false);
+    setClusterName("");
+    fetchClusters();
   };
 
   const deleteCluster = async (name: string) => {
-    await fetch(`/api/ecs?cluster=${encodeURIComponent(name)}`, { method: "DELETE" });
+    await apiFetch(`/api/ecs?cluster=${encodeURIComponent(name)}`, { method: "DELETE" });
     fetchClusters();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">ECS — Clusters</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Table
-            header={<Header variant="h2" actions={<Button onClick={() => setCreateModal(true)}>Create cluster</Button>}>Clusters ({clusters.length})</Header>}
-            items={clusters}
-            loading={loading}
-            columnDefinitions={[
-              { header: "Name", cell: (i) => i.clusterName },
-              { header: "Status", cell: (i) => <StatusIndicator type={i.status === "ACTIVE" ? "success" : "warning"}>{i.status}</StatusIndicator> },
-              { header: "Running tasks", cell: (i) => i.runningTasksCount },
-              { header: "Active services", cell: (i) => i.activeServicesCount },
-              { header: "Actions", cell: (i) => <Button onClick={() => deleteCluster(i.clusterName)} formAction="none">Delete</Button> },
-            ]}
-            empty={<Box textAlign="center">No clusters found.</Box>}
-          />
-        </Container>
-        <Modal visible={createModal} onDismiss={() => setCreateModal(false)} header="Create cluster"
-          footer={<SpaceBetween direction="horizontal" size="xs"><Button onClick={() => setCreateModal(false)}>Cancel</Button><Button variant="primary" onClick={createCluster}>Create</Button></SpaceBetween>}>
-          <FormField label="Cluster name"><Input value={clusterName} onChange={e => setClusterName(e.detail.value)} /></FormField>
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create cluster</Button>}
+            >
+              Clusters ({clusters.length})
+            </Header>
+          }
+          items={clusters}
+          loading={loading}
+          columnDefinitions={[
+            { header: "Name", cell: (i) => i.clusterName },
+            {
+              header: "Status",
+              cell: (i) => (
+                <StatusIndicator type={i.status === "ACTIVE" ? "success" : "warning"}>
+                  {i.status}
+                </StatusIndicator>
+              ),
+            },
+            { header: "Running tasks", cell: (i) => i.runningTasksCount },
+            { header: "Active services", cell: (i) => i.activeServicesCount },
+            {
+              header: "Actions",
+              cell: (i) => (
+                <Button onClick={() => deleteCluster(i.clusterName)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No clusters found.</Box>}
+        />
+
+        <Modal
+          visible={createModal}
+          onDismiss={() => setCreateModal(false)}
+          header="Create cluster"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => setCreateModal(false)}>Cancel</Button>
+              <Button variant="primary" onClick={createCluster}>
+                Create
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          <FormField label="Cluster name">
+            <Input value={clusterName} onChange={(e) => setClusterName(e.detail.value)} />
+          </FormField>
         </Modal>
       </SpaceBetween>
     </div>

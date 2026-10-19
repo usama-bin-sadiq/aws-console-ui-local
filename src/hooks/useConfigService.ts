@@ -2,10 +2,10 @@
  * useConfigService — Config adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { configService } from '@/lib/aws-clients'
-import { DescribeConfigRulesCommand } from '@aws-sdk/client-config-service';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { configService } from "@/lib/aws-clients";
+import { DescribeConfigRulesCommand } from "@aws-sdk/client-config-service";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface ConfigServiceState {
   rules: unknown[];
@@ -14,7 +14,11 @@ export interface ConfigServiceState {
 }
 
 export function useConfigService() {
-  const [state, setState] = useState<ConfigServiceState>({ rules: [], loading: false, error: null });
+  const [state, setState] = useState<ConfigServiceState>({
+    rules: [],
+    loading: false,
+    error: null,
+  });
   const describeConfigRules = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {

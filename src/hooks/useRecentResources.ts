@@ -27,11 +27,9 @@ export function useRecentResources() {
 
   const addRecentResource = (
     service: string,
-    resource: { id: string; name: string; type: string }
+    resource: { id: string; name: string; type: string },
   ) => {
-    const recent = JSON.parse(
-      localStorage.getItem("aws_recent_resources") || "[]"
-    );
+    const recent = JSON.parse(localStorage.getItem("aws_recent_resources") || "[]");
     const newRecent = [
       { service, resource, timestamp: Date.now() },
       ...recent.filter((r: RecentResource) => r.resource.id !== resource.id),

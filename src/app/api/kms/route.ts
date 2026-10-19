@@ -4,15 +4,21 @@ import {
   CreateKeyCommand,
   EnableKeyCommand,
   DisableKeyCommand,
+  EnableKeyRotationCommand,
+  DisableKeyRotationCommand,
+  GetKeyRotationStatusCommand,
+  GetKeyPolicyCommand,
   ScheduleKeyDeletionCommand,
   DescribeKeyCommand,
   ListAliasesCommand,
+  ListResourceTagsCommand,
   CreateAliasCommand,
   DeleteAliasCommand,
 } from "@aws-sdk/client-kms";
 import { KMSClient } from "@aws-sdk/client-kms";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -20,6 +26,44 @@ export async function GET(request: Request) {
 
   try {
     const kmsClient = getUserClientFromRequest(KMSClient, request);
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get("action");
+    const keyId = searchParams.get("KeyId") || searchParams.get("keyId");
+
+    // Rotation status and key policy are reads, so they are reachable by GET
+    // with `action`, mirroring the POST verbs of the same name.
+    if (action === "getRotationStatus" && keyId) {
+      const res = await kmsClient.send(new GetKeyRotationStatusCommand({ KeyId: keyId }));
+      return NextResponse.json({ rotationStatus: res });
+    }
+
+    if (action === "getPolicy" && keyId) {
+      const res = await kmsClient.send(
+        new GetKeyPolicyCommand({
+          KeyId: keyId,
+          PolicyName: searchParams.get("PolicyName") || searchParams.get("policyName") || "default",
+        }),
+      );
+      return NextResponse.json({
+        policy: res.Policy ?? null,
+        policyName: searchParams.get("PolicyName") || "default",
+      });
+    }
+
+    if (action === "getTags" && keyId) {
+      const res = await kmsClient.send(new ListResourceTagsCommand({ KeyId: keyId }));
+      return NextResponse.json({ tags: res.Tags || [] });
+    }
+
+    if (action) {
+      return NextResponse.json(
+        {
+          error: `Unknown GET action: ${action}. Supported: getRotationStatus, getPolicy, getTags`,
+        },
+        { status: 400 },
+      );
+    }
+
     const [keysRes, aliasesRes] = await Promise.all([
       kmsClient.send(new ListKeysCommand({})),
       kmsClient.send(new ListAliasesCommand({})),
@@ -46,7 +90,8 @@ export async function GET(request: Request) {
     }));
     return NextResponse.json({ keys: enrichedKeys, aliases: aliasesRes.Aliases || [] });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "KMS fetch failed" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -57,62 +102,108 @@ export async function POST(request: Request) {
   try {
     const kmsClient = getUserClientFromRequest(KMSClient, request);
     const body = await request.json();
-    const action = body.action || body;
+    const action = body.action;
+    const keyId = body.KeyId || body.keyId;
+    const aliasName = body.AliasName || body.aliasName;
 
-    if (action === "createKey" || body.action === "createKey") {
+    // CreateKeyRequest: Description, KeyUsage, KeySpec, KeyPolicy, Origin,
+    // Tags, MultiRegion, BypassPolicyLockoutSafetyCheck, ...
+    if (action === "createKey") {
       const res = await kmsClient.send(
         new CreateKeyCommand({
-          Description: body.description || "",
-          KeyUsage: body.keyUsage || "ENCRYPT_DECRYPT",
-          KeySpec: body.keySpec || "SYMMETRIC_DEFAULT",
-          Tags: body.tags || [],
-        })
+          Description: body.Description ?? body.description ?? "",
+          KeyUsage: body.KeyUsage || body.keyUsage || "ENCRYPT_DECRYPT",
+          KeySpec: body.KeySpec || body.keySpec || "SYMMETRIC_DEFAULT",
+          Policy: body.Policy || body.policy,
+          Origin: body.Origin || body.origin,
+          Tags: body.Tags || body.tags || [],
+        }),
       );
-      return NextResponse.json({ key: res.KeyMetadata });
+      return NextResponse.json({ success: true, key: res.KeyMetadata });
     }
 
-    if (action === "enable" || body.action === "enable") {
-      await kmsClient.send(new EnableKeyCommand({ KeyId: body.keyId }));
+    if (action === "enable") {
+      await kmsClient.send(new EnableKeyCommand({ KeyId: keyId }));
       return NextResponse.json({ success: true });
     }
 
-    if (action === "disable" || body.action === "disable") {
-      await kmsClient.send(new DisableKeyCommand({ KeyId: body.keyId }));
+    if (action === "disable") {
+      await kmsClient.send(new DisableKeyCommand({ KeyId: keyId }));
       return NextResponse.json({ success: true });
     }
 
-    if (action === "scheduleDeletion" || body.action === "scheduleDeletion") {
+    if (action === "enableRotation") {
+      await kmsClient.send(new EnableKeyRotationCommand({ KeyId: keyId }));
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "disableRotation") {
+      await kmsClient.send(new DisableKeyRotationCommand({ KeyId: keyId }));
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "getRotationStatus") {
+      const res = await kmsClient.send(new GetKeyRotationStatusCommand({ KeyId: keyId }));
+      return NextResponse.json({ rotationStatus: res, success: true });
+    }
+
+    if (action === "scheduleDeletion") {
       await kmsClient.send(
         new ScheduleKeyDeletionCommand({
-          KeyId: body.keyId,
-          PendingWindowInDays: body.pendingWindowInDays || 30,
-        })
+          KeyId: keyId,
+          PendingWindowInDays: body.PendingWindowInDays || body.pendingWindowInDays || 30,
+        }),
       );
       return NextResponse.json({ success: true });
     }
 
-    if (action === "createAlias" || body.action === "createAlias") {
+    if (action === "describeKey") {
+      const res = await kmsClient.send(new DescribeKeyCommand({ KeyId: keyId }));
+      return NextResponse.json({ key: res.KeyMetadata, keyMetadata: res.KeyMetadata });
+    }
+
+    if (action === "createAlias") {
       await kmsClient.send(
         new CreateAliasCommand({
-          AliasName: body.aliasName,
-          TargetKeyId: body.keyId,
-        })
+          AliasName: aliasName,
+          // CreateAliasRequest names the target `TargetKeyId`; the console
+          // sends `keyId`, so both are accepted.
+          TargetKeyId: body.TargetKeyId || body.targetKeyId || keyId,
+        }),
       );
       return NextResponse.json({ success: true });
     }
 
-    if (action === "deleteAlias" || body.action === "deleteAlias") {
-      await kmsClient.send(new DeleteAliasCommand({ AliasName: body.aliasName }));
+    if (action === "deleteAlias") {
+      await kmsClient.send(new DeleteAliasCommand({ AliasName: aliasName }));
       return NextResponse.json({ success: true });
     }
 
-    if (action === "getPolicy" || body.action === "getPolicy") {
-      const res = await kmsClient.send(new DescribeKeyCommand({ KeyId: body.keyId }));
-      return NextResponse.json({ policy: res.KeyMetadata ? { Statement: [{ Sid: "Enable IAM User Permissions", Effect: "Allow", Principal: { AWS: "*" }, Action: "kms:*", Resource: "*" }] } : null });
+    // GetKeyPolicyRequest: KeyId, PolicyName. Returns the key's real policy
+    // document rather than a synthesised one.
+    if (action === "getKeyPolicy" || action === "getPolicy") {
+      const res = await kmsClient.send(
+        new GetKeyPolicyCommand({
+          KeyId: keyId,
+          PolicyName: body.PolicyName || body.policyName || "default",
+        }),
+      );
+      return NextResponse.json({ success: true, policy: res.Policy ?? null });
     }
 
-    return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+    if (action === "getTags") {
+      const res = await kmsClient.send(new ListResourceTagsCommand({ KeyId: keyId }));
+      return NextResponse.json({ tags: res.Tags || [] });
+    }
+
+    return NextResponse.json(
+      {
+        error: `Unknown action: ${action ?? "(none)"}. Supported: createKey, enable, disable, enableRotation, disableRotation, getRotationStatus, scheduleDeletion, describeKey, createAlias, deleteAlias, getKeyPolicy, getTags`,
+      },
+      { status: 400 },
+    );
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "KMS action failed" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

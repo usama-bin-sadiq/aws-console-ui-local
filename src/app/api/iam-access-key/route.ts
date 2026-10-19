@@ -8,6 +8,7 @@ import {
 import { IAMClient } from "@aws-sdk/client-iam";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -23,7 +24,8 @@ export async function GET(request: Request) {
     const res = await iamClient.send(new ListAccessKeysCommand({ UserName: userName }));
     return NextResponse.json({ accessKeys: res.AccessKeyMetadata || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -40,14 +42,15 @@ export async function POST(request: Request) {
           UserName: body.userName,
           AccessKeyId: body.accessKeyId,
           Status: "Inactive",
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
     const res = await iamClient.send(new CreateAccessKeyCommand({ UserName: body.userName }));
     return NextResponse.json({ accessKey: res.AccessKey });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -62,10 +65,11 @@ export async function DELETE(request: Request) {
       new DeleteAccessKeyCommand({
         UserName: searchParams.get("userName")!,
         AccessKeyId: searchParams.get("accessKeyId")!,
-      })
+      }),
     );
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

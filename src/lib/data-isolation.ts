@@ -4,7 +4,8 @@
  */
 
 import { extractUserCredentials } from "@/lib/aws-clients";
-import { getUserPermissionsAsync } from "@/lib/db";
+import { getSessionFromRequest } from "@/lib/session-store";
+import { getUserByUsernameAsync, getUserPermissionsAsync } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export interface UserContext {
@@ -16,9 +17,14 @@ export interface UserContext {
 /**
  * Extracts user context from request headers.
  * Use this in every API route to determine who is making the request.
+ * The isSuperAdmin flag is resolved from the database, not from client headers.
  */
-export function getUserContext(request: Request): UserContext {
-  const { username, isSuperAdmin, region } = extractUserCredentials(request);
+export async function getUserContext(request: Request): Promise<UserContext> {
+  const session = await getSessionFromRequest(request);
+  const { region } = extractUserCredentials(request);
+  const username = session?.username || "anonymous";
+  const user = username === "anonymous" ? undefined : await getUserByUsernameAsync(username);
+  const isSuperAdmin = user?.is_root === 1;
   return { username, isSuperAdmin, region };
 }
 
@@ -30,7 +36,7 @@ export function getUserContext(request: Request): UserContext {
 export function userHasPermission(
   user: UserContext,
   permissions: string[],
-  action: string
+  action: string,
 ): boolean {
   if (user.isSuperAdmin) return true;
   if (permissions.includes("*")) return true;
@@ -58,7 +64,10 @@ export function ownerTag(username: string): { Key: string; Value: string }[] {
  * Resources tagged with aws-console-owner are user-scoped.
  * Resources without the tag are considered shared (visible to all).
  */
-export function isOwnedByUser(resource: { Tags?: Array<{ Key?: string; Value?: string }> }, username: string): boolean {
+export function isOwnedByUser(
+  resource: { Tags?: Array<{ Key?: string; Value?: string }> },
+  username: string,
+): boolean {
   if (!resource.Tags) return true; // No owner tag = shared
   const ownerTag = resource.Tags.find((t) => t.Key === "aws-console-owner");
   if (!ownerTag) return true; // No owner tag = shared
@@ -71,7 +80,7 @@ export function isOwnedByUser(resource: { Tags?: Array<{ Key?: string; Value?: s
  */
 export function filterByOwner<T extends { Tags?: Array<{ Key?: string; Value?: string }> }>(
   resources: T[],
-  user: UserContext
+  user: UserContext,
 ): T[] {
   if (user.isSuperAdmin) return resources;
   return resources.filter((r) => isOwnedByUser(r, user.username));
@@ -84,15 +93,15 @@ export function filterByOwner<T extends { Tags?: Array<{ Key?: string; Value?: s
  * Format: { service:read } for GET, { service:write } for POST/PUT/DELETE.
  */
 const ROUTE_PERMISSION_MAP: Record<string, string> = {
-  "s3": "s3",
+  s3: "s3",
   "s3-files": "s3",
-  "s3control": "s3control",
-  "ec2": "ec2",
+  s3control: "s3control",
+  ec2: "ec2",
   "ec2-vpc-peering": "ec2",
   "ec2-vpc-endpoint": "ec2",
-  "lambda": "lambda",
-  "rds": "rds",
-  "iam": "iam",
+  lambda: "lambda",
+  rds: "rds",
+  iam: "iam",
   "iam-access-key": "iam",
   "iam-group": "iam",
   "iam-instance-profile": "iam",
@@ -101,86 +110,86 @@ const ROUTE_PERMISSION_MAP: Record<string, string> = {
   "iam-openid-connect": "iam",
   "iam-virtual-mfa": "iam",
   "iam/credential-report": "iam",
-  "dynamodb": "dynamodb",
-  "sqs": "sqs",
-  "sns": "sns",
-  "cloudwatch": "cloudwatch",
+  dynamodb: "dynamodb",
+  sqs: "sqs",
+  sns: "sns",
+  cloudwatch: "cloudwatch",
   "cloudwatch-logs": "cloudwatch",
-  "cloudfront": "cloudfront",
-  "cloudformation": "cloudformation",
-  "cloudtrail": "cloudtrail",
-  "cloudcontrol": "cloudcontrol",
-  "route53": "route53",
-  "route53resolver": "route53",
-  "apigateway": "apigateway",
-  "apigatewayv2": "apigateway",
-  "ecs": "ecs",
-  "eks": "eks",
-  "efs": "efs",
-  "elasticache": "elasticache",
+  cloudfront: "cloudfront",
+  cloudformation: "cloudformation",
+  cloudtrail: "cloudtrail",
+  cloudcontrol: "cloudcontrol",
+  route53: "route53",
+  route53resolver: "route53",
+  apigateway: "apigateway",
+  apigatewayv2: "apigateway",
+  ecs: "ecs",
+  eks: "eks",
+  efs: "efs",
+  elasticache: "elasticache",
   "elastic-ip": "ec2",
-  "emr": "emr",
-  "eventbridge": "eventbridge",
-  "firehose": "firehose",
-  "glue": "glue",
-  "guardduty": "guardduty",
-  "inspector": "inspector",
-  "iot": "iot",
+  emr: "emr",
+  eventbridge: "eventbridge",
+  firehose: "firehose",
+  glue: "glue",
+  guardduty: "guardduty",
+  inspector: "inspector",
+  iot: "iot",
   "iot-analytics": "iot",
-  "kinesis": "kinesis",
-  "kms": "kms",
-  "memorydb": "memorydb",
-  "msk": "msk",
+  kinesis: "kinesis",
+  kms: "kms",
+  memorydb: "memorydb",
+  msk: "msk",
   "nat-gateway": "ec2",
   "network-acl": "ec2",
-  "opensearch": "opensearch",
-  "organizations": "organizations",
-  "pinpoint": "pinpoint",
-  "pipes": "pipes",
-  "redshift": "redshift",
+  opensearch: "opensearch",
+  organizations: "organizations",
+  pinpoint: "pinpoint",
+  pipes: "pipes",
+  redshift: "redshift",
   "resource-groups": "resourcegroups",
   "resource-groups-tagging": "resourcegroups",
   "route-table": "ec2",
-  "sagemaker": "sagemaker",
-  "scheduler": "scheduler",
+  sagemaker: "sagemaker",
+  scheduler: "scheduler",
   "secrets-manager": "secretsmanager",
   "security-group": "ec2",
   "security-hub": "securityhub",
-  "ses": "ses",
-  "sesv2": "ses",
-  "servicediscovery": "servicediscovery",
-  "sfn": "sfn",
-  "snapshot": "ec2",
-  "ssm": "ssm",
-  "sts": "sts",
-  "subnet": "ec2",
-  "system": "system",
-  "terminal": "terminal",
-  "transfer": "transfer",
+  ses: "ses",
+  sesv2: "ses",
+  servicediscovery: "servicediscovery",
+  sfn: "sfn",
+  snapshot: "ec2",
+  ssm: "ssm",
+  sts: "sts",
+  subnet: "ec2",
+  system: "system",
+  terminal: "terminal",
+  transfer: "transfer",
   "transit-gateway": "ec2",
   "verified-access": "verifiedaccess",
-  "volume": "ec2",
-  "vpc": "ec2",
-  "vpn": "ec2",
-  "wafv2": "wafv2",
-  "xray": "xray",
-  "amplify": "amplify",
+  volume: "ec2",
+  vpc: "ec2",
+  vpn: "ec2",
+  wafv2: "wafv2",
+  xray: "xray",
+  amplify: "amplify",
   "app-auto-scaling": "autoscaling",
-  "appconfig": "appconfig",
-  "appsync": "appsync",
-  "athena": "athena",
+  appconfig: "appconfig",
+  appsync: "appsync",
+  athena: "athena",
   "auto-scaling": "autoscaling",
-  "backup": "backup",
-  "batch": "batch",
-  "bedrock": "bedrock",
+  backup: "backup",
+  batch: "batch",
+  bedrock: "bedrock",
   "bedrock-agent": "bedrock",
   "bedrock-runtime": "bedrock",
-  "cognito": "cognito",
+  cognito: "cognito",
   "code-deploy": "codedeploy",
-  "codebuild": "codebuild",
-  "codepipeline": "codepipeline",
-  "config": "config",
-  "ami": "ec2",
+  codebuild: "codebuild",
+  codepipeline: "codepipeline",
+  config: "config",
+  ami: "ec2",
   "launch-template": "ec2",
 };
 
@@ -209,9 +218,28 @@ function resolvePermissionService(url: string): string | null {
  */
 export async function requirePermission(
   request: Request,
-  method: string
+  method: string,
 ): Promise<NextResponse | null> {
-  const user = getUserContext(request);
+  const session = await getSessionFromRequest(request);
+  if (!session) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+
+  if (method !== "GET") {
+    const origin = request.headers.get("origin");
+    const host = request.headers.get("host");
+    if (origin && host) {
+      try {
+        if (new URL(origin).host !== host) {
+          return NextResponse.json({ error: "Cross-origin request rejected" }, { status: 403 });
+        }
+      } catch {
+        return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
+      }
+    }
+  }
+
+  const user = await getUserContext(request);
 
   // Root / super admin bypasses all permission checks
   if (user.isSuperAdmin) return null;
@@ -238,6 +266,6 @@ export async function requirePermission(
       message: `You do not have permission to perform this action. Required: ${requiredPermission}`,
       required: requiredPermission,
     },
-    { status: 403 }
+    { status: 403 },
   );
 }

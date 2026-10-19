@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -37,13 +38,15 @@ export default function SnapshotPage() {
   const [volumeIdError, setVolumeIdError] = useState<string | null>(null);
 
   // Volumes for dropdown
-  const [volumes, setVolumes] = useState<Array<{ VolumeId?: string; Size?: number; State?: string }>>([]);
+  const [volumes, setVolumes] = useState<
+    Array<{ VolumeId?: string; Size?: number; State?: string }>
+  >([]);
 
   const fetchSnapshots = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/snapshot");
+      const res = await apiFetch("/api/snapshot");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch snapshots");
       setSnapshots(data.snapshots || []);
@@ -56,7 +59,7 @@ export default function SnapshotPage() {
 
   const fetchVolumes = useCallback(async () => {
     try {
-      const res = await fetch("/api/volume");
+      const res = await apiFetch("/api/volume");
       const data = await res.json();
       setVolumes((data.volumes || []).filter((v: { State?: string }) => v.State === "available"));
     } catch {
@@ -77,7 +80,7 @@ export default function SnapshotPage() {
     setVolumeIdError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/snapshot", {
+      const res = await apiFetch("/api/snapshot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ volumeId, description }),
@@ -99,7 +102,7 @@ export default function SnapshotPage() {
 
   const deleteSnapshot = async (snapshotId: string) => {
     try {
-      const res = await fetch(`/api/snapshot?snapshotId=${encodeURIComponent(snapshotId)}`, {
+      const res = await apiFetch(`/api/snapshot?snapshotId=${encodeURIComponent(snapshotId)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -129,15 +132,25 @@ export default function SnapshotPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
           variant="h1"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={fetchSnapshots} iconName="refresh">Refresh</Button>
-              <Button disabled={selected.length === 0} loading={deleting} onClick={handleBulkDelete}>Delete</Button>
-              <Button variant="primary" onClick={() => setCreateModal(true)}>Create snapshot</Button>
+              <Button onClick={fetchSnapshots} iconName="refresh">
+                Refresh
+              </Button>
+              <Button
+                disabled={selected.length === 0}
+                loading={deleting}
+                onClick={handleBulkDelete}
+              >
+                Delete
+              </Button>
+              <Button variant="primary" onClick={() => setCreateModal(true)}>
+                Create snapshot
+              </Button>
             </SpaceBetween>
           }
         >
@@ -150,43 +163,61 @@ export default function SnapshotPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            items={snapshots}
-            loading={loading}
-            loadingText="Loading snapshots..."
-            selectionType="multi"
-            selectedItems={selected}
-            onSelectionChange={({ detail }) => setSelected(detail.selectedItems as Snapshot[])}
-            trackBy="SnapshotId"
-            columnDefinitions={[
-              { id: "snapshotId", header: "Snapshot ID", cell: (item) => item.SnapshotId },
-              { id: "volumeId", header: "Volume ID", cell: (item) => item.VolumeId || "—" },
-              {
-                id: "state",
-                header: "State",
-                cell: (item) => (
-                  <StatusIndicator type={item.State === "completed" ? "success" : item.State === "pending" ? "pending" : "error"}>
-                    {item.State || "—"}
-                  </StatusIndicator>
-                ),
-              },
-              { id: "progress", header: "Progress", cell: (item) => item.Progress || "—" },
-              { id: "description", header: "Description", cell: (item) => <TruncatedText>{item.Description || "—"}</TruncatedText> },
-              { id: "startTime", header: "Start Time", cell: (item) => item.StartTime ? new Date(item.StartTime).toLocaleString() : "—" },
-              {
-                id: "actions",
-                header: "Actions",
-                cell: (item) => (
-                  <Button variant="link" onClick={() => deleteSnapshot(item.SnapshotId)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No snapshots found.</Box>}
-          />
-        </Container>
+        <Table
+          items={snapshots}
+          loading={loading}
+          loadingText="Loading snapshots..."
+          selectionType="multi"
+          selectedItems={selected}
+          onSelectionChange={({ detail }) => setSelected(detail.selectedItems as Snapshot[])}
+          trackBy="SnapshotId"
+          columnDefinitions={[
+            { id: "snapshotId", header: "Snapshot ID", cell: (item) => item.SnapshotId },
+            { id: "volumeId", header: "Volume ID", cell: (item) => item.VolumeId || "—" },
+            {
+              id: "state",
+              header: "State",
+              cell: (item) => (
+                <StatusIndicator
+                  type={
+                    item.State === "completed"
+                      ? "success"
+                      : item.State === "pending"
+                        ? "pending"
+                        : "error"
+                  }
+                >
+                  {item.State || "—"}
+                </StatusIndicator>
+              ),
+            },
+            { id: "progress", header: "Progress", cell: (item) => item.Progress || "—" },
+            {
+              id: "description",
+              header: "Description",
+              cell: (item) => <TruncatedText>{item.Description || "—"}</TruncatedText>,
+            },
+            {
+              id: "startTime",
+              header: "Start Time",
+              cell: (item) => (item.StartTime ? new Date(item.StartTime).toLocaleString() : "—"),
+            },
+            {
+              id: "actions",
+              header: "Actions",
+              cell: (item) => (
+                <Button
+                  variant="link"
+                  onClick={() => deleteSnapshot(item.SnapshotId)}
+                  formAction="none"
+                >
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No snapshots found.</Box>}
+        />
 
         <Modal
           visible={createModal}
@@ -202,12 +233,33 @@ export default function SnapshotPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Volume ID <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={volumeIdError}>
+            <FormField
+              label={
+                <>
+                  Volume ID <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={volumeIdError}
+            >
               <Select
-                selectedOption={volumeId ? { value: volumeId, label: `${volumeId} (${volumes.find((v) => v.VolumeId === volumeId)?.Size || ""} GiB)` } : null}
-                options={volumes.map((v) => ({ value: v.VolumeId || "", label: `${v.VolumeId} (${v.Size || 0} GiB) - ${v.State}` }))}
+                selectedOption={
+                  volumeId
+                    ? {
+                        value: volumeId,
+                        label: `${volumeId} (${volumes.find((v) => v.VolumeId === volumeId)?.Size || ""} GiB)`,
+                      }
+                    : null
+                }
+                options={volumes.map((v) => ({
+                  value: v.VolumeId || "",
+                  label: `${v.VolumeId} (${v.Size || 0} GiB) - ${v.State}`,
+                }))}
                 placeholder="Select a volume"
-                onChange={(e) => { setVolumeId(e.detail.selectedOption.value || ""); setVolumeIdError(null); }}
+                onChange={(e) => {
+                  setVolumeId(e.detail.selectedOption.value || "");
+                  setVolumeIdError(null);
+                }}
               />
             </FormField>
             <FormField label="Description">

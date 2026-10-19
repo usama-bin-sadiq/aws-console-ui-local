@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -28,7 +29,7 @@ export default function ResourceGroupsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/resource-groups");
+      const res = await apiFetch("/api/resource-groups");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setGroups(data.groups || []);
@@ -45,7 +46,7 @@ export default function ResourceGroupsPage() {
 
   const createGroup = async () => {
     try {
-      await fetch("/api/resource-groups", {
+      await apiFetch("/api/resource-groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create", name: groupName }),
@@ -58,42 +59,44 @@ export default function ResourceGroupsPage() {
   };
 
   const deleteGroup = async (name: string) => {
-    await fetch(`/api/resource-groups?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+    await apiFetch(`/api/resource-groups?name=${encodeURIComponent(name)}`, { method: "DELETE" });
     fetchGroups();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Resource Groups</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={<Button onClick={() => setCreateModal(true)}>Create group</Button>}
-              >
-                Resource Groups ({groups.length})
-              </Header>
-            }
-            items={groups}
-            loading={loading}
-            columnDefinitions={[
-              { header: "Name", cell: (item) => item.Name },
-              { header: "Description", cell: (item) => item.Description ?? "—" },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button onClick={() => deleteGroup(item.Name)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No resource groups found.</Box>}
-          />
-        </Container>
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create group</Button>}
+            >
+              Resource Groups ({groups.length})
+            </Header>
+          }
+          items={groups}
+          loading={loading}
+          columnDefinitions={[
+            { header: "Name", cell: (item) => item.Name },
+            { header: "Description", cell: (item) => item.Description ?? "—" },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button onClick={() => deleteGroup(item.Name)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No resource groups found.</Box>}
+        />
 
         <Modal
           visible={createModal}
@@ -102,7 +105,9 @@ export default function ResourceGroupsPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createGroup}>Create</Button>
+              <Button variant="primary" onClick={createGroup}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >

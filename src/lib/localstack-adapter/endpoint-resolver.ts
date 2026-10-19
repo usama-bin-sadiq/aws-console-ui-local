@@ -3,21 +3,36 @@
  * All 150 services must use this resolver. No exceptions. No stubs.
  */
 
-import { EndpointResolution } from '@/types/adapter';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { EndpointResolution } from "@/types/adapter";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
-export function resolveEndpoint(adapterMode?: 'localstack' | 'ministack'): EndpointResolution {
+export function resolveEndpoint(
+  adapterMode?: "localstack" | "ministack" | "localemu",
+): EndpointResolution {
   const mode = adapterMode || ADAPTER_CONFIG.adapterMode;
 
-  if (mode === 'ministack') {
+  if (mode === "ministack") {
     const host = ADAPTER_CONFIG.endpointConfig.minstackHostname;
     const port = ADAPTER_CONFIG.endpointConfig.minstackPort;
     const ssl = ADAPTER_CONFIG.endpointConfig.minstackSslEnabled;
     return {
-      protocol: ssl ? 'https' : 'http',
+      protocol: ssl ? "https" : "http",
       hostname: host,
       port,
-      url: `${ssl ? 'https' : 'http'}://${host}:${port}`,
+      url: `${ssl ? "https" : "http"}://${host}:${port}`,
+      sslEnabled: ssl,
+    };
+  }
+
+  if (mode === "localemu") {
+    const host = ADAPTER_CONFIG.endpointConfig.localemuHostname;
+    const port = ADAPTER_CONFIG.endpointConfig.localemuPort;
+    const ssl = ADAPTER_CONFIG.endpointConfig.localemuSslEnabled;
+    return {
+      protocol: ssl ? "https" : "http",
+      hostname: host,
+      port,
+      url: `${ssl ? "https" : "http"}://${host}:${port}`,
       sslEnabled: ssl,
     };
   }
@@ -26,10 +41,10 @@ export function resolveEndpoint(adapterMode?: 'localstack' | 'ministack'): Endpo
   const port = ADAPTER_CONFIG.endpointConfig.localstackPort;
   const ssl = ADAPTER_CONFIG.endpointConfig.localstackSslEnabled;
   return {
-    protocol: ssl ? 'https' : 'http',
+    protocol: ssl ? "https" : "http",
     hostname: host,
     port,
-    url: `${ssl ? 'https' : 'http'}://${host}:${port}`,
+    url: `${ssl ? "https" : "http"}://${host}:${port}`,
     sslEnabled: ssl,
   };
 }

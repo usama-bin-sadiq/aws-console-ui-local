@@ -7,6 +7,7 @@ import {
 import { IAMClient } from "@aws-sdk/client-iam";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -16,8 +17,9 @@ export async function GET(request: Request) {
     const iamClient = getUserClientFromRequest(IAMClient, request);
     const res = await iamClient.send(new ListSAMLProvidersCommand({}));
     return NextResponse.json({ samlProviders: res.SAMLProviderList || [] });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -32,13 +34,13 @@ export async function POST(request: Request) {
       new CreateSAMLProviderCommand({
         Name: body.name,
         SAMLMetadataDocument:
-          body.samlDoc ||
-          '<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"/>',
-      })
+          body.samlDoc || '<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"/>',
+      }),
     );
     return NextResponse.json({ samlProviderArn: res.SAMLProviderArn });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -49,9 +51,12 @@ export async function DELETE(request: Request) {
   try {
     const iamClient = getUserClientFromRequest(IAMClient, request);
     const { searchParams } = new URL(request.url);
-    await iamClient.send(new DeleteSAMLProviderCommand({ SAMLProviderArn: searchParams.get("arn")! }));
+    await iamClient.send(
+      new DeleteSAMLProviderCommand({ SAMLProviderArn: searchParams.get("arn")! }),
+    );
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

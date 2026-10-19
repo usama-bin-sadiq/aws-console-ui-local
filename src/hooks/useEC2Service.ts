@@ -123,106 +123,131 @@ export function useEC2Service() {
     }
   }, [setLoading, setError]);
 
-  const launchInstances = useCallback(async (params: EC2LaunchParams) => {
-    setLoading();
-    try {
-      const commandParams: Record<string, unknown> = {
-        ImageId: params.imageId,
-        InstanceType: params.instanceType,
-        MinCount: params.numInstances ?? 1,
-        MaxCount: params.numInstances ?? 1,
-      };
-      if (params.keyName) commandParams.KeyName = params.keyName;
-      if (params.subnetId) commandParams.SubnetId = params.subnetId;
-      if (params.securityGroupIds?.length) commandParams.SecurityGroupIds = params.securityGroupIds;
-      if (params.iamInstanceProfile) commandParams.IamInstanceProfile = { Arn: params.iamInstanceProfile };
-      if (params.userData) commandParams.UserData = Buffer.from(params.userData).toString("base64");
-      if (params.monitoring) commandParams.Monitoring = { Enabled: true };
-      if (params.disableApiTermination !== undefined) commandParams.DisableApiTermination = params.disableApiTermination;
-      if (params.shutdownBehavior) commandParams.InstanceInitiatedShutdownBehavior = params.shutdownBehavior;
-      if (params.tags?.length) {
-        commandParams.TagSpecifications = [{ ResourceType: "instance", Tags: params.tags }];
-      }
-      if (params.blockDeviceMappings?.length) {
-        commandParams.BlockDeviceMappings = params.blockDeviceMappings.map((bdm) => ({
-          DeviceName: bdm.DeviceName,
-          Ebs: bdm.Ebs,
+  const launchInstances = useCallback(
+    async (params: EC2LaunchParams) => {
+      setLoading();
+      try {
+        const commandParams: Record<string, unknown> = {
+          ImageId: params.imageId,
+          InstanceType: params.instanceType,
+          MinCount: params.numInstances ?? 1,
+          MaxCount: params.numInstances ?? 1,
+        };
+        if (params.keyName) commandParams.KeyName = params.keyName;
+        if (params.subnetId) commandParams.SubnetId = params.subnetId;
+        if (params.securityGroupIds?.length)
+          commandParams.SecurityGroupIds = params.securityGroupIds;
+        if (params.iamInstanceProfile)
+          commandParams.IamInstanceProfile = { Arn: params.iamInstanceProfile };
+        if (params.userData)
+          commandParams.UserData = Buffer.from(params.userData).toString("base64");
+        if (params.monitoring) commandParams.Monitoring = { Enabled: true };
+        if (params.disableApiTermination !== undefined)
+          commandParams.DisableApiTermination = params.disableApiTermination;
+        if (params.shutdownBehavior)
+          commandParams.InstanceInitiatedShutdownBehavior = params.shutdownBehavior;
+        if (params.tags?.length) {
+          commandParams.TagSpecifications = [{ ResourceType: "instance", Tags: params.tags }];
+        }
+        if (params.blockDeviceMappings?.length) {
+          commandParams.BlockDeviceMappings = params.blockDeviceMappings.map((bdm) => ({
+            DeviceName: bdm.DeviceName,
+            Ebs: bdm.Ebs,
+          }));
+        }
+
+        const result = await ec2.send(new RunInstancesCommand(commandParams as any));
+        setState((prev) => ({
+          ...prev,
+          instances: [...prev.instances, ...(result.Instances || [])],
+          loading: false,
         }));
+        return result.Instances;
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to launch instances");
+        throw err;
       }
+    },
+    [setLoading, setError],
+  );
 
-      const result = await ec2.send(new RunInstancesCommand(commandParams as any));
-      setState((prev) => ({
-        ...prev,
-        instances: [...prev.instances, ...(result.Instances || [])],
-        loading: false,
-      }));
-      return result.Instances;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to launch instances");
-      throw err;
-    }
-  }, [setLoading, setError]);
+  const startInstances = useCallback(
+    async (instanceIds: string[]) => {
+      setLoading();
+      try {
+        const result = await ec2.send(new StartInstancesCommand({ InstanceIds: instanceIds }));
+        await describeInstances();
+        return result.StartingInstances;
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to start instances");
+        throw err;
+      }
+    },
+    [setLoading, setError, describeInstances],
+  );
 
-  const startInstances = useCallback(async (instanceIds: string[]) => {
-    setLoading();
-    try {
-      const result = await ec2.send(new StartInstancesCommand({ InstanceIds: instanceIds }));
-      await describeInstances();
-      return result.StartingInstances;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to start instances");
-      throw err;
-    }
-  }, [setLoading, setError, describeInstances]);
+  const stopInstances = useCallback(
+    async (instanceIds: string[]) => {
+      setLoading();
+      try {
+        const result = await ec2.send(new StopInstancesCommand({ InstanceIds: instanceIds }));
+        await describeInstances();
+        return result.StoppingInstances;
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to stop instances");
+        throw err;
+      }
+    },
+    [setLoading, setError, describeInstances],
+  );
 
-  const stopInstances = useCallback(async (instanceIds: string[]) => {
-    setLoading();
-    try {
-      const result = await ec2.send(new StopInstancesCommand({ InstanceIds: instanceIds }));
-      await describeInstances();
-      return result.StoppingInstances;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to stop instances");
-      throw err;
-    }
-  }, [setLoading, setError, describeInstances]);
+  const rebootInstances = useCallback(
+    async (instanceIds: string[]) => {
+      setLoading();
+      try {
+        await ec2.send(new RebootInstancesCommand({ InstanceIds: instanceIds }));
+        await describeInstances();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to reboot instances");
+        throw err;
+      }
+    },
+    [setLoading, setError, describeInstances],
+  );
 
-  const rebootInstances = useCallback(async (instanceIds: string[]) => {
-    setLoading();
-    try {
-      await ec2.send(new RebootInstancesCommand({ InstanceIds: instanceIds }));
-      await describeInstances();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to reboot instances");
-      throw err;
-    }
-  }, [setLoading, setError, describeInstances]);
+  const terminateInstances = useCallback(
+    async (instanceIds: string[]) => {
+      setLoading();
+      try {
+        const result = await ec2.send(new TerminateInstancesCommand({ InstanceIds: instanceIds }));
+        await describeInstances();
+        return result.TerminatingInstances;
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to terminate instances");
+        throw err;
+      }
+    },
+    [setLoading, setError, describeInstances],
+  );
 
-  const terminateInstances = useCallback(async (instanceIds: string[]) => {
-    setLoading();
-    try {
-      const result = await ec2.send(new TerminateInstancesCommand({ InstanceIds: instanceIds }));
-      await describeInstances();
-      return result.TerminatingInstances;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to terminate instances");
-      throw err;
-    }
-  }, [setLoading, setError, describeInstances]);
-
-  const describeImages = useCallback(async (owners?: string[]) => {
-    setLoading();
-    try {
-      const result = await ec2.send(new DescribeImagesCommand({
-        Owners: owners || ["amazon"],
-      }));
-      setState((prev) => ({ ...prev, images: result.Images || [], loading: false }));
-      return result.Images;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to describe images");
-      return [];
-    }
-  }, [setLoading, setError]);
+  const describeImages = useCallback(
+    async (owners?: string[]) => {
+      setLoading();
+      try {
+        const result = await ec2.send(
+          new DescribeImagesCommand({
+            Owners: owners || ["amazon"],
+          }),
+        );
+        setState((prev) => ({ ...prev, images: result.Images || [], loading: false }));
+        return result.Images;
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to describe images");
+        return [];
+      }
+    },
+    [setLoading, setError],
+  );
 
   const describeInstanceTypes = useCallback(async () => {
     setLoading();
@@ -248,25 +273,31 @@ export function useEC2Service() {
     }
   }, [setLoading, setError]);
 
-  const describeSecurityGroups = useCallback(async (filters?: Array<{ Name: string; Values: string[] }>) => {
-    try {
-      const result = await ec2.send(new DescribeSecurityGroupsCommand({ Filters: filters }));
-      setState((prev) => ({ ...prev, securityGroups: result.SecurityGroups || [] }));
-      return result.SecurityGroups;
-    } catch (err: unknown) {
-      return [];
-    }
-  }, []);
+  const describeSecurityGroups = useCallback(
+    async (filters?: Array<{ Name: string; Values: string[] }>) => {
+      try {
+        const result = await ec2.send(new DescribeSecurityGroupsCommand({ Filters: filters }));
+        setState((prev) => ({ ...prev, securityGroups: result.SecurityGroups || [] }));
+        return result.SecurityGroups;
+      } catch (err: unknown) {
+        return [];
+      }
+    },
+    [],
+  );
 
-  const describeSubnets = useCallback(async (filters?: Array<{ Name: string; Values: string[] }>) => {
-    try {
-      const result = await ec2.send(new DescribeSubnetsCommand({ Filters: filters }));
-      setState((prev) => ({ ...prev, subnets: result.Subnets || [] }));
-      return result.Subnets;
-    } catch (err: unknown) {
-      return [];
-    }
-  }, []);
+  const describeSubnets = useCallback(
+    async (filters?: Array<{ Name: string; Values: string[] }>) => {
+      try {
+        const result = await ec2.send(new DescribeSubnetsCommand({ Filters: filters }));
+        setState((prev) => ({ ...prev, subnets: result.Subnets || [] }));
+        return result.Subnets;
+      } catch (err: unknown) {
+        return [];
+      }
+    },
+    [],
+  );
 
   const describeVpcs = useCallback(async (filters?: Array<{ Name: string; Values: string[] }>) => {
     try {
@@ -298,25 +329,31 @@ export function useEC2Service() {
     }
   }, []);
 
-  const createTags = useCallback(async (resources: string[], tags: Array<{ Key: string; Value: string }>) => {
-    try {
-      await ec2.send(new CreateTagsCommand({ Resources: resources, Tags: tags }));
-      await describeInstances();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to create tags");
-      throw err;
-    }
-  }, [describeInstances, setError]);
+  const createTags = useCallback(
+    async (resources: string[], tags: Array<{ Key: string; Value: string }>) => {
+      try {
+        await ec2.send(new CreateTagsCommand({ Resources: resources, Tags: tags }));
+        await describeInstances();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to create tags");
+        throw err;
+      }
+    },
+    [describeInstances, setError],
+  );
 
-  const deleteTags = useCallback(async (resources: string[], tags: Array<{ Key: string; Value: string }>) => {
-    try {
-      await ec2.send(new DeleteTagsCommand({ Resources: resources, Tags: tags }));
-      await describeInstances();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to delete tags");
-      throw err;
-    }
-  }, [describeInstances, setError]);
+  const deleteTags = useCallback(
+    async (resources: string[], tags: Array<{ Key: string; Value: string }>) => {
+      try {
+        await ec2.send(new DeleteTagsCommand({ Resources: resources, Tags: tags }));
+        await describeInstances();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to delete tags");
+        throw err;
+      }
+    },
+    [describeInstances, setError],
+  );
 
   const getConsoleOutput = useCallback(async (instanceId: string) => {
     try {

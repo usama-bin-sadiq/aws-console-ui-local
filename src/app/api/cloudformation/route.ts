@@ -85,11 +85,12 @@ export async function GET(request: Request) {
           "DELETE_COMPLETE",
           "DELETE_FAILED",
         ] as any,
-      })
+      }),
     );
     return NextResponse.json({ stacks: res.StackSummaries || [] });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "CloudFormation API error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -102,7 +103,10 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // UpdateStack takes precedence when action is explicitly "update"
-    if (body.action === "update" || (body.StackName && body.TemplateBody && body.action !== "create")) {
+    if (
+      body.action === "update" ||
+      (body.StackName && body.TemplateBody && body.action !== "create")
+    ) {
       await cloudformationClient.send(
         new UpdateStackCommand({
           StackName: body.StackName,
@@ -111,7 +115,7 @@ export async function POST(request: Request) {
           Parameters: body.Parameters,
           Capabilities: body.Capabilities,
           Tags: body.Tags,
-        })
+        }),
       );
       return NextResponse.json({ success: true, action: "update" });
     }
@@ -128,11 +132,12 @@ export async function POST(request: Request) {
         NotificationARNs: body.NotificationARNs,
         RoleARN: body.RoleARN,
         EnableTerminationProtection: body.EnableTerminationProtection,
-      })
+      }),
     );
     return NextResponse.json({ success: true, action: "create" });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "CloudFormation create/update error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -150,6 +155,7 @@ export async function DELETE(request: Request) {
     await cloudformationClient.send(new DeleteStackCommand({ StackName: stackName }));
     return NextResponse.json({ success: true, action: "delete" });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "CloudFormation delete error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

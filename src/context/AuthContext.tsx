@@ -1,226 +1,146 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface User {
   username: string;
   email?: string;
+  accountName?: string;
+  accountId?: string | null;
   credentials?: {
     accessKeyId: string;
-    secretAccessKey: string;
-    sessionToken?: string;
   };
   permissions: string[];
   isSuperAdmin: boolean;
-  loginMethod: "sqlite" | "credentials" | "root";
+  loginMethod: "sqlite";
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (username: string, password: string) => Promise<void>;
-  signInWithCredentials: (accessKeyId: string, secretAccessKey: string, sessionToken?: string) => Promise<void>;
+  signIn: (
+    username: string,
+    password: string,
+    options?: { email?: string; accountId?: string },
+  ) => Promise<void>;
   signOut: () => Promise<void>;
-  setupMFA: () => Promise<string>;
-  verifyMFA: (code: string) => Promise<void>;
   isRootUser: boolean;
   isSuperAdmin: boolean;
   hasPermission: (permission: string) => boolean;
-  getCredentials: () => { accessKeyId: string; secretAccessKey: string; sessionToken?: string } | null;
   getRegion: () => string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 const REGION = process.env.NEXT_PUBLIC_AWS_REGION || process.env.AWS_REGION || "us-east-1";
-const DEFAULT_ACCESS_KEY = process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || "test";
-const DEFAULT_SECRET_KEY = process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY || "test";
-const DEFAULT_SESSION_TOKEN = process.env.NEXT_PUBLIC_AWS_SESSION_TOKEN;
 const ROOT_USERNAME = process.env.NEXT_PUBLIC_ROOT_USERNAME || "root";
-const ROOT_PASSWORD = process.env.NEXT_PUBLIC_ROOT_PASSWORD || "root123";
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
+function toUser(data: Record<string, unknown>): User {
+  return {
+    username: String(data.username || ""),
+    email: data.email ? String(data.email) : undefined,
+    accountName: data.accountName ? String(data.accountName) : undefined,
+    accountId: data.accountId ? String(data.accountId) : null,
+    credentials: data.accessKeyId ? { accessKeyId: String(data.accessKeyId) } : undefined,
+    permissions: Array.isArray(data.permissions) ? data.permissions.map(String) : ["*"],
+    isSuperAdmin: data.isRoot === true,
+    loginMethod: "sqlite",
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    checkAuthState();
-  }, []);
-
-  const checkAuthState = async () => {
+  const checkAuthState = useCallback(async () => {
     try {
-      // Check root session
-      const rootSession = localStorage.getItem("aws_console_root_session");
-      if (rootSession) {
-        try {
-          const session = JSON.parse(rootSession);
-          setUser({
-            username: "root",
-            email: "root@localhost",
-            credentials: session.credentials,
-            permissions: ["*"],
-            isSuperAdmin: true,
-            loginMethod: "root",
-          });
-          return;
-        } catch {
-          localStorage.removeItem("aws_console_root_session");
-        }
-      }
-
-      // Check current user session (from SQLite-backed auth)
-      const currentUser = localStorage.getItem("aws_console_current_user");
-      if (currentUser) {
-        try {
-          const userData = JSON.parse(currentUser);
-          setUser({
-            username: userData.username,
-            email: userData.email,
-            credentials: {
-              accessKeyId: userData.accessKeyId || DEFAULT_ACCESS_KEY,
-              secretAccessKey: userData.secretAccessKey || DEFAULT_SECRET_KEY,
-            },
-            permissions: userData.permissions || ["*"],
-            isSuperAdmin: userData.isRoot || false,
-            loginMethod: "sqlite",
-          });
-          return;
-        } catch {
-          localStorage.removeItem("aws_console_current_user");
-        }
-      }
-
-      // Check credentials session
-      const credsSession = localStorage.getItem("aws_console_credentials_session");
-      if (credsSession) {
-        try {
-          const session = JSON.parse(credsSession);
-          const isRoot = session.credentials?.accessKeyId === DEFAULT_ACCESS_KEY;
-          setUser({
-            username: isRoot ? "root" : "custom",
-            email: isRoot ? "root@localhost" : "custom@localhost",
-            credentials: session.credentials,
-            permissions: ["*"],
-            isSuperAdmin: isRoot,
-            loginMethod: "credentials",
-          });
-          return;
-        } catch {
-          localStorage.removeItem("aws_console_credentials_session");
-        }
-      }
+      const response = await apiFetch("/api/auth", { cache: "no-store" });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.user) setUser(toUser(data.user));
+    } catch {
+      // An unavailable auth service is treated as signed out.
     } finally {
       setLoading(false);
     }
-  };
-
-  // Sign in via /api/auth (SQLite backend)
-  const signIn = useCallback(async (username: string, password: string) => {
-    const res = await fetch("/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "signin", username, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Sign in failed");
-
-    localStorage.setItem("aws_console_current_user", JSON.stringify(data.user));
-    setUser({
-      username: data.user.username,
-      email: data.user.email,
-      credentials: {
-        accessKeyId: data.user.accessKeyId || DEFAULT_ACCESS_KEY,
-        secretAccessKey: data.user.secretAccessKey || DEFAULT_SECRET_KEY,
-      },
-      permissions: data.user.permissions || ["*"],
-      isSuperAdmin: data.user.isRoot || false,
-      loginMethod: "sqlite",
-    });
   }, []);
 
-  // Sign in with raw AWS credentials
-  const signInWithCredentials = useCallback(async (accessKeyId: string, secretAccessKey: string, sessionToken?: string) => {
-    try {
-      const { STSClient, GetCallerIdentityCommand } = await import("@aws-sdk/client-sts");
-      const client = new STSClient({
-        region: REGION,
-        credentials: { accessKeyId, secretAccessKey, sessionToken },
-      });
-      await client.send(new GetCallerIdentityCommand({}));
+  useEffect(() => {
+    void checkAuthState();
+  }, [checkAuthState]);
 
-      const credentials = { accessKeyId, secretAccessKey, sessionToken };
-      const isRoot = accessKeyId === DEFAULT_ACCESS_KEY;
-      localStorage.setItem("aws_console_credentials_session", JSON.stringify({ credentials }));
-      setUser({
-        username: isRoot ? "root" : "custom",
-        email: isRoot ? "root@localhost" : "custom@localhost",
-        credentials,
-        permissions: ["*"],
-        isSuperAdmin: isRoot,
-        loginMethod: "credentials",
+  const signIn = useCallback(
+    async (
+      username: string,
+      password: string,
+      options?: { email?: string; accountId?: string },
+    ) => {
+      const response = await apiFetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "signin",
+          username,
+          password,
+          ...(options?.email ? { email: options.email } : {}),
+          ...(options?.accountId ? { accountId: options.accountId } : {}),
+        }),
       });
-    } catch (err: any) {
-      throw new Error(err.message || "Invalid AWS credentials");
-    }
-  }, []);
+      const data = await response.json();
+
+      if (data.mfaRequired && !data.user) {
+        const error = new Error(data.error || "MFA required") as Error & {
+          mfaRequired?: boolean;
+          sessionToken?: string;
+          username?: string;
+        };
+        error.mfaRequired = true;
+        error.sessionToken = data.sessionToken;
+        error.username = data.username;
+        throw error;
+      }
+
+      if (!response.ok) throw new Error(data.error || "Sign in failed");
+      setUser(toUser(data.user));
+    },
+    [],
+  );
 
   const signOut = useCallback(async () => {
-    localStorage.removeItem("aws_console_root_session");
-    localStorage.removeItem("aws_console_current_user");
-    localStorage.removeItem("aws_console_credentials_session");
-    setUser(null);
-  }, []);
-
-  const setupMFA = useCallback(async () => {
-    const array = new Uint8Array(20);
-    crypto.getRandomValues(array);
-    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-    let bits = 0, value = 0, output = "";
-    for (const byte of array) {
-      value = (value << 8) | byte;
-      bits += 8;
-      while (bits >= 5) { output += alphabet[(value >>> (bits - 5)) & 31]; bits -= 5; }
+    try {
+      await apiFetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "signout" }),
+      });
+    } finally {
+      setUser(null);
     }
-    if (bits > 0) output += alphabet[(value << (5 - bits)) & 31];
-    return output;
-  }, []);
-
-  const verifyMFA = useCallback(async (code: string) => {
-    setUser((prev) => (prev ? { ...prev } : null));
   }, []);
 
   const hasPermission = useCallback(
     (permission: string) => {
       if (!user) return false;
       if (user.permissions.includes("*")) return true;
-      return (
-        user.permissions.includes(permission) ||
-        user.permissions.some((p) => {
-          if (p.endsWith(":*")) return permission.startsWith(p.replace(":*", ":"));
-          return false;
-        })
-      );
+      return user.permissions.some((granted) => {
+        if (granted === permission) return true;
+        return granted.endsWith(":*") && permission.startsWith(granted.replace(":*", ":"));
+      });
     },
-    [user]
+    [user],
   );
-
-  const getCredentials = useCallback(() => {
-    if (!user?.credentials) return null;
-    return user.credentials;
-  }, [user]);
-
-  const getRegion = useCallback(() => REGION, []);
 
   return (
     <AuthContext.Provider
       value={{
-        user, loading, signIn, signInWithCredentials,
-        signOut, setupMFA, verifyMFA,
+        user,
+        loading,
+        signIn,
+        signOut,
         isRootUser: user?.username === ROOT_USERNAME,
         isSuperAdmin: user?.isSuperAdmin === true,
-        hasPermission, getCredentials, getRegion,
+        hasPermission,
+        getRegion: () => REGION,
       }}
     >
       {children}

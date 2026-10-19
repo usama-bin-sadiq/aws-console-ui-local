@@ -8,6 +8,7 @@ import {
 } from "@aws-sdk/client-servicediscovery";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -18,7 +19,8 @@ export async function GET(request: Request) {
     const res = await servicediscoveryClient.send(new ListNamespacesCommand({}));
     return NextResponse.json({ namespaces: res.Namespaces || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -30,13 +32,18 @@ export async function POST(request: Request) {
     const servicediscoveryClient = getUserClientFromRequest(ServiceDiscoveryClient, request);
     const body = await request.json();
     if (body.action === "createService") {
-      const res = await servicediscoveryClient.send(new CreateServiceCommand({ Name: body.name, NamespaceId: body.namespaceId }));
+      const res = await servicediscoveryClient.send(
+        new CreateServiceCommand({ Name: body.name, NamespaceId: body.namespaceId }),
+      );
       return NextResponse.json({ service: res.Service });
     }
-    const res = await servicediscoveryClient.send(new CreateHttpNamespaceCommand({ Name: body.name }));
+    const res = await servicediscoveryClient.send(
+      new CreateHttpNamespaceCommand({ Name: body.name }),
+    );
     return NextResponse.json({ namespace: res });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -51,6 +58,7 @@ export async function DELETE(request: Request) {
     await servicediscoveryClient.send(new DeleteNamespaceCommand({ Id: id }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

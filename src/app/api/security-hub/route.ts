@@ -13,6 +13,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ findings: res.Findings || [] });
   } catch (error: unknown) {
     // Security Hub may not be enabled — return graceful empty state
-    return NextResponse.json({ findings: [], message: error instanceof Error ? error.message : "Security Hub not enabled" });
+    return NextResponse.json({
+      findings: [],
+      message: error instanceof Error ? error.message : "Security Hub not enabled",
+    });
   }
 }

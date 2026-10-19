@@ -3,8 +3,26 @@
 import React, { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import Spinner from "@cloudscape-design/components/spinner";
 
-const PUBLIC_PATHS = ["/login", "/api/health"];
+/**
+ * Paths reachable without a session.
+ *
+ * `/signup` must be here. Accounts are only seeded when
+ * `NEXT_PUBLIC_ROOT_PASSWORD` is set, so on a fresh install the database has no
+ * users at all — without this, an unauthenticated visitor is bounced from
+ * signup to a login page they cannot use, and the app cannot be entered.
+ */
+const PUBLIC_PATHS = [
+  "/login",
+  "/signup",
+  // Part of the sign-in journey: a locked-out visitor must be able to reach the
+  // recovery form and the session-expired notice without already having a
+  // session. Without these, both redirect to /login and the user is stuck.
+  "/forgot-password",
+  "/session-expired",
+  "/api/health",
+];
 
 /**
  * AuthGuard — wraps the app shell and redirects to /login if not authenticated.
@@ -26,11 +44,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   // Show loading spinner while checking auth
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
+      <div
+        style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}
+      >
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: "18px", color: "#545b64", marginBottom: "12px" }}>Loading...</div>
-          <div style={{ width: "40px", height: "40px", border: "4px solid #e9ebed", borderTop: "4px solid #0073bb", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto" }} />
-          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+          <Spinner size="large" />
         </div>
       </div>
     );

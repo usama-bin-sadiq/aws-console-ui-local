@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { WidgetConfig } from "@/lib/db";
+import { apiFetch } from "@/lib/api-client";
 
 export interface WidgetLayoutItem {
   id: string;
@@ -20,7 +21,7 @@ export function useWidgetLayout(userId: string = "default") {
     try {
       const response = await fetch(`/api/widgets?userId=${userId}`);
       const data = await response.json();
-      
+
       const layoutItems: WidgetLayoutItem[] = data.widgets.map((w: WidgetConfig) => ({
         id: w.widget_id,
         x: w.position_x,
@@ -29,7 +30,7 @@ export function useWidgetLayout(userId: string = "default") {
         h: w.height,
         visible: w.visible === 1,
       }));
-      
+
       setWidgets(layoutItems);
     } catch (error) {
       console.error("Failed to load widgets:", error);
@@ -45,10 +46,10 @@ export function useWidgetLayout(userId: string = "default") {
   const updateWidget = useCallback(
     async (widgetId: string, updates: Partial<Omit<WidgetLayoutItem, "id">>) => {
       try {
-        await fetch("/api/widgets", {
+        await apiFetch("/api/widgets", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+          json: {
             userId,
             widgetId,
             updates: {
@@ -58,31 +59,29 @@ export function useWidgetLayout(userId: string = "default") {
               height: updates.h,
               visible: updates.visible ? 1 : 0,
             },
-          }),
+          },
         });
 
-        setWidgets((prev) =>
-          prev.map((w) => (w.id === widgetId ? { ...w, ...updates } : w))
-        );
+        setWidgets((prev) => prev.map((w) => (w.id === widgetId ? { ...w, ...updates } : w)));
       } catch (error) {
         console.error("Failed to update widget:", error);
       }
     },
-    [userId]
+    [userId],
   );
 
   const resetLayout = useCallback(async () => {
     try {
-      const response = await fetch("/api/widgets", {
+      const response = await apiFetch("/api/widgets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        json: {
           userId,
           action: "reset",
-        }),
+        },
       });
       const data = await response.json();
-      
+
       const layoutItems: WidgetLayoutItem[] = data.widgets.map((w: WidgetConfig) => ({
         id: w.widget_id,
         x: w.position_x,
@@ -91,7 +90,7 @@ export function useWidgetLayout(userId: string = "default") {
         h: w.height,
         visible: w.visible === 1,
       }));
-      
+
       setWidgets(layoutItems);
     } catch (error) {
       console.error("Failed to reset layout:", error);
@@ -105,7 +104,7 @@ export function useWidgetLayout(userId: string = "default") {
         await updateWidget(widgetId, { visible: !widget.visible });
       }
     },
-    [widgets, updateWidget]
+    [widgets, updateWidget],
   );
 
   const resizeWidget = useCallback(
@@ -113,7 +112,7 @@ export function useWidgetLayout(userId: string = "default") {
       const height = size === "extended" ? 2 : 1;
       await updateWidget(widgetId, { h: height });
     },
-    [updateWidget]
+    [updateWidget],
   );
 
   return {

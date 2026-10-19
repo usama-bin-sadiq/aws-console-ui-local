@@ -2,10 +2,10 @@
  * useKMSService — KMS adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { kms } from '@/lib/aws-clients'
-import { ListKeysCommand } from '@aws-sdk/client-kms';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { kms } from "@/lib/aws-clients";
+import { ListKeysCommand } from "@aws-sdk/client-kms";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface KMSServiceState {
   keys: unknown[];

@@ -37,7 +37,7 @@ export default function VerifiedAccessPage() {
   }, []);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Verified Access</Header>
 
@@ -47,18 +47,16 @@ export default function VerifiedAccessPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={<Header variant="h2">Instances ({instances.length})</Header>}
-            items={instances}
-            columnDefinitions={[
-              { header: "Instance ID", cell: (item) => item.VerifiedAccessInstanceId },
-              { header: "Description", cell: (item) => item.Description || "—" },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No Verified Access instances found.</Box>}
-          />
-        </Container>
+        <Table
+          header={<Header variant="h2">Instances ({instances.length})</Header>}
+          items={instances}
+          columnDefinitions={[
+            { header: "Instance ID", cell: (item) => item.VerifiedAccessInstanceId },
+            { header: "Description", cell: (item) => item.Description || "—" },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No Verified Access instances found.</Box>}
+        />
       </SpaceBetween>
     </div>
   );

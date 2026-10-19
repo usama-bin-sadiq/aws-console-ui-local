@@ -4,6 +4,8 @@ import { useEffect } from "react";
 
 export default function IoTCorePage() {
   const router = useRouter();
-  useEffect(() => { router.replace("/iot"); }, [router]);
+  useEffect(() => {
+    router.replace("/iot");
+  }, [router]);
   return null;
 }

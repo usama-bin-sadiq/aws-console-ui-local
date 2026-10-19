@@ -1,9 +1,6 @@
 import { OTP } from "otplib";
 import * as QRCode from "qrcode";
 
-// Emulator bypass code - "000000" bypasses MFA in emulator mode
-const EMULATOR_BYPASS_CODE = "000000";
-
 // Create OTP instance for TOTP
 const totp = new OTP({ strategy: "totp" });
 
@@ -40,12 +37,12 @@ export async function generateQRCode(username: string, secret: string): Promise<
 
 /**
  * Verify a TOTP code against a secret
- * Returns true if the code is valid or if it's the emulator bypass code (in emulator mode)
+ * Returns true if the code is valid
  */
 export function verifyTOTP(secret: string, code: string): boolean {
-  // Emulator bypass: accept "000000" as valid code for testing
-  if (code === EMULATOR_BYPASS_CODE) {
-    return true;
+  // Always reject the emulator bypass code
+  if (code === "000000") {
+    return false;
   }
 
   // Validate code format (must be 6 digits)

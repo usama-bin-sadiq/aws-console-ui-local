@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
     if (action === "listRules") {
       const rulesRes = await eventbridgeClient.send(
-        new ListRulesCommand({ EventBusName: eventBusName })
+        new ListRulesCommand({ EventBusName: eventBusName }),
       );
       return NextResponse.json({ rules: rulesRes.Rules || [] });
     }
@@ -38,16 +38,16 @@ export async function GET(request: Request) {
         new ListTargetsByRuleCommand({
           Rule: searchParams.get("ruleName")!,
           EventBusName: eventBusName,
-        })
+        }),
       );
       return NextResponse.json({ targets: res.Targets || [] });
     }
 
     const [busRes, rulesRes] = await Promise.all([
       eventbridgeClient.send(new ListEventBusesCommand({})),
-      eventbridgeClient.send(
-        new ListRulesCommand({ EventBusName: eventBusName })
-      ).catch(() => ({ Rules: [] })),
+      eventbridgeClient
+        .send(new ListRulesCommand({ EventBusName: eventBusName }))
+        .catch(() => ({ Rules: [] })),
     ]);
     return NextResponse.json({
       eventBuses: busRes.EventBuses || [],
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -68,12 +68,17 @@ export async function POST(request: Request) {
   try {
     const eventbridgeClient = getUserClientFromRequest(EventBridgeClient, request);
     const body = await request.json();
-    const action = (body && typeof body === "object" && body.action) ? body.action : ((typeof body === "string") ? body : (body && body.name ? "createEventBus" : undefined));
+    const action =
+      body && typeof body === "object" && body.action
+        ? body.action
+        : typeof body === "string"
+          ? body
+          : body && body.name
+            ? "createEventBus"
+            : undefined;
 
     if (action === "createEventBus" || body.action === "createEventBus") {
-      const res = await eventbridgeClient.send(
-        new CreateEventBusCommand({ Name: body.name })
-      );
+      const res = await eventbridgeClient.send(new CreateEventBusCommand({ Name: body.name }));
       return NextResponse.json({ eventBusArn: res.EventBusArn });
     }
 
@@ -85,7 +90,7 @@ export async function POST(request: Request) {
           EventPattern: body.eventPattern ? JSON.stringify(body.eventPattern) : undefined,
           ScheduleExpression: body.scheduleExpression,
           State: body.state || "ENABLED",
-        })
+        }),
       );
       return NextResponse.json({ ruleArn: res.RuleArn });
     }
@@ -96,7 +101,7 @@ export async function POST(request: Request) {
           Rule: body.ruleName,
           EventBusName: body.eventBusName || "default",
           Targets: body.targets || [],
-        })
+        }),
       );
       return NextResponse.json({ failedEntryCount: res.FailedEntryCount || 0 });
     }
@@ -106,7 +111,7 @@ export async function POST(request: Request) {
         new DeleteRuleCommand({
           Name: body.ruleName,
           EventBusName: body.eventBusName || "default",
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -116,7 +121,7 @@ export async function POST(request: Request) {
         new EnableRuleCommand({
           Name: body.ruleName,
           EventBusName: body.eventBusName || "default",
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -126,7 +131,7 @@ export async function POST(request: Request) {
         new DisableRuleCommand({
           Name: body.ruleName,
           EventBusName: body.eventBusName || "default",
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -136,7 +141,7 @@ export async function POST(request: Request) {
         new ListTargetsByRuleCommand({
           Rule: body.ruleName,
           EventBusName: body.eventBusName || "default",
-        })
+        }),
       );
       return NextResponse.json({ targets: res.Targets || [] });
     }
@@ -145,7 +150,7 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -167,19 +172,17 @@ export async function DELETE(request: Request) {
         new DeleteRuleCommand({
           Name: searchParams.get("ruleName")!,
           EventBusName: eventBusName,
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
 
-    await eventbridgeClient.send(
-      new DeleteEventBusCommand({ Name: busName! })
-    );
+    await eventbridgeClient.send(new DeleteEventBusCommand({ Name: busName! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

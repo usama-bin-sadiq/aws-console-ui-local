@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/client-efs";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -17,7 +18,8 @@ export async function GET(request: Request) {
     const res = await efsClient.send(new DescribeFileSystemsCommand({}));
     return NextResponse.json({ fileSystems: res.FileSystems || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -28,13 +30,16 @@ export async function POST(request: Request) {
   try {
     const efsClient = getUserClientFromRequest(EFSClient, request);
     const body = await request.json();
-    const res = await efsClient.send(new CreateFileSystemCommand({
-      CreationToken: body.creationToken || Date.now().toString(),
-      PerformanceMode: body.performanceMode || "generalPurpose",
-    }));
+    const res = await efsClient.send(
+      new CreateFileSystemCommand({
+        CreationToken: body.creationToken || Date.now().toString(),
+        PerformanceMode: body.performanceMode || "generalPurpose",
+      }),
+    );
     return NextResponse.json({ fileSystem: res });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -49,6 +54,7 @@ export async function DELETE(request: Request) {
     await efsClient.send(new DeleteFileSystemCommand({ FileSystemId: fileSystemId }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

@@ -25,7 +25,7 @@ export default function SNSSMSPage() {
   }, []);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">SNS — SMS Notifications</Header>
         {error && (
@@ -37,15 +37,13 @@ export default function SNSSMSPage() {
           To send SMS, publish to an SNS topic with phone number subscriptions. Create topics in the
           SNS console and subscribe phone numbers.
         </Alert>
-        <Container>
-          <Table
-            header={<Header variant="h2">SNS Topics ({topics.length})</Header>}
-            items={topics}
-            loading={loading}
-            columnDefinitions={[{ header: "Topic ARN", cell: (i) => i.TopicArn }]}
-            empty={<Box textAlign="center">No topics found.</Box>}
-          />
-        </Container>
+        <Table
+          header={<Header variant="h2">SNS Topics ({topics.length})</Header>}
+          items={topics}
+          loading={loading}
+          columnDefinitions={[{ header: "Topic ARN", cell: (i) => i.TopicArn }]}
+          empty={<Box textAlign="center">No topics found.</Box>}
+        />
       </SpaceBetween>
     </div>
   );

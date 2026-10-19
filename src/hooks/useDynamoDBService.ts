@@ -2,10 +2,10 @@
  * useDynamoDBService — DynamoDB adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { dynamodb } from '@/lib/aws-clients'
-import { ListTablesCommand } from '@aws-sdk/client-dynamodb';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { dynamodb } from "@/lib/aws-clients";
+import { ListTablesCommand } from "@aws-sdk/client-dynamodb";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface DynamoDBServiceState {
   tables: unknown[];
@@ -14,7 +14,11 @@ export interface DynamoDBServiceState {
 }
 
 export function useDynamoDBService() {
-  const [state, setState] = useState<DynamoDBServiceState>({ tables: [], loading: false, error: null });
+  const [state, setState] = useState<DynamoDBServiceState>({
+    tables: [],
+    loading: false,
+    error: null,
+  });
 
   const listTables = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));

@@ -2,11 +2,11 @@
  * EC2VolumeTable — Volume list with exact AWS columns.
  */
 
-import React, { useState } from 'react';
-import Table from '@cloudscape-design/components/table';
-import Pagination from '@cloudscape-design/components/pagination';
-import SpaceBetween from '@cloudscape-design/components/space-between';
-import Button from '@cloudscape-design/components/button';
+import React, { useState } from "react";
+import Table from "@cloudscape-design/components/table";
+import Pagination from "@cloudscape-design/components/pagination";
+import SpaceBetween from "@cloudscape-design/components/space-between";
+import Button from "@cloudscape-design/components/button";
 
 export interface EC2VolumeTableProps {
   readonly volumes?: Array<Record<string, unknown>>;
@@ -14,14 +14,43 @@ export interface EC2VolumeTableProps {
   readonly onRefresh?: () => void;
 }
 
-export function EC2VolumeTable({ volumes = [], loading = false, onRefresh }: EC2VolumeTableProps): React.ReactElement {
+export function EC2VolumeTable({
+  volumes = [],
+  loading = false,
+  onRefresh,
+}: EC2VolumeTableProps): React.ReactElement {
   const columnDefinitions: any[] = [
-    { id: 'volumeId', header: 'Volume ID', cell: (item: Record<string, unknown>) => String(item.VolumeId || item.volumeId || '-') },
-    { id: 'size', header: 'Size (GiB)', cell: (item: Record<string, unknown>) => String(item.Size || item.size || '-') },
-    { id: 'type', header: 'Type', cell: (item: Record<string, unknown>) => String(item.VolumeType || item.type || '-') },
-    { id: 'state', header: 'State', cell: (item: Record<string, unknown>) => String(item.State || item.state || '-') },
-    { id: 'az', header: 'Availability Zone', cell: (item: Record<string, unknown>) => String(item.AvailabilityZone || item.az || '-') },
-    { id: 'attachments', header: 'Attachments', cell: (item: Record<string, unknown>) => String(item.Attachments ? JSON.stringify(item.Attachments) : '-') },
+    {
+      id: "volumeId",
+      header: "Volume ID",
+      cell: (item: Record<string, unknown>) => String(item.VolumeId || item.volumeId || "-"),
+    },
+    {
+      id: "size",
+      header: "Size (GiB)",
+      cell: (item: Record<string, unknown>) => String(item.Size || item.size || "-"),
+    },
+    {
+      id: "type",
+      header: "Type",
+      cell: (item: Record<string, unknown>) => String(item.VolumeType || item.type || "-"),
+    },
+    {
+      id: "state",
+      header: "State",
+      cell: (item: Record<string, unknown>) => String(item.State || item.state || "-"),
+    },
+    {
+      id: "az",
+      header: "Availability Zone",
+      cell: (item: Record<string, unknown>) => String(item.AvailabilityZone || item.az || "-"),
+    },
+    {
+      id: "attachments",
+      header: "Attachments",
+      cell: (item: Record<string, unknown>) =>
+        String(item.Attachments ? JSON.stringify(item.Attachments) : "-"),
+    },
   ];
 
   return (

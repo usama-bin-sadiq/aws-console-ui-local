@@ -9,7 +9,7 @@ import Alert from "@cloudscape-design/components/alert";
 
 export default function IMDSPage() {
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">EC2 Instance Metadata Service (IMDS)</Header>
         <Alert type="info" header="IMDS">

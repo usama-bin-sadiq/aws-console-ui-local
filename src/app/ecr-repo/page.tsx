@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -32,7 +33,7 @@ export default function ECRRepoPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/ecr");
+      const res = await apiFetch("/api/ecr");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch repositories");
       setRepositories(data.repositories || []);
@@ -55,7 +56,7 @@ export default function ECRRepoPage() {
     setRepositoryNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/ecr", {
+      const res = await apiFetch("/api/ecr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ repositoryName }),
@@ -76,7 +77,7 @@ export default function ECRRepoPage() {
 
   const deleteRepository = async (name: string) => {
     try {
-      const res = await fetch(`/api/ecr?name=${encodeURIComponent(name)}`, {
+      const res = await apiFetch(`/api/ecr?name=${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -90,7 +91,7 @@ export default function ECRRepoPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon ECR Repositories</Header>
 
@@ -100,42 +101,39 @@ export default function ECRRepoPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Create repository
-                  </Button>
-                }
-              >
-                Repositories ({repositories.length})
-              </Header>
-            }
-            items={repositories}
-            columnDefinitions={[
-              { header: "Repository name", cell: (item) => item.repositoryName },
-              { header: "URI", cell: (item) => item.repositoryUri || "-" },
-              {
-                header: "Created at",
-                cell: (item) =>
-                  item.createdAt ? new Date(item.createdAt).toLocaleString() : "-",
-              },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button onClick={() => deleteRepository(item.repositoryName)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No repositories found.</Box>}
-          />
-        </Container>
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button variant="primary" onClick={() => setCreateModal(true)}>
+                  Create repository
+                </Button>
+              }
+            >
+              Repositories ({repositories.length})
+            </Header>
+          }
+          items={repositories}
+          columnDefinitions={[
+            { header: "Repository name", cell: (item) => item.repositoryName },
+            { header: "URI", cell: (item) => item.repositoryUri || "-" },
+            {
+              header: "Created at",
+              cell: (item) => (item.createdAt ? new Date(item.createdAt).toLocaleString() : "-"),
+            },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button onClick={() => deleteRepository(item.repositoryName)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No repositories found.</Box>}
+        />
 
         <Modal
           visible={createModal}
@@ -151,10 +149,21 @@ export default function ECRRepoPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Repository name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={repositoryNameError}>
+            <FormField
+              label={
+                <>
+                  Repository name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={repositoryNameError}
+            >
               <Input
                 value={repositoryName}
-                onChange={(e) => { setRepositoryName(e.detail.value); setRepositoryNameError(null); }}
+                onChange={(e) => {
+                  setRepositoryName(e.detail.value);
+                  setRepositoryNameError(null);
+                }}
                 placeholder="my-repo"
               />
             </FormField>

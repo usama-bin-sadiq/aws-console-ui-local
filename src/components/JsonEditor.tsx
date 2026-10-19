@@ -75,7 +75,7 @@ export default function JsonEditor({
       onChange(detail.value);
       if (!touched) setTouched(true);
     },
-    [onChange, touched]
+    [onChange, touched],
   );
 
   // Auto-format on blur when the content is valid JSON

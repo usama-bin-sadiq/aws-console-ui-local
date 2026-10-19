@@ -35,7 +35,7 @@ function tokenize(cmd: string): string[] {
 function runCommand(
   executable: string,
   args: string[],
-  env: NodeJS.ProcessEnv
+  env: NodeJS.ProcessEnv,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve) => {
     let resolved = false;
@@ -43,8 +43,12 @@ function runCommand(
     let stdout = "";
     let stderr = "";
 
-    proc.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
-    proc.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
+    proc.stdout.on("data", (d: Buffer) => {
+      stdout += d.toString();
+    });
+    proc.stderr.on("data", (d: Buffer) => {
+      stderr += d.toString();
+    });
 
     proc.on("close", (code: number | null) => {
       if (!resolved) {
@@ -84,7 +88,7 @@ export async function GET(request: Request) {
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -102,7 +106,7 @@ export async function POST(request: Request) {
     if (!command.startsWith("aws ") && command !== "aws") {
       return NextResponse.json(
         { error: "Only aws CLI commands are supported", exitCode: 1 },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -128,7 +132,7 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

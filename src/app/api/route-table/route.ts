@@ -13,6 +13,7 @@ import {
 } from "@aws-sdk/client-ec2";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -22,8 +23,9 @@ export async function GET(request: Request) {
     const ec2Client = getUserClientFromRequest(EC2Client, request);
     const res = await ec2Client.send(new DescribeRouteTablesCommand({}));
     return NextResponse.json({ routeTables: res.RouteTables || [] });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -36,8 +38,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const res = await ec2Client.send(new CreateRouteTableCommand({ VpcId: body.vpcId }));
     return NextResponse.json({ routeTable: res.RouteTable });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -58,7 +61,7 @@ export async function PUT(request: Request) {
           NatGatewayId: body.natGatewayId,
           InstanceId: body.instanceId,
           VpcPeeringConnectionId: body.vpcPeeringConnectionId,
-        })
+        }),
       );
       return NextResponse.json({ success: true, action: "create-route" });
     }
@@ -68,7 +71,7 @@ export async function PUT(request: Request) {
         new DeleteRouteCommand({
           RouteTableId: body.routeTableId,
           DestinationCidrBlock: body.destinationCidrBlock || "0.0.0.0/0",
-        })
+        }),
       );
       return NextResponse.json({ success: true, action: "delete-route" });
     }
@@ -78,13 +81,14 @@ export async function PUT(request: Request) {
         new AssociateRouteTableCommand({
           RouteTableId: body.routeTableId,
           SubnetId: body.subnetId,
-        })
+        }),
       );
       return NextResponse.json({ success: true, action: "associate-route-table" });
     }
     return NextResponse.json({ error: "Unknown PUT action for route-table" }, { status: 400 });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -95,9 +99,12 @@ export async function DELETE(request: Request) {
   try {
     const ec2Client = getUserClientFromRequest(EC2Client, request);
     const { searchParams } = new URL(request.url);
-    await ec2Client.send(new DeleteRouteTableCommand({ RouteTableId: searchParams.get("routeTableId")! }));
+    await ec2Client.send(
+      new DeleteRouteTableCommand({ RouteTableId: searchParams.get("routeTableId")! }),
+    );
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

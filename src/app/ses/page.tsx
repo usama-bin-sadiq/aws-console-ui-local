@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -26,7 +27,7 @@ export default function SESPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/ses");
+      const res = await apiFetch("/api/ses");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setIdentities((data.identities || []).map((i: string) => ({ identity: i })));
@@ -42,7 +43,7 @@ export default function SESPage() {
   }, []);
 
   const verifyIdentity = async () => {
-    await fetch("/api/ses", {
+    await apiFetch("/api/ses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "verify", emailAddress }),
@@ -53,41 +54,44 @@ export default function SESPage() {
   };
 
   const deleteIdentity = async (identity: string) => {
-    await fetch(`/api/ses?identity=${encodeURIComponent(identity)}`, { method: "DELETE" });
+    await apiFetch(`/api/ses?identity=${encodeURIComponent(identity)}`, { method: "DELETE" });
     fetchIdentities();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">SES — Simple Email Service</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={<Button onClick={() => setCreateModal(true)}>Verify identity</Button>}
-              >
-                Identities ({identities.length})
-              </Header>
-            }
-            items={identities}
-            loading={loading}
-            columnDefinitions={[
-              { header: "Identity", cell: (item) => item.identity },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button onClick={() => deleteIdentity(item.identity)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No verified identities.</Box>}
-          />
-        </Container>
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Verify identity</Button>}
+            >
+              Identities ({identities.length})
+            </Header>
+          }
+          items={identities}
+          loading={loading}
+          columnDefinitions={[
+            { header: "Identity", cell: (item) => item.identity },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button onClick={() => deleteIdentity(item.identity)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No verified identities.</Box>}
+        />
+
         <Modal
           visible={createModal}
           onDismiss={() => setCreateModal(false)}

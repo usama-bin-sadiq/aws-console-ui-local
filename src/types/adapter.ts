@@ -5,7 +5,7 @@
  */
 
 export interface AdapterModeValue {
-  readonly mode: 'localstack' | 'ministack';
+  readonly mode: "localstack" | "ministack" | "localemu";
 }
 
 export interface AuthCredentials {
@@ -24,7 +24,7 @@ export interface EndpointResolution {
 }
 
 export interface AdapterConfigShape {
-  readonly adapterMode: 'localstack' | 'ministack';
+  readonly adapterMode: "localstack" | "ministack" | "localemu";
   readonly endpointConfig: {
     readonly localstackHostname: string;
     readonly localstackPort: number;
@@ -34,13 +34,17 @@ export interface AdapterConfigShape {
     readonly minstackSslEnabled: boolean;
     readonly localstackEndpoint: string;
     readonly minstackEndpoint: string;
+    readonly localemuHostname: string;
+    readonly localemuPort: number;
+    readonly localemuSslEnabled: boolean;
+    readonly localemuEndpoint: string;
   };
   readonly authConfig: AuthCredentials;
   readonly serviceStatusCheck: boolean;
 }
 
 export interface AdapterFactoryOptions {
-  readonly adapterMode?: 'localstack' | 'ministack';
+  readonly adapterMode?: "localstack" | "ministack";
   readonly serviceName?: string;
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
@@ -24,7 +25,7 @@ export default function IAMPasswordPolicyPage() {
   const [requireSymbols, setRequireSymbols] = useState(false);
 
   useEffect(() => {
-    fetch("/api/iam-password-policy")
+    apiFetch("/api/iam-password-policy")
       .then((r) => r.json())
       .then((data) => {
         if (data.passwordPolicy) {
@@ -45,7 +46,7 @@ export default function IAMPasswordPolicyPage() {
     setError(null);
     setSuccess(false);
     try {
-      const res = await fetch("/api/iam-password-policy", {
+      const res = await apiFetch("/api/iam-password-policy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -67,11 +68,19 @@ export default function IAMPasswordPolicyPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">IAM Password Policy</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        {success && <Alert type="success" header="Saved">Password policy updated successfully.</Alert>}
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert type="success" header="Saved">
+            Password policy updated successfully.
+          </Alert>
+        )}
         <Container header={<Header variant="h2">Account Password Policy</Header>}>
           {loading ? (
             <Box>Loading...</Box>

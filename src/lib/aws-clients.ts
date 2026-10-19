@@ -1,5 +1,5 @@
 // ─── Imports: all 98 AWS SDK v3 clients ──────────────────────────────────────
-import { ADAPTER_CONFIG } from "@/config/adapter-config";
+import { ADAPTER_CONFIG, getAdapterEndpoint } from "@/config/adapter-config";
 
 // Security & Identity
 import { ACMClient } from "@aws-sdk/client-acm";
@@ -90,6 +90,7 @@ import { SSMClient } from "@aws-sdk/client-ssm";
 import { OrganizationsClient } from "@aws-sdk/client-organizations";
 import { ResourceGroupsClient } from "@aws-sdk/client-resource-groups";
 import { ResourceGroupsTaggingAPIClient } from "@aws-sdk/client-resource-groups-tagging-api";
+import { AppConfigClient } from "@aws-sdk/client-appconfig";
 import { SupportClient } from "@aws-sdk/client-support";
 import { RAMClient } from "@aws-sdk/client-ram";
 import { XRayClient } from "@aws-sdk/client-xray";
@@ -119,9 +120,16 @@ import { BedrockAgentClient } from "@aws-sdk/client-bedrock-agent";
 import { BedrockAgentRuntimeClient } from "@aws-sdk/client-bedrock-agent-runtime";
 import { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
 import { SageMakerClient } from "@aws-sdk/client-sagemaker";
+import { ComprehendClient } from "@aws-sdk/client-comprehend";
+import { RekognitionClient } from "@aws-sdk/client-rekognition";
+import { LexModelsV2Client } from "@aws-sdk/client-lex-models-v2";
+import { QuickSightClient } from "@aws-sdk/client-quicksight";
+import { ConnectClient } from "@aws-sdk/client-connect";
+import { DeviceFarmClient } from "@aws-sdk/client-device-farm";
 
 // Media
 import { MediaConvertClient } from "@aws-sdk/client-mediaconvert";
+import { PollyClient } from "@aws-sdk/client-polly";
 
 // IoT
 import { IoTClient } from "@aws-sdk/client-iot";
@@ -163,21 +171,19 @@ const clientCache = new Map<string, unknown>();
  */
 export function getClient<T>(
   ClientClass: new (config: AwsClientConfig) => T,
-  region: string = process.env.AWS_DEFAULT_REGION ?? "us-east-1"
+  region: string = process.env.AWS_DEFAULT_REGION ?? "us-east-1",
 ): T {
   const key = `${ClientClass.name}::${region}`;
 
   if (!clientCache.has(key)) {
     const config: AwsClientConfig = {
-      endpoint: ADAPTER_CONFIG.adapterMode === "ministack"
-        ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
-        : ADAPTER_CONFIG.endpointConfig.localstackEndpoint,
+      endpoint: getAdapterEndpoint(),
       region,
       credentials: {
         accessKeyId: ADAPTER_CONFIG.authConfig.accessKeyId,
         secretAccessKey: ADAPTER_CONFIG.authConfig.secretAccessKey,
       },
-      // S3 requires path-style URLs with LocalStack / Ministack
+      // S3 requires path-style URLs with the emulators
       forcePathStyle: ClientClass.name === "S3Client" ? true : undefined,
     };
     clientCache.set(key, new ClientClass(config));
@@ -201,15 +207,13 @@ const userClientCache = new Map<string, unknown>();
 export function getUserClient<T>(
   ClientClass: new (config: AwsClientConfig) => T,
   userCreds: UserCredentials,
-  region: string = process.env.AWS_DEFAULT_REGION ?? "us-east-1"
+  region: string = process.env.AWS_DEFAULT_REGION ?? "us-east-1",
 ): T {
   const key = `${ClientClass.name}::${region}::${userCreds.accessKeyId}`;
 
   if (!userClientCache.has(key)) {
     const config: AwsClientConfig = {
-      endpoint: ADAPTER_CONFIG.adapterMode === "ministack"
-        ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
-        : ADAPTER_CONFIG.endpointConfig.localstackEndpoint,
+      endpoint: getAdapterEndpoint(),
       region,
       credentials: {
         accessKeyId: userCreds.accessKeyId,
@@ -225,16 +229,9 @@ export function getUserClient<T>(
 }
 
 /**
- * Extracts user credentials and identity from request headers.
- * Falls back to default adapter credentials if no user creds are present.
- *
- * Expected headers:
- *   x-aws-access-key-id
- *   x-aws-secret-access-key
- *   x-aws-session-token (optional)
- *   x-aws-region (optional)
- *   x-aws-username (optional — for data isolation)
- *   x-aws-is-super-admin (optional — for permission checks)
+ * Extracts server-side adapter credentials and request region.
+ * Authentication identity is resolved from the server-side session; legacy
+ * client credential headers are intentionally ignored.
  */
 export function extractUserCredentials(request: Request): {
   credentials: UserCredentials;
@@ -242,18 +239,17 @@ export function extractUserCredentials(request: Request): {
   username: string;
   isSuperAdmin: boolean;
 } {
-  const accessKeyId = request.headers.get("x-aws-access-key-id") || ADAPTER_CONFIG.authConfig.accessKeyId;
-  const secretAccessKey = request.headers.get("x-aws-secret-access-key") || ADAPTER_CONFIG.authConfig.secretAccessKey;
-  const sessionToken = request.headers.get("x-aws-session-token") || undefined;
-  const region = request.headers.get("x-aws-region") || process.env.AWS_DEFAULT_REGION || "us-east-1";
-  const username = request.headers.get("x-aws-username") || "anonymous";
-  const isSuperAdmin = request.headers.get("x-aws-is-super-admin") === "true";
+  const region =
+    request.headers.get("x-aws-region") || process.env.AWS_DEFAULT_REGION || "us-east-1";
 
   return {
-    credentials: { accessKeyId, secretAccessKey, sessionToken },
+    credentials: {
+      accessKeyId: ADAPTER_CONFIG.authConfig.accessKeyId,
+      secretAccessKey: ADAPTER_CONFIG.authConfig.secretAccessKey,
+    },
     region,
-    username,
-    isSuperAdmin,
+    username: "session-user",
+    isSuperAdmin: false,
   };
 }
 
@@ -263,7 +259,7 @@ export function extractUserCredentials(request: Request): {
  */
 export function getUserClientFromRequest<T>(
   ClientClass: new (config: AwsClientConfig) => T,
-  request: Request
+  request: Request,
 ): T {
   const { credentials, region } = extractUserCredentials(request);
   return getUserClient(ClientClass, credentials, region);
@@ -276,15 +272,20 @@ export function getUserClientFromRequest<T>(
  * running. Called by the health API route.
  */
 export async function detectProvider(): Promise<
-  "ministack" | "localstack" | "unknown"
+  "ministack" | "localstack" | "localemu" | "unknown"
 > {
-  const base = ADAPTER_CONFIG.adapterMode === "ministack"
-    ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
-    : ADAPTER_CONFIG.endpointConfig.localstackEndpoint;
+  const base = getAdapterEndpoint();
 
   try {
     const res = await fetch(`${base}/_ministack/health`);
     if (res.ok) return "ministack";
+  } catch {
+    // provider not available — try next
+  }
+
+  try {
+    const res = await fetch(`${base}/_localemu/health`);
+    if (res.ok) return "localemu";
   } catch {
     // provider not available — try next
   }
@@ -397,6 +398,7 @@ export const ssm = getClient(SSMClient);
 export const organizations = getClient(OrganizationsClient);
 export const resourceGroups = getClient(ResourceGroupsClient);
 export const resourceGroupsTagging = getClient(ResourceGroupsTaggingAPIClient);
+export const appConfig = getClient(AppConfigClient);
 export const support = getClient(SupportClient);
 export const ram = getClient(RAMClient);
 export const xray = getClient(XRayClient);
@@ -429,10 +431,17 @@ export const bedrockAgent = getClient(BedrockAgentClient);
 export const bedrockAgentRuntime = getClient(BedrockAgentRuntimeClient);
 export const bedrockRuntime = getClient(BedrockRuntimeClient);
 export const sagemaker = getClient(SageMakerClient);
+export const comprehend = getClient(ComprehendClient);
+export const rekognition = getClient(RekognitionClient);
+export const lexModelsV2 = getClient(LexModelsV2Client);
+export const quicksight = getClient(QuickSightClient);
+export const connect = getClient(ConnectClient);
+export const deviceFarm = getClient(DeviceFarmClient);
 
 // ─── Singleton exports — Media ────────────────────────────────────────────────
 
 export const mediaconvert = getClient(MediaConvertClient);
+export const polly = getClient(PollyClient);
 
 // ─── Singleton exports — IoT ──────────────────────────────────────────────────
 
@@ -525,6 +534,7 @@ export {
   OrganizationsClient,
   ResourceGroupsClient,
   ResourceGroupsTaggingAPIClient,
+  AppConfigClient,
   SupportClient,
   RAMClient,
   XRayClient,
@@ -551,8 +561,15 @@ export {
   BedrockAgentRuntimeClient,
   BedrockRuntimeClient,
   SageMakerClient,
+  ComprehendClient,
+  RekognitionClient,
+  LexModelsV2Client,
+  QuickSightClient,
+  ConnectClient,
+  DeviceFarmClient,
   // Media
   MediaConvertClient,
+  PollyClient,
   // IoT
   IoTClient,
   IoTDataPlaneClient,

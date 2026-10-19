@@ -9,14 +9,13 @@ import Link from "@cloudscape-design/components/link";
 
 export default function BedrockAgentCorePage() {
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon Bedrock AgentCore</Header>
         <Container>
           <Box>
-            AgentCore extends Bedrock Agents with advanced runtime capabilities.
-            Manage your agents via{" "}
-            <Link href="/bedrock-agent">Bedrock Agents</Link>.
+            AgentCore extends Bedrock Agents with advanced runtime capabilities. Manage your agents
+            via <Link href="/bedrock-agent">Bedrock Agents</Link>.
           </Box>
         </Container>
       </SpaceBetween>

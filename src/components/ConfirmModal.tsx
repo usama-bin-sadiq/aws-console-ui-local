@@ -88,7 +88,9 @@ export default function ConfirmModal({
       const modalEl = document.querySelector('[role="dialog"]') as HTMLElement | null;
       if (!modalEl) return;
       const focusable = Array.from(
-        modalEl.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+        modalEl.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
       ) as HTMLElement[];
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -120,10 +122,11 @@ export default function ConfirmModal({
       footer={
         <Box float="right">
           <SpaceBetween direction="horizontal" size="xs">
-            <Button variant="link" onClick={handleDismiss} disabled={loading}>
+            <Button key="cancel" variant="link" onClick={handleDismiss} disabled={loading}>
               Cancel
             </Button>
             <Button
+              key="confirm"
               variant="primary"
               onClick={handleConfirm}
               disabled={!isConfirmed}
@@ -136,7 +139,7 @@ export default function ConfirmModal({
       }
     >
       <SpaceBetween size="m">
-        <Alert type="warning" statusIconAriaLabel="Warning">
+        <Alert key="warning" type="warning" statusIconAriaLabel="Warning">
           This action cannot be undone. The {resourceType}{" "}
           <Box variant="span" fontWeight="bold">
             {resourceName}
@@ -145,6 +148,7 @@ export default function ConfirmModal({
         </Alert>
 
         <FormField
+          key="confirmation-field"
           label={
             <>
               To confirm, type{" "}

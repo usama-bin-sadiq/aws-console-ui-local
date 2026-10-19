@@ -39,22 +39,16 @@ export default function TagEditor({
 }: TagEditorProps) {
   const handleKeyChange = useCallback(
     (index: number, newKey: string) => {
-      onChange(
-        tags.map((tag, i) => (i === index ? { ...tag, key: newKey } : tag))
-      );
+      onChange(tags.map((tag, i) => (i === index ? { ...tag, key: newKey } : tag)));
     },
-    [tags, onChange]
+    [tags, onChange],
   );
 
   const handleValueChange = useCallback(
     (index: number, newValue: string) => {
-      onChange(
-        tags.map((tag, i) =>
-          i === index ? { ...tag, value: newValue } : tag
-        )
-      );
+      onChange(tags.map((tag, i) => (i === index ? { ...tag, value: newValue } : tag)));
     },
-    [tags, onChange]
+    [tags, onChange],
   );
 
   const handleAddTag = useCallback(() => {
@@ -66,20 +60,14 @@ export default function TagEditor({
     (index: number) => {
       onChange(tags.filter((_, i) => i !== index));
     },
-    [tags, onChange]
+    [tags, onChange],
   );
 
   return (
     <SpaceBetween size="s">
       {/* Column headers — only shown when there is at least one tag row */}
       {tags.length > 0 && (
-        <Grid
-          gridDefinition={[
-            { colspan: 5 },
-            { colspan: 5 },
-            { colspan: 2 },
-          ]}
-        >
+        <Grid gridDefinition={[{ colspan: 5 }, { colspan: 5 }, { colspan: 2 }]}>
           <Box variant="awsui-key-label">Key</Box>
           <Box variant="awsui-key-label">Value</Box>
           {/* Spacer for the remove-button column */}
@@ -89,14 +77,7 @@ export default function TagEditor({
 
       {/* One row per tag */}
       {tags.map((tag, index) => (
-        <Grid
-          key={index}
-          gridDefinition={[
-            { colspan: 5 },
-            { colspan: 5 },
-            { colspan: 2 },
-          ]}
-        >
+        <Grid key={index} gridDefinition={[{ colspan: 5 }, { colspan: 5 }, { colspan: 2 }]}>
           <FormField>
             <Input
               value={tag.key}
@@ -110,9 +91,7 @@ export default function TagEditor({
           <FormField>
             <Input
               value={tag.value}
-              onChange={({ detail }) =>
-                handleValueChange(index, detail.value)
-              }
+              onChange={({ detail }) => handleValueChange(index, detail.value)}
               placeholder="Value (optional)"
               readOnly={readOnly}
               ariaLabel={`Tag ${index + 1} value`}
@@ -135,11 +114,7 @@ export default function TagEditor({
       {/* Add tag button + count helper */}
       {!readOnly && (
         <SpaceBetween size="xs">
-          <Button
-            onClick={handleAddTag}
-            disabled={tags.length >= maxTags}
-            iconName="add-plus"
-          >
+          <Button onClick={handleAddTag} disabled={tags.length >= maxTags} iconName="add-plus">
             Add tag
           </Button>
           <Box variant="small" color="text-body-secondary">

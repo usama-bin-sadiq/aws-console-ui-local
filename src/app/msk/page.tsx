@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -32,7 +33,7 @@ export default function MSKPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/msk");
+      const res = await apiFetch("/api/msk");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch clusters");
       setClusters(data.clusters || []);
@@ -55,7 +56,7 @@ export default function MSKPage() {
     setClusterNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/msk", {
+      const res = await apiFetch("/api/msk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clusterName }),
@@ -76,7 +77,7 @@ export default function MSKPage() {
 
   const deleteCluster = async (arn: string) => {
     try {
-      const res = await fetch(`/api/msk?clusterArn=${encodeURIComponent(arn)}`, {
+      const res = await apiFetch(`/api/msk?clusterArn=${encodeURIComponent(arn)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -90,7 +91,7 @@ export default function MSKPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon MSK</Header>
 
@@ -100,41 +101,36 @@ export default function MSKPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Create cluster
-                  </Button>
-                }
-              >
-                Clusters ({clusters.length})
-              </Header>
-            }
-            items={clusters}
-            columnDefinitions={[
-              { header: "Cluster name", cell: (item) => item.ClusterName },
-              { header: "State", cell: (item) => item.State },
-              { header: "Cluster type", cell: (item) => item.ClusterType },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button
-                    onClick={() => deleteCluster(item.ClusterArn)}
-                    formAction="none"
-                  >
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No clusters found.</Box>}
-          />
-        </Container>
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button variant="primary" onClick={() => setCreateModal(true)}>
+                  Create cluster
+                </Button>
+              }
+            >
+              Clusters ({clusters.length})
+            </Header>
+          }
+          items={clusters}
+          columnDefinitions={[
+            { header: "Cluster name", cell: (item) => item.ClusterName },
+            { header: "State", cell: (item) => item.State },
+            { header: "Cluster type", cell: (item) => item.ClusterType },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button onClick={() => deleteCluster(item.ClusterArn)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No clusters found.</Box>}
+        />
 
         <Modal
           visible={createModal}
@@ -150,10 +146,21 @@ export default function MSKPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Cluster name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={clusterNameError}>
+            <FormField
+              label={
+                <>
+                  Cluster name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={clusterNameError}
+            >
               <Input
                 value={clusterName}
-                onChange={(e) => { setClusterName(e.detail.value); setClusterNameError(null); }}
+                onChange={(e) => {
+                  setClusterName(e.detail.value);
+                  setClusterNameError(null);
+                }}
                 placeholder="my-cluster"
               />
             </FormField>

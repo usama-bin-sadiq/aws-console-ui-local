@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -34,7 +35,7 @@ export default function InternetGatewayPage() {
 
   async function loadVpcs() {
     try {
-      const res = await fetch("/api/vpc");
+      const res = await apiFetch("/api/vpc");
       const data = await res.json();
       setVpcs(data.vpcs || []);
     } catch {
@@ -46,7 +47,7 @@ export default function InternetGatewayPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/internet-gateway");
+      const res = await apiFetch("/api/internet-gateway");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setGateways(data.internetGateways || []);
@@ -57,12 +58,15 @@ export default function InternetGatewayPage() {
     }
   }
 
-  useEffect(() => { load(); loadVpcs(); }, []);
+  useEffect(() => {
+    load();
+    loadVpcs();
+  }, []);
 
   async function handleCreate() {
     setSubmitting(true);
     try {
-      const res = await fetch("/api/internet-gateway", {
+      const res = await apiFetch("/api/internet-gateway", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create" }),
@@ -80,7 +84,7 @@ export default function InternetGatewayPage() {
   async function handleAttach() {
     setSubmitting(true);
     try {
-      const res = await fetch("/api/internet-gateway", {
+      const res = await apiFetch("/api/internet-gateway", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "attach", igwId: attachIgwId, vpcId: attachVpcId }),
@@ -101,7 +105,7 @@ export default function InternetGatewayPage() {
   async function handleDetach(igwId: string, vpcId: string) {
     setDetaching(igwId);
     try {
-      const res = await fetch("/api/internet-gateway", {
+      const res = await apiFetch("/api/internet-gateway", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "detach", igwId, vpcId }),
@@ -121,7 +125,9 @@ export default function InternetGatewayPage() {
     setDeleting(true);
     try {
       for (const igw of selected) {
-        const res = await fetch(`/api/internet-gateway?igwId=${igw.InternetGatewayId}`, { method: "DELETE" });
+        const res = await apiFetch(`/api/internet-gateway?igwId=${igw.InternetGatewayId}`, {
+          method: "DELETE",
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
       }
@@ -135,52 +141,64 @@ export default function InternetGatewayPage() {
   }
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
           variant="h1"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh">Refresh</Button>
-              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>Delete</Button>
+              <Button onClick={load} iconName="refresh">
+                Refresh
+              </Button>
+              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>
+                Delete
+              </Button>
               <Button onClick={() => setShowAttach(true)}>Attach to VPC</Button>
-              <Button variant="primary" loading={submitting} onClick={handleCreate}>Create Internet Gateway</Button>
+              <Button variant="primary" loading={submitting} onClick={handleCreate}>
+                Create Internet Gateway
+              </Button>
             </SpaceBetween>
           }
         >
           Internet Gateways
         </Header>
 
-        {error && <Alert type="error" dismissible onDismiss={() => setError(null)}>{error}</Alert>}
+        {error && (
+          <Alert type="error" dismissible onDismiss={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-        <Container>
-          <Table
-            loading={loading}
-            loadingText="Loading internet gateways..."
-            items={gateways}
-            selectionType="multi"
-            selectedItems={selected}
-            onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
-            columnDefinitions={[
-              { id: "igwId", header: "Internet Gateway ID", cell: (item) => item.InternetGatewayId },
-              {
-                id: "attachedVpc",
-                header: "Attached VPC",
-                cell: (item) => item.Attachments && item.Attachments.length > 0
+        <Table
+          loading={loading}
+          loadingText="Loading internet gateways..."
+          items={gateways}
+          selectionType="multi"
+          selectedItems={selected}
+          onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
+          columnDefinitions={[
+            { id: "igwId", header: "Internet Gateway ID", cell: (item) => item.InternetGatewayId },
+            {
+              id: "attachedVpc",
+              header: "Attached VPC",
+              cell: (item) =>
+                item.Attachments && item.Attachments.length > 0
                   ? item.Attachments.map((a) => a.VpcId).join(", ")
                   : "—",
-              },
-              {
-                id: "state",
-                header: "State",
-                cell: (item) => item.Attachments && item.Attachments.length > 0
+            },
+            {
+              id: "state",
+              header: "State",
+              cell: (item) =>
+                item.Attachments && item.Attachments.length > 0
                   ? item.Attachments[0].State
                   : "detached",
-              },
-              {
-                id: "actions",
-                header: "Actions",
-                cell: (item) => item.Attachments && item.Attachments.length > 0 ? (
+            },
+            {
+              id: "actions",
+              header: "Actions",
+              cell: (item) =>
+                item.Attachments && item.Attachments.length > 0 ? (
                   <Button
                     variant="link"
                     loading={detaching === item.InternetGatewayId}
@@ -189,17 +207,20 @@ export default function InternetGatewayPage() {
                   >
                     Detach
                   </Button>
-                ) : "—",
-              },
-            ]}
-            empty={
-              <Box textAlign="center" color="inherit">
-                <b>No internet gateways</b>
-                <Box variant="p" color="inherit">No internet gateways found.</Box>
+                ) : (
+                  "—"
+                ),
+            },
+          ]}
+          empty={
+            <Box textAlign="center" color="inherit">
+              <b>No internet gateways</b>
+              <Box variant="p" color="inherit">
+                No internet gateways found.
               </Box>
-            }
-          />
-        </Container>
+            </Box>
+          }
+        />
       </SpaceBetween>
 
       <Modal
@@ -210,7 +231,9 @@ export default function InternetGatewayPage() {
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setShowAttach(false)}>Cancel</Button>
-              <Button variant="primary" loading={submitting} onClick={handleAttach}>Attach</Button>
+              <Button variant="primary" loading={submitting} onClick={handleAttach}>
+                Attach
+              </Button>
             </SpaceBetween>
           </Box>
         }
@@ -219,15 +242,27 @@ export default function InternetGatewayPage() {
           <FormField label="Internet Gateway ID">
             <Select
               selectedOption={attachIgwId ? { value: attachIgwId, label: attachIgwId } : null}
-              options={gateways.filter((g) => !g.Attachments || g.Attachments.length === 0).map((gw) => ({ value: gw.InternetGatewayId, label: gw.InternetGatewayId }))}
+              options={gateways
+                .filter((g) => !g.Attachments || g.Attachments.length === 0)
+                .map((gw) => ({ value: gw.InternetGatewayId, label: gw.InternetGatewayId }))}
               placeholder="Select an internet gateway"
               onChange={({ detail }) => setAttachIgwId(detail.selectedOption.value || "")}
             />
           </FormField>
           <FormField label="VPC ID">
             <Select
-              selectedOption={attachVpcId ? { value: attachVpcId, label: `${attachVpcId} (${vpcs.find((v) => v.VpcId === attachVpcId)?.CidrBlock || ""})` } : null}
-              options={vpcs.map((vpc) => ({ value: vpc.VpcId, label: `${vpc.VpcId} (${vpc.CidrBlock || ""})` }))}
+              selectedOption={
+                attachVpcId
+                  ? {
+                      value: attachVpcId,
+                      label: `${attachVpcId} (${vpcs.find((v) => v.VpcId === attachVpcId)?.CidrBlock || ""})`,
+                    }
+                  : null
+              }
+              options={vpcs.map((vpc) => ({
+                value: vpc.VpcId,
+                label: `${vpc.VpcId} (${vpc.CidrBlock || ""})`,
+              }))}
               placeholder="Select a VPC"
               onChange={({ detail }) => setAttachVpcId(detail.selectedOption.value || "")}
             />

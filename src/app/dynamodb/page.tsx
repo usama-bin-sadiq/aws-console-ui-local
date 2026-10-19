@@ -1,19 +1,22 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api-client";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@cloudscape-design/components/header";
-import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import Modal from "@cloudscape-design/components/modal";
 import Input from "@cloudscape-design/components/input";
 import Select from "@cloudscape-design/components/select";
 import SpaceBetween from "@cloudscape-design/components/space-between";
-import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
 import Alert from "@cloudscape-design/components/alert";
+import type { TableProps } from "@cloudscape-design/components/table";
+import { ResourceTable } from "@/features/resource-table";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { CopyableText } from "@/components/ui/CopyableText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+
+// ── Types ──────────────────────────────────────────────────────────────────
 
 interface DynamoTable {
   TableName?: string;
@@ -24,21 +27,107 @@ interface DynamoTable {
   WriteCapacityUnits?: number;
 }
 
+// ── Table Configuration ────────────────────────────────────────────────────
+
+const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<Record<string, unknown>>[] = [
+  {
+    id: "name",
+    header: "Name",
+    cell: (item) => (
+      <a
+        href={`/dynamodb/${encodeURIComponent(String(item.TableName || ""))}`}
+        style={{
+          color: "var(--awsui-color-text-interactive-default)",
+          textDecoration: "underline",
+        }}
+      >
+        {String(item.TableName)}
+      </a>
+    ),
+    sortingField: "TableName",
+    isRowHeader: true,
+  },
+  {
+    id: "status",
+    header: "Status",
+    cell: (item) => {
+      const status = String(item.TableStatus);
+      let badgeStatus: "success" | "warning" | "error" | "info" = "info";
+      if (status === "ACTIVE") badgeStatus = "success";
+      else if (status === "CREATING" || status === "UPDATING" || status === "DELETING")
+        badgeStatus = "warning";
+      else if (status === "FAILED") badgeStatus = "error";
+      return <StatusBadge status={badgeStatus} label={status ?? "unknown"} />;
+    },
+    sortingField: "TableStatus",
+  },
+  {
+    id: "items",
+    header: "Items",
+    cell: (item) => Number(item.ItemCount) || 0,
+    sortingField: "ItemCount",
+  },
+  {
+    id: "size",
+    header: "Size",
+    cell: (item) => {
+      const bytes = Number(item.TableSizeBytes) || 0;
+      if (bytes === 0) return "—";
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    },
+  },
+  {
+    id: "readCapacity",
+    header: "Read capacity",
+    cell: (item) => (item.ReadCapacityUnits !== undefined ? String(item.ReadCapacityUnits) : "—"),
+  },
+  {
+    id: "writeCapacity",
+    header: "Write capacity",
+    cell: (item) => (item.WriteCapacityUnits !== undefined ? String(item.WriteCapacityUnits) : "—"),
+  },
+];
+
+const DEFAULT_VISIBLE_COLUMNS = [
+  "name",
+  "status",
+  "items",
+  "size",
+  "readCapacity",
+  "writeCapacity",
+];
+
+// ── Page Component ─────────────────────────────────────────────────────────
+
 export default function DynamoDBPage() {
   const router = useRouter();
   const [tables, setTables] = useState<DynamoTable[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedItems, setSelectedItems] = useState<DynamoTable[]>([]);
+
+  // Create modal state
   const [createModal, setCreateModal] = useState(false);
   const [newTable, setNewTable] = useState("");
   const [partitionKeyName, setPartitionKeyName] = useState("id");
-  const [partitionKeyType, setPartitionKeyType] = useState<{ label: string; value: string }>({ label: "String (S)", value: "S" });
+  const [partitionKeyType, setPartitionKeyType] = useState<{ label: string; value: string }>({
+    label: "String (S)",
+    value: "S",
+  });
   const [sortKeyName, setSortKeyName] = useState("");
-  const [sortKeyType, setSortKeyType] = useState<{ label: string; value: string }>({ label: "String (S)", value: "S" });
-  const [billingMode, setBillingMode] = useState<{ label: string; value: string }>({ label: "On-demand (PAY_PER_REQUEST)", value: "PAY_PER_REQUEST" });
+  const [sortKeyType, setSortKeyType] = useState<{ label: string; value: string }>({
+    label: "String (S)",
+    value: "S",
+  });
+  const [billingMode, setBillingMode] = useState<{ label: string; value: string }>({
+    label: "On-demand (PAY_PER_REQUEST)",
+    value: "PAY_PER_REQUEST",
+  });
   const [createLoading, setCreateLoading] = useState(false);
 
-  // Delete confirmation
+  // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string>("");
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
@@ -54,19 +143,26 @@ export default function DynamoDBPage() {
     { label: "Provisioned (PROVISIONED)", value: "PROVISIONED" },
   ];
 
-  const fetchTables = async () => {
+  // ── Data Fetching ──────────────────────────────────────────────────────
+
+  const fetchTables = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch("/api/dynamodb");
+      const res = await apiFetch("/api/dynamodb");
       const data = await res.json();
       setTables(data.tables || []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load tables");
     }
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchTables(); }, []);
+  useEffect(() => {
+    fetchTables();
+  }, [fetchTables]);
+
+  // ── Create Table ───────────────────────────────────────────────────────
 
   const createTable = async () => {
     if (!newTable.trim()) return;
@@ -75,14 +171,12 @@ export default function DynamoDBPage() {
       const attrDefs: any[] = [
         { AttributeName: partitionKeyName, AttributeType: partitionKeyType.value },
       ];
-      const keySchema: any[] = [
-        { AttributeName: partitionKeyName, KeyType: "HASH" },
-      ];
+      const keySchema: any[] = [{ AttributeName: partitionKeyName, KeyType: "HASH" }];
       if (sortKeyName.trim()) {
         attrDefs.push({ AttributeName: sortKeyName, AttributeType: sortKeyType.value });
         keySchema.push({ AttributeName: sortKeyName, KeyType: "RANGE" });
       }
-      const res = await fetch("/api/dynamodb", {
+      const res = await apiFetch("/api/dynamodb", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -108,16 +202,18 @@ export default function DynamoDBPage() {
     setCreateLoading(false);
   };
 
-  const openDeleteModal = (name: string) => {
+  // ── Delete Table ───────────────────────────────────────────────────────
+
+  const openDeleteModal = useCallback((name: string) => {
     setDeleteTarget(name);
     setDeleteConfirmName("");
     setDeleteModal(true);
-  };
+  }, []);
 
   const deleteTable = async () => {
     if (deleteConfirmName !== deleteTarget) return;
     try {
-      const res = await fetch(`/api/dynamodb?tableName=${deleteTarget}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/dynamodb?tableName=${deleteTarget}`, { method: "DELETE" });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setDeleteModal(false);
@@ -129,64 +225,60 @@ export default function DynamoDBPage() {
     }
   };
 
-  return (
-    <div style={{ padding: "16px" }}>
-      <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          actions={
-            <Button variant="primary" onClick={() => setCreateModal(true)} ariaLabel="Create DynamoDB table">
-              Create Table
-            </Button>
-          }
-        >
-          DynamoDB
-        </Header>
+  // ── Bulk Delete Action ─────────────────────────────────────────────────
 
+  const handleBulkDelete = useCallback(() => {
+    if (selectedItems.length === 0) return;
+    const names = selectedItems.map((t) => t.TableName).filter(Boolean);
+    if (names.length === 1) {
+      openDeleteModal(names[0]!);
+    } else {
+      // For multiple tables, use the first as target for confirmation
+      openDeleteModal(names[0]!);
+    }
+  }, [selectedItems, openDeleteModal]);
+
+  // ── Action Definitions ─────────────────────────────────────────────────
+
+  const actions = [
+    {
+      id: "delete",
+      label: "Delete tables",
+      disabled: (items: DynamoTable[]) => items.length === 0,
+      danger: true,
+      onClick: handleBulkDelete,
+    },
+  ];
+
+  // ── Render ─────────────────────────────────────────────────────────────
+
+  return (
+    <div style={{ padding: 0 }}>
+      <SpaceBetween size="l">
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>
             {error}
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={<Header variant="h2">Tables ({tables.length})</Header>}
-            items={tables}
-            columnDefinitions={[
-              { header: "Name", cell: (item) => (
-                <a href={`/dynamodb/${encodeURIComponent(item.TableName || "")}`} style={{ color: "var(--awsui-color-text-interactive-default)", textDecoration: "underline" }}>
-                  {item.TableName}
-                </a>
-              ) },
-              { header: "Status", cell: (item) => item.TableStatus },
-              { header: "Items", cell: (item) => item.ItemCount || 0 },
-              {
-                header: "Size",
-                cell: (item) => {
-                  const bytes = item.TableSizeBytes;
-                  if (!bytes || bytes === 0) return "—";
-                  if (bytes < 1024) return `${bytes} B`;
-                  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-                  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-                },
-              },
-              { header: "Read capacity", cell: (item) => item.ReadCapacityUnits ?? "—" },
-              { header: "Write capacity", cell: (item) => item.WriteCapacityUnits ?? "—" },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button onClick={() => router.push(`/dynamodb/${encodeURIComponent(item.TableName!)}`)} formAction="none" ariaLabel={`View DynamoDB table ${item.TableName}`}>View</Button>
-                    <Button onClick={() => openDeleteModal(item.TableName!)} formAction="none" ariaLabel={`Delete DynamoDB table ${item.TableName}`}>Delete</Button>
-                  </SpaceBetween>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No tables found. Create one to get started.</Box>}
-          />
-        </Container>
+        <ResourceTable
+          config={{
+            serviceKey: "dynamodb",
+            resourceName: "Tables",
+            columnDefinitions: COLUMN_DEFINITIONS,
+            defaultVisibleColumns: DEFAULT_VISIBLE_COLUMNS,
+            trackBy: "TableName",
+            createLabel: "Create table",
+            createHref: "/dynamodb/create",
+            filterPlaceholder: "Filter tables",
+          }}
+          items={tables as unknown as Record<string, unknown>[]}
+          loading={loading}
+          selectedItems={selectedItems as unknown as Record<string, unknown>[]}
+          onSelectionChange={(items) => setSelectedItems(items as unknown as DynamoTable[])}
+          onRefresh={fetchTables}
+          actions={actions as any}
+        />
 
         {/* Create Table Modal */}
         <Modal
@@ -196,22 +288,35 @@ export default function DynamoDBPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createTable} loading={createLoading}>Create</Button>
+              <Button variant="primary" onClick={createTable} loading={createLoading}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
           <SpaceBetween size="m" direction="vertical">
             <FormField label="Table Name">
-              <Input value={newTable} onChange={(e) => setNewTable(e.detail.value)} placeholder="my-table" />
+              <Input
+                value={newTable}
+                onChange={(e) => setNewTable(e.detail.value)}
+                placeholder="my-table"
+              />
             </FormField>
             <FormField label="Partition Key">
               <SpaceBetween size="s" direction="vertical">
-                <Input value={partitionKeyName} onChange={(e) => setPartitionKeyName(e.detail.value)} placeholder="id" />
+                <Input
+                  value={partitionKeyName}
+                  onChange={(e) => setPartitionKeyName(e.detail.value)}
+                  placeholder="id"
+                />
                 <Select
                   selectedOption={partitionKeyType}
                   onChange={(e) => {
                     const opt = e.detail.selectedOption;
-                    setPartitionKeyType({ label: String(opt.label || ""), value: String(opt.value || "S") });
+                    setPartitionKeyType({
+                      label: String(opt.label || ""),
+                      value: String(opt.value || "S"),
+                    });
                   }}
                   options={typeOptions}
                   ariaLabel="Partition key type"
@@ -220,12 +325,19 @@ export default function DynamoDBPage() {
             </FormField>
             <FormField label="Sort Key (optional)">
               <SpaceBetween size="s" direction="vertical">
-                <Input value={sortKeyName} onChange={(e) => setSortKeyName(e.detail.value)} placeholder="Leave empty for no sort key" />
+                <Input
+                  value={sortKeyName}
+                  onChange={(e) => setSortKeyName(e.detail.value)}
+                  placeholder="Leave empty for no sort key"
+                />
                 <Select
                   selectedOption={sortKeyType}
                   onChange={(e) => {
                     const opt = e.detail.selectedOption;
-                    setSortKeyType({ label: String(opt.label || ""), value: String(opt.value || "S") });
+                    setSortKeyType({
+                      label: String(opt.label || ""),
+                      value: String(opt.value || "S"),
+                    });
                   }}
                   options={typeOptions}
                   ariaLabel="Sort key type"
@@ -237,7 +349,10 @@ export default function DynamoDBPage() {
                 selectedOption={billingMode}
                 onChange={(e) => {
                   const opt = e.detail.selectedOption;
-                  setBillingMode({ label: String(opt.label || ""), value: String(opt.value || "PAY_PER_REQUEST") });
+                  setBillingMode({
+                    label: String(opt.label || ""),
+                    value: String(opt.value || "PAY_PER_REQUEST"),
+                  });
                 }}
                 options={billingOptions}
                 ariaLabel="Billing mode"
@@ -254,16 +369,28 @@ export default function DynamoDBPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setDeleteModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={deleteTable} disabled={deleteConfirmName !== deleteTarget} ariaLabel="Confirm delete table">Delete</Button>
+              <Button
+                variant="primary"
+                onClick={deleteTable}
+                disabled={deleteConfirmName !== deleteTarget}
+                ariaLabel="Confirm delete table"
+              >
+                Delete
+              </Button>
             </SpaceBetween>
           }
         >
           <SpaceBetween size="m" direction="vertical">
             <Alert type="warning">
-              This action cannot be undone. The table <strong>{deleteTarget}</strong> and all its data will be permanently deleted.
+              This action cannot be undone. The table <strong>{deleteTarget}</strong> and all its
+              data will be permanently deleted.
             </Alert>
             <FormField label={`Type the table name "${deleteTarget}" to confirm deletion.`}>
-              <Input value={deleteConfirmName} onChange={(e) => setDeleteConfirmName(e.detail.value)} placeholder={deleteTarget} />
+              <Input
+                value={deleteConfirmName}
+                onChange={(e) => setDeleteConfirmName(e.detail.value)}
+                placeholder={deleteTarget}
+              />
             </FormField>
           </SpaceBetween>
         </Modal>

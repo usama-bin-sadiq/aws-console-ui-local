@@ -39,7 +39,7 @@ export default function SecurityHubPage() {
   }, []);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Security Hub</Header>
 
@@ -49,20 +49,18 @@ export default function SecurityHubPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={<Header variant="h2">Findings ({findings.length})</Header>}
-            items={findings}
-            columnDefinitions={[
-              { header: "Title", cell: (item) => item.Title || "—" },
-              { header: "Severity", cell: (item) => item.Severity?.Label || "—" },
-              { header: "Workflow state", cell: (item) => item.WorkflowState || "—" },
-              { header: "Created at", cell: (item) => item.CreatedAt || "—" },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No findings found.</Box>}
-          />
-        </Container>
+        <Table
+          header={<Header variant="h2">Findings ({findings.length})</Header>}
+          items={findings}
+          columnDefinitions={[
+            { header: "Title", cell: (item) => item.Title || "—" },
+            { header: "Severity", cell: (item) => item.Severity?.Label || "—" },
+            { header: "Workflow state", cell: (item) => item.WorkflowState || "—" },
+            { header: "Created at", cell: (item) => item.CreatedAt || "—" },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No findings found.</Box>}
+        />
       </SpaceBetween>
     </div>
   );

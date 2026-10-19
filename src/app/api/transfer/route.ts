@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { ListServersCommand, CreateServerCommand, DeleteServerCommand, CreateUserCommand, TransferClient } from "@aws-sdk/client-transfer";
+import {
+  ListServersCommand,
+  CreateServerCommand,
+  DeleteServerCommand,
+  CreateUserCommand,
+  TransferClient,
+} from "@aws-sdk/client-transfer";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -12,7 +19,8 @@ export async function GET(request: Request) {
     const res = await transferClient.send(new ListServersCommand({}));
     return NextResponse.json({ servers: res.Servers || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -24,13 +32,25 @@ export async function POST(request: Request) {
     const transferClient = getUserClientFromRequest(TransferClient, request);
     const body = await request.json();
     if (body.action === "createUser") {
-      const res = await transferClient.send(new CreateUserCommand({ ServerId: body.serverId, UserName: body.userName, Role: body.role || "arn:aws:iam::000000000000:role/transfer-role" }));
+      const res = await transferClient.send(
+        new CreateUserCommand({
+          ServerId: body.serverId,
+          UserName: body.userName,
+          Role: body.role || "arn:aws:iam::000000000000:role/transfer-role",
+        }),
+      );
       return NextResponse.json({ user: res.UserName });
     }
-    const res = await transferClient.send(new CreateServerCommand({ Protocols: body.protocols || ["SFTP"], EndpointType: body.endpointType || "PUBLIC" }));
+    const res = await transferClient.send(
+      new CreateServerCommand({
+        Protocols: body.protocols || ["SFTP"],
+        EndpointType: body.endpointType || "PUBLIC",
+      }),
+    );
     return NextResponse.json({ serverId: res.ServerId });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -44,6 +64,7 @@ export async function DELETE(request: Request) {
     await transferClient.send(new DeleteServerCommand({ ServerId: searchParams.get("serverId")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

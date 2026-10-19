@@ -136,7 +136,11 @@ function extractCount(data: any, href: string): number {
     case "/security-group":
       return extractListLength(data.securityGroups);
     case "/iam":
-      return extractListLength(data.users) + extractListLength(data.roles) + extractListLength(data.policies);
+      return (
+        extractListLength(data.users) +
+        extractListLength(data.roles) +
+        extractListLength(data.policies)
+      );
     case "/sqs":
       return extractListLength(data.queues);
     case "/sns":
@@ -254,7 +258,7 @@ export function useResourceCounts(): UseResourceCountsResult {
         } catch {
           newCounts[href] = 0;
         }
-      })
+      }),
     );
 
     setCounts(newCounts);

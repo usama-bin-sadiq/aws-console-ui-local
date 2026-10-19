@@ -10,9 +10,12 @@ import {
   ListHealthChecksCommand,
   UpdateHealthCheckCommand,
   DeleteHealthCheckCommand,
+  GetHealthCheckStatusCommand,
+  ListQueryLoggingConfigsCommand,
 } from "@aws-sdk/client-route-53";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -29,14 +32,17 @@ export async function GET(request: Request) {
     const zonesRes = await route53Client.send(new ListHostedZonesCommand({}));
     const zones = [];
     for (const zone of zonesRes.HostedZones || []) {
-      const records = await route53Client.send(new ListResourceRecordSetsCommand({
-        HostedZoneId: zone.Id,
-      }));
+      const records = await route53Client.send(
+        new ListResourceRecordSetsCommand({
+          HostedZoneId: zone.Id,
+        }),
+      );
       zones.push({ ...zone, records: records.ResourceRecordSets || [] });
     }
     return NextResponse.json({ zones, adapterClient: "route53" });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -48,51 +54,100 @@ export async function POST(request: Request) {
     const route53Client = getUserClientFromRequest(Route53Client, request);
     const body = await request.json();
     if (body.action === "createZone") {
-      const res = await route53Client.send(new CreateHostedZoneCommand({
-        Name: body.name,
-        CallerReference: body.callerReference || Date.now().toString(),
-        VPC: body.vpc ? { VPCRegion: body.vpc.vpcRegion || "us-east-1", VPCId: body.vpc.vpcId || "vpc-default" } : undefined,
-      }));
+      const res = await route53Client.send(
+        new CreateHostedZoneCommand({
+          Name: body.name,
+          CallerReference: body.callerReference || Date.now().toString(),
+          VPC: body.vpc
+            ? {
+                VPCRegion: body.vpc.vpcRegion || "us-east-1",
+                VPCId: body.vpc.vpcId || "vpc-default",
+              }
+            : undefined,
+        }),
+      );
       return NextResponse.json({ zone: res.HostedZone, adapterClient: "route53" });
     }
     if (body.action === "createRecord") {
-      await route53Client.send(new ChangeResourceRecordSetsCommand({
-        HostedZoneId: body.hostedZoneId,
-        ChangeBatch: {
-          Changes: [{
-            Action: "CREATE",
-            ResourceRecordSet: body.resourceRecordSet,
-          }],
-        },
-      }));
+      await route53Client.send(
+        new ChangeResourceRecordSetsCommand({
+          HostedZoneId: body.hostedZoneId,
+          ChangeBatch: {
+            Changes: [
+              {
+                Action: "CREATE",
+                ResourceRecordSet: body.resourceRecordSet,
+              },
+            ],
+          },
+        }),
+      );
       return NextResponse.json({ success: true, adapterClient: "route53" });
     }
     if (body.action === "createHealthCheck") {
-      const res = await route53Client.send(new CreateHealthCheckCommand({
-        CallerReference: body.callerReference || Date.now().toString(),
-        HealthCheckConfig: body.healthCheckConfig || {
-          IPAddress: body.ipAddress || "127.0.0.1",
-          Port: body.port || 80,
-          Type: body.type || "HTTP",
-          ResourcePath: body.resourcePath || "/",
-          FullyQualifiedDomainName: body.fqdn || "example.com",
-        },
-      }));
+      const res = await route53Client.send(
+        new CreateHealthCheckCommand({
+          CallerReference: body.callerReference || Date.now().toString(),
+          HealthCheckConfig: body.healthCheckConfig || {
+            IPAddress: body.ipAddress || "127.0.0.1",
+            Port: body.port || 80,
+            Type: body.type || "HTTP",
+            ResourcePath: body.resourcePath || "/",
+            FullyQualifiedDomainName: body.fqdn || "example.com",
+          },
+        }),
+      );
       return NextResponse.json({ healthCheck: res.HealthCheck, adapterClient: "route53" });
     }
     if (body.action === "updateHealthCheck") {
-      const res = await route53Client.send(new UpdateHealthCheckCommand({
-        HealthCheckId: body.healthCheckId,
-        FullyQualifiedDomainName: body.fqdn,
-        IPAddress: body.ipAddress,
-        Port: body.port,
-        ResourcePath: body.resourcePath,
-      }));
+      const res = await route53Client.send(
+        new UpdateHealthCheckCommand({
+          HealthCheckId: body.healthCheckId,
+          FullyQualifiedDomainName: body.fqdn,
+          IPAddress: body.ipAddress,
+          Port: body.port,
+          ResourcePath: body.resourcePath,
+        }),
+      );
       return NextResponse.json({ healthCheck: res.HealthCheck, adapterClient: "route53" });
     }
-    return NextResponse.json({ error: "Unknown action. Supported: createZone, createRecord, createHealthCheck, updateHealthCheck", adapterClient: "route53" }, { status: 400 });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    if (body.action === "listQueryLoggingConfigs") {
+      const res = await route53Client.send(
+        new ListQueryLoggingConfigsCommand({
+          HostedZoneId: body.hostedZoneId,
+        }),
+      );
+      const configs = res.QueryLoggingConfigs || [];
+      return NextResponse.json({ items: configs, configs, adapterClient: "route53" });
+    }
+    if (body.action === "getHealthCheckStatus") {
+      const res = await route53Client.send(
+        new GetHealthCheckStatusCommand({
+          HealthCheckId: body.healthCheckId,
+        }),
+      );
+      const status = res.HealthCheckObservations || [];
+      return NextResponse.json({ status, healthCheckStatus: status, adapterClient: "route53" });
+    }
+    if (body.action === "deleteHealthCheck") {
+      await route53Client.send(new DeleteHealthCheckCommand({ HealthCheckId: body.healthCheckId }));
+      return NextResponse.json({
+        success: true,
+        healthCheckId: body.healthCheckId,
+        adapterClient: "route53",
+      });
+    }
+    return NextResponse.json(
+      {
+        error:
+          "Unknown action. Supported: createZone, createRecord, createHealthCheck, updateHealthCheck, listQueryLoggingConfigs, getHealthCheckStatus, deleteHealthCheck",
+        adapterClient: "route53",
+      },
+      { status: 400 },
+    );
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -111,7 +166,8 @@ export async function DELETE(request: Request) {
     }
     await route53Client.send(new DeleteHostedZoneCommand({ Id: zoneId! }));
     return NextResponse.json({ success: true, adapterClient: "route53" });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

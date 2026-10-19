@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { DescribeSnapshotsCommand, CreateSnapshotCommand, DeleteSnapshotCommand, EC2Client } from "@aws-sdk/client-ec2";
+import {
+  DescribeSnapshotsCommand,
+  CreateSnapshotCommand,
+  DeleteSnapshotCommand,
+  EC2Client,
+} from "@aws-sdk/client-ec2";
 import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
@@ -13,7 +18,8 @@ export async function GET(request: Request) {
     const res = await ec2Client.send(new DescribeSnapshotsCommand({ OwnerIds: ["self"] }));
     return NextResponse.json({ snapshots: res.Snapshots || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -24,10 +30,13 @@ export async function POST(request: Request) {
   try {
     const ec2Client = getUserClientFromRequest(EC2Client, request);
     const body = await request.json();
-    const res = await ec2Client.send(new CreateSnapshotCommand({ VolumeId: body.volumeId, Description: body.description || "" }));
+    const res = await ec2Client.send(
+      new CreateSnapshotCommand({ VolumeId: body.volumeId, Description: body.description || "" }),
+    );
     return NextResponse.json({ snapshot: res });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -38,9 +47,12 @@ export async function DELETE(request: Request) {
   try {
     const ec2Client = getUserClientFromRequest(EC2Client, request);
     const { searchParams } = new URL(request.url);
-    await ec2Client.send(new DeleteSnapshotCommand({ SnapshotId: searchParams.get("snapshotId")! }));
+    await ec2Client.send(
+      new DeleteSnapshotCommand({ SnapshotId: searchParams.get("snapshotId")! }),
+    );
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

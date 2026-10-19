@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
@@ -17,7 +18,13 @@ import Select from "@cloudscape-design/components/select";
 import Alert from "@cloudscape-design/components/alert";
 import TextFilter from "@cloudscape-design/components/text-filter";
 import Pagination from "@cloudscape-design/components/pagination";
-import { CloudWatchAlarm, CloudWatchMetric, CloudWatchLogGroup, CloudWatchLogStream, CloudWatchInsightsQuery } from "@/types/cloudwatch";
+import {
+  CloudWatchAlarm,
+  CloudWatchMetric,
+  CloudWatchLogGroup,
+  CloudWatchLogStream,
+  CloudWatchInsightsQuery,
+} from "@/types/cloudwatch";
 import TruncatedText from "@/components/TruncatedText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 
@@ -49,7 +56,9 @@ export default function CloudWatchPage() {
   const [logGroupNameInput, setLogGroupNameInput] = useState("");
 
   // Insights query state
-  const [insightsQuery, setInsightsQuery] = useState("fields @timestamp, @message | sort @timestamp desc | limit 20");
+  const [insightsQuery, setInsightsQuery] = useState(
+    "fields @timestamp, @message | sort @timestamp desc | limit 20",
+  );
   const [insightsResults, setInsightsResults] = useState<Record<string, unknown>[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [insightsQueryId, setInsightsQueryId] = useState<string | null>(null);
@@ -66,7 +75,7 @@ export default function CloudWatchPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/cloudwatch");
+      const res = await apiFetch("/api/cloudwatch");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const d = await res.json();
       if (d.error) throw new Error(d.error);
@@ -82,7 +91,9 @@ export default function CloudWatchPage() {
 
   const fetchLogStreams = useCallback(async (groupName: string) => {
     try {
-      const res = await fetch(`/api/cloudwatch?action=describeLogStreams&logGroupName=${encodeURIComponent(groupName)}`);
+      const res = await apiFetch(
+        `/api/cloudwatch?action=describeLogStreams&logGroupName=${encodeURIComponent(groupName)}`,
+      );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const d = await res.json();
       setLogStreams(d.logStreams || []);
@@ -102,7 +113,16 @@ export default function CloudWatchPage() {
   }, [selectedLogGroup, fetchLogStreams]);
 
   const openCreateAlarm = useCallback(() => {
-    setAlarmForm({ AlarmName: "", MetricName: "CPUUtilization", Namespace: "AWS/EC2", Statistic: "Average", Period: 300, Threshold: 80, ComparisonOperator: "GreaterThanThreshold", EvaluationPeriods: 1 });
+    setAlarmForm({
+      AlarmName: "",
+      MetricName: "CPUUtilization",
+      Namespace: "AWS/EC2",
+      Statistic: "Average",
+      Period: 300,
+      Threshold: 80,
+      ComparisonOperator: "GreaterThanThreshold",
+      EvaluationPeriods: 1,
+    });
     setEditingAlarmName(null);
     setAlarmModalVisible(true);
   }, []);
@@ -113,7 +133,7 @@ export default function CloudWatchPage() {
         action: editingAlarmName ? "updateAlarm" : "createAlarm",
         ...alarmForm,
       };
-      const res = await fetch("/api/cloudwatch", {
+      const res = await apiFetch("/api/cloudwatch", {
         method: editingAlarmName ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -140,7 +160,9 @@ export default function CloudWatchPage() {
 
   const handleDeleteAlarm = async (alarmName: string) => {
     try {
-      const res = await fetch(`/api/cloudwatch?alarmNames=${encodeURIComponent(alarmName)}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/cloudwatch?alarmNames=${encodeURIComponent(alarmName)}`, {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       fetchData();
     } catch (err: unknown) {
@@ -151,7 +173,7 @@ export default function CloudWatchPage() {
   const handleCreateLogGroup = async () => {
     if (!logGroupNameInput.trim()) return;
     try {
-      const res = await fetch("/api/cloudwatch", {
+      const res = await apiFetch("/api/cloudwatch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "createLogGroup", logGroupName: logGroupNameInput }),
@@ -167,7 +189,9 @@ export default function CloudWatchPage() {
 
   const handleDeleteLogGroup = async (name: string) => {
     try {
-      const res = await fetch(`/api/cloudwatch?logGroupName=${encodeURIComponent(name)}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/cloudwatch?logGroupName=${encodeURIComponent(name)}`, {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       if (selectedLogGroup === name) setSelectedLogGroup(null);
       fetchData();
@@ -179,7 +203,7 @@ export default function CloudWatchPage() {
   const handleRunInsightsQuery = async () => {
     setInsightsLoading(true);
     try {
-      const res = await fetch("/api/cloudwatch", {
+      const res = await apiFetch("/api/cloudwatch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -196,7 +220,9 @@ export default function CloudWatchPage() {
         setInsightsQueryId(d.queryId);
         // Poll for results briefly
         setTimeout(async () => {
-          const r2 = await fetch(`/api/cloudwatch?action=getQueryResults&queryId=${encodeURIComponent(d.queryId)}`);
+          const r2 = await apiFetch(
+            `/api/cloudwatch?action=getQueryResults&queryId=${encodeURIComponent(d.queryId)}`,
+          );
           const d2 = await r2.json();
           setInsightsResults(d2.results || []);
           setInsightsLoading(false);
@@ -223,13 +249,16 @@ export default function CloudWatchPage() {
 
   const alarmEmptyContent = (
     <Box textAlign="center">
-      No alarms configured. <Button onClick={openCreateAlarm} formAction="none">Create alarm</Button>
+      No alarms configured.{" "}
+      <Button onClick={openCreateAlarm} formAction="none">
+        Create alarm
+      </Button>
     </Box>
   );
 
   const pagedAlarms = filteredAlarms.slice(
     (alarmPageIndex - 1) * alarmPageSize,
-    alarmPageIndex * alarmPageSize
+    alarmPageIndex * alarmPageSize,
   );
 
   const alarmColumns: TableProps.ColumnDefinition<CloudWatchAlarm>[] = [
@@ -237,7 +266,15 @@ export default function CloudWatchPage() {
       id: "name",
       header: "Alarm Name",
       cell: (item) => (
-        <Button variant="link" onClick={() => { setAlarmForm({ ...item, AlarmName: item.AlarmName || "" }); setEditingAlarmName(item.AlarmName || null); setAlarmModalVisible(true); }} formAction="none">
+        <Button
+          variant="link"
+          onClick={() => {
+            setAlarmForm({ ...item, AlarmName: item.AlarmName || "" });
+            setEditingAlarmName(item.AlarmName || null);
+            setAlarmModalVisible(true);
+          }}
+          formAction="none"
+        >
           {item.AlarmName}
         </Button>
       ),
@@ -248,7 +285,11 @@ export default function CloudWatchPage() {
       id: "state",
       header: "State",
       cell: (item) => (
-        <StatusIndicator type={item.AlarmState === "OK" ? "success" : item.AlarmState === "ALARM" ? "error" : "warning"}>
+        <StatusIndicator
+          type={
+            item.AlarmState === "OK" ? "success" : item.AlarmState === "ALARM" ? "error" : "warning"
+          }
+        >
           {item.AlarmState || "INSUFFICIENT_DATA"}
         </StatusIndicator>
       ),
@@ -274,7 +315,7 @@ export default function CloudWatchPage() {
     {
       id: "period",
       header: "Period",
-      cell: (item) => item.Period ? `${item.Period}s` : "—",
+      cell: (item) => (item.Period ? `${item.Period}s` : "—"),
     },
     {
       id: "actions",
@@ -285,7 +326,11 @@ export default function CloudWatchPage() {
             variant="icon"
             iconName="edit"
             ariaLabel="Edit alarm"
-            onClick={() => { setAlarmForm({ ...item, AlarmName: item.AlarmName || "" }); setEditingAlarmName(item.AlarmName || null); setAlarmModalVisible(true); }}
+            onClick={() => {
+              setAlarmForm({ ...item, AlarmName: item.AlarmName || "" });
+              setEditingAlarmName(item.AlarmName || null);
+              setAlarmModalVisible(true);
+            }}
           />
           <Button
             variant="icon"
@@ -299,26 +344,84 @@ export default function CloudWatchPage() {
   ];
 
   const metricColumns: TableProps.ColumnDefinition<CloudWatchMetric>[] = [
-    { id: "metricName", header: "Metric Name", cell: (item) => item.MetricName || "—", sortingField: "MetricName" },
-    { id: "namespace", header: "Namespace", cell: (item) => item.Namespace || "—", sortingField: "Namespace" },
-    { id: "dimensions", header: "Dimensions", cell: (item) => item.Dimensions?.map((d) => `${d.Name || ""}=${d.Value || ""}`).join(", ") || "—" },
+    {
+      id: "metricName",
+      header: "Metric Name",
+      cell: (item) => item.MetricName || "—",
+      sortingField: "MetricName",
+    },
+    {
+      id: "namespace",
+      header: "Namespace",
+      cell: (item) => item.Namespace || "—",
+      sortingField: "Namespace",
+    },
+    {
+      id: "dimensions",
+      header: "Dimensions",
+      cell: (item) =>
+        item.Dimensions?.map((d) => `${d.Name || ""}=${d.Value || ""}`).join(", ") || "—",
+    },
   ];
 
   const logGroupColumns: TableProps.ColumnDefinition<CloudWatchLogGroup>[] = [
-    { id: "name", header: "Log Group Name", cell: (item) => <TruncatedText><Button variant="link" onClick={() => setSelectedLogGroup(item.logGroupName || null)} formAction="none">{item.logGroupName || "—"}</Button></TruncatedText>, sortingField: "logGroupName", isRowHeader: true },
+    {
+      id: "name",
+      header: "Log Group Name",
+      cell: (item) => (
+        <TruncatedText>
+          <Button
+            variant="link"
+            onClick={() => setSelectedLogGroup(item.logGroupName || null)}
+            formAction="none"
+          >
+            {item.logGroupName || "—"}
+          </Button>
+        </TruncatedText>
+      ),
+      sortingField: "logGroupName",
+      isRowHeader: true,
+    },
     { id: "retention", header: "Retention (days)", cell: (item) => item.retentionInDays ?? "—" },
-    { id: "storedBytes", header: "Stored Bytes", cell: (item) => (item.storedBytes !== undefined ? String(item.storedBytes) : "—") },
-    { id: "actions", header: "Actions", cell: (item) => (
+    {
+      id: "storedBytes",
+      header: "Stored Bytes",
+      cell: (item) => (item.storedBytes !== undefined ? String(item.storedBytes) : "—"),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: (item) => (
         <SpaceBetween direction="horizontal" size="xs">
-          <Button variant="icon" iconName="remove" ariaLabel="Delete log group" onClick={() => item.logGroupName && handleDeleteLogGroup(item.logGroupName)} />
+          <Button
+            variant="icon"
+            iconName="remove"
+            ariaLabel="Delete log group"
+            onClick={() => item.logGroupName && handleDeleteLogGroup(item.logGroupName)}
+          />
         </SpaceBetween>
-      ) },
+      ),
+    },
   ];
 
   const logStreamColumns: TableProps.ColumnDefinition<CloudWatchLogStream>[] = [
-    { id: "streamName", header: "Log Stream Name", cell: (item) => item.logStreamName || "—", isRowHeader: true },
-    { id: "creationTime", header: "Created", cell: (item) => item.creationTime ? new Date(item.creationTime).toLocaleString() : "—" },
-    { id: "lastEvent", header: "Last Event", cell: (item) => item.lastEventTimestamp ? new Date(item.lastEventTimestamp).toLocaleString() : "—" },
+    {
+      id: "streamName",
+      header: "Log Stream Name",
+      cell: (item) => item.logStreamName || "—",
+      isRowHeader: true,
+    },
+    {
+      id: "creationTime",
+      header: "Created",
+      cell: (item) => (item.creationTime ? new Date(item.creationTime).toLocaleString() : "—"),
+    },
+    {
+      id: "lastEvent",
+      header: "Last Event",
+      cell: (item) =>
+        item.lastEventTimestamp ? new Date(item.lastEventTimestamp).toLocaleString() : "—",
+    },
   ];
 
   const headerActions = (
@@ -327,14 +430,20 @@ export default function CloudWatchPage() {
       <Button variant="primary" onClick={openCreateAlarm}>
         Create alarm
       </Button>
-      <Button variant="primary" onClick={() => { setLogGroupNameInput(""); setLogGroupModalVisible(true); }}>
+      <Button
+        variant="primary"
+        onClick={() => {
+          setLogGroupNameInput("");
+          setLogGroupModalVisible(true);
+        }}
+      >
         Create log group
       </Button>
     </SpaceBetween>
   );
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1" counter={`(${alarms.length})`} actions={headerActions}>
           CloudWatch
@@ -352,7 +461,7 @@ export default function CloudWatchPage() {
               label: `Alarms (${alarms.length})`,
               id: "alarms",
               content: (
-                <Container>
+                <Container className="aws-table-card">
                   <SpaceBetween size="m" direction="vertical">
                     <Table
                       items={pagedAlarms}
@@ -365,7 +474,10 @@ export default function CloudWatchPage() {
                           filteringText={alarmFilterText}
                           filteringPlaceholder="Filter alarms"
                           filteringAriaLabel="Filter alarms"
-                          onChange={({ detail }) => { setAlarmFilterText(detail.filteringText); setAlarmPageIndex(1); }}
+                          onChange={({ detail }) => {
+                            setAlarmFilterText(detail.filteringText);
+                            setAlarmPageIndex(1);
+                          }}
                         />
                       }
                       pagination={
@@ -373,7 +485,11 @@ export default function CloudWatchPage() {
                           currentPageIndex={alarmPageIndex}
                           pagesCount={Math.max(1, Math.ceil(filteredAlarms.length / alarmPageSize))}
                           onChange={({ detail }) => setAlarmPageIndex(detail.currentPageIndex)}
-                          ariaLabels={{ nextPageLabel: "Next page", previousPageLabel: "Previous page", pageLabel: (n) => `Page ${n}` }}
+                          ariaLabels={{
+                            nextPageLabel: "Next page",
+                            previousPageLabel: "Previous page",
+                            pageLabel: (n) => `Page ${n}`,
+                          }}
                         />
                       }
                       empty={alarmEmptyContent}
@@ -386,15 +502,13 @@ export default function CloudWatchPage() {
               label: `Metrics (${metrics.length})`,
               id: "metrics",
               content: (
-                <Container>
-                  <Table
-                    items={metrics}
-                    columnDefinitions={metricColumns}
-                    loading={loading}
-                    loadingText="Loading metrics..."
-                    empty={<Box textAlign="center">No metrics available.</Box>}
-                  />
-                </Container>
+                <Table
+                  items={metrics}
+                  columnDefinitions={metricColumns}
+                  loading={loading}
+                  loadingText="Loading metrics..."
+                  empty={<Box textAlign="center">No metrics available.</Box>}
+                />
               ),
             },
             {
@@ -402,7 +516,7 @@ export default function CloudWatchPage() {
               id: "logs",
               content: (
                 <SpaceBetween size="l" direction="vertical">
-                  <Container>
+                  <Container className="aws-table-card">
                     <Header variant="h2">Log Groups</Header>
                     <Table
                       items={logGroups}
@@ -410,16 +524,31 @@ export default function CloudWatchPage() {
                       loading={loading}
                       loadingText="Loading log groups..."
                       selectionType="single"
-                      selectedItems={selectedLogGroup ? [{ logGroupName: selectedLogGroup } as CloudWatchLogGroup] : []}
+                      selectedItems={
+                        selectedLogGroup
+                          ? [{ logGroupName: selectedLogGroup } as CloudWatchLogGroup]
+                          : []
+                      }
                       onSelectionChange={({ detail }) => {
                         const selected = detail.selectedItems as CloudWatchLogGroup[];
-                        setSelectedLogGroup(selected.length > 0 && selected[0]?.logGroupName ? selected[0].logGroupName : null);
+                        setSelectedLogGroup(
+                          selected.length > 0 && selected[0]?.logGroupName
+                            ? selected[0].logGroupName
+                            : null,
+                        );
                       }}
-                      empty={<Box textAlign="center">No log groups. <Button onClick={() => setLogGroupModalVisible(true)}>Create log group</Button></Box>}
+                      empty={
+                        <Box textAlign="center">
+                          No log groups.{" "}
+                          <Button onClick={() => setLogGroupModalVisible(true)}>
+                            Create log group
+                          </Button>
+                        </Box>
+                      }
                     />
                   </Container>
                   {selectedLogGroup && (
-                    <Container>
+                    <Container className="aws-table-card">
                       <Header variant="h2">Log Streams — {selectedLogGroup}</Header>
                       <Table
                         items={logStreams}
@@ -437,10 +566,13 @@ export default function CloudWatchPage() {
               label: "Insights",
               id: "insights",
               content: (
-                <Container>
+                <Container className="aws-table-card">
                   <SpaceBetween size="m" direction="vertical">
                     <Header variant="h2">CloudWatch Logs Insights</Header>
-                    <FormField label="Query string" description="Use Insights query language (e.g. fields @timestamp, @message | sort @timestamp desc | limit 20)">
+                    <FormField
+                      label="Query string"
+                      description="Use Insights query language (e.g. fields @timestamp, @message | sort @timestamp desc | limit 20)"
+                    >
                       <Input
                         value={insightsQuery}
                         onChange={({ detail }) => setInsightsQuery(detail.value)}
@@ -448,17 +580,32 @@ export default function CloudWatchPage() {
                       />
                     </FormField>
                     <SpaceBetween direction="horizontal" size="xs">
-                      <Button variant="primary" onClick={handleRunInsightsQuery} loading={insightsLoading}>
+                      <Button
+                        variant="primary"
+                        onClick={handleRunInsightsQuery}
+                        loading={insightsLoading}
+                      >
                         Run query
                       </Button>
-                      <Button variant="link" onClick={() => setInsightsQuery("fields @timestamp, @message | sort @timestamp desc | limit 20")}>
+                      <Button
+                        variant="link"
+                        onClick={() =>
+                          setInsightsQuery(
+                            "fields @timestamp, @message | sort @timestamp desc | limit 20",
+                          )
+                        }
+                      >
                         Reset
                       </Button>
                     </SpaceBetween>
                     {insightsResults.length > 0 && (
                       <Table
                         items={insightsResults}
-                        columnDefinitions={Object.keys(insightsResults[0] || {}).map((k) => ({ id: k, header: k, cell: (item: any) => String(item[k] ?? "—") }))}
+                        columnDefinitions={Object.keys(insightsResults[0] || {}).map((k) => ({
+                          id: k,
+                          header: k,
+                          cell: (item: any) => String(item[k] ?? "—"),
+                        }))}
                         loading={insightsLoading}
                         empty={<Box>No results.</Box>}
                       />
@@ -479,27 +626,56 @@ export default function CloudWatchPage() {
       {/* Alarm Create / Edit Modal */}
       <Modal
         visible={alarmModalVisible}
-        onDismiss={() => { setAlarmModalVisible(false); setEditingAlarmName(null); }}
+        onDismiss={() => {
+          setAlarmModalVisible(false);
+          setEditingAlarmName(null);
+        }}
         header={editingAlarmName ? "Edit Alarm" : "Create Alarm"}
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => { setAlarmModalVisible(false); setEditingAlarmName(null); }} formAction="none">Cancel</Button>
-            <Button variant="primary" onClick={handleCreateAlarm}>Save</Button>
+            <Button
+              onClick={() => {
+                setAlarmModalVisible(false);
+                setEditingAlarmName(null);
+              }}
+              formAction="none"
+            >
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleCreateAlarm}>
+              Save
+            </Button>
           </SpaceBetween>
         }
       >
         <SpaceBetween size="m" direction="vertical">
           <FormField label="Alarm name" description="Unique identifier for this alarm">
-            <Input value={alarmForm.AlarmName || ""} onChange={({ detail }) => setAlarmForm({ ...alarmForm, AlarmName: detail.value })} placeholder="high-cpu-alarm" />
+            <Input
+              value={alarmForm.AlarmName || ""}
+              onChange={({ detail }) => setAlarmForm({ ...alarmForm, AlarmName: detail.value })}
+              placeholder="high-cpu-alarm"
+            />
           </FormField>
           <FormField label="Description">
-            <Input value={alarmForm.AlarmDescription || ""} onChange={({ detail }) => setAlarmForm({ ...alarmForm, AlarmDescription: detail.value })} placeholder="Alarm when CPU exceeds threshold" />
+            <Input
+              value={alarmForm.AlarmDescription || ""}
+              onChange={({ detail }) =>
+                setAlarmForm({ ...alarmForm, AlarmDescription: detail.value })
+              }
+              placeholder="Alarm when CPU exceeds threshold"
+            />
           </FormField>
           <SpaceBetween direction="horizontal" size="s" alignItems="end">
             <FormField label="Namespace">
               <Select
-                selectedOption={alarmForm.Namespace ? { label: alarmForm.Namespace, value: alarmForm.Namespace } : null}
-                onChange={({ detail }) => setAlarmForm({ ...alarmForm, Namespace: detail.selectedOption?.value })}
+                selectedOption={
+                  alarmForm.Namespace
+                    ? { label: alarmForm.Namespace, value: alarmForm.Namespace }
+                    : null
+                }
+                onChange={({ detail }) =>
+                  setAlarmForm({ ...alarmForm, Namespace: detail.selectedOption?.value })
+                }
                 options={[
                   { label: "AWS/EC2", value: "AWS/EC2" },
                   { label: "AWS/Lambda", value: "AWS/Lambda" },
@@ -510,30 +686,66 @@ export default function CloudWatchPage() {
               />
             </FormField>
             <FormField label="Metric name">
-              <Input value={alarmForm.MetricName || ""} onChange={({ detail }) => setAlarmForm({ ...alarmForm, MetricName: detail.value })} placeholder="CPUUtilization" />
+              <Input
+                value={alarmForm.MetricName || ""}
+                onChange={({ detail }) => setAlarmForm({ ...alarmForm, MetricName: detail.value })}
+                placeholder="CPUUtilization"
+              />
             </FormField>
           </SpaceBetween>
           <SpaceBetween direction="horizontal" size="s" alignItems="end">
             <FormField label="Statistic">
               <Select
-                selectedOption={alarmForm.Statistic ? { label: alarmForm.Statistic, value: alarmForm.Statistic } : null}
-                onChange={({ detail }) => setAlarmForm({ ...alarmForm, Statistic: detail.selectedOption?.value as any })}
-                options={[{ label: "Average", value: "Average" }, { label: "Sum", value: "Sum" }, { label: "Minimum", value: "Minimum" }, { label: "Maximum", value: "Maximum" }]}
+                selectedOption={
+                  alarmForm.Statistic
+                    ? { label: alarmForm.Statistic, value: alarmForm.Statistic }
+                    : null
+                }
+                onChange={({ detail }) =>
+                  setAlarmForm({ ...alarmForm, Statistic: detail.selectedOption?.value as any })
+                }
+                options={[
+                  { label: "Average", value: "Average" },
+                  { label: "Sum", value: "Sum" },
+                  { label: "Minimum", value: "Minimum" },
+                  { label: "Maximum", value: "Maximum" },
+                ]}
                 placeholder="Average"
               />
             </FormField>
             <FormField label="Period (seconds)">
-              <Input value={String(alarmForm.Period ?? "")} onChange={({ detail }) => setAlarmForm({ ...alarmForm, Period: Number(detail.value) || 300 })} placeholder="300" />
+              <Input
+                value={String(alarmForm.Period ?? "")}
+                onChange={({ detail }) =>
+                  setAlarmForm({ ...alarmForm, Period: Number(detail.value) || 300 })
+                }
+                placeholder="300"
+              />
             </FormField>
           </SpaceBetween>
           <SpaceBetween direction="horizontal" size="s" alignItems="end">
             <FormField label="Threshold">
-              <Input value={String(alarmForm.Threshold ?? "")} onChange={({ detail }) => setAlarmForm({ ...alarmForm, Threshold: Number(detail.value) })} placeholder="80" />
+              <Input
+                value={String(alarmForm.Threshold ?? "")}
+                onChange={({ detail }) =>
+                  setAlarmForm({ ...alarmForm, Threshold: Number(detail.value) })
+                }
+                placeholder="80"
+              />
             </FormField>
             <FormField label="Comparison">
               <Select
-                selectedOption={alarmForm.ComparisonOperator ? { label: alarmForm.ComparisonOperator, value: alarmForm.ComparisonOperator } : null}
-                onChange={({ detail }) => setAlarmForm({ ...alarmForm, ComparisonOperator: detail.selectedOption?.value as any })}
+                selectedOption={
+                  alarmForm.ComparisonOperator
+                    ? { label: alarmForm.ComparisonOperator, value: alarmForm.ComparisonOperator }
+                    : null
+                }
+                onChange={({ detail }) =>
+                  setAlarmForm({
+                    ...alarmForm,
+                    ComparisonOperator: detail.selectedOption?.value as any,
+                  })
+                }
                 options={[
                   { label: "Greater than", value: "GreaterThanThreshold" },
                   { label: "Greater than or equal to", value: "GreaterThanOrEqualToThreshold" },
@@ -544,7 +756,13 @@ export default function CloudWatchPage() {
               />
             </FormField>
             <FormField label="Evaluation periods">
-              <Input value={String(alarmForm.EvaluationPeriods ?? "")} onChange={({ detail }) => setAlarmForm({ ...alarmForm, EvaluationPeriods: Number(detail.value) || 1 })} placeholder="1" />
+              <Input
+                value={String(alarmForm.EvaluationPeriods ?? "")}
+                onChange={({ detail }) =>
+                  setAlarmForm({ ...alarmForm, EvaluationPeriods: Number(detail.value) || 1 })
+                }
+                placeholder="1"
+              />
             </FormField>
           </SpaceBetween>
         </SpaceBetween>
@@ -557,13 +775,24 @@ export default function CloudWatchPage() {
         header="Create Log Group"
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setLogGroupModalVisible(false)} formAction="none">Cancel</Button>
-            <Button variant="primary" onClick={handleCreateLogGroup}>Create</Button>
+            <Button onClick={() => setLogGroupModalVisible(false)} formAction="none">
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleCreateLogGroup}>
+              Create
+            </Button>
           </SpaceBetween>
         }
       >
-        <FormField label="Log group name" description="Name for the new log group (e.g. /aws/ec2/my-app)">
-          <Input value={logGroupNameInput} onChange={({ detail }) => setLogGroupNameInput(detail.value)} placeholder="/aws/lambda/my-function" />
+        <FormField
+          label="Log group name"
+          description="Name for the new log group (e.g. /aws/ec2/my-app)"
+        >
+          <Input
+            value={logGroupNameInput}
+            onChange={({ detail }) => setLogGroupNameInput(detail.value)}
+            placeholder="/aws/lambda/my-function"
+          />
         </FormField>
       </Modal>
     </div>

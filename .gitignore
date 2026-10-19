@@ -56,9 +56,18 @@ docker-compose.local.yml
 .npmrc
 pnpm-lock.yaml.legacy
 
+# Sample credentials — never commit these; they contain plaintext passwords/keys
+sample-users-creds.csv
+*users-creds*.csv
+
 # Claude / OpenCode
 .claude/
 .opencode/
 .ultimate-dev/
 
 .memory/ultimate-dev/
+
+# Visual regression artefacts (regenerate with pnpm audit:visual:update)
+.visual-baselines/
+.visual-diffs/
+.vitest/

@@ -11,6 +11,7 @@ import {
 import { CloudTrailClient } from "@aws-sdk/client-cloudtrail";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -32,7 +33,9 @@ export async function GET(request: Request) {
     const trailsWithStatus = await Promise.all(
       trails.map(async (trail) => {
         try {
-          const status = await cloudtrailClient.send(new GetTrailStatusCommand({ Name: trail.Name! }));
+          const status = await cloudtrailClient.send(
+            new GetTrailStatusCommand({ Name: trail.Name! }),
+          );
           return {
             ...trail,
             IsLogging: status.IsLogging ?? false,
@@ -40,12 +43,13 @@ export async function GET(request: Request) {
         } catch {
           return { ...trail, IsLogging: false };
         }
-      })
+      }),
     );
 
     return NextResponse.json({ trails: trailsWithStatus });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -73,11 +77,12 @@ export async function POST(request: Request) {
         S3BucketName: body.s3BucketName || "cloudtrail-logs",
         IsMultiRegionTrail: body.isMultiRegionTrail ?? false,
         EnableLogFileValidation: body.enableLogFileValidation ?? true,
-      })
+      }),
     );
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -91,6 +96,7 @@ export async function DELETE(request: Request) {
     await cloudtrailClient.send(new DeleteTrailCommand({ Name: searchParams.get("name")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

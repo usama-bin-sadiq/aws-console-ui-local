@@ -8,10 +8,13 @@ import {
   AttachGroupPolicyCommand,
   DetachGroupPolicyCommand,
   ListUsersCommand,
+  AddUserToGroupCommand,
+  RemoveUserFromGroupCommand,
 } from "@aws-sdk/client-iam";
 import { IAMClient } from "@aws-sdk/client-iam";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -25,17 +28,21 @@ export async function GET(request: Request) {
 
     if (action === "getGroup" && groupName) {
       const groupRes = await iamClient.send(new GetGroupCommand({ GroupName: groupName }));
-      const policiesRes = await iamClient.send(new ListAttachedGroupPoliciesCommand({ GroupName: groupName }));
+      const policiesRes = await iamClient.send(
+        new ListAttachedGroupPoliciesCommand({ GroupName: groupName }),
+      );
       // Fetch members
       let members: any[] = [];
       try {
         const usersRes = await iamClient.send(new ListUsersCommand({}));
         const allUsers = usersRes.Users || [];
         // Filter users whose group membership includes this group (if SDK includes Groups)
-        members = allUsers.filter((u: any) => {
-          const userGroups = u?.Groups || [];
-          return userGroups.some((g: any) => g.GroupName === groupName);
-        }).map((u: any) => ({ UserName: u.UserName, UserId: u.UserId, Arn: u.Arn }));
+        members = allUsers
+          .filter((u: any) => {
+            const userGroups = u?.Groups || [];
+            return userGroups.some((g: any) => g.GroupName === groupName);
+          })
+          .map((u: any) => ({ UserName: u.UserName, UserId: u.UserId, Arn: u.Arn }));
       } catch {}
       return NextResponse.json({
         group: {
@@ -48,8 +55,9 @@ export async function GET(request: Request) {
 
     const res = await iamClient.send(new ListGroupsCommand({}));
     return NextResponse.json({ groups: res.Groups || [] });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -63,20 +71,55 @@ export async function POST(request: Request) {
     const action = body.action;
 
     if (action === "attachPolicy") {
-      await iamClient.send(new AttachGroupPolicyCommand({ GroupName: body.groupName, PolicyArn: body.policyArn }));
+      await iamClient.send(
+        new AttachGroupPolicyCommand({ GroupName: body.groupName, PolicyArn: body.policyArn }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "detachPolicy") {
-      await iamClient.send(new DetachGroupPolicyCommand({ GroupName: body.groupName, PolicyArn: body.policyArn }));
+      await iamClient.send(
+        new DetachGroupPolicyCommand({ GroupName: body.groupName, PolicyArn: body.policyArn }),
+      );
       return NextResponse.json({ success: true });
     }
 
+    if (action === "addUserToGroup") {
+      if (!body.groupName || !body.userName) {
+        return NextResponse.json({ error: "groupName and userName are required" }, { status: 400 });
+      }
+      await iamClient.send(
+        new AddUserToGroupCommand({ GroupName: body.groupName, UserName: body.userName }),
+      );
+      return NextResponse.json({
+        success: true,
+        groupName: body.groupName,
+        userName: body.userName,
+      });
+    }
+
+    if (action === "removeUserFromGroup") {
+      if (!body.groupName || !body.userName) {
+        return NextResponse.json({ error: "groupName and userName are required" }, { status: 400 });
+      }
+      await iamClient.send(
+        new RemoveUserFromGroupCommand({ GroupName: body.groupName, UserName: body.userName }),
+      );
+      return NextResponse.json({
+        success: true,
+        groupName: body.groupName,
+        userName: body.userName,
+      });
+    }
+
     // Default: create group
-    const res = await iamClient.send(new CreateGroupCommand({ GroupName: body.groupName, Path: body.path || "/" }));
+    const res = await iamClient.send(
+      new CreateGroupCommand({ GroupName: body.groupName, Path: body.path || "/" }),
+    );
     return NextResponse.json({ group: res.Group });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -89,7 +132,8 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     await iamClient.send(new DeleteGroupCommand({ GroupName: searchParams.get("groupName")! }));
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

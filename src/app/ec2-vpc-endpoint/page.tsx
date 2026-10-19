@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -34,7 +35,7 @@ export default function VpcEndpointPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/ec2-vpc-endpoint");
+      const res = await apiFetch("/api/ec2-vpc-endpoint");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setEndpoints(data.vpcEndpoints || []);
@@ -45,12 +46,14 @@ export default function VpcEndpointPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function handleCreate() {
     setCreating(true);
     try {
-      const res = await fetch("/api/ec2-vpc-endpoint", {
+      const res = await apiFetch("/api/ec2-vpc-endpoint", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vpcId, serviceName }),
@@ -73,7 +76,9 @@ export default function VpcEndpointPage() {
     setDeleting(true);
     try {
       for (const ep of selected) {
-        const res = await fetch(`/api/ec2-vpc-endpoint?vpcEndpointId=${ep.VpcEndpointId}`, { method: "DELETE" });
+        const res = await apiFetch(`/api/ec2-vpc-endpoint?vpcEndpointId=${ep.VpcEndpointId}`, {
+          method: "DELETE",
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
       }
@@ -87,45 +92,55 @@ export default function VpcEndpointPage() {
   }
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
           variant="h1"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh">Refresh</Button>
-              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>Delete</Button>
-              <Button variant="primary" onClick={() => setShowCreate(true)}>Create VPC Endpoint</Button>
+              <Button onClick={load} iconName="refresh">
+                Refresh
+              </Button>
+              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>
+                Delete
+              </Button>
+              <Button variant="primary" onClick={() => setShowCreate(true)}>
+                Create VPC Endpoint
+              </Button>
             </SpaceBetween>
           }
         >
           VPC Endpoints
         </Header>
 
-        {error && <Alert type="error" dismissible onDismiss={() => setError(null)}>{error}</Alert>}
+        {error && (
+          <Alert type="error" dismissible onDismiss={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-        <Container>
-          <Table
-            loading={loading}
-            loadingText="Loading VPC endpoints..."
-            items={endpoints}
-            selectionType="multi"
-            selectedItems={selected}
-            onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
-            columnDefinitions={[
-              { id: "vpcEndpointId", header: "VPC Endpoint ID", cell: (item) => item.VpcEndpointId },
-              { id: "serviceName", header: "Service Name", cell: (item) => item.ServiceName },
-              { id: "state", header: "State", cell: (item) => item.State },
-              { id: "type", header: "Type", cell: (item) => item.VpcEndpointType },
-            ]}
-            empty={
-              <Box textAlign="center" color="inherit">
-                <b>No VPC endpoints</b>
-                <Box variant="p" color="inherit">No VPC endpoints found.</Box>
+        <Table
+          loading={loading}
+          loadingText="Loading VPC endpoints..."
+          items={endpoints}
+          selectionType="multi"
+          selectedItems={selected}
+          onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
+          columnDefinitions={[
+            { id: "vpcEndpointId", header: "VPC Endpoint ID", cell: (item) => item.VpcEndpointId },
+            { id: "serviceName", header: "Service Name", cell: (item) => item.ServiceName },
+            { id: "state", header: "State", cell: (item) => item.State },
+            { id: "type", header: "Type", cell: (item) => item.VpcEndpointType },
+          ]}
+          empty={
+            <Box textAlign="center" color="inherit">
+              <b>No VPC endpoints</b>
+              <Box variant="p" color="inherit">
+                No VPC endpoints found.
               </Box>
-            }
-          />
-        </Container>
+            </Box>
+          }
+        />
       </SpaceBetween>
 
       <Modal
@@ -136,17 +151,27 @@ export default function VpcEndpointPage() {
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button variant="primary" loading={creating} onClick={handleCreate}>Create VPC Endpoint</Button>
+              <Button variant="primary" loading={creating} onClick={handleCreate}>
+                Create VPC Endpoint
+              </Button>
             </SpaceBetween>
           </Box>
         }
       >
         <SpaceBetween size="m">
           <FormField label="VPC ID">
-            <Input value={vpcId} onChange={({ detail }) => setVpcId(detail.value)} placeholder="vpc-xxxxxxxx" />
+            <Input
+              value={vpcId}
+              onChange={({ detail }) => setVpcId(detail.value)}
+              placeholder="vpc-xxxxxxxx"
+            />
           </FormField>
           <FormField label="Service Name">
-            <Input value={serviceName} onChange={({ detail }) => setServiceName(detail.value)} placeholder="com.amazonaws.us-east-1.s3" />
+            <Input
+              value={serviceName}
+              onChange={({ detail }) => setServiceName(detail.value)}
+              placeholder="com.amazonaws.us-east-1.s3"
+            />
           </FormField>
         </SpaceBetween>
       </Modal>

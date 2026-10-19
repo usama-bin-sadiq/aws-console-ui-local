@@ -10,10 +10,30 @@ interface RateLimitEntry {
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
+let cleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+function startCleanup() {
+  if (cleanupInterval !== null) return;
+  cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of rateLimitStore.entries()) {
+      if (v.resetTime < now) {
+        rateLimitStore.delete(k);
+      }
+    }
+  }, 1000);
+  if (typeof cleanupInterval === "object" && "unref" in cleanupInterval) {
+    (cleanupInterval as ReturnType<typeof setInterval> & { unref: () => void }).unref();
+  }
+}
+
+// Start the scheduled cleanup on module load
+startCleanup();
+
 export interface RateLimitOptions {
-  windowMs: number;      // Time window in milliseconds
-  maxRequests: number;   // Maximum requests per window
-  keyPrefix?: string;    // Prefix for rate limit keys
+  windowMs: number; // Time window in milliseconds
+  maxRequests: number; // Maximum requests per window
+  keyPrefix?: string; // Prefix for rate limit keys
 }
 
 export interface RateLimitResult {
@@ -26,22 +46,12 @@ export interface RateLimitResult {
 /**
  * Check and consume a rate limit slot.
  */
-export function checkRateLimit(
-  identifier: string,
-  options: RateLimitOptions
-): RateLimitResult {
-  const key = `${options.keyPrefix || 'ratelimit'}:${identifier}`;
+export function checkRateLimit(identifier: string, options: RateLimitOptions): RateLimitResult {
+  const key = `${options.keyPrefix || "ratelimit"}:${identifier}`;
   const now = Date.now();
   const windowStart = now - options.windowMs;
 
-  // Clean up expired entries periodically
-  if (Math.random() < 0.01) {
-    for (const [k, v] of rateLimitStore.entries()) {
-      if (v.resetTime < now) {
-        rateLimitStore.delete(k);
-      }
-    }
-  }
+  // Clean up expired entries periodically (via scheduled setInterval)
 
   const entry = rateLimitStore.get(key);
 
@@ -84,18 +94,15 @@ export function checkRateLimit(
  * Reset rate limit for an identifier (e.g., after successful auth).
  */
 export function resetRateLimit(identifier: string, keyPrefix?: string): void {
-  const key = `${keyPrefix || 'ratelimit'}:${identifier}`;
+  const key = `${keyPrefix || "ratelimit"}:${identifier}`;
   rateLimitStore.delete(key);
 }
 
 /**
  * Get current rate limit status without consuming a slot.
  */
-export function getRateLimitStatus(
-  identifier: string,
-  options: RateLimitOptions
-): RateLimitResult {
-  const key = `${options.keyPrefix || 'ratelimit'}:${identifier}`;
+export function getRateLimitStatus(identifier: string, options: RateLimitOptions): RateLimitResult {
+  const key = `${options.keyPrefix || "ratelimit"}:${identifier}`;
   const now = Date.now();
   const entry = rateLimitStore.get(key);
 

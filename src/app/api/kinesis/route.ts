@@ -11,6 +11,7 @@ import {
 import { KinesisClient } from "@aws-sdk/client-kinesis";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -34,11 +35,12 @@ export async function GET(request: Request) {
         } catch {
           details[name] = { StreamStatus: "ACTIVE", Shards: [] };
         }
-      })
+      }),
     );
     return NextResponse.json({ streams: streamNames, streamDetails: details });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
           StreamName: body.streamName,
           Data: Buffer.from(body.data || ""),
           PartitionKey: body.partitionKey || "default",
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -64,15 +66,18 @@ export async function POST(request: Request) {
         new IncreaseStreamRetentionPeriodCommand({
           StreamName: body.streamName,
           RetentionPeriodHours: body.retentionHours || 24,
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
     const streamName = body.streamName || body.StreamName;
-    await kinesisClient.send(new CreateStreamCommand({ StreamName: streamName, ShardCount: body.shardCount || 1 }));
+    await kinesisClient.send(
+      new CreateStreamCommand({ StreamName: streamName, ShardCount: body.shardCount || 1 }),
+    );
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -83,9 +88,12 @@ export async function DELETE(request: Request) {
   try {
     const kinesisClient = getUserClientFromRequest(KinesisClient, request);
     const { searchParams } = new URL(request.url);
-    await kinesisClient.send(new DeleteStreamCommand({ StreamName: searchParams.get("streamName")! }));
+    await kinesisClient.send(
+      new DeleteStreamCommand({ StreamName: searchParams.get("streamName")! }),
+    );
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

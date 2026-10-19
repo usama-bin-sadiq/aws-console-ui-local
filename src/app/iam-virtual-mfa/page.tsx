@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -26,7 +27,7 @@ export default function IAMVirtualMFAPage() {
   const fetchDevices = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/iam-virtual-mfa");
+      const res = await apiFetch("/api/iam-virtual-mfa");
       const data = await res.json();
       setMfaDevices(data.mfaDevices || []);
     } catch {}
@@ -38,7 +39,7 @@ export default function IAMVirtualMFAPage() {
   }, []);
 
   const createDevice = async () => {
-    await fetch("/api/iam-virtual-mfa", {
+    await apiFetch("/api/iam-virtual-mfa", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: deviceName }),
@@ -49,14 +50,14 @@ export default function IAMVirtualMFAPage() {
   };
 
   const deleteDevice = async (serialNumber: string) => {
-    await fetch(`/api/iam-virtual-mfa?serialNumber=${encodeURIComponent(serialNumber)}`, {
+    await apiFetch(`/api/iam-virtual-mfa?serialNumber=${encodeURIComponent(serialNumber)}`, {
       method: "DELETE",
     });
     fetchDevices();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">IAM Virtual MFA Devices</Header>
         <Container
@@ -68,6 +69,7 @@ export default function IAMVirtualMFAPage() {
               Virtual MFA Devices
             </Header>
           }
+          className="aws-table-card"
         >
           <Table
             items={mfaDevices}
@@ -86,10 +88,7 @@ export default function IAMVirtualMFAPage() {
               {
                 header: "Actions",
                 cell: (item) => (
-                  <Button
-                    onClick={() => deleteDevice(item.SerialNumber)}
-                    formAction="none"
-                  >
+                  <Button onClick={() => deleteDevice(item.SerialNumber)} formAction="none">
                     Delete
                   </Button>
                 ),

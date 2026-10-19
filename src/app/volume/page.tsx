@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -34,20 +35,24 @@ export default function VolumePage() {
   const [formAZ, setFormAZ] = useState("us-east-1a");
   const [attachInstance, setAttachInstance] = useState("");
   const [attachDevice, setAttachDevice] = useState("/dev/xvdf");
-  const [runningInstances, setRunningInstances] = useState<Array<{ InstanceId?: string; Name?: string }>>([]);
+  const [runningInstances, setRunningInstances] = useState<
+    Array<{ InstanceId?: string; Name?: string }>
+  >([]);
 
   const fetchVolumes = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/volume");
+      const res = await apiFetch("/api/volume");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setVolumes((data.volumes || []).map((v: any) => ({
-        ...v,
-        Size: v.Size || 0,
-        VolumeType: v.VolumeType || "gp3",
-      })));
+      setVolumes(
+        (data.volumes || []).map((v: any) => ({
+          ...v,
+          Size: v.Size || 0,
+          VolumeType: v.VolumeType || "gp3",
+        })),
+      );
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to fetch volumes");
     }
@@ -56,7 +61,7 @@ export default function VolumePage() {
 
   const fetchRunningInstances = useCallback(async () => {
     try {
-      const res = await fetch("/api/volume", {
+      const res = await apiFetch("/api/volume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "listInstances" }),
@@ -75,7 +80,7 @@ export default function VolumePage() {
 
   const handleCreate = useCallback(async () => {
     try {
-      const res = await fetch("/api/volume", {
+      const res = await apiFetch("/api/volume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -101,7 +106,7 @@ export default function VolumePage() {
     if (ids.length === 0) return;
     try {
       for (const id of ids) {
-        await fetch(`/api/volume`, {
+        await apiFetch(`/api/volume`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "delete", volumeId: id }),
@@ -118,7 +123,7 @@ export default function VolumePage() {
     const id = selectedItems[0]?.VolumeId;
     if (!id || !attachInstance) return;
     try {
-      const res = await fetch("/api/volume", {
+      const res = await apiFetch("/api/volume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -142,7 +147,7 @@ export default function VolumePage() {
     const id = selectedItems[0]?.VolumeId;
     if (!id) return;
     try {
-      const res = await fetch("/api/volume", {
+      const res = await apiFetch("/api/volume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "detach", volumeId: id }),
@@ -165,7 +170,7 @@ export default function VolumePage() {
   const selectedIds = selectedItems.map((v) => v.VolumeId).filter(Boolean) as string[];
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
           variant="h1"
@@ -175,8 +180,18 @@ export default function VolumePage() {
               <Button iconName="refresh" onClick={fetchVolumes} ariaLabel="Refresh" />
               <ButtonDropdown
                 items={[
-                  { text: "Attach", id: "attach", disabled: selectedIds.length !== 1 || selectedItems.some((v) => v.State === "in-use") },
-                  { text: "Detach", id: "detach", disabled: selectedIds.length !== 1 || selectedItems.some((v) => v.State !== "in-use") },
+                  {
+                    text: "Attach",
+                    id: "attach",
+                    disabled:
+                      selectedIds.length !== 1 || selectedItems.some((v) => v.State === "in-use"),
+                  },
+                  {
+                    text: "Detach",
+                    id: "detach",
+                    disabled:
+                      selectedIds.length !== 1 || selectedItems.some((v) => v.State !== "in-use"),
+                  },
                   { text: "Delete", id: "delete", disabled: selectedIds.length === 0 },
                 ]}
                 onItemClick={({ detail }) => {
@@ -204,53 +219,89 @@ export default function VolumePage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            columnDefinitions={[
-              { id: "volumeId", header: "Volume ID", cell: (item) => item.VolumeId, sortingField: "VolumeId" },
-              { id: "size", header: "Size", cell: (item) => `${item.Size || 0} GiB`, sortingField: "Size" },
-              { id: "type", header: "Volume Type", cell: (item) => item.VolumeType || "gp3" },
-              { id: "state", header: "State", cell: (item) => <StatusIndicator type={item.State === "available" ? "success" : item.State === "in-use" ? "info" : "warning"}>{item.State || "—"}</StatusIndicator> },
-              { id: "az", header: "Availability Zone", cell: (item) => item.AvailabilityZone || "—" },
-              { id: "iops", header: "IOPS", cell: (item) => item.Iops ? String(item.Iops) : "—" },
-              { id: "attachments", header: "Attachments", cell: (item) => <TruncatedText>{item.Attachments && item.Attachments.length > 0 ? item.Attachments.map((a) => a.InstanceId).join(", ") : "—"}</TruncatedText> },
-            ]}
-            items={pagedItems}
-            loading={loading}
-            loadingText="Loading volumes..."
-            selectionType="multi"
-            selectedItems={selectedItems}
-            onSelectionChange={({ detail }) => setSelectedItems(detail.selectedItems as EC2Volume[])}
-            trackBy="VolumeId"
-            filter={
-              <TextFilter
-                filteringText={filteringText}
-                filteringPlaceholder="Filter volumes"
-                filteringAriaLabel="Filter volumes"
-                onChange={({ detail }) => {
-                  setFilteringText(detail.filteringText);
-                  setCurrentPage(1);
-                }}
-              />
-            }
-            pagination={
-              <Pagination
-                currentPageIndex={currentPage}
-                pagesCount={Math.ceil(filteredItems.length / pageSize)}
-                onChange={({ detail }) => setCurrentPage(detail.currentPageIndex)}
-              />
-            }
-            empty={
-              <Box textAlign="center" color="inherit">
-                <Box variant="strong" textAlign="center" color="inherit">No volumes found</Box>
-                <Box variant="p" padding={{ bottom: "s" }} color="inherit">
-                  Create a new EBS volume to attach to your instances.
-                </Box>
-                <Button onClick={() => setCreateModal(true)}>Create volume</Button>
+        <Table
+          columnDefinitions={[
+            {
+              id: "volumeId",
+              header: "Volume ID",
+              cell: (item) => item.VolumeId,
+              sortingField: "VolumeId",
+            },
+            {
+              id: "size",
+              header: "Size",
+              cell: (item) => `${item.Size || 0} GiB`,
+              sortingField: "Size",
+            },
+            { id: "type", header: "Volume Type", cell: (item) => item.VolumeType || "gp3" },
+            {
+              id: "state",
+              header: "State",
+              cell: (item) => (
+                <StatusIndicator
+                  type={
+                    item.State === "available"
+                      ? "success"
+                      : item.State === "in-use"
+                        ? "info"
+                        : "warning"
+                  }
+                >
+                  {item.State || "—"}
+                </StatusIndicator>
+              ),
+            },
+            { id: "az", header: "Availability Zone", cell: (item) => item.AvailabilityZone || "—" },
+            { id: "iops", header: "IOPS", cell: (item) => (item.Iops ? String(item.Iops) : "—") },
+            {
+              id: "attachments",
+              header: "Attachments",
+              cell: (item) => (
+                <TruncatedText>
+                  {item.Attachments && item.Attachments.length > 0
+                    ? item.Attachments.map((a) => a.InstanceId).join(", ")
+                    : "—"}
+                </TruncatedText>
+              ),
+            },
+          ]}
+          items={pagedItems}
+          loading={loading}
+          loadingText="Loading volumes..."
+          selectionType="multi"
+          selectedItems={selectedItems}
+          onSelectionChange={({ detail }) => setSelectedItems(detail.selectedItems as EC2Volume[])}
+          trackBy="VolumeId"
+          filter={
+            <TextFilter
+              filteringText={filteringText}
+              filteringPlaceholder="Filter volumes"
+              filteringAriaLabel="Filter volumes"
+              onChange={({ detail }) => {
+                setFilteringText(detail.filteringText);
+                setCurrentPage(1);
+              }}
+            />
+          }
+          pagination={
+            <Pagination
+              currentPageIndex={currentPage}
+              pagesCount={Math.ceil(filteredItems.length / pageSize)}
+              onChange={({ detail }) => setCurrentPage(detail.currentPageIndex)}
+            />
+          }
+          empty={
+            <Box textAlign="center" color="inherit">
+              <Box variant="strong" textAlign="center" color="inherit">
+                No volumes found
               </Box>
-            }
-          />
-        </Container>
+              <Box variant="p" padding={{ bottom: "s" }} color="inherit">
+                Create a new EBS volume to attach to your instances.
+              </Box>
+              <Button onClick={() => setCreateModal(true)}>Create volume</Button>
+            </Box>
+          }
+        />
       </SpaceBetween>
 
       <Modal
@@ -259,24 +310,40 @@ export default function VolumePage() {
         header="Create volume"
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setCreateModal(false)} formAction="none">Cancel</Button>
-            <Button variant="primary" onClick={handleCreate}>Create</Button>
+            <Button onClick={() => setCreateModal(false)} formAction="none">
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleCreate}>
+              Create
+            </Button>
           </SpaceBetween>
         }
       >
         <SpaceBetween size="m">
           <FormField label="Size (GiB)">
-            <Input value={formSize} onChange={({ detail }) => setFormSize(detail.value)} type="number" placeholder="20" />
+            <Input
+              value={formSize}
+              onChange={({ detail }) => setFormSize(detail.value)}
+              type="number"
+              placeholder="20"
+            />
           </FormField>
           <FormField label="Volume Type">
             <Select
-              selectedOption={{ value: formType, label: EC2_VOLUME_TYPES.find((t) => t.value === formType)?.label || formType }}
+              selectedOption={{
+                value: formType,
+                label: EC2_VOLUME_TYPES.find((t) => t.value === formType)?.label || formType,
+              }}
               options={EC2_VOLUME_TYPES.map((t) => ({ value: t.value, label: t.label }))}
               onChange={({ detail }) => setFormType(detail.selectedOption.value || "gp3")}
             />
           </FormField>
           <FormField label="Availability Zone">
-            <Input value={formAZ} onChange={({ detail }) => setFormAZ(detail.value)} placeholder="us-east-1a" />
+            <Input
+              value={formAZ}
+              onChange={({ detail }) => setFormAZ(detail.value)}
+              placeholder="us-east-1a"
+            />
           </FormField>
         </SpaceBetween>
       </Modal>
@@ -287,20 +354,42 @@ export default function VolumePage() {
         header="Attach Volume"
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setAttachModal(false)} formAction="none">Cancel</Button>
-            <Button variant="primary" onClick={handleAttach} disabled={!attachInstance}>Attach</Button>
+            <Button onClick={() => setAttachModal(false)} formAction="none">
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleAttach} disabled={!attachInstance}>
+              Attach
+            </Button>
           </SpaceBetween>
         }
       >
         <SpaceBetween size="m">
-          <Box variant="small" color="text-label">Select running instance</Box>
+          <Box variant="small" color="text-label">
+            Select running instance
+          </Box>
           <Select
-            selectedOption={{ value: attachInstance, label: runningInstances.find((i) => i.InstanceId === attachInstance)?.Name || attachInstance || "Select instance" }}
-            options={[{ value: "", label: "Select instance" }, ...runningInstances.map((i) => ({ value: i.InstanceId || "", label: `${i.Name || i.InstanceId} (${i.InstanceId})` }))]}
+            selectedOption={{
+              value: attachInstance,
+              label:
+                runningInstances.find((i) => i.InstanceId === attachInstance)?.Name ||
+                attachInstance ||
+                "Select instance",
+            }}
+            options={[
+              { value: "", label: "Select instance" },
+              ...runningInstances.map((i) => ({
+                value: i.InstanceId || "",
+                label: `${i.Name || i.InstanceId} (${i.InstanceId})`,
+              })),
+            ]}
             onChange={({ detail }) => setAttachInstance(detail.selectedOption.value || "")}
           />
           <FormField label="Device name">
-            <Input value={attachDevice} onChange={({ detail }) => setAttachDevice(detail.value)} placeholder="/dev/xvdf" />
+            <Input
+              value={attachDevice}
+              onChange={({ detail }) => setAttachDevice(detail.value)}
+              placeholder="/dev/xvdf"
+            />
           </FormField>
         </SpaceBetween>
       </Modal>

@@ -1,0 +1,179 @@
+/**
+ * Small-screen treatment for the console shell.
+ *
+ * Every rule is gated on one of the two media queries declared in
+ * `shell-responsive.ts`, so nothing here can reach 1024px or wider and the
+ * desktop layout — and the stored visual baselines at 1440px and 1920px — is
+ * exactly what it was. `shell-responsive.test.ts` asserts that the breakpoint
+ * values in this file and in that module agree, and that no third breakpoint
+ * has crept in: a stray `max-width` is the failure mode that makes a "mobile"
+ * rule quietly stop applying to half the shell while still looking correct in
+ * review.
+ *
+ * Cloudscape's own class names are matched through `:global([class*="..."])`
+ * deliberately. The tab strip is rendered by two different layouts (the
+ * route-driven `layouts/ServiceLayout` and the nested `service-layout/ServiceLayout`)
+ * and the header by `AppShell`, so scoping to a wrapper class would fix one of
+ * them and leave the other chunky, and wrapping a component this change does not
+ * own is not an option. Each selector below is narrow enough that it can only
+ * match a Cloudscape tab, a Cloudscape top-navigation utility, a Cloudscape
+ * breadcrumb, a Cloudscape app-layout navigation container, or the console's own
+ * content box.
+ *
+ * The values are literals, not imports: a CSS module cannot read a TypeScript
+ * constant. The test is what keeps them in step.
+ *
+ * There are exactly two bands, one block each, grouped by width rather than by
+ * concern so that moving a rule between bands is a visible edit.
+ */
+
+/* ═══ Phone (≤479px) ═══════════════════════════════════════════════════════
+   The band where a phone's width, not its height, is the binding constraint.
+
+   ── Tab labels never wrap ────────────────────────────────────────────────
+   Measured on /lambda: the tab label is a flex box whose content width and its
+   own width land within a sub-pixel of each other, so "Overview" wraps to two
+   lines at 320px and 390px and stays on one at 768px. That one extra line took
+   the bar from 46px to 56px; the 54px the audit reports on /iam and
+   /cloudwatch is the same wrap on labels that break differently.
+
+   Wrapping is the wrong thing to fix. The strip already scrolls horizontally
+   (`overflow-x: scroll` on the list, measured) and Cloudscape already renders
+   its own left/right pagination arrows when it overflows, so a label too wide
+   for a phone belongs in that scroll rather than on a second line.
+
+   ── The bar's height is capped, so the budget is unconditional ────────────
+   Cloudscape's own tab is 44px and the bar it sits in measures 46px (measured
+   at 768px and 1440px alike). Capping the row rather than trimming the padding
+   keeps the height independent of how tall Cloudscape's label box happens to
+   be, so no label can push the bar past the budget at any width. The block
+   padding goes so the label is not squeezed out of the box it is centred in.
+
+   ── 32px of dead space under every tab strip ─────────────────────────────
+   A Tabs whose tabs carry no content still renders an active tab panel, and
+   Cloudscape gives that panel 16px of block padding above and below: 32px of
+   nothing, measured at 1440px as well as at 320px. It is collapsed only when
+   the panel really is empty, which `:empty` states exactly, so a Tabs that does
+   carry content — DetailLayout passes `tab.content` — keeps its padding and no
+   page can be hidden by this. */
+@media (max-width: 479px) {
+  :global([class*="awsui_tabs-tab-label"]) {
+    white-space: nowrap;
+  }
+
+  :global([class*="awsui_tab-header-scroll-container"]) {
+    max-block-size: 44px;
+  }
+
+  :global([class*="awsui_tabs-tab-link"]) {
+    block-size: 44px;
+    padding-block: 0;
+    align-items: center;
+  }
+
+  :global([class*="awsui_tabs-content-wrapper"]):has(> [class*="awsui_tabs-content-active"]:empty) {
+    display: none;
+  }
+}
+
+/* ═══ Compact (≤959px) ════════════════════════════════════════════════════
+   AppShell's existing `isCompactLayout` boundary — the width below which it
+   stops drawing the `[Option+S]` hint and closes the service rail on load. The
+   header collapses its utilities into an overflow menu somewhere in here, which
+   is exactly the range where the icon-only forms of those utilities get used.
+
+   ── Nothing in the header is a 16x19 target ──────────────────────────────
+   Measured inside `#awsui-top-navigation header`: every Cloudscape utility link
+   — terminal, support, region, account — is 16x19, and "Open global search" is
+   16x19 on a phone. The region and account entries are labelled text at desktop
+   but render as bare icons once the utilities collapse, which is exactly the
+   range where a fingertip meets them. The links already centre a glyph that
+   fills most of a 24px header slot, so growing the box does not move the icon.
+
+   The Services entry and the search field are line-height-sized controls:
+   measured 101x18.1 and 91x18.1 at 768px.
+
+   ── The breadcrumb is a list of links a finger can hit ───────────────────
+   The breadcrumb nav is 28px tall and every link inside it is 20px, at every
+   width. A 20px link is the one control in the shell a touch user reliably
+   misses, and on a phone the breadcrumb is the only way back up a route. The
+   links centre their text inside a 20px box, so growing the box keeps the text
+   where it is rather than pushing it onto a new line.
+
+   ── The search field keeps no empty keyboard-shortcut gutter ─────────────
+   `.aws-console-search-input` reserves 84px on its right for the `[Option+S]`
+   hint, and the hint is only rendered from 960px up. Below that boundary the
+   field is 84px narrower than it needs to be for nothing.
+
+   ── Pagination buttons clear the floor on height but not on width ─────────
+   Measured on /s3: `Previous page`, `Page 1` and `Next page` are each 20x24
+   inside a 20x24 `li`, with no larger ancestor to absorb the miss. They sit
+   shoulder to shoulder, so a fingertip aiming for "next" lands on the current
+   page. Widening the button widens only the button — the pagination row is
+   `inline-flex` and grows by 4px a control, with no effect on the table above.
+
+   ── Text links in page content clear the floor too ───────────────────────
+   Cloudscape's `Link` is a 19px-tall anchor — measured on the home page's
+   service catalogue ("Amazon DynamoDB", "Amazon S3", "X-Ray") and on /vpc's
+   "Create VPC wizard". It is the one remaining sub-24px target once the header,
+   the breadcrumb and the pagination buttons are fixed. The label inside is the
+   same size in the same place, so a taller box is a floor and not a restyle.
+
+   ── The rail overlays the content instead of taking a column from it ──────
+   Cloudscape's AppLayout is a five-column grid and the rail sits in column 1,
+   so an open rail widens that column and squeezes the rest of the page. It
+   already has an answer for this — `position: fixed` on the navigation
+   container, which removes it from the grid entirely — but it is gated behind
+   Cloudscape's own 688px breakpoint.
+
+   Above 688px the rail therefore takes a real column: measured on /lambda at
+   768px, opening it moved the content column from 684px to 459px, so 225px of a
+   768px viewport was handed to a panel that overlays nothing.
+
+   The same three declarations Cloudscape uses at 688px are restated here at the
+   shell's compact boundary. The container is always in the DOM and only its
+   width changes with the open state, so `:has()` on the open-state class is what
+   limits this to an *open* rail: the closed container stays in the grid because
+   at these widths it is what carries the toggle button, and the mobile bar that
+   would replace it is itself gated on Cloudscape's mobile mode. */
+@media (max-width: 959px) {
+  :global([class*="awsui_navigation-container_"]:has([class*="awsui_is-navigation-open_"])) {
+    position: fixed;
+    inset-inline-start: 0;
+    z-index: 1001;
+  }
+
+  :global(#awsui-top-navigation header a[class*="awsui_variant-top-navigation"]) {
+    min-inline-size: 24px;
+    min-block-size: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  :global(#awsui-top-navigation .aws-console-services-trigger),
+  :global(#awsui-top-navigation .aws-console-search-input) {
+    min-block-size: 24px;
+  }
+
+  :global(nav[aria-label="Breadcrumbs"]) a,
+  :global(nav[aria-label="Breadcrumbs"]) button {
+    min-block-size: 24px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  :global(#awsui-top-navigation .aws-console-search-input) {
+    padding-inline-end: 12px;
+  }
+
+  :global(.aws-console-main-content) :global(li[class*="awsui_page-item"]) > button {
+    min-inline-size: 24px;
+  }
+
+  :global(.aws-console-main-content) :global(a[class*="awsui_variant-primary"]),
+  :global(.aws-console-main-content) :global(a[class*="awsui_variant-secondary"]) {
+    min-block-size: 24px;
+    align-items: center;
+  }
+}

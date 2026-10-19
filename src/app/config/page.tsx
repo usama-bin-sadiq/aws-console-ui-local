@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -46,7 +47,7 @@ export default function ConfigPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/config");
+      const res = await apiFetch("/api/config");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch config");
       setRecorders(data.recorders || []);
@@ -70,7 +71,7 @@ export default function ConfigPage() {
     setRuleNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/config", {
+      const res = await apiFetch("/api/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ruleName, sourceIdentifier }),
@@ -92,7 +93,9 @@ export default function ConfigPage() {
 
   const deleteRule = async (name: string) => {
     try {
-      const res = await fetch(`/api/config?ruleName=${encodeURIComponent(name)}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/config?ruleName=${encodeURIComponent(name)}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to delete rule");
@@ -111,10 +114,14 @@ export default function ConfigPage() {
     setRecorderNameError(null);
     setCreatingRecorder(true);
     try {
-      const res = await fetch("/api/config", {
+      const res = await apiFetch("/api/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "createRecorder", recorderName: recorderName, roleARN: recorderRoleARN }),
+        body: JSON.stringify({
+          action: "createRecorder",
+          recorderName: recorderName,
+          roleARN: recorderRoleARN,
+        }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -132,7 +139,7 @@ export default function ConfigPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Config</Header>
 
@@ -142,7 +149,7 @@ export default function ConfigPage() {
           </Alert>
         )}
 
-        <Container>
+        <Container className="aws-table-card">
           <Tabs
             tabs={[
               {
@@ -169,10 +176,18 @@ export default function ConfigPage() {
                       {
                         header: "Actions",
                         cell: (item: ConfigurationRecorder) => (
-                          <Button onClick={() => {
-                            const name = item.name || "default";
-                            fetch(`/api/config?action=deleteRecorder&recorderName=${encodeURIComponent(name)}`, { method: "DELETE" }).then(() => fetchConfig());
-                          }} formAction="none">Delete</Button>
+                          <Button
+                            onClick={() => {
+                              const name = item.name || "default";
+                              apiFetch(
+                                `/api/config?action=deleteRecorder&recorderName=${encodeURIComponent(name)}`,
+                                { method: "DELETE" },
+                              ).then(() => fetchConfig());
+                            }}
+                            formAction="none"
+                          >
+                            Delete
+                          </Button>
                         ),
                       },
                     ]}
@@ -202,7 +217,10 @@ export default function ConfigPage() {
                     columnDefinitions={[
                       { header: "Rule name", cell: (item) => item.ConfigRuleName },
                       { header: "State", cell: (item) => item.ConfigRuleState || "—" },
-                      { header: "Source identifier", cell: (item) => item.Source?.SourceIdentifier || "—" },
+                      {
+                        header: "Source identifier",
+                        cell: (item) => item.Source?.SourceIdentifier || "—",
+                      },
                       {
                         header: "Actions",
                         cell: (item) => (
@@ -223,21 +241,54 @@ export default function ConfigPage() {
 
         <Modal
           visible={recorderModal}
-          onDismiss={() => { setRecorderModal(false); setRecorderName(""); setRecorderRoleARN(""); }}
+          onDismiss={() => {
+            setRecorderModal(false);
+            setRecorderName("");
+            setRecorderRoleARN("");
+          }}
           header="Create configuration recorder"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => { setRecorderModal(false); setRecorderName(""); setRecorderRoleARN(""); }}>Cancel</Button>
-              <Button variant="primary" onClick={createRecorder} loading={creatingRecorder}>Create</Button>
+              <Button
+                onClick={() => {
+                  setRecorderModal(false);
+                  setRecorderName("");
+                  setRecorderRoleARN("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={createRecorder} loading={creatingRecorder}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Recorder name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={recorderNameError}>
-              <Input value={recorderName} onChange={(e) => { setRecorderName(e.detail.value); setRecorderNameError(null); }} placeholder="default" />
+            <FormField
+              label={
+                <>
+                  Recorder name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={recorderNameError}
+            >
+              <Input
+                value={recorderName}
+                onChange={(e) => {
+                  setRecorderName(e.detail.value);
+                  setRecorderNameError(null);
+                }}
+                placeholder="default"
+              />
             </FormField>
             <FormField label="Role ARN">
-              <Input value={recorderRoleARN} onChange={(e) => setRecorderRoleARN(e.detail.value)} placeholder="arn:aws:iam::123456789012:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig" />
+              <Input
+                value={recorderRoleARN}
+                onChange={(e) => setRecorderRoleARN(e.detail.value)}
+                placeholder="arn:aws:iam::123456789012:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig"
+              />
             </FormField>
           </SpaceBetween>
         </Modal>
@@ -256,10 +307,21 @@ export default function ConfigPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Rule name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={ruleNameError}>
+            <FormField
+              label={
+                <>
+                  Rule name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={ruleNameError}
+            >
               <Input
                 value={ruleName}
-                onChange={(e) => { setRuleName(e.detail.value); setRuleNameError(null); }}
+                onChange={(e) => {
+                  setRuleName(e.detail.value);
+                  setRuleNameError(null);
+                }}
                 placeholder="my-config-rule"
               />
             </FormField>

@@ -12,9 +12,7 @@ export type EC2InstanceState =
   | "terminated"
   | "stopping"
   | "shutting-down"
-  | "stopping"
-  | "rebooting"
-  | "pending";
+  | "rebooting";
 
 export interface EC2Instance {
   InstanceId?: string;
@@ -298,7 +296,19 @@ export interface EC2AMIAttribute {
   ImageId?: string;
   LaunchPermissions?: EC2LaunchPermission[];
   ProductCodes?: Array<{ ProductCodeId?: string; ProductCodeType?: string }>;
-  BlockDeviceMapping?: Array<{ DeviceName?: string; Ebs?: { SnapshotId?: string; VolumeSize?: number; DeleteOnTermination?: boolean; VolumeType?: string; Encrypted?: boolean; Iops?: number; Throughput?: number; KmsKeyId?: string } }>;
+  BlockDeviceMapping?: Array<{
+    DeviceName?: string;
+    Ebs?: {
+      SnapshotId?: string;
+      VolumeSize?: number;
+      DeleteOnTermination?: boolean;
+      VolumeType?: string;
+      Encrypted?: boolean;
+      Iops?: number;
+      Throughput?: number;
+      KmsKeyId?: string;
+    };
+  }>;
   Description?: string;
   KernelId?: string;
   RamdiskId?: string;
@@ -384,7 +394,12 @@ export interface EC2NetworkInterface {
   PrivateIpAddresses?: Array<{
     PrivateIpAddress?: string;
     Primary?: boolean;
-    Association?: { AllocationId?: string; AssociationId?: string; PublicIp?: string; PublicDnsName?: string };
+    Association?: {
+      AllocationId?: string;
+      AssociationId?: string;
+      PublicIp?: string;
+      PublicDnsName?: string;
+    };
   }>;
   PrivateDnsName?: string;
   SourceDestCheck?: boolean;
@@ -398,7 +413,12 @@ export interface EC2NetworkInterface {
     AttachTime?: Date;
     DeleteOnTermination?: boolean;
   };
-  Association?: { AllocationId?: string; AssociationId?: string; PublicIp?: string; PublicDnsName?: string };
+  Association?: {
+    AllocationId?: string;
+    AssociationId?: string;
+    PublicIp?: string;
+    PublicDnsName?: string;
+  };
   TagSet?: Array<{ Key?: string; Value?: string }>;
   Ipv6Addresses?: Array<{ Ipv6Address?: string }>;
   Ipv6Native?: boolean;
@@ -479,6 +499,8 @@ export interface EC2LaunchWizardStep5 {
 }
 
 export interface EC2LaunchWizardStep6 {
+  /** Optional key pair selected for the launch. */
+  keyName?: string;
   securityGroupId: string;
   securityGroupName: string;
   description: string;
@@ -599,8 +621,21 @@ export interface EC2DedicatedHost {
   AutoPlacement?: "on" | "off";
   AvailabilityZone?: string;
   ClientToken?: string;
-  State?: "available" | "under-assessment" | "permanent-failure" | "released" | "released-permanently" | "pending";
-  AvailableCapacity?: { AvailableInstanceCapacity?: Array<{ InstanceType?: string; AvailableCapacity?: number; TotalCapacity?: number }>; AvailableVCpus?: number; };
+  State?:
+    | "available"
+    | "under-assessment"
+    | "permanent-failure"
+    | "released"
+    | "released-permanently"
+    | "pending";
+  AvailableCapacity?: {
+    AvailableInstanceCapacity?: Array<{
+      InstanceType?: string;
+      AvailableCapacity?: number;
+      TotalCapacity?: number;
+    }>;
+    AvailableVCpus?: number;
+  };
   AllocationTime?: Date;
   ReleaseTime?: Date;
   Tags?: Array<{ Key?: string; Value?: string }>;
@@ -617,7 +652,21 @@ export interface EC2DedicatedHost {
 export interface EC2CapacityReservation {
   CapacityReservationId?: string;
   InstanceType?: string;
-  InstancePlatform?: "Linux/UNIX" | "Red Hat Enterprise Linux" | "SUSE Linux" | "Windows" | "Windows with SQL Server" | "Windows with SQL Server Enterprise" | "Windows with SQL Server Standard" | "Windows with SQL Server Web" | "Linux with SQL Server Standard" | "Linux with SQL Server Web" | "Linux with SQL Server Enterprise" | "RHEL with SQL Server Standard" | "RHEL with SQL Server Enterprise" | "RHEL with SQL Server Web" | "RHEL with SQL Server Web";
+  InstancePlatform?:
+    | "Linux/UNIX"
+    | "Red Hat Enterprise Linux"
+    | "SUSE Linux"
+    | "Windows"
+    | "Windows with SQL Server"
+    | "Windows with SQL Server Enterprise"
+    | "Windows with SQL Server Standard"
+    | "Windows with SQL Server Web"
+    | "Linux with SQL Server Standard"
+    | "Linux with SQL Server Web"
+    | "Linux with SQL Server Enterprise"
+    | "RHEL with SQL Server Standard"
+    | "RHEL with SQL Server Enterprise"
+    | "RHEL with SQL Server Web";
   AvailabilityZone?: string;
   AvailabilityZoneId?: string;
   Tenancy?: "default" | "dedicated";

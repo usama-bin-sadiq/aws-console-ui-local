@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -61,7 +62,7 @@ export default function ECSPage() {
   // Task definition actions
   const [taskDefModal, setTaskDefModal] = useState(false);
   const [taskDefFamily, setTaskDefFamily] = useState("");
-  const [taskDefJson, setTaskDefJson] = useState('{}');
+  const [taskDefJson, setTaskDefJson] = useState("{}");
   const [taskDefFamilyError, setTaskDefFamilyError] = useState<string | null>(null);
 
   // Tasks actions
@@ -73,7 +74,7 @@ export default function ECSPage() {
     setLoadingServices(true);
     setError(null);
     try {
-      const res = await fetch("/api/ecs", {
+      const res = await apiFetch("/api/ecs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "listServices", cluster }),
@@ -99,7 +100,7 @@ export default function ECSPage() {
     if (hasError) return;
     const cluster = clusterInput.trim() || clusterName;
     try {
-      const response = await fetch("/api/ecs", {
+      const response = await apiFetch("/api/ecs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -123,7 +124,7 @@ export default function ECSPage() {
   const deleteService = async (serviceName: string) => {
     const cluster = clusterInput.trim() || clusterName;
     try {
-      await fetch("/api/ecs", {
+      await apiFetch("/api/ecs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "deleteService", cluster, serviceName, force: true }),
@@ -137,7 +138,7 @@ export default function ECSPage() {
   const fetchTaskDefinitions = async () => {
     setLoadingTaskDefs(true);
     try {
-      const res = await fetch("/api/ecs", {
+      const res = await apiFetch("/api/ecs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "listTaskDefinitions", status: "ACTIVE" }),
@@ -168,9 +169,10 @@ export default function ECSPage() {
     setTaskDefFamilyError(null);
     try {
       const containerDefinitions = JSON.parse(taskDefJson);
-      if (!Array.isArray(containerDefinitions)) throw new Error("Container definitions must be a JSON array");
+      if (!Array.isArray(containerDefinitions))
+        throw new Error("Container definitions must be a JSON array");
       if (!taskDefFamily.trim()) throw new Error("Task definition family is required");
-      const response = await fetch("/api/ecs", {
+      const response = await apiFetch("/api/ecs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -180,10 +182,11 @@ export default function ECSPage() {
         }),
       });
       const data = await response.json();
-      if (!response.ok || data.error) throw new Error(data.error || "Failed to register task definition");
+      if (!response.ok || data.error)
+        throw new Error(data.error || "Failed to register task definition");
       setTaskDefModal(false);
       setTaskDefFamily("");
-      setTaskDefJson('{}');
+      setTaskDefJson("{}");
       fetchTaskDefinitions();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to register task definition");
@@ -196,7 +199,7 @@ export default function ECSPage() {
     setLoadingTasks(true);
     setTasksLoaded(false);
     try {
-      const res = await fetch("/api/ecs", {
+      const res = await apiFetch("/api/ecs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "listTasks", cluster }),
@@ -209,7 +212,7 @@ export default function ECSPage() {
         setTasksLoaded(true);
         return;
       }
-      const descRes = await fetch("/api/ecs", {
+      const descRes = await apiFetch("/api/ecs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "describeTasks", cluster, tasks: arns }),
@@ -230,7 +233,7 @@ export default function ECSPage() {
   }, []);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon ECS — Container Services</Header>
         {error && (
@@ -249,98 +252,144 @@ export default function ECSPage() {
                   onChange={(e) => setClusterInput(e.detail.value)}
                   placeholder="my-cluster"
                 />
-                <Button onClick={() => { setClusterName(clusterInput.trim() || "default"); fetchServices(); }}>Set cluster</Button>
+                <Button
+                  onClick={() => {
+                    setClusterName(clusterInput.trim() || "default");
+                    fetchServices();
+                  }}
+                >
+                  Set cluster
+                </Button>
               </SpaceBetween>
             </FormField>
           </SpaceBetween>
         </Container>
 
         {/* Services Section */}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setServiceModal(true)}>
-                    Create service
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button variant="primary" onClick={() => setServiceModal(true)}>
+                  Create service
+                </Button>
+              }
+            >
+              Services in {clusterInput.trim() || clusterName}
+            </Header>
+          }
+          items={services}
+          loading={loadingServices}
+          columnDefinitions={[
+            { header: "Service name", cell: (i: ECSServiceSummary) => i.serviceName },
+            {
+              header: "Status",
+              cell: (i: ECSServiceSummary) => (
+                <StatusIndicator type={i.status === "ACTIVE" ? "success" : "warning"}>
+                  {i.status || "—"}
+                </StatusIndicator>
+              ),
+            },
+            { header: "Desired", cell: (i: ECSServiceSummary) => i.desiredCount ?? "—" },
+            { header: "Running", cell: (i: ECSServiceSummary) => i.runningCount ?? "—" },
+            {
+              header: "Actions",
+              cell: (i: ECSServiceSummary) => (
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button formAction="none" onClick={() => deleteService(i.serviceName)}>
+                    Delete
                   </Button>
-                }
-              >
-                Services in {clusterInput.trim() || clusterName}
-              </Header>
-            }
-            items={services}
-            loading={loadingServices}
-            columnDefinitions={[
-              { header: "Service name", cell: (i: ECSServiceSummary) => i.serviceName },
-              { header: "Status", cell: (i: ECSServiceSummary) => <StatusIndicator type={i.status === "ACTIVE" ? "success" : "warning"}>{i.status || "—"}</StatusIndicator> },
-              { header: "Desired", cell: (i: ECSServiceSummary) => i.desiredCount ?? "—" },
-              { header: "Running", cell: (i: ECSServiceSummary) => i.runningCount ?? "—" },
-              {
-                header: "Actions",
-                cell: (i: ECSServiceSummary) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button formAction="none" onClick={() => deleteService(i.serviceName)}>Delete</Button>
-                  </SpaceBetween>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No services found.</Box>}
-          />
-        </Container>
+                </SpaceBetween>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No services found.</Box>}
+        />
 
         {/* Task Definitions Section */}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setTaskDefModal(true)}>
-                    Register task definition
-                  </Button>
-                }
-              >
-                Task Definitions
-              </Header>
-            }
-            items={taskDefs}
-            loading={loadingTaskDefs}
-            columnDefinitions={[
-              { header: "Family", cell: (i: TaskDefinitionSummary) => i.family || "—" },
-              { header: "Revision", cell: (i: TaskDefinitionSummary) => i.revision ?? "—" },
-              { header: "Status", cell: (i: TaskDefinitionSummary) => <StatusIndicator type="success">{i.status || "—"}</StatusIndicator> },
-              { header: "ARN", cell: (i: TaskDefinitionSummary) => <TruncatedText>{i.taskDefinitionArn || "—"}</TruncatedText> },
-            ]}
-            empty={<Box textAlign="center">No task definitions found.</Box>}
-          />
-        </Container>
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button variant="primary" onClick={() => setTaskDefModal(true)}>
+                  Register task definition
+                </Button>
+              }
+            >
+              Task Definitions
+            </Header>
+          }
+          items={taskDefs}
+          loading={loadingTaskDefs}
+          columnDefinitions={[
+            { header: "Family", cell: (i: TaskDefinitionSummary) => i.family || "—" },
+            { header: "Revision", cell: (i: TaskDefinitionSummary) => i.revision ?? "—" },
+            {
+              header: "Status",
+              cell: (i: TaskDefinitionSummary) => (
+                <StatusIndicator type="success">{i.status || "—"}</StatusIndicator>
+              ),
+            },
+            {
+              header: "ARN",
+              cell: (i: TaskDefinitionSummary) => (
+                <TruncatedText>{i.taskDefinitionArn || "—"}</TruncatedText>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No task definitions found.</Box>}
+        />
 
         {/* Running Tasks Section */}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button onClick={fetchTasks} loading={loadingTasks}>Load running tasks</Button>
-                }
-              >
-                Running Tasks
-              </Header>
-            }
-            items={tasks}
-            loading={loadingTasks}
-            columnDefinitions={[
-              { header: "Task ARN", cell: (i: TaskSummary) => <TruncatedText>{i.taskArn || "—"}</TruncatedText> },
-              { header: "Status", cell: (i: TaskSummary) => <StatusIndicator type={i.lastStatus === "RUNNING" ? "success" : i.lastStatus === "STOPPED" ? "warning" : "in-progress"}>{i.lastStatus || "—"}</StatusIndicator> },
-              { header: "Desired", cell: (i: TaskSummary) => i.desiredStatus || "—" },
-              { header: "Service", cell: (i: TaskSummary) => i.serviceName || "—" },
-            ]}
-            empty={<Box textAlign="center">{tasksLoaded ? "No tasks found." : "Click Load running tasks to fetch tasks for the selected cluster."}</Box>}
-          />
-        </Container>
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button onClick={fetchTasks} loading={loadingTasks}>
+                  Load running tasks
+                </Button>
+              }
+            >
+              Running Tasks
+            </Header>
+          }
+          items={tasks}
+          loading={loadingTasks}
+          columnDefinitions={[
+            {
+              header: "Task ARN",
+              cell: (i: TaskSummary) => <TruncatedText>{i.taskArn || "—"}</TruncatedText>,
+            },
+            {
+              header: "Status",
+              cell: (i: TaskSummary) => (
+                <StatusIndicator
+                  type={
+                    i.lastStatus === "RUNNING"
+                      ? "success"
+                      : i.lastStatus === "STOPPED"
+                        ? "warning"
+                        : "in-progress"
+                  }
+                >
+                  {i.lastStatus || "—"}
+                </StatusIndicator>
+              ),
+            },
+            { header: "Desired", cell: (i: TaskSummary) => i.desiredStatus || "—" },
+            { header: "Service", cell: (i: TaskSummary) => i.serviceName || "—" },
+          ]}
+          empty={
+            <Box textAlign="center">
+              {tasksLoaded
+                ? "No tasks found."
+                : "Click Load running tasks to fetch tasks for the selected cluster."}
+            </Box>
+          }
+        />
 
         {/* Service Create Modal */}
         <Modal
@@ -350,19 +399,44 @@ export default function ECSPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setServiceModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createService}>Create</Button>
+              <Button variant="primary" onClick={createService}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Service name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={serviceNameError}>
-              <Input value={serviceNameInput} onChange={(e) => { setServiceNameInput(e.detail.value); setServiceNameError(null); }} placeholder="my-service" />
+            <FormField
+              label={
+                <>
+                  Service name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={serviceNameError}
+            >
+              <Input
+                value={serviceNameInput}
+                onChange={(e) => {
+                  setServiceNameInput(e.detail.value);
+                  setServiceNameError(null);
+                }}
+                placeholder="my-service"
+              />
             </FormField>
             <FormField label="Task definition">
-              <Input value={serviceTaskDef} onChange={(e) => setServiceTaskDef(e.detail.value)} placeholder="my-task-definition:1" />
+              <Input
+                value={serviceTaskDef}
+                onChange={(e) => setServiceTaskDef(e.detail.value)}
+                placeholder="my-task-definition:1"
+              />
             </FormField>
             <FormField label="Desired count">
-              <Input value={serviceDesired} onChange={(e) => setServiceDesired(e.detail.value)} placeholder="1" />
+              <Input
+                value={serviceDesired}
+                onChange={(e) => setServiceDesired(e.detail.value)}
+                placeholder="1"
+              />
             </FormField>
           </SpaceBetween>
         </Modal>
@@ -375,16 +449,38 @@ export default function ECSPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setTaskDefModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={registerTaskDef}>Register</Button>
+              <Button variant="primary" onClick={registerTaskDef}>
+                Register
+              </Button>
             </SpaceBetween>
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Family name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={taskDefFamilyError}>
-              <Input value={taskDefFamily} onChange={(e) => { setTaskDefFamily(e.detail.value); setTaskDefFamilyError(null); }} placeholder="my-family" />
+            <FormField
+              label={
+                <>
+                  Family name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={taskDefFamilyError}
+            >
+              <Input
+                value={taskDefFamily}
+                onChange={(e) => {
+                  setTaskDefFamily(e.detail.value);
+                  setTaskDefFamilyError(null);
+                }}
+                placeholder="my-family"
+              />
             </FormField>
             <FormField label="Container definitions (JSON)">
-              <Textarea value={taskDefJson} onChange={(e) => setTaskDefJson(e.detail.value)} rows={6} placeholder='[{"name":"app","image":"nginx","memory":512}]' />
+              <Textarea
+                value={taskDefJson}
+                onChange={(e) => setTaskDefJson(e.detail.value)}
+                rows={6}
+                placeholder='[{"name":"app","image":"nginx","memory":512}]'
+              />
             </FormField>
           </SpaceBetween>
         </Modal>

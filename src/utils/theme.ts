@@ -1,8 +1,4 @@
-export const getThemedColor = (
-  theme: "dark" | "light",
-  darkColor: string,
-  lightColor: string
-) => {
+export const getThemedColor = (theme: "dark" | "light", darkColor: string, lightColor: string) => {
   return theme === "dark" ? darkColor : lightColor;
 };
 
@@ -24,7 +20,7 @@ export const THEME_COLORS = {
 
 // Provider badge colors
 export const getProviderBadgeColor = (
-  provider: "ministack" | "localstack" | "unknown"
+  provider: "ministack" | "localstack" | "unknown",
 ): "green" | "blue" | "red" => {
   switch (provider) {
     case "ministack":

@@ -11,6 +11,7 @@ import {
 } from "@aws-sdk/client-ecr";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -28,13 +29,17 @@ export async function GET(request: Request) {
     }
     if (action === "getLifecyclePolicy" && repositoryName) {
       const res = await ecrClient.send(new GetLifecyclePolicyCommand({ repositoryName }));
-      return NextResponse.json({ lifecyclePolicyText: res.lifecyclePolicyText, repositoryName: res.repositoryName });
+      return NextResponse.json({
+        lifecyclePolicyText: res.lifecyclePolicyText,
+        repositoryName: res.repositoryName,
+      });
     }
 
     const res = await ecrClient.send(new DescribeRepositoriesCommand({}));
     return NextResponse.json({ repositories: res.repositories || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -46,20 +51,33 @@ export async function POST(request: Request) {
     const ecrClient = getUserClientFromRequest(ECRClient, request);
     const body = await request.json();
     if (body.action === "putLifecyclePolicy") {
-      const res = await ecrClient.send(new PutLifecyclePolicyCommand({
-        repositoryName: body.repositoryName,
-        lifecyclePolicyText: body.lifecyclePolicyText,
-      }));
-      return NextResponse.json({ lifecyclePolicyText: res.lifecyclePolicyText, repositoryName: res.repositoryName });
+      const res = await ecrClient.send(
+        new PutLifecyclePolicyCommand({
+          repositoryName: body.repositoryName,
+          lifecyclePolicyText: body.lifecyclePolicyText,
+        }),
+      );
+      return NextResponse.json({
+        lifecyclePolicyText: res.lifecyclePolicyText,
+        repositoryName: res.repositoryName,
+      });
     }
     if (body.action === "deleteLifecyclePolicy") {
-      await ecrClient.send(new DeleteLifecyclePolicyCommand({ repositoryName: body.repositoryName }));
+      await ecrClient.send(
+        new DeleteLifecyclePolicyCommand({ repositoryName: body.repositoryName }),
+      );
       return NextResponse.json({ success: true });
     }
-    const res = await ecrClient.send(new CreateRepositoryCommand({ repositoryName: body.repositoryName, imageTagMutability: "MUTABLE" }));
+    const res = await ecrClient.send(
+      new CreateRepositoryCommand({
+        repositoryName: body.repositoryName,
+        imageTagMutability: "MUTABLE",
+      }),
+    );
     return NextResponse.json({ repository: res.repository });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -75,6 +93,7 @@ export async function DELETE(request: Request) {
     await ecrClient.send(new DeleteRepositoryCommand({ repositoryName: name, force: true }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

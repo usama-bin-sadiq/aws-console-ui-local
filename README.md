@@ -7,7 +7,7 @@
 [![Cloudscape](https://img.shields.io/badge/Cloudscape-3.0-orange.svg)](https://cloudscape.design/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang/)
 
-An open-source, **Cloudscape-based** web console for AWS-compatible services running in **LocalStack** or **MiniStack**. Provides exact AWS Management Console UI/UX parity for local development and testing.
+An open-source, **Cloudscape-based** web console for AWS-compatible services running in **LocalStack** or **MiniStack**. It provides an AWS-inspired management-console experience for local development and testing; it is not a literal pixel-for-pixel production AWS console.
 
 > **⚠️ Important**: This is an emulator console, not an AWS production console. It connects to local emulators only. No real AWS credentials, billing, or production data involved.
 
@@ -15,29 +15,30 @@ An open-source, **Cloudscape-based** web console for AWS-compatible services run
 
 ## ✨ Features
 
-| Feature | Description |
-|---------|-------------|
-| 🎯 **Exact AWS Console Parity** | Cloudscape Design System — same components AWS uses |
-| 🔌 **Multi-Backend Support** | LocalStack (full) + MiniStack (partial) via adapter pattern |
-| 🔐 **Local Authentication** | SQLite-backed auth with MFA, no verification required |
-| 📦 **150+ Services** | Capability-aware navigation — only shows what your emulator supports |
-| 🔗 **Cross-Service Linking** | Resource relationships (EC2→VPC, Lambda→CloudWatch, etc.) |
-| 🌙 **Dark/Light Mode** | Full theme support with Cloudscape tokens |
-| 📱 **Fully Responsive** | Works at 320px, 400% zoom, touch-friendly |
-| ♿ **WCAG 2.1 AA** | Accessible by default via Cloudscape |
-| 🖥️ **Integrated Terminal** | xterm.js-based CloudShell alternative |
-| 🔍 **Global Search** | Service + resource search with Autosuggest |
+| Feature                             | Description                                                                                               |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 🎯 **AWS-inspired management UI**   | Cloudscape components and interaction patterns used as a reference, with documented non-parity boundaries |
+| 🔌 **Capability-aware backends**    | LocalStack and MiniStack share an adapter contract; availability is verified per runtime/license          |
+| 🔐 **Local Authentication**         | SQLite-backed auth with MFA, no verification required                                                     |
+| 📦 **166 service registry entries** | Capability-aware navigation across 117 linked services; only verified/enabled services are navigable      |
+| 🔗 **Cross-Service Linking**        | Resource relationships (EC2→VPC, Lambda→CloudWatch, etc.)                                                 |
+| 🌙 **Dark/Light Mode**              | Full theme support with Cloudscape tokens                                                                 |
+| 📱 **Fully Responsive**             | Works at 320px, 400% zoom, touch-friendly                                                                 |
+| ♿ **WCAG 2.1 AA**                  | Accessible by default via Cloudscape                                                                      |
+| 🖥️ **Integrated Terminal**          | xterm.js-based CloudShell alternative                                                                     |
+| 🔍 **Global Search**                | Service + resource search with Autosuggest                                                                |
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 20+
 - Docker (for LocalStack/MiniStack)
 - pnpm (recommended) or npm
 
-### Option 1: LocalStack (Recommended — Full Service Coverage)
+### Option 1: LocalStack (Recommended — broadest service coverage)
 
 ```bash
 # Clone and install
@@ -102,13 +103,13 @@ docker compose -f docker-compose.both.yml up -d
 
 ### Key Architectural Decisions
 
-| ADR | Decision | Status |
-|-----|----------|--------|
-| [ADR-001](docs/adr/ADR-001-cloudscape-ui.md) | Cloudscape Design System for UI | ✅ Accepted |
-| [ADR-002](docs/adr/ADR-002-adapter-pattern.md) | Adapter Pattern for Multi-Backend | ✅ Accepted |
-| [ADR-003](docs/adr/ADR-003-capability-navigation.md) | Capability-Aware Navigation | ✅ Accepted |
-| [ADR-004](docs/adr/ADR-004-sqlite-auth.md) | SQLite for Local Auth (with bcrypt) | ✅ Accepted |
-| [ADR-005](docs/adr/ADR-005-nextjs-react19.md) | Next.js App Router + React 19 | ✅ Accepted |
+| ADR                                                  | Decision                            | Status      |
+| ---------------------------------------------------- | ----------------------------------- | ----------- |
+| [ADR-001](docs/adr/ADR-001-cloudscape-ui.md)         | Cloudscape Design System for UI     | ✅ Accepted |
+| [ADR-002](docs/adr/ADR-002-adapter-pattern.md)       | Adapter Pattern for Multi-Backend   | ✅ Accepted |
+| [ADR-003](docs/adr/ADR-003-capability-navigation.md) | Capability-Aware Navigation         | ✅ Accepted |
+| [ADR-004](docs/adr/ADR-004-sqlite-auth.md)           | SQLite for Local Auth (with bcrypt) | ✅ Accepted |
+| [ADR-005](docs/adr/ADR-005-nextjs-react19.md)        | Next.js App Router + React 19       | ✅ Accepted |
 
 ---
 
@@ -142,7 +143,7 @@ aws-console/
 │   │   ├── localstack-adapter/ # Multi-backend adapter
 │   │   └── mfa.ts             # TOTP MFA utilities
 │   ├── constants/             # Configuration
-│   │   ├── navigation.ts      # Service navigation (150 services)
+│   │   ├── navigation.ts      # Service navigation (117 linked services)
 │   │   ├── service-compatibility.ts # Capability registry
 │   │   ├── service-icons.ts   # AWS Architecture icons
 │   │   └── regions.ts         # AWS regions
@@ -164,35 +165,35 @@ aws-console/
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ACTIVE_BACKEND` | `localstack` | `localstack` or `ministack` |
-| `LOCALSTACK_HOSTNAME` | `localhost` | LocalStack host |
-| `LOCALSTACK_EDGE_PORT` | `4566` | LocalStack edge port |
-| `MINSTACK_HOSTNAME` | `localhost` | MiniStack host |
-| `MINSTACK_EDGE_PORT` | `4566` | MiniStack edge port |
-| `AWS_REGION` | `us-east-1` | Default AWS region |
-| `NEXT_PUBLIC_ROOT_USERNAME` | `root` | Default root username |
-| `NEXT_PUBLIC_ROOT_PASSWORD` | `root123` | Default root password |
+| Variable                    | Default     | Description                                       |
+| --------------------------- | ----------- | ------------------------------------------------- |
+| `ACTIVE_BACKEND`            | `localemu`  | `localemu` (default), `localstack` or `ministack` |
+| `LOCALSTACK_HOSTNAME`       | `localhost` | LocalStack host                                   |
+| `LOCALSTACK_EDGE_PORT`      | `4566`      | LocalStack edge port                              |
+| `MINSTACK_HOSTNAME`         | `localhost` | MiniStack host                                    |
+| `MINSTACK_EDGE_PORT`        | `4566`      | MiniStack edge port                               |
+| `AWS_REGION`                | `us-east-1` | Default AWS region                                |
+| `NEXT_PUBLIC_ROOT_USERNAME` | `root`      | Default root username                             |
+| `NEXT_PUBLIC_ROOT_PASSWORD` | `root123`   | Default root password                             |
 
 ### Backend Capability Differences
 
-| Service | LocalStack | MiniStack |
-|---------|------------|-----------|
-| S3 | ✅ Full | ✅ Full |
-| DynamoDB | ✅ Full | ✅ Full |
-| Lambda | ✅ Full | ✅ Full |
-| EC2 | ✅ Full | ⚠️ Partial |
-| RDS | ✅ Full | ✅ Full |
-| CloudFormation | ✅ Full | ✅ Full |
-| IAM | ✅ Full | ✅ Full |
-| CloudWatch | ✅ Full | ✅ Full |
-| API Gateway | ✅ Full | ⚠️ Partial |
-| EventBridge | ✅ Full | ⚠️ Partial |
-| Step Functions | ✅ Full | ⚠️ Partial |
-| ... | ... | ... |
+| Service        | LocalStack                   | MiniStack            |
+| -------------- | ---------------------------- | -------------------- |
+| S3             | ✅ Full                      | ✅ Full              |
+| DynamoDB       | ✅ Full                      | ✅ Full              |
+| Lambda         | ✅ Full                      | ✅ Full              |
+| EC2            | ✅ Full                      | ⚠️ Partial           |
+| RDS            | ⚠️ License/runtime dependent | ⚠️ Runtime dependent |
+| CloudFormation | ✅ Full                      | ✅ Full              |
+| IAM            | ✅ Full                      | ✅ Full              |
+| CloudWatch     | ✅ Full                      | ✅ Full              |
+| API Gateway    | ✅ Full                      | ⚠️ Partial           |
+| EventBridge    | ⚠️ Runtime dependent         | ⚠️ Partial           |
+| Step Functions | ✅ Full                      | ⚠️ Partial           |
+| ...            | ...                          | ...                  |
 
-> See [service-compatibility.ts](src/constants/service-compatibility.ts) for full 150-service registry.
+> See [service-compatibility.ts](src/constants/service-compatibility.ts) for the full registry and [emulator-runtime-evidence.md](docs/emulator-runtime-evidence.md) for the latest verified runtime matrix. A service being present in the UI does not imply that the active emulator license or data plane supports it.
 
 ---
 
@@ -222,6 +223,9 @@ pnpm a11y:axe
 
 # UI parity audit
 pnpm audit:ui
+
+# Authenticated runtime API probe (requires the existing Chrome/CDP session)
+pnpm audit:runtime
 ```
 
 ---
@@ -241,6 +245,7 @@ docker run -p 3000:3000 aws-console
 ```
 
 ### Standalone Output
+
 Next.js `output: "standalone"` creates a minimal deployment bundle in `.next/standalone/`.
 
 ---
@@ -292,6 +297,15 @@ MIT License — see [LICENSE](LICENSE) for details.
 - **LocalStack** — The most comprehensive local AWS emulator
 - **MiniStack** — Lightweight AWS-compatible emulator
 - **AWS Architecture Icons** — Official service icons
+
+> **Icon provenance.** The vendored set under `public/icons/Architecture-Service/` is the official AWS
+> Architecture Service Icons package. The Amazon QuickSight icons were taken from the
+> `Architecture-Service-Icons_07312025` release, because AWS removed QuickSight from the newer
+> `Icon-package_07312026` release. Two icon paths were corrected to match where the current pack groups
+> services (ECS/EKS/ECR under `Arch_Containers`, Connect/Pinpoint/SES under `Arch_Business-Applications`,
+> Redshift under `Arch_Analytics`). AWS no longer publishes an "AWS Billing Dashboard" service icon in any
+> current release, so `/billing` points at the Cost Explorer glyph with a comment recording the substitution.
+
 - **All contributors** — Thank you for making this better!
 
 ---

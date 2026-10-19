@@ -2,10 +2,10 @@
  * useVPCService — VPC adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { ec2 } from '@/lib/aws-clients'
-import { DescribeVpcsCommand } from '@aws-sdk/client-ec2';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { ec2 } from "@/lib/aws-clients";
+import { DescribeVpcsCommand } from "@aws-sdk/client-ec2";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface VPCServiceState {
   vpcs: unknown[];

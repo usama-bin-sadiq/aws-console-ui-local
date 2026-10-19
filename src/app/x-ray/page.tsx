@@ -8,7 +8,11 @@ import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 
-interface XRayService { name: string; type: string; startTime?: string; }
+interface XRayService {
+  name: string;
+  type: string;
+  startTime?: string;
+}
 
 export default function XRayPage() {
   const [services, setServices] = useState<XRayService[]>([]);
@@ -16,7 +20,8 @@ export default function XRayPage() {
   const [error, setError] = useState<string | null>(null);
 
   const loadServiceGraph = async () => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/xray");
       const data = await res.json();
@@ -24,17 +29,25 @@ export default function XRayPage() {
       setServices(data.services || []);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unknown error");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS X-Ray</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Container className="aws-table-card">
           <SpaceBetween size="m">
-            <Button onClick={loadServiceGraph} loading={loading}>Load service graph (last 1 hour)</Button>
+            <Button onClick={loadServiceGraph} loading={loading}>
+              Load service graph (last 1 hour)
+            </Button>
             <Table
               header={<Header variant="h2">Services ({services.length})</Header>}
               items={services}
@@ -43,7 +56,11 @@ export default function XRayPage() {
                 { header: "Type", cell: (i) => i.type },
                 { header: "Start time", cell: (i) => i.startTime || "—" },
               ]}
-              empty={<Box textAlign="center">Click &quot;Load service graph&quot; to view X-Ray services.</Box>}
+              empty={
+                <Box textAlign="center">
+                  Click &quot;Load service graph&quot; to view X-Ray services.
+                </Box>
+              }
             />
           </SpaceBetween>
         </Container>

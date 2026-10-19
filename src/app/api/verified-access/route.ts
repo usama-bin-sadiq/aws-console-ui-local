@@ -12,6 +12,9 @@ export async function GET(request: Request) {
     const res = await ec2Client.send(new DescribeVerifiedAccessInstancesCommand({}));
     return NextResponse.json({ instances: res.VerifiedAccessInstances || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ instances: [], message: error instanceof Error ? error.message : "Verified Access not available" });
+    return NextResponse.json({
+      instances: [],
+      message: error instanceof Error ? error.message : "Verified Access not available",
+    });
   }
 }

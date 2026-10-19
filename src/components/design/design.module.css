@@ -1,0 +1,709 @@
+/*
+ * AWS console design system.
+ *
+ * Every rule here is transcribed from the supplied canvases
+ * (~/Downloads/cloud-console-canvases), extracted as the rules that appear in
+ * 20+ frames -- so these are the shared archetypes, not one-off frame styling:
+ *
+ *   card / toolbar / table   list pages        (~495 frames)
+ *   field / opt / steps      create & edit     (~137 frames)
+ *   body / stat / badge      detail pages      (~134 frames)
+ *   sk / spin / bar/loadrow  loading states    (~348 frames)
+ *   overlay / modal          confirmations     (~9 frames)
+ *   cols / col / split/pane  dashboards, terminals
+ *
+ * The shell chrome (nav, side rail, breadcrumbs, footer) lives in
+ * ../shell/shell.module.css. This file starts from the same token block so a
+ * page rendered outside the shell still gets correct colours.
+ */
+
+.root {
+  --bg: #f2f3f3;
+  --surface: #ffffff;
+  --text: #0f141a;
+  --muted: #5f6b7a;
+  --border: #d5dbdb;
+  --border2: #e9ebed;
+  --link: #0972d3;
+  --linkh: #033160;
+  --hl: #f0f8ff;
+  --accent: #006ce0;
+  --pri: #006ce0;
+  --prih: #1853b0;
+  --err: #d91515;
+  --okbg: rgba(3, 127, 12, 0.1);
+  --ok: #037f0c;
+  --warn: #855900;
+  --bad: #d91515;
+  --off: #5f6b7a;
+  --brand: #ff9900;
+  --brandText: #161d26;
+  --navBg: #161d26;
+  --navBorder: #414d5c;
+  --navHover: #2e3947;
+  --fieldBorder: #8c97a5;
+  --ddsh: rgba(0, 7, 22, 0.25);
+
+  position: relative;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: normal;
+}
+
+.root.dark {
+  --bg: #0f141a;
+  --surface: #161d26;
+  --text: #e9ebed;
+  --muted: #a1acba;
+  --border: #354150;
+  --border2: #2a3441;
+  --link: #6cb6ff;
+  --linkh: #a8d4ff;
+  --hl: #1f2d40;
+  --accent: #7bbcff;
+  --pri: #006ce0;
+  --prih: #1a7de8;
+  --err: #ff8a8a;
+  --okbg: rgba(46, 160, 67, 0.14);
+  --ok: #2ea043;
+  --warn: #e0a30c;
+  --bad: #ff6b6b;
+  --off: #8896a6;
+  --navBorder: #2a3441;
+  color-scheme: dark;
+}
+
+.root :where(*) {
+  box-sizing: border-box;
+}
+
+/* `:where()` keeps these at zero specificity so the component rules below win.
+   A bare `p`/`a` selector here would out-specify `.muted`, `.legal` and the
+   primary button, which is a bug this file already had once. */
+.root :where(h1, h2, h3, p, ul, ol) {
+  margin: 0;
+  padding: 0;
+}
+.root :where(a) {
+  color: var(--link);
+  text-decoration: none;
+}
+.root :where(a):hover {
+  color: var(--linkh);
+  text-decoration: underline;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+
+.btn {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 20px;
+  border: 2px solid var(--accent);
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.btn:hover {
+  background: var(--hl);
+  text-decoration: none;
+  color: var(--accent);
+}
+.btn.pri {
+  background: var(--pri);
+  border-color: var(--pri);
+  color: #fff;
+}
+.btn.pri:hover {
+  background: var(--prih);
+  border-color: var(--prih);
+  color: #fff;
+}
+.btn.org {
+  background: #ff9900;
+  border-color: #ff9900;
+  color: #161d26;
+}
+.btn.org:hover {
+  background: #ffb84d;
+  border-color: #ffb84d;
+  color: #161d26;
+}
+.btn.danger {
+  background: #d91515;
+  border-color: #d91515;
+  color: #fff;
+}
+.btn.danger:hover {
+  background: #a80f0f;
+  border-color: #a80f0f;
+  color: #fff;
+}
+.btn.full {
+  width: 100%;
+}
+
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Card ──────────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 1px rgba(0, 28, 36, 0.15);
+  min-width: 0;
+}
+.card + .card {
+  margin-top: 20px;
+}
+.cardHeader {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.cardBody {
+  padding: 16px 20px;
+  font-size: 14px;
+}
+.cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.cardTitleSmall {
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 6px;
+}
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ── Page header ───────────────────────────────────────────────────────── */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.headTitle {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.headTitleSmall {
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+/*
+ * The "Info" affordance the design places next to most page titles. It has to
+ * beat the global link colour, hence the explicit colour rather than inheriting
+ * --link (which is only 4.30:1 on --bg).
+ */
+.infoLink {
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+  color: var(--linkh);
+}
+
+/* ── List: toolbar + table ─────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border2);
+  align-items: center;
+}
+.toolbar > input {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.tablewrap {
+  overflow-x: auto;
+}
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 640px;
+  font-size: 14px;
+}
+.th {
+  text-align: left;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border2);
+  white-space: nowrap;
+}
+.td {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border2);
+  white-space: nowrap;
+}
+.tr:last-child .td {
+  border-bottom: 0;
+}
+
+/* ── Forms ─────────────────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.fieldLabel {
+  font-size: 14px;
+  font-weight: 700;
+}
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+.input,
+.select,
+.textarea {
+  height: 44px;
+  border: 1px solid var(--fieldBorder);
+  border-radius: 8px;
+  padding: 0 12px;
+  font:
+    14px "Open Sans",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+}
+.textarea {
+  height: 96px;
+  padding: 8px 12px;
+  resize: vertical;
+}
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--muted);
+}
+
+/* Error state thickens the border, matching the design's 2px rule. */
+.fieldErr .input,
+.fieldErr .select,
+.fieldErr .textarea {
+  border-color: var(--err);
+  border-width: 2px;
+}
+.errText {
+  color: var(--err);
+  font-size: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.opt {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.opt b {
+  display: block;
+}
+.opt input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+.step {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.stepOn {
+  background: #006ce0;
+  color: #fff;
+  border-color: #006ce0;
+}
+
+/* ── Alerts ────────────────────────────────────────────────────────────── */
+
+.alert {
+  border: 1px solid var(--link);
+  background: var(--hl);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.alertSuccess {
+  border-color: #037f0c;
+  background: var(--okbg);
+}
+.alertError {
+  border-color: var(--err);
+  background: rgba(217, 21, 21, 0.08);
+}
+
+/* ── Empty state ───────────────────────────────────────────────────────── */
+
+.empty {
+  text-align: center;
+  padding: 32px 16px;
+}
+.emptyTitle {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+/* ── Stats & badges ────────────────────────────────────────────────────── */
+
+.stat b {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.stat span {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+}
+.dotOk {
+  background: var(--ok);
+}
+.dotWarn {
+  background: var(--warn);
+}
+.dotBad {
+  background: var(--bad);
+}
+.dotOff {
+  background: var(--off);
+}
+
+/* ── Loading ───────────────────────────────────────────────────────────── */
+
+.sk {
+  height: 14px;
+  border-radius: 4px;
+  background: var(--border2);
+}
+.spin {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  display: inline-block;
+}
+.spinLg {
+  width: 44px;
+  height: 44px;
+  border-width: 5px;
+}
+.spinSm {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--border2);
+  overflow: hidden;
+}
+.bar > i {
+  display: block;
+  height: 100%;
+  width: 45%;
+  background: var(--accent);
+  border-radius: 4px;
+}
+.loadRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  font-size: 14px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border2);
+}
+
+/* ── Layout helpers ────────────────────────────────────────────────────── */
+
+.cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+.colLeft {
+  flex: 1.6 1 520px;
+}
+.colRight {
+  flex: 1 1 360px;
+}
+.col .card + .card {
+  margin-top: 0;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+.g3 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.g2 {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.twocol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+}
+.twocolMain {
+  flex: 999 1 520px;
+  min-width: 0;
+}
+.twocolHelp {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 7, 22, 0.6);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 120px 16px 16px;
+  z-index: 40;
+}
+.modal {
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 8px;
+  width: min(520px, 100%);
+  box-shadow: 0 8px 32px var(--ddsh);
+}
+.modalHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+.modalBody {
+  padding: 16px 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.modalFooter {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border2);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.tab {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+}
+.tabOn {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── Definition rows (detail pages) ────────────────────────────────────── */
+
+.tog {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border2);
+  font-size: 14px;
+}
+
+/* ── Terminal ──────────────────────────────────────────────────────────── */
+
+.term {
+  background: #0f141a;
+  color: #d1d5db;
+  font: 13px/1.6 monospace;
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 360px;
+  overflow-x: auto;
+  white-space: pre;
+}
+.termGreen {
+  color: #6ee7a1;
+}
+.termYellow {
+  color: #fcd34d;
+}
+.termRed {
+  color: #fca5a5;
+}
+.termBlue {
+  color: #93c5fd;
+}
+.termDim {
+  color: #8c97a5;
+}
+
+.split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: stretch;
+}
+.split > * {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+.pane {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Utility ───────────────────────────────────────────────────────────── */
+
+.hide {
+  display: none;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Narrow ────────────────────────────────────────────────────────────── */
+
+@container (max-width: 760px) {
+  .cardHeader,
+  .cardBody,
+  .toolbar {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .th,
+  .td {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .headTitle {
+    font-size: 24px;
+  }
+  .btns .btn {
+    flex: 1 1 140px;
+  }
+}

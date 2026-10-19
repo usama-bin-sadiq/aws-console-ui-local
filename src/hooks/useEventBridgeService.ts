@@ -2,10 +2,10 @@
  * useEventBridgeService — EventBridge adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { eventbridge } from '@/lib/aws-clients'
-import { ListEventBusesCommand } from '@aws-sdk/client-eventbridge';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { eventbridge } from "@/lib/aws-clients";
+import { ListEventBusesCommand } from "@aws-sdk/client-eventbridge";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface EventBridgeServiceState {
   buses: unknown[];
@@ -14,7 +14,11 @@ export interface EventBridgeServiceState {
 }
 
 export function useEventBridgeService() {
-  const [state, setState] = useState<EventBridgeServiceState>({ buses: [], loading: false, error: null });
+  const [state, setState] = useState<EventBridgeServiceState>({
+    buses: [],
+    loading: false,
+    error: null,
+  });
   const listEventBuses = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {

@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -39,7 +40,7 @@ export default function OpenSearchPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/opensearch");
+      const res = await apiFetch("/api/opensearch");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch OpenSearch data");
       setDomains(data.domains || []);
@@ -63,7 +64,7 @@ export default function OpenSearchPage() {
     setDomainNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/opensearch", {
+      const res = await apiFetch("/api/opensearch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domainName, engineVersion }),
@@ -85,7 +86,7 @@ export default function OpenSearchPage() {
 
   const deleteDomain = async (name: string) => {
     try {
-      const res = await fetch(`/api/opensearch?domainName=${encodeURIComponent(name)}`, {
+      const res = await apiFetch(`/api/opensearch?domainName=${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -99,7 +100,7 @@ export default function OpenSearchPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">OpenSearch Service</Header>
 
@@ -109,7 +110,7 @@ export default function OpenSearchPage() {
           </Alert>
         )}
 
-        <Container>
+        <Container className="aws-table-card">
           <Tabs
             tabs={[
               {
@@ -132,7 +133,10 @@ export default function OpenSearchPage() {
                     items={domains}
                     columnDefinitions={[
                       { header: "Domain name", cell: (item: OpenSearchDomain) => item.DomainName },
-                      { header: "Engine version", cell: (item: OpenSearchDomain) => item.EngineVersion || "—" },
+                      {
+                        header: "Engine version",
+                        cell: (item: OpenSearchDomain) => item.EngineVersion || "—",
+                      },
                       {
                         header: "Actions",
                         cell: (item: OpenSearchDomain) => (
@@ -152,14 +156,21 @@ export default function OpenSearchPage() {
                 id: "pipelines",
                 content: (
                   <Table
-                    header={
-                      <Header variant="h2">Pipelines ({pipelines.length})</Header>
-                    }
+                    header={<Header variant="h2">Pipelines ({pipelines.length})</Header>}
                     items={pipelines}
                     columnDefinitions={[
-                      { header: "Pipeline name", cell: (item: PipelineInfo) => item.PipelineName || "—" },
-                      { header: "Status", cell: (item: PipelineInfo) => item.PipelineStatus || "—" },
-                      { header: "Description", cell: (item: PipelineInfo) => item.Description || "—" },
+                      {
+                        header: "Pipeline name",
+                        cell: (item: PipelineInfo) => item.PipelineName || "—",
+                      },
+                      {
+                        header: "Status",
+                        cell: (item: PipelineInfo) => item.PipelineStatus || "—",
+                      },
+                      {
+                        header: "Description",
+                        cell: (item: PipelineInfo) => item.Description || "—",
+                      },
                     ]}
                     loading={loading}
                     empty={<Box textAlign="center">No pipelines found.</Box>}
@@ -196,10 +207,21 @@ export default function OpenSearchPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Domain name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={domainNameError}>
+            <FormField
+              label={
+                <>
+                  Domain name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={domainNameError}
+            >
               <Input
                 value={domainName}
-                onChange={(e) => { setDomainName(e.detail.value); setDomainNameError(null); }}
+                onChange={(e) => {
+                  setDomainName(e.detail.value);
+                  setDomainNameError(null);
+                }}
                 placeholder="my-domain"
               />
             </FormField>

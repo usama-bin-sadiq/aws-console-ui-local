@@ -12,6 +12,7 @@ import {
 } from "@aws-sdk/client-ec2";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -21,8 +22,9 @@ export async function GET(request: Request) {
     const ec2Client = getUserClientFromRequest(EC2Client, request);
     const res = await ec2Client.send(new DescribeInternetGatewaysCommand({}));
     return NextResponse.json({ internetGateways: res.InternetGateways || [] });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -34,18 +36,23 @@ export async function POST(request: Request) {
     const ec2Client = getUserClientFromRequest(EC2Client, request);
     const body = await request.json();
     if (body.action === "attach") {
-      await ec2Client.send(new AttachInternetGatewayCommand({ InternetGatewayId: body.igwId, VpcId: body.vpcId }));
+      await ec2Client.send(
+        new AttachInternetGatewayCommand({ InternetGatewayId: body.igwId, VpcId: body.vpcId }),
+      );
       return NextResponse.json({ success: true });
     }
     if (body.action === "detach") {
-      await ec2Client.send(new DetachInternetGatewayCommand({ InternetGatewayId: body.igwId, VpcId: body.vpcId }));
+      await ec2Client.send(
+        new DetachInternetGatewayCommand({ InternetGatewayId: body.igwId, VpcId: body.vpcId }),
+      );
       return NextResponse.json({ success: true });
     }
     // default: create
     const res = await ec2Client.send(new CreateInternetGatewayCommand({}));
     return NextResponse.json({ internetGateway: res.InternetGateway });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -56,9 +63,12 @@ export async function DELETE(request: Request) {
   try {
     const ec2Client = getUserClientFromRequest(EC2Client, request);
     const { searchParams } = new URL(request.url);
-    await ec2Client.send(new DeleteInternetGatewayCommand({ InternetGatewayId: searchParams.get("igwId")! }));
+    await ec2Client.send(
+      new DeleteInternetGatewayCommand({ InternetGatewayId: searchParams.get("igwId")! }),
+    );
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

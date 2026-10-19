@@ -8,6 +8,7 @@ import {
 import { ApiGatewayV2Client } from "@aws-sdk/client-apigatewayv2";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -18,7 +19,8 @@ export async function GET(request: Request) {
     const res = await apigatewayv2Client.send(new GetApisCommand({}));
     return NextResponse.json({ apis: res.Items || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -30,13 +32,18 @@ export async function POST(request: Request) {
     const apigatewayv2Client = getUserClientFromRequest(ApiGatewayV2Client, request);
     const body = await request.json();
     if (body.action === "createStage") {
-      const res = await apigatewayv2Client.send(new CreateStageCommand({ ApiId: body.apiId, StageName: body.stageName }));
+      const res = await apigatewayv2Client.send(
+        new CreateStageCommand({ ApiId: body.apiId, StageName: body.stageName }),
+      );
       return NextResponse.json({ stage: res });
     }
-    const res = await apigatewayv2Client.send(new CreateApiCommand({ Name: body.name, ProtocolType: body.protocolType || "HTTP" }));
+    const res = await apigatewayv2Client.send(
+      new CreateApiCommand({ Name: body.name, ProtocolType: body.protocolType || "HTTP" }),
+    );
     return NextResponse.json({ api: res });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -51,6 +58,7 @@ export async function DELETE(request: Request) {
     await apigatewayv2Client.send(new DeleteApiCommand({ ApiId: apiId }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

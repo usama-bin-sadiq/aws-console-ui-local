@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -38,7 +39,7 @@ export default function SSMParameterStorePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/ssm");
+      const res = await apiFetch("/api/ssm");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setParameters(data.parameters || []);
@@ -55,7 +56,7 @@ export default function SSMParameterStorePage() {
 
   const putParameter = async () => {
     try {
-      await fetch("/api/ssm", {
+      await apiFetch("/api/ssm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -75,43 +76,45 @@ export default function SSMParameterStorePage() {
   };
 
   const deleteParameter = async (name: string) => {
-    await fetch(`/api/ssm?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+    await apiFetch(`/api/ssm?name=${encodeURIComponent(name)}`, { method: "DELETE" });
     fetchParameters();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Systems Manager — Parameter Store</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={<Button onClick={() => setCreateModal(true)}>Create parameter</Button>}
-              >
-                Parameters ({parameters.length})
-              </Header>
-            }
-            items={parameters}
-            loading={loading}
-            columnDefinitions={[
-              { header: "Name", cell: (item) => item.Name },
-              { header: "Type", cell: (item) => item.Type },
-              { header: "Last modified", cell: (item) => item.LastModifiedDate ?? "—" },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button onClick={() => deleteParameter(item.Name)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No parameters found.</Box>}
-          />
-        </Container>
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create parameter</Button>}
+            >
+              Parameters ({parameters.length})
+            </Header>
+          }
+          items={parameters}
+          loading={loading}
+          columnDefinitions={[
+            { header: "Name", cell: (item) => item.Name },
+            { header: "Type", cell: (item) => item.Type },
+            { header: "Last modified", cell: (item) => item.LastModifiedDate ?? "—" },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button onClick={() => deleteParameter(item.Name)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No parameters found.</Box>}
+        />
 
         <Modal
           visible={createModal}
@@ -120,7 +123,9 @@ export default function SSMParameterStorePage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={putParameter}>Create</Button>
+              <Button variant="primary" onClick={putParameter}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
@@ -142,7 +147,7 @@ export default function SSMParameterStorePage() {
             <FormField label="Type">
               <Select
                 selectedOption={paramType}
-                onChange={(e) => setParamType(e.detail.selectedOption as typeof TYPE_OPTIONS[0])}
+                onChange={(e) => setParamType(e.detail.selectedOption as (typeof TYPE_OPTIONS)[0])}
                 options={TYPE_OPTIONS}
               />
             </FormField>

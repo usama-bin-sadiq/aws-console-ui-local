@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -92,7 +93,7 @@ export default function AutoScalingPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/auto-scaling");
+      const res = await apiFetch("/api/auto-scaling");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch Auto Scaling groups");
       setGroups(data.autoScalingGroups || []);
@@ -115,7 +116,7 @@ export default function AutoScalingPage() {
     setGroupNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/auto-scaling", {
+      const res = await apiFetch("/api/auto-scaling", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -144,7 +145,7 @@ export default function AutoScalingPage() {
 
   const deleteGroup = async (name: string) => {
     try {
-      const res = await fetch(`/api/auto-scaling?groupName=${encodeURIComponent(name)}`, {
+      const res = await apiFetch(`/api/auto-scaling?groupName=${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -168,7 +169,7 @@ export default function AutoScalingPage() {
   const updateGroup = async () => {
     setUpdating(true);
     try {
-      const res = await fetch("/api/auto-scaling", {
+      const res = await apiFetch("/api/auto-scaling", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -195,7 +196,7 @@ export default function AutoScalingPage() {
   const fetchLaunchConfigs = async () => {
     setLaunchConfigLoading(true);
     try {
-      const res = await fetch("/api/auto-scaling?action=launchConfigurations");
+      const res = await apiFetch("/api/auto-scaling?action=launchConfigurations");
       const data = await res.json();
       setLaunchConfigs(data.launchConfigurations || []);
       setLaunchConfigModal(true);
@@ -209,7 +210,7 @@ export default function AutoScalingPage() {
   const createLaunchConfig = async () => {
     setLaunchCreating(true);
     try {
-      const res = await fetch("/api/auto-scaling", {
+      const res = await apiFetch("/api/auto-scaling", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -237,7 +238,9 @@ export default function AutoScalingPage() {
   const fetchPolicies = async (groupName: string) => {
     setPoliciesLoading(true);
     try {
-      const res = await fetch(`/api/auto-scaling?action=scalingPolicies&groupName=${encodeURIComponent(groupName)}`);
+      const res = await apiFetch(
+        `/api/auto-scaling?action=scalingPolicies&groupName=${encodeURIComponent(groupName)}`,
+      );
       const data = await res.json();
       setPolicies(data.scalingPolicies || []);
     } catch (err) {
@@ -255,7 +258,7 @@ export default function AutoScalingPage() {
     setPolicyNameError(null);
     setPolicyCreating(true);
     try {
-      const res = await fetch("/api/auto-scaling", {
+      const res = await apiFetch("/api/auto-scaling", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -283,7 +286,9 @@ export default function AutoScalingPage() {
   const fetchScheduledActions = async (groupName: string) => {
     setScheduledLoading(true);
     try {
-      const res = await fetch(`/api/auto-scaling?action=scheduledActions&groupName=${encodeURIComponent(groupName)}`);
+      const res = await apiFetch(
+        `/api/auto-scaling?action=scheduledActions&groupName=${encodeURIComponent(groupName)}`,
+      );
       const data = await res.json();
       setScheduledActions(data.scheduledActions || []);
     } catch (err) {
@@ -301,7 +306,7 @@ export default function AutoScalingPage() {
     setScheduledNameError(null);
     setScheduledCreating(true);
     try {
-      const res = await fetch("/api/auto-scaling", {
+      const res = await apiFetch("/api/auto-scaling", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -325,7 +330,7 @@ export default function AutoScalingPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Auto Scaling Groups</Header>
 
@@ -335,64 +340,62 @@ export default function AutoScalingPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button variant="primary" onClick={() => setCreateModal(true)}>
-                      Create Auto Scaling group
-                    </Button>
-                    <Button onClick={fetchLaunchConfigs}>Launch configurations</Button>
-                    <Button onClick={() => setPolicyModal(true)}>Scaling policies</Button>
-                    <Button onClick={() => setScheduledModal(true)}>Scheduled actions</Button>
-                  </SpaceBetween>
-                }
-              >
-                Auto Scaling groups ({groups.length})
-              </Header>
-            }
-            items={groups}
-            columnDefinitions={[
-              { header: "Name", cell: (item) => item.AutoScalingGroupName },
-              { header: "Min size", cell: (item) => item.MinSize },
-              { header: "Max size", cell: (item) => item.MaxSize },
-              { header: "Desired capacity", cell: (item) => item.DesiredCapacity },
-              { header: "Launch config", cell: (item) => item.LaunchConfigurationName || "—" },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button onClick={() => openUpdate(item)} formAction="none">
-                      Update
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        fetchPolicies(item.AutoScalingGroupName);
-                        fetchScheduledActions(item.AutoScalingGroupName);
-                      }}
-                      formAction="none"
-                    >
-                      Policies / Schedule
-                    </Button>
-                    <Button onClick={() => deleteGroup(item.AutoScalingGroupName)} formAction="none">
-                      Delete
-                    </Button>
-                  </SpaceBetween>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No Auto Scaling groups found.</Box>}
-          />
-        </Container>
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button variant="primary" onClick={() => setCreateModal(true)}>
+                    Create Auto Scaling group
+                  </Button>
+                  <Button onClick={fetchLaunchConfigs}>Launch configurations</Button>
+                  <Button onClick={() => setPolicyModal(true)}>Scaling policies</Button>
+                  <Button onClick={() => setScheduledModal(true)}>Scheduled actions</Button>
+                </SpaceBetween>
+              }
+            >
+              Auto Scaling groups ({groups.length})
+            </Header>
+          }
+          items={groups}
+          columnDefinitions={[
+            { header: "Name", cell: (item) => item.AutoScalingGroupName },
+            { header: "Min size", cell: (item) => item.MinSize },
+            { header: "Max size", cell: (item) => item.MaxSize },
+            { header: "Desired capacity", cell: (item) => item.DesiredCapacity },
+            { header: "Launch config", cell: (item) => item.LaunchConfigurationName || "—" },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button onClick={() => openUpdate(item)} formAction="none">
+                    Update
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      fetchPolicies(item.AutoScalingGroupName);
+                      fetchScheduledActions(item.AutoScalingGroupName);
+                    }}
+                    formAction="none"
+                  >
+                    Policies / Schedule
+                  </Button>
+                  <Button onClick={() => deleteGroup(item.AutoScalingGroupName)} formAction="none">
+                    Delete
+                  </Button>
+                </SpaceBetween>
+              ),
+            },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No Auto Scaling groups found.</Box>}
+        />
 
         {policies.length > 0 || scheduledActions.length > 0 ? (
           <SpaceBetween size="m">
             {policies.length > 0 && (
-              <Container>
+              <Container className="aws-table-card">
                 <Header variant="h2">Scaling Policies</Header>
                 <Table
                   items={policies}
@@ -400,14 +403,17 @@ export default function AutoScalingPage() {
                   columnDefinitions={[
                     { header: "Policy name", cell: (item) => item.PolicyName || "—" },
                     { header: "Type", cell: (item) => item.PolicyType || "—" },
-                    { header: "Adjustment", cell: (item) => item.AdjustmentType || String(item.ScalingAdjustment || "—") },
+                    {
+                      header: "Adjustment",
+                      cell: (item) => item.AdjustmentType || String(item.ScalingAdjustment || "—"),
+                    },
                   ]}
                   empty={<Box textAlign="center">No scaling policies.</Box>}
                 />
               </Container>
             )}
             {scheduledActions.length > 0 && (
-              <Container>
+              <Container className="aws-table-card">
                 <Header variant="h2">Scheduled Actions</Header>
                 <Table
                   items={scheduledActions}
@@ -439,10 +445,21 @@ export default function AutoScalingPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Group name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={groupNameError}>
+            <FormField
+              label={
+                <>
+                  Group name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={groupNameError}
+            >
               <Input
                 value={groupName}
-                onChange={(e) => { setGroupName(e.detail.value); setGroupNameError(null); }}
+                onChange={(e) => {
+                  setGroupName(e.detail.value);
+                  setGroupNameError(null);
+                }}
                 placeholder="my-asg"
               />
             </FormField>
@@ -491,13 +508,25 @@ export default function AutoScalingPage() {
               <Input value={updateGroupName} disabled />
             </FormField>
             <FormField label="Minimum size">
-              <Input value={updateMin} onChange={(e) => setUpdateMin(e.detail.value)} type="number" />
+              <Input
+                value={updateMin}
+                onChange={(e) => setUpdateMin(e.detail.value)}
+                type="number"
+              />
             </FormField>
             <FormField label="Maximum size">
-              <Input value={updateMax} onChange={(e) => setUpdateMax(e.detail.value)} type="number" />
+              <Input
+                value={updateMax}
+                onChange={(e) => setUpdateMax(e.detail.value)}
+                type="number"
+              />
             </FormField>
             <FormField label="Desired capacity">
-              <Input value={updateDesired} onChange={(e) => setUpdateDesired(e.detail.value)} type="number" />
+              <Input
+                value={updateDesired}
+                onChange={(e) => setUpdateDesired(e.detail.value)}
+                type="number"
+              />
             </FormField>
           </SpaceBetween>
         </Modal>
@@ -531,8 +560,16 @@ export default function AutoScalingPage() {
                   onChange={(e) => setLaunchConfigName(e.detail.value)}
                   placeholder="Launch config name"
                 />
-                <Input value={launchImage} onChange={(e) => setLaunchImage(e.detail.value)} placeholder="AMI ID" />
-                <Input value={launchType} onChange={(e) => setLaunchType(e.detail.value)} placeholder="Instance type" />
+                <Input
+                  value={launchImage}
+                  onChange={(e) => setLaunchImage(e.detail.value)}
+                  placeholder="AMI ID"
+                />
+                <Input
+                  value={launchType}
+                  onChange={(e) => setLaunchType(e.detail.value)}
+                  placeholder="Instance type"
+                />
                 <Button variant="primary" onClick={createLaunchConfig} loading={launchCreating}>
                   Create
                 </Button>
@@ -548,16 +585,37 @@ export default function AutoScalingPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setPolicyModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createPolicy} loading={policyCreating}>Create</Button>
+              <Button variant="primary" onClick={createPolicy} loading={policyCreating}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Policy name <span style={{ color: "red" }}>*</span></>} errorText={policyNameError}>
-              <Input value={policyName} onChange={(e) => { setPolicyName(e.detail.value); setPolicyNameError(null); }} placeholder="ScaleUp" />
+            <FormField
+              label={
+                <>
+                  Policy name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              errorText={policyNameError}
+            >
+              <Input
+                value={policyName}
+                onChange={(e) => {
+                  setPolicyName(e.detail.value);
+                  setPolicyNameError(null);
+                }}
+                placeholder="ScaleUp"
+              />
             </FormField>
             <FormField label="Scaling adjustment">
-              <Input value={policyAdjustment} onChange={(e) => setPolicyAdjustment(e.detail.value)} type="number" placeholder="1" />
+              <Input
+                value={policyAdjustment}
+                onChange={(e) => setPolicyAdjustment(e.detail.value)}
+                type="number"
+                placeholder="1"
+              />
             </FormField>
           </SpaceBetween>
         </Modal>
@@ -569,12 +627,28 @@ export default function AutoScalingPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setScheduledModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createScheduledAction} loading={scheduledCreating}>Create</Button>
+              <Button variant="primary" onClick={createScheduledAction} loading={scheduledCreating}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
-          <FormField label={<>Scheduled action name <span style={{ color: "red" }}>*</span></>} errorText={scheduledNameError}>
-            <Input value={scheduledName} onChange={(e) => { setScheduledName(e.detail.value); setScheduledNameError(null); }} placeholder="scheduled-action" />
+          <FormField
+            label={
+              <>
+                Scheduled action name <span style={{ color: "red" }}>*</span>
+              </>
+            }
+            errorText={scheduledNameError}
+          >
+            <Input
+              value={scheduledName}
+              onChange={(e) => {
+                setScheduledName(e.detail.value);
+                setScheduledNameError(null);
+              }}
+              placeholder="scheduled-action"
+            />
           </FormField>
         </Modal>
       </SpaceBetween>

@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -41,7 +42,7 @@ export default function AppSyncPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/appsync");
+      const res = await apiFetch("/api/appsync");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch APIs");
       setApis(data.graphqlApis || []);
@@ -64,7 +65,7 @@ export default function AppSyncPage() {
     setApiNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/appsync", {
+      const res = await apiFetch("/api/appsync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: apiName, authenticationType: authType.value }),
@@ -86,7 +87,7 @@ export default function AppSyncPage() {
 
   const deleteApi = async (apiId: string) => {
     try {
-      const res = await fetch(`/api/appsync?apiId=${encodeURIComponent(apiId)}`, {
+      const res = await apiFetch(`/api/appsync?apiId=${encodeURIComponent(apiId)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -100,7 +101,7 @@ export default function AppSyncPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">API Gateway / AppSync</Header>
 
@@ -110,38 +111,36 @@ export default function AppSyncPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Create API
-                  </Button>
-                }
-              >
-                GraphQL APIs ({apis.length})
-              </Header>
-            }
-            items={apis}
-            columnDefinitions={[
-              { header: "Name", cell: (item) => item.name },
-              { header: "API ID", cell: (item) => item.apiId },
-              { header: "Authentication type", cell: (item) => item.authenticationType },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button formAction="none" onClick={() => deleteApi(item.apiId)}>
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No GraphQL APIs found.</Box>}
-          />
-        </Container>
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button variant="primary" onClick={() => setCreateModal(true)}>
+                  Create API
+                </Button>
+              }
+            >
+              GraphQL APIs ({apis.length})
+            </Header>
+          }
+          items={apis}
+          columnDefinitions={[
+            { header: "Name", cell: (item) => item.name },
+            { header: "API ID", cell: (item) => item.apiId },
+            { header: "Authentication type", cell: (item) => item.authenticationType },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button formAction="none" onClick={() => deleteApi(item.apiId)}>
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No GraphQL APIs found.</Box>}
+        />
 
         <Modal
           visible={createModal}
@@ -157,17 +156,30 @@ export default function AppSyncPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>API name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={apiNameError}>
+            <FormField
+              label={
+                <>
+                  API name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={apiNameError}
+            >
               <Input
                 value={apiName}
-                onChange={(e) => { setApiName(e.detail.value); setApiNameError(null); }}
+                onChange={(e) => {
+                  setApiName(e.detail.value);
+                  setApiNameError(null);
+                }}
                 placeholder="my-graphql-api"
               />
             </FormField>
             <FormField label="Authentication type">
               <Select
                 selectedOption={authType}
-                onChange={(e) => setAuthType(e.detail.selectedOption as { label: string; value: string })}
+                onChange={(e) =>
+                  setAuthType(e.detail.selectedOption as { label: string; value: string })
+                }
                 options={AUTH_TYPES}
               />
             </FormField>

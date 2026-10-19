@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
@@ -33,7 +34,7 @@ export default function GlueJobPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/glue");
+      const res = await apiFetch("/api/glue");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch Glue jobs");
       setJobs(data.jobs || []);
@@ -53,7 +54,7 @@ export default function GlueJobPage() {
     setStarting(true);
     setStartResult("");
     try {
-      const res = await fetch("/api/glue", {
+      const res = await apiFetch("/api/glue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "startJobRun", jobName: selectedJob }),
@@ -70,7 +71,7 @@ export default function GlueJobPage() {
 
   const deleteJob = async (name: string) => {
     try {
-      const res = await fetch(`/api/glue?type=job&name=${encodeURIComponent(name)}`, {
+      const res = await apiFetch(`/api/glue?type=job&name=${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -84,7 +85,7 @@ export default function GlueJobPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Glue ETL Jobs</Header>
 
@@ -94,42 +95,41 @@ export default function GlueJobPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={
-              <Header variant="h2">Jobs ({jobs.length})</Header>
-            }
-            items={jobs}
-            columnDefinitions={[
-              { header: "Name", cell: (item: GlueJob) => item.Name },
-              { header: "Command", cell: (item: GlueJob) => item.Command?.Name || "—" },
-              { header: "Script location", cell: (item: GlueJob) => item.Command?.ScriptLocation || "—" },
-              { header: "Role", cell: (item: GlueJob) => item.Role || "—" },
-              { header: "Last run state", cell: (item: GlueJob) => item.JobRunState || "—" },
-              {
-                header: "Actions",
-                cell: (item: GlueJob) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button
-                      onClick={() => {
-                        setSelectedJob(item.Name);
-                        setStartModal(true);
-                      }}
-                      formAction="none"
-                    >
-                      Start run
-                    </Button>
-                    <Button onClick={() => deleteJob(item.Name)} formAction="none">
-                      Delete
-                    </Button>
-                  </SpaceBetween>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No jobs found.</Box>}
-          />
-        </Container>
+        <Table
+          header={<Header variant="h2">Jobs ({jobs.length})</Header>}
+          items={jobs}
+          columnDefinitions={[
+            { header: "Name", cell: (item: GlueJob) => item.Name },
+            { header: "Command", cell: (item: GlueJob) => item.Command?.Name || "—" },
+            {
+              header: "Script location",
+              cell: (item: GlueJob) => item.Command?.ScriptLocation || "—",
+            },
+            { header: "Role", cell: (item: GlueJob) => item.Role || "—" },
+            { header: "Last run state", cell: (item: GlueJob) => item.JobRunState || "—" },
+            {
+              header: "Actions",
+              cell: (item: GlueJob) => (
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button
+                    onClick={() => {
+                      setSelectedJob(item.Name);
+                      setStartModal(true);
+                    }}
+                    formAction="none"
+                  >
+                    Start run
+                  </Button>
+                  <Button onClick={() => deleteJob(item.Name)} formAction="none">
+                    Delete
+                  </Button>
+                </SpaceBetween>
+              ),
+            },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No jobs found.</Box>}
+        />
 
         <Modal
           visible={startModal}

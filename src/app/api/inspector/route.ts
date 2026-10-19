@@ -12,6 +12,9 @@ export async function GET(request: Request) {
     const res = await inspector2Client.send(new ListFindingsCommand({}));
     return NextResponse.json({ findings: res.findings || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ findings: [], message: error instanceof Error ? error.message : "Inspector not enabled" });
+    return NextResponse.json({
+      findings: [],
+      message: error instanceof Error ? error.message : "Inspector not enabled",
+    });
   }
 }

@@ -8,7 +8,7 @@ import Alert from "@cloudscape-design/components/alert";
 
 export default function GlobalAcceleratorPage() {
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Global Accelerator</Header>
         <Alert type="info" header="Not available in local emulation">

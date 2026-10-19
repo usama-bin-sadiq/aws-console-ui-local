@@ -12,6 +12,7 @@ import {
 } from "@aws-sdk/client-sagemaker";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -28,7 +29,8 @@ export async function GET(request: Request) {
       endpoints: epRes.Endpoints || [],
     });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -40,28 +42,37 @@ export async function POST(request: Request) {
     const sagemakerClient = getUserClientFromRequest(SageMakerClient, request);
     const body = await request.json();
     if (body.action === "startNotebook") {
-      await sagemakerClient.send(new StartNotebookInstanceCommand({ NotebookInstanceName: body.name }));
+      await sagemakerClient.send(
+        new StartNotebookInstanceCommand({ NotebookInstanceName: body.name }),
+      );
       return NextResponse.json({ success: true });
     }
     if (body.action === "stopNotebook") {
-      await sagemakerClient.send(new StopNotebookInstanceCommand({ NotebookInstanceName: body.name }));
+      await sagemakerClient.send(
+        new StopNotebookInstanceCommand({ NotebookInstanceName: body.name }),
+      );
       return NextResponse.json({ success: true });
     }
     if (body.action === "createEndpoint") {
-      await sagemakerClient.send(new CreateEndpointCommand({
-        EndpointName: body.endpointName,
-        EndpointConfigName: body.endpointConfigName,
-      }));
+      await sagemakerClient.send(
+        new CreateEndpointCommand({
+          EndpointName: body.endpointName,
+          EndpointConfigName: body.endpointConfigName,
+        }),
+      );
       return NextResponse.json({ success: true });
     }
-    await sagemakerClient.send(new CreateNotebookInstanceCommand({
-      NotebookInstanceName: body.notebookInstanceName,
-      InstanceType: body.instanceType || "ml.t2.medium",
-      RoleArn: body.roleArn || "arn:aws:iam::000000000000:role/sagemaker-role",
-    }));
+    await sagemakerClient.send(
+      new CreateNotebookInstanceCommand({
+        NotebookInstanceName: body.notebookInstanceName,
+        InstanceType: body.instanceType || "ml.t2.medium",
+        RoleArn: body.roleArn || "arn:aws:iam::000000000000:role/sagemaker-role",
+      }),
+    );
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -81,6 +92,7 @@ export async function DELETE(request: Request) {
     }
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

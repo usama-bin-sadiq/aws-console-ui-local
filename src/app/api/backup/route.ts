@@ -8,6 +8,7 @@ import {
 import { BackupClient } from "@aws-sdk/client-backup";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -18,7 +19,8 @@ export async function GET(request: Request) {
     const res = await backupClient.send(new ListBackupVaultsCommand({}));
     return NextResponse.json({ backupVaults: res.BackupVaultList || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -30,17 +32,22 @@ export async function POST(request: Request) {
     const backupClient = getUserClientFromRequest(BackupClient, request);
     const body = await request.json();
     if (body.action === "startBackupJob") {
-      const res = await backupClient.send(new StartBackupJobCommand({
-        BackupVaultName: body.backupVaultName,
-        ResourceArn: body.resourceArn,
-        IamRoleArn: body.iamRoleArn || "arn:aws:iam::000000000000:role/backup-role",
-      }));
+      const res = await backupClient.send(
+        new StartBackupJobCommand({
+          BackupVaultName: body.backupVaultName,
+          ResourceArn: body.resourceArn,
+          IamRoleArn: body.iamRoleArn || "arn:aws:iam::000000000000:role/backup-role",
+        }),
+      );
       return NextResponse.json({ jobId: res.BackupJobId });
     }
-    const res = await backupClient.send(new CreateBackupVaultCommand({ BackupVaultName: body.backupVaultName }));
+    const res = await backupClient.send(
+      new CreateBackupVaultCommand({ BackupVaultName: body.backupVaultName }),
+    );
     return NextResponse.json({ vault: res });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -55,6 +62,7 @@ export async function DELETE(request: Request) {
     await backupClient.send(new DeleteBackupVaultCommand({ BackupVaultName: vaultName }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

@@ -2,10 +2,10 @@
  * useCloudTrailService — CloudTrail adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { cloudtrail } from '@/lib/aws-clients'
-import { DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { cloudtrail } from "@/lib/aws-clients";
+import { DescribeTrailsCommand } from "@aws-sdk/client-cloudtrail";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface CloudTrailServiceState {
   trails: unknown[];
@@ -14,7 +14,11 @@ export interface CloudTrailServiceState {
 }
 
 export function useCloudTrailService() {
-  const [state, setState] = useState<CloudTrailServiceState>({ trails: [], loading: false, error: null });
+  const [state, setState] = useState<CloudTrailServiceState>({
+    trails: [],
+    loading: false,
+    error: null,
+  });
   const describeTrails = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {

@@ -13,6 +13,7 @@ import {
 import { CodeDeployClient } from "@aws-sdk/client-codedeploy";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -26,14 +27,14 @@ export async function GET(request: Request) {
 
     if (action === "deploymentGroups" && appName) {
       const res = await codedeployClient.send(
-        new ListDeploymentGroupsCommand({ applicationName: appName })
+        new ListDeploymentGroupsCommand({ applicationName: appName }),
       );
       return NextResponse.json({ deploymentGroups: res.deploymentGroups || [] });
     }
 
     if (action === "deployments" && appName) {
       const res = await codedeployClient.send(
-        new ListDeploymentsCommand({ applicationName: appName })
+        new ListDeploymentsCommand({ applicationName: appName }),
       );
       return NextResponse.json({ deployments: res.deployments || [] });
     }
@@ -41,7 +42,9 @@ export async function GET(request: Request) {
     if (action === "deploymentConfigs") {
       const res = await codedeployClient.send(new ListDeploymentConfigsCommand({}));
       const output = res as { deploymentConfigs?: any[]; deploymentConfigsList?: any[] };
-      return NextResponse.json({ deploymentConfigs: output.deploymentConfigs || output.deploymentConfigsList || [] });
+      return NextResponse.json({
+        deploymentConfigs: output.deploymentConfigs || output.deploymentConfigsList || [],
+      });
     }
 
     const res = await codedeployClient.send(new ListApplicationsCommand({}));
@@ -51,10 +54,8 @@ export async function GET(request: Request) {
       })),
     });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -73,11 +74,10 @@ export async function POST(request: Request) {
           deploymentGroupName: body.deploymentGroupName,
           deploymentConfigName: body.deploymentConfigName || "CodeDeployDefault.AllAtOnce",
           serviceRoleArn:
-            body.serviceRoleArn ||
-            "arn:aws:iam::000000000000:role/codedeploy-service-role",
+            body.serviceRoleArn || "arn:aws:iam::000000000000:role/codedeploy-service-role",
           ec2TagFilters: body.ec2TagFilters,
           onPremisesInstanceTagFilters: body.onPremisesInstanceTagFilters,
-        })
+        }),
       );
       return NextResponse.json({ deploymentGroup: res });
     }
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
               bundleType: "zip",
             },
           },
-        })
+        }),
       );
       return NextResponse.json({ deploymentId: res.deploymentId });
     }
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
         new CreateDeploymentConfigCommand({
           deploymentConfigName: body.deploymentConfigName || "CustomConfig",
           minimumHealthyHosts: body.minimumHealthyHosts || { type: "HOST_COUNT", value: 0 },
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -114,14 +114,12 @@ export async function POST(request: Request) {
       new CreateApplicationCommand({
         applicationName: body.name,
         computePlatform: body.platform || "Server",
-      })
+      }),
     );
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -134,16 +132,12 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const appName = searchParams.get("appName");
     if (appName) {
-      await codedeployClient.send(
-        new DeleteApplicationCommand({ applicationName: appName })
-      );
+      await codedeployClient.send(new DeleteApplicationCommand({ applicationName: appName }));
       return NextResponse.json({ success: true });
     }
     return NextResponse.json({ error: "appName required" }, { status: 400 });
   } catch (error: unknown) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

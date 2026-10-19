@@ -26,7 +26,9 @@ export async function GET(request: Request) {
 
     if (action === "describeRecorderStatus") {
       const name = searchParams.get("recorderName") || "default";
-      const res = await configClient.send(new DescribeConfigurationRecorderStatusCommand({ ConfigurationRecorderNames: [name] }));
+      const res = await configClient.send(
+        new DescribeConfigurationRecorderStatusCommand({ ConfigurationRecorderNames: [name] }),
+      );
       return NextResponse.json({ status: res.ConfigurationRecordersStatus || [] });
     }
 
@@ -57,21 +59,31 @@ export async function POST(request: Request) {
         new PutConfigurationRecorderCommand({
           ConfigurationRecorder: {
             name: body.recorderName || "default",
-            roleARN: body.roleARN || "arn:aws:iam::123456789012:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig",
+            roleARN:
+              body.roleARN ||
+              "arn:aws:iam::123456789012:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig",
             recordingGroup: { allSupported: true, includeGlobalResourceTypes: true },
           },
-        })
+        }),
       );
       return NextResponse.json({ success: true, recorderName: body.recorderName || "default" });
     }
 
     if (body.action === "startRecorder") {
-      const res = await configClient.send(new StartConfigurationRecorderCommand({ ConfigurationRecorderName: body.recorderName || "default" }));
+      const res = await configClient.send(
+        new StartConfigurationRecorderCommand({
+          ConfigurationRecorderName: body.recorderName || "default",
+        }),
+      );
       return NextResponse.json({ success: true, recorderName: body.recorderName || "default" });
     }
 
     if (body.action === "stopRecorder") {
-      const res = await configClient.send(new StopConfigurationRecorderCommand({ ConfigurationRecorderName: body.recorderName || "default" }));
+      const res = await configClient.send(
+        new StopConfigurationRecorderCommand({
+          ConfigurationRecorderName: body.recorderName || "default",
+        }),
+      );
       return NextResponse.json({ success: true, recorderName: body.recorderName || "default" });
     }
 
@@ -81,7 +93,7 @@ export async function POST(request: Request) {
           ConfigRuleName: body.ruleName,
           Source: { Owner: "AWS", SourceIdentifier: body.sourceIdentifier || "REQUIRED_TAGS" },
         },
-      })
+      }),
     );
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
@@ -101,11 +113,15 @@ export async function DELETE(request: Request) {
 
     if (action === "deleteRecorder") {
       const name = searchParams.get("recorderName") || "default";
-      await configClient.send(new DeleteConfigurationRecorderCommand({ ConfigurationRecorderName: name }));
+      await configClient.send(
+        new DeleteConfigurationRecorderCommand({ ConfigurationRecorderName: name }),
+      );
       return NextResponse.json({ success: true, recorderName: name });
     }
 
-    await configClient.send(new DeleteConfigRuleCommand({ ConfigRuleName: searchParams.get("ruleName")! }));
+    await configClient.send(
+      new DeleteConfigRuleCommand({ ConfigRuleName: searchParams.get("ruleName")! }),
+    );
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();

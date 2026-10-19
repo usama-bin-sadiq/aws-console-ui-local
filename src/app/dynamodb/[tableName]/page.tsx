@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { CodeView } from "@cloudscape-design/code-view";
@@ -59,7 +60,9 @@ export default function DynamoDBTableDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/dynamodb?tableName=${encodeURIComponent(tableName)}&action=describe`);
+      const res = await apiFetch(
+        `/api/dynamodb?tableName=${encodeURIComponent(tableName)}&action=describe`,
+      );
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setTableInfo(data.table || null);
@@ -70,13 +73,15 @@ export default function DynamoDBTableDetailPage() {
     }
   }, [tableName]);
 
-  useEffect(() => { fetchTableInfo(); }, [fetchTableInfo]);
+  useEffect(() => {
+    fetchTableInfo();
+  }, [fetchTableInfo]);
 
   const fetchItems = useCallback(async () => {
     if (!tableName) return;
     setItemsLoading(true);
     try {
-      const res = await fetch("/api/dynamodb", {
+      const res = await apiFetch("/api/dynamodb", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "scan", tableName }),
@@ -91,7 +96,9 @@ export default function DynamoDBTableDetailPage() {
     }
   }, [tableName]);
 
-  useEffect(() => { fetchItems(); }, [fetchItems]);
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
   const filteredItems = React.useMemo(() => {
     if (!filterText.trim()) return items;
@@ -121,7 +128,7 @@ export default function DynamoDBTableDetailPage() {
         body.expressionAttributeNames["#sk"] = querySortKey;
         body.expressionAttributeValues[":sk"] = { S: querySortValue };
       }
-      const res = await fetch("/api/dynamodb", {
+      const res = await apiFetch("/api/dynamodb", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -151,7 +158,9 @@ export default function DynamoDBTableDetailPage() {
     if (!tableName) return;
     setBackupsLoading(true);
     try {
-      const res = await fetch(`/api/dynamodb?tableName=${encodeURIComponent(tableName)}&action=describe`);
+      const res = await apiFetch(
+        `/api/dynamodb?tableName=${encodeURIComponent(tableName)}&action=describe`,
+      );
       const data = await res.json();
       const table = data.table || {};
       const pits = table.ContinuousBackupsDescription?.PointInTimeRecoveryDescription;
@@ -174,7 +183,9 @@ export default function DynamoDBTableDetailPage() {
     if (!tableName) return;
     setTagsLoading(true);
     try {
-      const res = await fetch(`/api/dynamodb?tableName=${encodeURIComponent(tableName)}&action=describe`);
+      const res = await apiFetch(
+        `/api/dynamodb?tableName=${encodeURIComponent(tableName)}&action=describe`,
+      );
       const data = await res.json();
       setTags(data.table?.Tags || []);
     } catch (err: unknown) {
@@ -187,7 +198,7 @@ export default function DynamoDBTableDetailPage() {
   const handleAddItem = async () => {
     try {
       const parsed = JSON.parse(itemJson);
-      const res = await fetch("/api/dynamodb", {
+      const res = await apiFetch("/api/dynamodb", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "putItem", tableName, item: parsed }),
@@ -205,7 +216,7 @@ export default function DynamoDBTableDetailPage() {
   const handleEditItem = async () => {
     try {
       const parsed = JSON.parse(itemJson);
-      const res = await fetch("/api/dynamodb", {
+      const res = await apiFetch("/api/dynamodb", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "putItem", tableName, item: parsed }),
@@ -225,7 +236,7 @@ export default function DynamoDBTableDetailPage() {
     if (!selectedItem) return;
     try {
       const key = extractItemKey(selectedItem, tableInfo);
-      const res = await fetch("/api/dynamodb", {
+      const res = await apiFetch("/api/dynamodb", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "deleteItem", tableName, key }),
@@ -267,19 +278,44 @@ export default function DynamoDBTableDetailPage() {
 
   const itemColumns = React.useMemo(() => {
     const baseColumns: any[] = [
-      { id: "json", header: "Item (JSON)", cell: (item: Record<string, any>) => (
-        <div style={{ fontFamily: "monospace", fontSize: "11px", maxWidth: "500px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {JSON.stringify(item)}
-        </div>
-      ) },
+      {
+        id: "json",
+        header: "Item (JSON)",
+        cell: (item: Record<string, any>) => (
+          <div
+            style={{
+              fontFamily: "var(--awsui-font-family-code)",
+              fontSize: "var(--awsui-font-size-xs)",
+              maxWidth: "500px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {JSON.stringify(item)}
+          </div>
+        ),
+      },
     ];
     baseColumns.push({
       id: "actions",
       header: "Actions",
       cell: (item: Record<string, any>) => (
         <SpaceBetween direction="horizontal" size="xs">
-          <Button variant="inline-link" onClick={() => openEditModal(item)} ariaLabel={`Edit item ${JSON.stringify(item)}`}>Edit</Button>
-          <Button variant="inline-link" onClick={() => openDeleteModal(item)} ariaLabel={`Delete item ${JSON.stringify(item)}`}>Delete</Button>
+          <Button
+            variant="inline-link"
+            onClick={() => openEditModal(item)}
+            ariaLabel={`Edit item ${JSON.stringify(item)}`}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="inline-link"
+            onClick={() => openDeleteModal(item)}
+            ariaLabel={`Delete item ${JSON.stringify(item)}`}
+          >
+            Delete
+          </Button>
         </SpaceBetween>
       ),
     });
@@ -287,8 +323,10 @@ export default function DynamoDBTableDetailPage() {
   }, []);
 
   // Key schema helpers
-  const partitionKeyAttr = tableInfo?.KeySchema?.find((k: any) => k.KeyType === "HASH")?.AttributeName || "";
-  const sortKeyAttr = tableInfo?.KeySchema?.find((k: any) => k.KeyType === "RANGE")?.AttributeName || "";
+  const partitionKeyAttr =
+    tableInfo?.KeySchema?.find((k: any) => k.KeyType === "HASH")?.AttributeName || "";
+  const sortKeyAttr =
+    tableInfo?.KeySchema?.find((k: any) => k.KeyType === "RANGE")?.AttributeName || "";
   const keySchema = tableInfo?.KeySchema || [];
 
   // Overview content
@@ -297,34 +335,56 @@ export default function DynamoDBTableDetailPage() {
       <Container header={<Header variant="h2">Table Overview</Header>}>
         <SpaceBetween size="m" direction="vertical">
           <Box>
-            <Box variant="small" color="text-label">Table Name</Box>
+            <Box variant="small" color="text-label">
+              Table Name
+            </Box>
             <Box fontWeight="bold">{tableName}</Box>
           </Box>
           <SpaceBetween size="xs" direction="horizontal">
             <Box>
-              <Box variant="small" color="text-label">Status</Box>
+              <Box variant="small" color="text-label">
+                Status
+              </Box>
               <StatusIndicator type="success">{tableInfo?.TableStatus || "ACTIVE"}</StatusIndicator>
             </Box>
             <Box>
-              <Box variant="small" color="text-label">Item Count (approx)</Box>
+              <Box variant="small" color="text-label">
+                Item Count (approx)
+              </Box>
               <Box>{tableInfo?.ItemCount ?? items.length}</Box>
             </Box>
             <Box>
-              <Box variant="small" color="text-label">Table Size</Box>
-              <Box>{tableInfo?.TableSizeBytes ? `${Math.round(tableInfo.TableSizeBytes / 1024)} KB` : "—"}</Box>
+              <Box variant="small" color="text-label">
+                Table Size
+              </Box>
+              <Box>
+                {tableInfo?.TableSizeBytes
+                  ? `${Math.round(tableInfo.TableSizeBytes / 1024)} KB`
+                  : "—"}
+              </Box>
             </Box>
           </SpaceBetween>
           <Box>
-            <Box variant="small" color="text-label">Partition Key</Box>
+            <Box variant="small" color="text-label">
+              Partition Key
+            </Box>
             <Box>{partitionKeyAttr || "—"}</Box>
           </Box>
           <Box>
-            <Box variant="small" color="text-label">Sort Key</Box>
+            <Box variant="small" color="text-label">
+              Sort Key
+            </Box>
             <Box>{sortKeyAttr || "—"}</Box>
           </Box>
           <Box>
-            <Box variant="small" color="text-label">Billing Mode</Box>
-            <Box>{tableInfo?.BillingModeSummary?.BillingMode || tableInfo?.BillingMode || "PAY_PER_REQUEST"}</Box>
+            <Box variant="small" color="text-label">
+              Billing Mode
+            </Box>
+            <Box>
+              {tableInfo?.BillingModeSummary?.BillingMode ||
+                tableInfo?.BillingMode ||
+                "PAY_PER_REQUEST"}
+            </Box>
           </Box>
         </SpaceBetween>
       </Container>
@@ -337,14 +397,26 @@ export default function DynamoDBTableDetailPage() {
       <Container header={<Header variant="h2">Query</Header>}>
         <SpaceBetween size="m" direction="vertical">
           <SpaceBetween direction="horizontal" size="m" alignItems="center">
-            <Button onClick={handleScan} formAction="none">Scan</Button>
-            <Button variant="primary" onClick={handleQuery} formAction="none">Run Query</Button>
+            <Button onClick={handleScan} formAction="none">
+              Scan
+            </Button>
+            <Button variant="primary" onClick={handleQuery} formAction="none">
+              Run Query
+            </Button>
           </SpaceBetween>
           <FormField label={`Partition Key (${partitionKeyAttr})`}>
             <SpaceBetween size="xs" direction="horizontal" alignItems="center">
-              <Input value={queryPartitionKey} onChange={(e) => setQueryPartitionKey(e.detail.value)} placeholder={partitionKeyAttr} />
+              <Input
+                value={queryPartitionKey}
+                onChange={(e) => setQueryPartitionKey(e.detail.value)}
+                placeholder={partitionKeyAttr}
+              />
               <Box>=</Box>
-              <Input value={queryPartitionValue} onChange={(e) => setQueryPartitionValue(e.detail.value)} placeholder="Value" />
+              <Input
+                value={queryPartitionValue}
+                onChange={(e) => setQueryPartitionValue(e.detail.value)}
+                placeholder="Value"
+              />
             </SpaceBetween>
           </FormField>
           {sortKeyAttr && (
@@ -352,15 +424,25 @@ export default function DynamoDBTableDetailPage() {
               <SpaceBetween size="xs" direction="vertical">
                 <SpaceBetween size="xs" direction="horizontal" alignItems="center">
                   <Select
-                    selectedOption={querySortBeginsWith ? { label: "begins_with", value: "begins_with" } : { label: "=", value: "=" }}
-                    onChange={(e) => setQuerySortBeginsWith(e.detail.selectedOption.value === "begins_with")}
+                    selectedOption={
+                      querySortBeginsWith
+                        ? { label: "begins_with", value: "begins_with" }
+                        : { label: "=", value: "=" }
+                    }
+                    onChange={(e) =>
+                      setQuerySortBeginsWith(e.detail.selectedOption.value === "begins_with")
+                    }
                     options={[
                       { label: "=", value: "=" },
                       { label: "begins_with", value: "begins_with" },
                     ]}
                     ariaLabel="Sort key condition"
                   />
-                  <Input value={querySortValue} onChange={(e) => setQuerySortValue(e.detail.value)} placeholder="Value" />
+                  <Input
+                    value={querySortValue}
+                    onChange={(e) => setQuerySortValue(e.detail.value)}
+                    placeholder="Value"
+                  />
                 </SpaceBetween>
               </SpaceBetween>
             </FormField>
@@ -373,7 +455,11 @@ export default function DynamoDBTableDetailPage() {
         filteringText={filterText}
         filteringAriaLabel="Filter DynamoDB items"
         onChange={({ detail }) => setFilterText(detail.filteringText)}
-        countText={filterText ? `${filteredItems.length} match${filteredItems.length !== 1 ? "es" : ""}` : undefined}
+        countText={
+          filterText
+            ? `${filteredItems.length} match${filteredItems.length !== 1 ? "es" : ""}`
+            : undefined
+        }
       />
 
       <Table
@@ -392,36 +478,60 @@ export default function DynamoDBTableDetailPage() {
     <Container header={<Header variant="h2">Consumed Capacity</Header>}>
       <SpaceBetween size="m" direction="vertical">
         <Box>
-          <Box variant="small" color="text-label">Read Capacity Units</Box>
+          <Box variant="small" color="text-label">
+            Read Capacity Units
+          </Box>
           <Box>{tableInfo?.ProvisionedThroughput?.ReadCapacityUnits ?? "N/A (on-demand)"}</Box>
         </Box>
         <Box>
-          <Box variant="small" color="text-label">Write Capacity Units</Box>
+          <Box variant="small" color="text-label">
+            Write Capacity Units
+          </Box>
           <Box>{tableInfo?.ProvisionedThroughput?.WriteCapacityUnits ?? "N/A (on-demand)"}</Box>
         </Box>
         <Box>
-          <Box variant="small" color="text-label">Last Increase Time</Box>
+          <Box variant="small" color="text-label">
+            Last Increase Time
+          </Box>
           <Box>{tableInfo?.ProvisionedThroughput?.LastIncreaseDateTime || "—"}</Box>
         </Box>
         <Box>
-          <Box variant="small" color="text-label">Last Decrease Time</Box>
+          <Box variant="small" color="text-label">
+            Last Decrease Time
+          </Box>
           <Box>{tableInfo?.ProvisionedThroughput?.LastDecreaseDateTime || "—"}</Box>
         </Box>
         <Box>
-          <Box variant="small" color="text-label">Number of Decreases Today</Box>
+          <Box variant="small" color="text-label">
+            Number of Decreases Today
+          </Box>
           <Box>{tableInfo?.ProvisionedThroughput?.NumberOfDecreasesToday ?? 0}</Box>
         </Box>
         <Box>
-          <Box variant="small" color="text-label">Table Size</Box>
-          <Box>{tableInfo?.TableSizeBytes ? `${Math.round(tableInfo.TableSizeBytes / 1024)} KB (${tableInfo.TableSizeBytes} bytes)` : "—"}</Box>
+          <Box variant="small" color="text-label">
+            Table Size
+          </Box>
+          <Box>
+            {tableInfo?.TableSizeBytes
+              ? `${Math.round(tableInfo.TableSizeBytes / 1024)} KB (${tableInfo.TableSizeBytes} bytes)`
+              : "—"}
+          </Box>
         </Box>
         <Box>
-          <Box variant="small" color="text-label">Item Count (approx)</Box>
+          <Box variant="small" color="text-label">
+            Item Count (approx)
+          </Box>
           <Box>{tableInfo?.ItemCount ?? "—"}</Box>
         </Box>
         <Box>
-          <Box variant="small" color="text-label">Index Size</Box>
-          <Box>{tableInfo?.GlobalSecondaryIndexes?.length ? `${tableInfo.GlobalSecondaryIndexes.length} GSI(s)` : "None"}</Box>
+          <Box variant="small" color="text-label">
+            Index Size
+          </Box>
+          <Box>
+            {tableInfo?.GlobalSecondaryIndexes?.length
+              ? `${tableInfo.GlobalSecondaryIndexes.length} GSI(s)`
+              : "None"}
+          </Box>
         </Box>
       </SpaceBetween>
     </Container>
@@ -429,7 +539,7 @@ export default function DynamoDBTableDetailPage() {
 
   // Backups content
   const backupsContent = (
-    <Container header={<Header variant="h2">Backups</Header>}>
+    <Container header={<Header variant="h2">Backups</Header>} className="aws-table-card">
       <SpaceBetween size="m" direction="vertical">
         {backupsLoading ? (
           <Box>Loading backup information...</Box>
@@ -465,7 +575,7 @@ export default function DynamoDBTableDetailPage() {
 
   // Tags content
   const tagsContent = (
-    <Container header={<Header variant="h2">Tags</Header>}>
+    <Container header={<Header variant="h2">Tags</Header>} className="aws-table-card">
       <SpaceBetween size="m" direction="vertical">
         {tagsLoading ? (
           <Box>Loading tags...</Box>
@@ -499,10 +609,16 @@ export default function DynamoDBTableDetailPage() {
           filteringText={filterText}
           filteringAriaLabel="Filter DynamoDB items"
           onChange={({ detail }) => setFilterText(detail.filteringText)}
-          countText={filterText ? `${filteredItems.length} match${filteredItems.length !== 1 ? "es" : ""}` : undefined}
+          countText={
+            filterText
+              ? `${filteredItems.length} match${filteredItems.length !== 1 ? "es" : ""}`
+              : undefined
+          }
         />
         <SpaceBetween direction="horizontal" size="xs">
-          <Button variant="primary" onClick={() => setAddModalOpen(true)} ariaLabel="Add new item">Add item</Button>
+          <Button variant="primary" onClick={() => setAddModalOpen(true)} ariaLabel="Add new item">
+            Add item
+          </Button>
           <Button iconName="refresh" onClick={fetchItems} ariaLabel="Refresh items" />
         </SpaceBetween>
       </SpaceBetween>
@@ -514,7 +630,9 @@ export default function DynamoDBTableDetailPage() {
           items={filteredItems}
           columnDefinitions={itemColumns}
           loading={itemsLoading}
-          empty={<Box textAlign="center">No items found. Try scanning again or add a new item.</Box>}
+          empty={
+            <Box textAlign="center">No items found. Try scanning again or add a new item.</Box>
+          }
           header={<Header variant="h2">Items ({filteredItems.length})</Header>}
           ariaLabels={{ selectionGroupLabel: "Select item" }}
         />
@@ -534,17 +652,29 @@ export default function DynamoDBTableDetailPage() {
       ]}
       headerActions={
         <SpaceBetween direction="horizontal" size="xs">
-          <Button onClick={() => router.push("/dynamodb")} formAction="none">Back to Tables</Button>
+          <Button onClick={() => router.push("/dynamodb")} formAction="none">
+            Back to Tables
+          </Button>
         </SpaceBetween>
       }
+
+      headingLevel="h2"
     >
       <SpaceBetween size="l" direction="vertical">
         <Header
-          variant="h1"
+          variant="h2"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button variant="primary" onClick={() => setAddModalOpen(true)} ariaLabel="Add new DynamoDB item">Add item</Button>
-              <Button onClick={() => router.push("/dynamodb")} formAction="none">Back to Tables</Button>
+              <Button
+                variant="primary"
+                onClick={() => setAddModalOpen(true)}
+                ariaLabel="Add new DynamoDB item"
+              >
+                Add item
+              </Button>
+              <Button onClick={() => router.push("/dynamodb")} formAction="none">
+                Back to Tables
+              </Button>
             </SpaceBetween>
           }
         >
@@ -589,13 +719,22 @@ export default function DynamoDBTableDetailPage() {
         header={addModalOpen ? "Add DynamoDB Item" : "Edit DynamoDB Item"}
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button variant="link" onClick={() => {
-              setAddModalOpen(false);
-              setEditModalOpen(false);
-              setSelectedItem(null);
-              setItemJson("{}");
-            }}>Cancel</Button>
-            <Button variant="primary" onClick={addModalOpen ? handleAddItem : handleEditItem} ariaLabel={addModalOpen ? "Confirm add item" : "Confirm edit item"}>
+            <Button
+              variant="link"
+              onClick={() => {
+                setAddModalOpen(false);
+                setEditModalOpen(false);
+                setSelectedItem(null);
+                setItemJson("{}");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={addModalOpen ? handleAddItem : handleEditItem}
+              ariaLabel={addModalOpen ? "Confirm add item" : "Confirm edit item"}
+            >
               {addModalOpen ? "Add" : "Save"}
             </Button>
           </SpaceBetween>
@@ -603,7 +742,10 @@ export default function DynamoDBTableDetailPage() {
       >
         <SpaceBetween size="m" direction="vertical">
           <Box>
-            <p>Edit the item as native DynamoDB JSON (e.g., <code>{`{"id":{"S":"123"},"name":{"S":"Alice"}}`}</code>).</p>
+            <p>
+              Edit the item as native DynamoDB JSON (e.g.,{" "}
+              <code>{`{"id":{"S":"123"},"name":{"S":"Alice"}}`}</code>).
+            </p>
           </Box>
           <JsonEditor
             label={addModalOpen ? "Item JSON" : "Item JSON"}
@@ -625,20 +767,32 @@ export default function DynamoDBTableDetailPage() {
         header="Delete DynamoDB Item"
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button variant="link" onClick={() => {
-              setDeleteModalOpen(false);
-              setSelectedItem(null);
-            }}>Cancel</Button>
-            <Button variant="primary" onClick={handleDeleteItem} ariaLabel="Confirm delete item">Delete</Button>
+            <Button
+              variant="link"
+              onClick={() => {
+                setDeleteModalOpen(false);
+                setSelectedItem(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleDeleteItem} ariaLabel="Confirm delete item">
+              Delete
+            </Button>
           </SpaceBetween>
         }
       >
         <SpaceBetween size="m" direction="vertical">
           <Alert type="warning">
-            This action cannot be undone. The item will be permanently deleted from <strong>{tableName}</strong>.
+            This action cannot be undone. The item will be permanently deleted from{" "}
+            <strong>{tableName}</strong>.
           </Alert>
           <Box>
-            <CodeView content={selectedItem ? JSON.stringify(selectedItem, null, 2) : ""} lineNumbers wrapLines />
+            <CodeView
+              content={selectedItem ? JSON.stringify(selectedItem, null, 2) : ""}
+              lineNumbers
+              wrapLines
+            />
           </Box>
         </SpaceBetween>
       </Modal>

@@ -2,10 +2,10 @@
  * useCognitoService — Cognito adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { cognitoIdp } from '@/lib/aws-clients'
-import { ListUserPoolsCommand } from '@aws-sdk/client-cognito-identity-provider';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { cognitoIdp } from "@/lib/aws-clients";
+import { ListUserPoolsCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface CognitoServiceState {
   pools: unknown[];
@@ -14,7 +14,11 @@ export interface CognitoServiceState {
 }
 
 export function useCognitoService() {
-  const [state, setState] = useState<CognitoServiceState>({ pools: [], loading: false, error: null });
+  const [state, setState] = useState<CognitoServiceState>({
+    pools: [],
+    loading: false,
+    error: null,
+  });
   const listUserPools = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {

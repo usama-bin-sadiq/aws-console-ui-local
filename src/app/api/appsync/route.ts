@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -35,13 +35,13 @@ export async function POST(request: Request) {
       new CreateGraphqlApiCommand({
         name: body.name,
         authenticationType: body.authenticationType || "API_KEY",
-      })
+      }),
     );
     return NextResponse.json({ api: res.graphqlApi });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -53,14 +53,12 @@ export async function DELETE(request: Request) {
   try {
     const appsyncClient = getUserClientFromRequest(AppSyncClient, request);
     const { searchParams } = new URL(request.url);
-    await appsyncClient.send(
-      new DeleteGraphqlApiCommand({ apiId: searchParams.get("apiId")! })
-    );
+    await appsyncClient.send(new DeleteGraphqlApiCommand({ apiId: searchParams.get("apiId")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

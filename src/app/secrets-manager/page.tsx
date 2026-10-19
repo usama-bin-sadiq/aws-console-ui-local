@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
@@ -36,7 +37,7 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<SecretData>[] = [
   {
     id: "name",
     header: "Secret name",
-    cell: (item) => item.SecretName ? <Link href="#">{item.SecretName}</Link> : "—",
+    cell: (item) => (item.SecretName ? <Link href="#">{item.SecretName}</Link> : "—"),
     sortingField: "SecretName",
     isRowHeader: true,
   },
@@ -70,9 +71,27 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<SecretData>[] = [
     header: "Actions",
     cell: (item) => (
       <SpaceBetween direction="horizontal" size="xs">
-        <Button onClick={() => handleRowView(item)} formAction="none" ariaLabel={`View value of ${item.SecretName}`}>View</Button>
-        <Button onClick={() => handleRowRotate(item)} formAction="none" ariaLabel={`Rotate secret ${item.SecretName}`}>Rotate</Button>
-        <Button onClick={() => handleRowDelete(item)} formAction="none" ariaLabel={`Delete secret ${item.SecretName}`}>Delete</Button>
+        <Button
+          onClick={() => handleRowView(item)}
+          formAction="none"
+          ariaLabel={`View value of ${item.SecretName}`}
+        >
+          View
+        </Button>
+        <Button
+          onClick={() => handleRowRotate(item)}
+          formAction="none"
+          ariaLabel={`Rotate secret ${item.SecretName}`}
+        >
+          Rotate
+        </Button>
+        <Button
+          onClick={() => handleRowDelete(item)}
+          formAction="none"
+          ariaLabel={`Delete secret ${item.SecretName}`}
+        >
+          Delete
+        </Button>
       </SpaceBetween>
     ),
   },
@@ -90,6 +109,19 @@ function handleRowRotate(item: SecretData) {
 
 function handleRowDelete(item: SecretData) {
   window.dispatchEvent(new CustomEvent("secrets-delete", { detail: item.SecretName }));
+}
+
+// Normalize list payloads: a bare array or a wrapper object with an array under
+// a known key. Anything else renders [].
+function toArray<T = Record<string, unknown>>(d: unknown): T[] {
+  if (Array.isArray(d)) return d as T[];
+  if (d && typeof d === "object") {
+    const o = d as Record<string, unknown>;
+    for (const k of ["secrets", "items", "data", "results"]) {
+      if (Array.isArray(o[k])) return o[k] as T[];
+    }
+  }
+  return [];
 }
 
 export default function SecretsManagerPage() {
@@ -130,11 +162,13 @@ export default function SecretsManagerPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/secrets-manager");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setSecrets(data.secrets || []);
+      const res = await apiFetch("/api/secrets-manager");
+      const data = await res.json().catch(() => null);
+      if (data === null) throw new Error(`Invalid response (HTTP ${res.status})`);
+      if (!res.ok || data.error) {
+        throw new Error(data.message || data.error || `HTTP ${res.status}`);
+      }
+      setSecrets(toArray<SecretData>(data));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to fetch secrets");
       setSecrets([]);
@@ -155,14 +189,18 @@ export default function SecretsManagerPage() {
       setViewLoading(true);
       setViewModal(true);
       try {
-        const res = await fetch("/api/secrets-manager", {
+        const res = await apiFetch("/api/secrets-manager", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "getValue", secretId: name }),
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
-        setViewValue(data.secret?.SecretString || data.secret?.SecretBinary ? "***" : JSON.stringify(data.secret || {}, null, 2));
+        setViewValue(
+          data.secret?.SecretString || data.secret?.SecretBinary
+            ? "***"
+            : JSON.stringify(data.secret || {}, null, 2),
+        );
       } catch (err: unknown) {
         setViewValue(err instanceof Error ? err.message : "Failed to retrieve secret value");
       } finally {
@@ -175,7 +213,7 @@ export default function SecretsManagerPage() {
       setRotateLoading(true);
       setRotateModal(true);
       try {
-        const res = await fetch("/api/secrets-manager", {
+        const res = await apiFetch("/api/secrets-manager", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "rotateSecret", secretId: name }),
@@ -222,7 +260,7 @@ export default function SecretsManagerPage() {
     }
     if (hasError) return;
     try {
-      const res = await fetch("/api/secrets-manager", {
+      const res = await apiFetch("/api/secrets-manager", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -248,7 +286,10 @@ export default function SecretsManagerPage() {
 
   const handleConfirmDelete = async () => {
     try {
-      const res = await fetch(`/api/secrets-manager?secretId=${encodeURIComponent(deleteName)}`, { method: "DELETE" });
+      const res = await apiFetch(
+        `/api/secrets-manager?secretId=${encodeURIComponent(deleteName)}`,
+        { method: "DELETE" },
+      );
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setDeleteConfirm(false);
@@ -271,10 +312,7 @@ export default function SecretsManagerPage() {
   });
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
-  const pagedItems = filteredItems.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const pagedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const headerActions = (
     <SpaceBetween direction="horizontal" size="xs">
@@ -288,11 +326,17 @@ export default function SecretsManagerPage() {
         onItemClick={({ detail }) => {
           if (selectedItems[0]) {
             if (detail.id === "view") {
-              window.dispatchEvent(new CustomEvent("secrets-view", { detail: selectedItems[0].SecretName }));
+              window.dispatchEvent(
+                new CustomEvent("secrets-view", { detail: selectedItems[0].SecretName }),
+              );
             } else if (detail.id === "rotate") {
-              window.dispatchEvent(new CustomEvent("secrets-rotate", { detail: selectedItems[0].SecretName }));
+              window.dispatchEvent(
+                new CustomEvent("secrets-rotate", { detail: selectedItems[0].SecretName }),
+              );
             } else if (detail.id === "delete") {
-              window.dispatchEvent(new CustomEvent("secrets-delete", { detail: selectedItems[0].SecretName }));
+              window.dispatchEvent(
+                new CustomEvent("secrets-delete", { detail: selectedItems[0].SecretName }),
+              );
             }
           }
         }}
@@ -310,12 +354,17 @@ export default function SecretsManagerPage() {
   return (
     <ServiceLayout
       serviceName="AWS Secrets Manager"
+      showServiceHeader={false}
       serviceCategory="Security"
-      breadcrumbs={[{ text: "Services", href: "/" }, { text: "Security", href: "#" }, { text: "Secrets Manager", href: "#" }]}
+      breadcrumbs={[
+        { text: "Services", href: "/" },
+        { text: "Security", href: "#" },
+        { text: "Secrets Manager", href: "#" },
+      ]}
       headerActions={headerActions}
     >
       <SpaceBetween size="m" direction="vertical">
-        <Container header={<Header variant="h2">Secrets</Header>}>
+        <Container header={<Header variant="h2">Secrets</Header>} className="aws-table-card">
           {error && (
             <Alert type="error" dismissible onDismiss={() => setError(null)}>
               {error}
@@ -329,7 +378,9 @@ export default function SecretsManagerPage() {
             loadingText="Loading secrets..."
             selectionType="multi"
             selectedItems={selectedItems}
-            onSelectionChange={({ detail }) => setSelectedItems(detail.selectedItems as SecretData[])}
+            onSelectionChange={({ detail }) =>
+              setSelectedItems(detail.selectedItems as SecretData[])
+            }
             trackBy="SecretName"
             sortingColumn={COLUMN_DEFINITIONS[0]}
             sortingDescending={false}
@@ -399,11 +450,17 @@ export default function SecretsManagerPage() {
             }
             empty={
               <Box textAlign="center" color="inherit">
-                <Box variant="strong" textAlign="center" color="inherit">No secrets found</Box>
-                <Box variant="p" padding={{ bottom: "s" }} color="inherit">
-                  {filteringText ? "No secrets match your filter." : "To get started, create a secret."}
+                <Box variant="strong" textAlign="center" color="inherit">
+                  No secrets found
                 </Box>
-                {!filteringText && <Button onClick={() => setCreateModal(true)}>Store new secret</Button>}
+                <Box variant="p" padding={{ bottom: "s" }} color="inherit">
+                  {filteringText
+                    ? "No secrets match your filter."
+                    : "To get started, create a secret."}
+                </Box>
+                {!filteringText && (
+                  <Button onClick={() => setCreateModal(true)}>Store new secret</Button>
+                )}
               </Box>
             }
           />
@@ -417,23 +474,70 @@ export default function SecretsManagerPage() {
         header="Store a new secret"
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setCreateModal(false)} formAction="none">Cancel</Button>
-            <Button variant="primary" onClick={handleCreateSecret}>Store secret</Button>
+            <Button onClick={() => setCreateModal(false)} formAction="none">
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleCreateSecret}>
+              Store secret
+            </Button>
           </SpaceBetween>
         }
       >
         <SpaceBetween size="m">
-          <FormField label={<>Secret name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={createNameError}>
-            <Input value={createName} onChange={(e) => { setCreateName(e.detail.value); setCreateNameError(null); }} placeholder="my-secret" ariaLabel="Secret name" />
+          <FormField
+            label={
+              <>
+                Secret name <span style={{ color: "red" }}>*</span>
+              </>
+            }
+            constraintText="Required"
+            errorText={createNameError}
+          >
+            <Input
+              value={createName}
+              onChange={(e) => {
+                setCreateName(e.detail.value);
+                setCreateNameError(null);
+              }}
+              placeholder="my-secret"
+              ariaLabel="Secret name"
+            />
           </FormField>
-          <FormField label={<>Secret value <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={createStringError}>
-            <Textarea value={createString} onChange={(e) => { setCreateString(e.detail.value); setCreateStringError(null); }} rows={6} placeholder="key=value" ariaLabel="Secret value" />
+          <FormField
+            label={
+              <>
+                Secret value <span style={{ color: "red" }}>*</span>
+              </>
+            }
+            constraintText="Required"
+            errorText={createStringError}
+          >
+            <Textarea
+              value={createString}
+              onChange={(e) => {
+                setCreateString(e.detail.value);
+                setCreateStringError(null);
+              }}
+              rows={6}
+              placeholder="key=value"
+              ariaLabel="Secret value"
+            />
           </FormField>
           <FormField label="KMS key ID" constraintText="Optional">
-            <Input value={createKmsKey} onChange={(e) => setCreateKmsKey(e.detail.value)} placeholder="alias/aws/secretsmanager" ariaLabel="KMS key ID" />
+            <Input
+              value={createKmsKey}
+              onChange={(e) => setCreateKmsKey(e.detail.value)}
+              placeholder="alias/aws/secretsmanager"
+              ariaLabel="KMS key ID"
+            />
           </FormField>
           <FormField label="Description" constraintText="Optional">
-            <Input value={createDescription} onChange={(e) => setCreateDescription(e.detail.value)} placeholder="My application secret" ariaLabel="Secret description" />
+            <Input
+              value={createDescription}
+              onChange={(e) => setCreateDescription(e.detail.value)}
+              placeholder="My application secret"
+              ariaLabel="Secret description"
+            />
           </FormField>
         </SpaceBetween>
       </Modal>
@@ -441,11 +545,24 @@ export default function SecretsManagerPage() {
       {/* View Value Modal */}
       <Modal
         visible={viewModal}
-        onDismiss={() => { setViewModal(false); setViewName(""); setViewValue(""); }}
+        onDismiss={() => {
+          setViewModal(false);
+          setViewName("");
+          setViewValue("");
+        }}
         header={`Secret value — ${viewName}`}
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => { setViewModal(false); setViewName(""); setViewValue(""); }} formAction="none">Close</Button>
+            <Button
+              onClick={() => {
+                setViewModal(false);
+                setViewName("");
+                setViewValue("");
+              }}
+              formAction="none"
+            >
+              Close
+            </Button>
           </SpaceBetween>
         }
       >
@@ -454,7 +571,13 @@ export default function SecretsManagerPage() {
             {viewLoading ? (
               <Box>Loading...</Box>
             ) : (
-              <Textarea value={viewValue} onChange={(e) => setViewValue(e.detail.value)} rows={8} readOnly ariaLabel="Secret value read-only" />
+              <Textarea
+                value={viewValue}
+                onChange={(e) => setViewValue(e.detail.value)}
+                rows={8}
+                readOnly
+                ariaLabel="Secret value read-only"
+              />
             )}
           </FormField>
         </SpaceBetween>
@@ -467,13 +590,17 @@ export default function SecretsManagerPage() {
         header={`Rotate secret — ${rotateName}`}
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setRotateModal(false)} formAction="none">Cancel</Button>
+            <Button onClick={() => setRotateModal(false)} formAction="none">
+              Cancel
+            </Button>
           </SpaceBetween>
         }
       >
         <SpaceBetween size="m">
           <FormField label="Rotation status">
-            <StatusIndicator type={rotateLoading ? "info" : "success"}>{rotateLoading ? "Rotating..." : "Rotation triggered"}</StatusIndicator>
+            <StatusIndicator type={rotateLoading ? "info" : "success"}>
+              {rotateLoading ? "Rotating..." : "Rotation triggered"}
+            </StatusIndicator>
           </FormField>
         </SpaceBetween>
       </Modal>
@@ -481,17 +608,33 @@ export default function SecretsManagerPage() {
       {/* Delete Confirm Modal */}
       <Modal
         visible={deleteConfirm}
-        onDismiss={() => { setDeleteConfirm(false); setDeleteName(""); }}
+        onDismiss={() => {
+          setDeleteConfirm(false);
+          setDeleteName("");
+        }}
         header="Delete secret"
         footer={
           <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => { setDeleteConfirm(false); setDeleteName(""); }} formAction="none">Cancel</Button>
-            <Button variant="primary" onClick={handleConfirmDelete}>Confirm delete</Button>
+            <Button
+              onClick={() => {
+                setDeleteConfirm(false);
+                setDeleteName("");
+              }}
+              formAction="none"
+            >
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleConfirmDelete}>
+              Confirm delete
+            </Button>
           </SpaceBetween>
         }
       >
         <SpaceBetween size="m">
-          <Box>Are you sure you want to delete <strong>{deleteName}</strong>? This action is irreversible.</Box>
+          <Box>
+            Are you sure you want to delete <strong>{deleteName}</strong>? This action is
+            irreversible.
+          </Box>
         </SpaceBetween>
       </Modal>
     </ServiceLayout>

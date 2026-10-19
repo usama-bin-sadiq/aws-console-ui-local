@@ -2,21 +2,21 @@
  * DashboardServiceComponent — PRD Section 8 + 7.4
  * Service-level dashboard customization with adapter-backed widgets.
  */
-import React from 'react';
-import Cards from '@cloudscape-design/components/cards';
-import SpaceBetween from '@cloudscape-design/components/space-between';
-import Header from '@cloudscape-design/components/header';
-import Container from '@cloudscape-design/components/container';
-import StatusIndicator from '@cloudscape-design/components/status-indicator';
-import Box from '@cloudscape-design/components/box';
-import { AWACS_DESIGN_TOKENS } from '@/constants/design-tokens';
+import React from "react";
+import Cards from "@cloudscape-design/components/cards";
+import SpaceBetween from "@cloudscape-design/components/space-between";
+import Header from "@cloudscape-design/components/header";
+import Container from "@cloudscape-design/components/container";
+import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Box from "@cloudscape-design/components/box";
+import { AWACS_DESIGN_TOKENS } from "@/constants/design-tokens";
 
 export interface WidgetItem {
   readonly name: string;
   readonly title: string;
   readonly description: string;
   readonly value?: string | number;
-  readonly status?: 'pending' | 'success' | 'warning' | 'error';
+  readonly status?: "pending" | "success" | "warning" | "error";
   readonly featureId: string;
 }
 
@@ -28,8 +28,8 @@ export interface DashboardServiceProps {
 }
 
 export function DashboardServiceComponent({
-  serviceName = 'AWS Service',
-  category = 'Compute',
+  serviceName = "AWS Service",
+  category = "Compute",
   widgets = [],
   customizationEnabled = true,
 }: DashboardServiceProps): React.ReactElement {
@@ -46,26 +46,38 @@ export function DashboardServiceComponent({
             header: (item: WidgetItem) => (
               <SpaceBetween size="xs" direction="vertical">
                 <span style={{ fontWeight: 600 }}>{item.title}</span>
-                <span style={{ fontSize: AWACS_DESIGN_TOKENS.typography.fontSizeXs, color: 'var(--awsui-color-text-body-secondary)' }}>
+                <span
+                  style={{
+                    fontSize: AWACS_DESIGN_TOKENS.typography.fontSizeXs,
+                    color: "var(--awsui-color-text-body-secondary)",
+                  }}
+                >
                   {item.name} — {item.featureId}
                 </span>
               </SpaceBetween>
             ),
             sections: [
               {
-                id: 'value',
-                header: 'Current value',
+                id: "value",
+                header: "Current value",
                 content: (item: WidgetItem) => (
                   <SpaceBetween size="xs" direction="vertical">
-                    <div style={{ fontSize: AWACS_DESIGN_TOKENS.typography.fontSizeXxl, fontWeight: 600 }}>
+                    <div
+                      style={{
+                        fontSize: AWACS_DESIGN_TOKENS.typography.fontSizeXxl,
+                        fontWeight: 600,
+                      }}
+                    >
                       {item.value}
                     </div>
-                    <StatusIndicator type={item.status || 'success'}>{item.status || 'success'}</StatusIndicator>
+                    <StatusIndicator type={item.status || "success"}>
+                      {item.status || "success"}
+                    </StatusIndicator>
                   </SpaceBetween>
                 ),
               },
               {
-                id: 'description',
+                id: "description",
                 content: (item: WidgetItem) => item.description,
               },
             ],
@@ -73,13 +85,18 @@ export function DashboardServiceComponent({
           items={displayWidgets}
           loading={false}
           loadingText="Loading adapter data..."
-          empty={<Box textAlign="center" padding="l">No dashboard metrics are available for this service.</Box>}
+          empty={
+            <Box textAlign="center" padding="l">
+              No dashboard metrics are available for this service.
+            </Box>
+          }
         />
       </Container>
       {customizationEnabled && (
         <Container header={<Header variant="h3">Customization</Header>}>
-          <p style={{ color: 'var(--awsui-color-text-body-secondary)' }}>
-            Dashboard customization enabled (PRD F-034). Widget library backed by adapter SDK responses. Save/load configurations persist to adapter store.
+          <p style={{ color: "var(--awsui-color-text-body-secondary)" }}>
+            Dashboard customization enabled (PRD F-034). Widget library backed by adapter SDK
+            responses. Save/load configurations persist to adapter store.
           </p>
         </Container>
       )}

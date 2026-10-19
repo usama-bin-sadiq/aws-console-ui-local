@@ -3,12 +3,12 @@
  * Applies endpoint rewrite and auth injection when adapter is active.
  */
 
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
-import { resolveEndpoint } from './localstack-adapter/endpoint-resolver';
-import { injectAuth } from './localstack-adapter/auth-injector';
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
+import { resolveEndpoint } from "./localstack-adapter/endpoint-resolver";
+import { injectAuth } from "./localstack-adapter/auth-injector";
 
 export interface MiddlewareOptions {
-  readonly adapterMode?: 'localstack' | 'ministack';
+  readonly adapterMode?: "localstack" | "ministack";
   readonly disableAdapter?: boolean;
 }
 
@@ -37,7 +37,7 @@ export function createAdapterMiddleware(options?: MiddlewareOptions) {
   const disabled = isAdapterDisabled(options);
   return function adapterMiddleware(
     nextRequest: HttpRequestLike,
-    nextHandler?: (req: HttpRequestLike) => Promise<HttpResponseLike>
+    nextHandler?: (req: HttpRequestLike) => Promise<HttpResponseLike>,
   ): Promise<HttpResponseLike> {
     if (disabled) {
       if (nextHandler) {
@@ -45,8 +45,8 @@ export function createAdapterMiddleware(options?: MiddlewareOptions) {
       }
       return Promise.resolve({
         statusCode: 200,
-        headers: { 'content-type': 'application/json' },
-        body: '{}',
+        headers: { "content-type": "application/json" },
+        body: "{}",
       } as HttpResponseLike);
     }
 
@@ -60,10 +60,10 @@ export function createAdapterMiddleware(options?: MiddlewareOptions) {
       port: endpoint.port,
       headers: {
         ...nextRequest.headers,
-        'Host': `${endpoint.hostname}:${endpoint.port}`,
-        'x-adapter-mode': options?.adapterMode || 'localstack',
-        'x-adapter-service': 'aws-console-emulator',
-        'Authorization': `AWS4-HMAC-SHA256 Credential=${auth.accessKeyId}/${auth.region}/aws4_request`,
+        Host: `${endpoint.hostname}:${endpoint.port}`,
+        "x-adapter-mode": options?.adapterMode || "localstack",
+        "x-adapter-service": "aws-console-emulator",
+        Authorization: `AWS4-HMAC-SHA256 Credential=${auth.accessKeyId}/${auth.region}/aws4_request`,
       },
     };
 
@@ -72,8 +72,8 @@ export function createAdapterMiddleware(options?: MiddlewareOptions) {
     }
     return Promise.resolve({
       statusCode: 200,
-      headers: { 'content-type': 'application/json' },
-      body: '{}',
+      headers: { "content-type": "application/json" },
+      body: "{}",
     } as HttpResponseLike);
   };
 }

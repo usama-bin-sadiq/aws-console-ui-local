@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useState } from "react";
 import Grid from "@cloudscape-design/components/grid";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -17,10 +18,7 @@ export interface WidgetContainerProps {
   onSettingsClick?: () => void;
 }
 
-export default function WidgetContainer({
-  widgets,
-  onSettingsClick,
-}: WidgetContainerProps) {
+export default function WidgetContainer({ widgets, onSettingsClick }: WidgetContainerProps) {
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [order, setOrder] = useState<string[]>(() => widgets.map((w) => w.id));
@@ -52,7 +50,7 @@ export default function WidgetContainer({
     newOrder.forEach((widgetId, index) => {
       const posX = index % 2;
       const posY = Math.floor(index / 2);
-      fetch("/api/widgets", {
+      apiFetch("/api/widgets", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -67,7 +65,7 @@ export default function WidgetContainer({
     // Optimistically remove from order
     setOrder((prev) => prev.filter((id) => id !== widgetId));
     // Persist to API
-    fetch("/api/widgets", {
+    apiFetch("/api/widgets", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ widgetId, updates: { visible: 0 } }),
@@ -80,7 +78,7 @@ export default function WidgetContainer({
 
   function handleRestore(widgetId: string) {
     setOrder((prev) => (prev.includes(widgetId) ? prev : [...prev, widgetId]));
-    fetch("/api/widgets", {
+    apiFetch("/api/widgets", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ widgetId, updates: { visible: 1 } }),
@@ -88,9 +86,7 @@ export default function WidgetContainer({
   }
 
   // Build a map for quick lookup
-  const widgetMap = new Map<string, React.ReactNode>(
-    widgets.map((w) => [w.id, w.node])
-  );
+  const widgetMap = new Map<string, React.ReactNode>(widgets.map((w) => [w.id, w.node]));
 
   // Ordered widget IDs filtered to only those present in the current widgets prop
   const orderedIds = order.filter((id) => widgetMap.has(id));
@@ -136,8 +132,7 @@ export default function WidgetContainer({
                 margin: "4px 0 0 0",
               }}
             >
-              Welcome back. Customize this page to show the information that
-              matters most to you.
+              Welcome back. Customize this page to show the information that matters most to you.
             </p>
           </div>
           <Button
@@ -214,11 +209,7 @@ export default function WidgetContainer({
             <Header variant="h3">Hidden widgets</Header>
             <SpaceBetween direction="horizontal" size="xs">
               {hiddenWidgetIds.map((id) => (
-                <Button
-                  key={id}
-                  onClick={() => handleRestore(id)}
-                  formAction="none"
-                >
+                <Button key={id} onClick={() => handleRestore(id)} formAction="none">
                   Restore: {id}
                 </Button>
               ))}

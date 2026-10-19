@@ -5,16 +5,13 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId") || "default";
-    
+
     const widgets = await getWidgetConfigAsync(userId);
-    
+
     return NextResponse.json({ widgets });
   } catch (error) {
     console.error("Error fetching widgets:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch widgets" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch widgets" }, { status: 500 });
   }
 }
 
@@ -24,21 +21,15 @@ export async function PUT(request: NextRequest) {
     const { userId = "default", widgetId, updates } = body;
 
     if (!widgetId || !updates) {
-      return NextResponse.json(
-        { error: "Missing widgetId or updates" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing widgetId or updates" }, { status: 400 });
     }
 
     await updateWidgetConfigAsync(userId, widgetId, updates);
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error updating widget:", error);
-    return NextResponse.json(
-      { error: "Failed to update widget" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update widget" }, { status: 500 });
   }
 }
 
@@ -53,15 +44,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ widgets });
     }
 
-    return NextResponse.json(
-      { error: "Unknown action" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
     console.error("Error performing widget action:", error);
-    return NextResponse.json(
-      { error: "Failed to perform action" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to perform action" }, { status: 500 });
   }
 }

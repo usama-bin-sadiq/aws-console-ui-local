@@ -26,9 +26,7 @@ export async function GET(request: Request) {
     const buildId = searchParams.get("buildId");
 
     if (action === "builds" && projectName) {
-      const listRes = await codebuildClient.send(
-        new ListBuildsForProjectCommand({ projectName })
-      );
+      const listRes = await codebuildClient.send(new ListBuildsForProjectCommand({ projectName }));
       return NextResponse.json({ builds: listRes.ids || [] });
     }
 
@@ -37,7 +35,10 @@ export async function GET(request: Request) {
       if (!idsParam) {
         return NextResponse.json({ error: "ids required" }, { status: 400 });
       }
-      const ids = idsParam.split(",").map((s) => s.trim()).filter(Boolean);
+      const ids = idsParam
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       const res = await codebuildClient.send(new BatchGetBuildsCommand({ ids }));
       return NextResponse.json({ builds: res.builds || [] });
     }
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -72,15 +73,13 @@ export async function POST(request: Request) {
 
     if (body.action === "startBuild") {
       const res = await codebuildClient.send(
-        new StartBuildCommand({ projectName: body.projectName })
+        new StartBuildCommand({ projectName: body.projectName }),
       );
       return NextResponse.json({ build: res.build });
     }
 
     if (body.action === "stopBuild") {
-      const res = await codebuildClient.send(
-        new StopBuildCommand({ id: body.buildId })
-      );
+      const res = await codebuildClient.send(new StopBuildCommand({ id: body.buildId }));
       return NextResponse.json({ build: res.build });
     }
 
@@ -89,22 +88,19 @@ export async function POST(request: Request) {
         name: body.name,
         source: body.source || { type: "NO_SOURCE" },
         artifacts: body.artifacts || { type: "NO_ARTIFACTS" },
-        environment:
-          body.environment || {
-            type: "LINUX_CONTAINER",
-            image: "aws/codebuild/standard:7.0",
-            computeType: "BUILD_GENERAL1_SMALL",
-          },
-        serviceRole:
-          body.serviceRole ||
-          "arn:aws:iam::000000000000:role/codebuild-role",
-      })
+        environment: body.environment || {
+          type: "LINUX_CONTAINER",
+          image: "aws/codebuild/standard:7.0",
+          computeType: "BUILD_GENERAL1_SMALL",
+        },
+        serviceRole: body.serviceRole || "arn:aws:iam::000000000000:role/codebuild-role",
+      }),
     );
     return NextResponse.json({ project: res.project });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -116,14 +112,12 @@ export async function DELETE(request: Request) {
   try {
     const codebuildClient = getUserClientFromRequest(CodeBuildClient, request);
     const { searchParams } = new URL(request.url);
-    await codebuildClient.send(
-      new DeleteProjectCommand({ name: searchParams.get("name")! })
-    );
+    await codebuildClient.send(new DeleteProjectCommand({ name: searchParams.get("name")! }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

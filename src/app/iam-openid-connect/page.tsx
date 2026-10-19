@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -25,7 +26,7 @@ export default function IAMOpenIDConnectPage() {
   const fetchProviders = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/iam-openid-connect");
+      const res = await apiFetch("/api/iam-openid-connect");
       const data = await res.json();
       setProviders(data.providers || []);
     } catch {}
@@ -37,7 +38,7 @@ export default function IAMOpenIDConnectPage() {
   }, []);
 
   const createProvider = async () => {
-    await fetch("/api/iam-openid-connect", {
+    await apiFetch("/api/iam-openid-connect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: providerUrl, clientId }),
@@ -49,25 +50,24 @@ export default function IAMOpenIDConnectPage() {
   };
 
   const deleteProvider = async (arn: string) => {
-    await fetch(`/api/iam-openid-connect?arn=${encodeURIComponent(arn)}`, { method: "DELETE" });
+    await apiFetch(`/api/iam-openid-connect?arn=${encodeURIComponent(arn)}`, { method: "DELETE" });
     fetchProviders();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">IAM OIDC Providers</Header>
         <Container
           header={
             <Header
               variant="h2"
-              actions={
-                <Button onClick={() => setCreateModal(true)}>Create OIDC Provider</Button>
-              }
+              actions={<Button onClick={() => setCreateModal(true)}>Create OIDC Provider</Button>}
             >
               OpenID Connect Providers
             </Header>
           }
+          className="aws-table-card"
         >
           <Table
             items={providers}

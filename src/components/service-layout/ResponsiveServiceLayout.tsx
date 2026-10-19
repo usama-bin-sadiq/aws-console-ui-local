@@ -16,7 +16,12 @@ import { AdapterStatus } from "@/components/AdapterStatus/AdapterStatus";
 export interface ResponsiveServiceLayoutProps {
   readonly serviceName: string;
   readonly serviceRoute: string;
-  readonly navigationItems?: Array<{ text: string; href: string; type?: string; items?: Array<{ text: string; href: string }> }>;
+  readonly navigationItems?: Array<{
+    text: string;
+    href: string;
+    type?: string;
+    items?: Array<{ text: string; href: string }>;
+  }>;
   readonly headerActions?: React.ReactNode;
   readonly content: React.ReactNode;
   readonly detailsLink?: string;
@@ -26,7 +31,12 @@ export interface ResponsiveServiceLayoutProps {
 export function ResponsiveServiceLayout({
   serviceName,
   serviceRoute,
-  navigationItems = [{ text: "Overview", href: `/${serviceRoute}` }, { text: "Resources", href: `/${serviceRoute}/resources` }, { text: "Details", href: `/${serviceRoute}/details` }, { text: "Tags", href: `/${serviceRoute}/tags` }],
+  navigationItems = [
+    { text: "Overview", href: `/${serviceRoute}` },
+    { text: "Resources", href: `/${serviceRoute}/resources` },
+    { text: "Details", href: `/${serviceRoute}/details` },
+    { text: "Tags", href: `/${serviceRoute}/tags` },
+  ],
   headerActions,
   content,
   detailsLink,
@@ -46,28 +56,30 @@ export function ResponsiveServiceLayout({
   return (
     <AppLayout
       ariaLabels={{ navigation: `${serviceName} service navigation` }}
-      navigationWidth={isCompactLayout ? 220 : 240}
+      navigationWidth={isCompactLayout ? 72 : 240}
       navigationCollapsedWidth={56}
       navigationOpen={!isCompactLayout}
       navigation={
         <SideNavigation
           activeHref={pathname || `/${serviceRoute}`}
-          items={navigationItems.map((item) => {
-            if (item.type === "divider") return { type: "divider" };
-            if (item.items) {
+          items={
+            navigationItems.map((item) => {
+              if (item.type === "divider") return { type: "divider" };
+              if (item.items) {
+                return {
+                  type: "expandable-link-group",
+                  text: item.text,
+                  href: item.href || "#",
+                  items: item.items,
+                };
+              }
               return {
-                type: "expandable-link-group",
+                type: "link",
                 text: item.text,
-                href: item.href || "#",
-                items: item.items,
+                href: item.href,
               };
-            }
-            return {
-              type: "link",
-              text: item.text,
-              href: item.href,
-            };
-          }) as any}
+            }) as any
+          }
           onFollow={(event) => {
             if (!event.detail.external) {
               event.preventDefault();
@@ -83,7 +95,12 @@ export function ResponsiveServiceLayout({
               variant="h1"
               actions={
                 <SpaceBetween size="xs" direction={isCompactLayout ? "vertical" : "horizontal"}>
-                  <AdapterStatus status={adapterStatus} endpointUrl={process.env.NEXT_PUBLIC_LOCALSTACK_ENDPOINT || "http://localhost:4566"} />
+                  <AdapterStatus
+                    status={adapterStatus}
+                    endpointUrl={
+                      process.env.NEXT_PUBLIC_LOCALSTACK_ENDPOINT || "http://localhost:4566"
+                    }
+                  />
                   {headerActions}
                 </SpaceBetween>
               }
@@ -94,7 +111,11 @@ export function ResponsiveServiceLayout({
         >
           <SpaceBetween size="l">
             {content}
-            {detailsLink ? <StatusIndicator type="info">Adapter connected. <a href={detailsLink}>View details</a></StatusIndicator> : null}
+            {detailsLink ? (
+              <StatusIndicator type="info">
+                Adapter connected. <a href={detailsLink}>View details</a>
+              </StatusIndicator>
+            ) : null}
           </SpaceBetween>
         </ContentLayout>
       }

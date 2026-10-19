@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -35,16 +36,24 @@ export default function KinesisPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/kinesis");
+      const res = await apiFetch("/api/kinesis");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch streams");
       const names: string[] = data.streams || [];
       setStreams(
         names.map((n: string) => ({
           name: n,
-          status: data.streamDetails && data.streamDetails[n] ? data.streamDetails[n].StreamStatus : "ACTIVE",
-          shards: data.streamDetails && data.streamDetails[n] ? (data.streamDetails[n].Shards ? data.streamDetails[n].Shards.length : 1) : 1,
-        }))
+          status:
+            data.streamDetails && data.streamDetails[n]
+              ? data.streamDetails[n].StreamStatus
+              : "ACTIVE",
+          shards:
+            data.streamDetails && data.streamDetails[n]
+              ? data.streamDetails[n].Shards
+                ? data.streamDetails[n].Shards.length
+                : 1
+              : 1,
+        })),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch streams");
@@ -65,7 +74,7 @@ export default function KinesisPage() {
     setStreamNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/kinesis", {
+      const res = await apiFetch("/api/kinesis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -92,7 +101,7 @@ export default function KinesisPage() {
 
   const deleteStream = async (name: string) => {
     try {
-      const res = await fetch(`/api/kinesis?streamName=${encodeURIComponent(name)}`, {
+      const res = await apiFetch(`/api/kinesis?streamName=${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -106,7 +115,7 @@ export default function KinesisPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Kinesis Data Streams</Header>
 
@@ -116,7 +125,7 @@ export default function KinesisPage() {
           </Alert>
         )}
 
-        <Container>
+        <Container className="aws-table-card">
           <Tabs
             tabs={[
               {
@@ -140,7 +149,10 @@ export default function KinesisPage() {
                     columnDefinitions={[
                       { header: "Stream name", cell: (item: KinesisStream) => item.name },
                       { header: "Status", cell: (item: KinesisStream) => item.status || "—" },
-                      { header: "Shards", cell: (item: KinesisStream) => String(item.shards || "—") },
+                      {
+                        header: "Shards",
+                        cell: (item: KinesisStream) => String(item.shards || "—"),
+                      },
                       {
                         header: "Actions",
                         cell: (item: KinesisStream) => (
@@ -159,26 +171,32 @@ export default function KinesisPage() {
                 label: "Analytics",
                 id: "analytics",
                 content: (
-                  <div style={{ padding: "16px", color: "var(--awsui-color-text-body-secondary)" }}>
+                  <Box padding="m" color="text-body-secondary">
                     <Header variant="h2">Analytics overview</Header>
                     <SpaceBetween size="s">
-                      <Box>Stream analytics and metrics available through adapter SDK integration.</Box>
+                      <Box>
+                        Stream analytics and metrics available through adapter SDK integration.
+                      </Box>
                       <Box>Use the query editor or analytics APIs to process stream records.</Box>
                     </SpaceBetween>
-                  </div>
+                  </Box>
                 ),
               },
               {
                 label: "Video Streams",
                 id: "video",
                 content: (
-                  <div style={{ padding: "16px", color: "var(--awsui-color-text-body-secondary)" }}>
+                  <Box padding="m" color="text-body-secondary">
                     <Header variant="h2">Video streams</Header>
                     <SpaceBetween size="s">
-                      <Box>Kinesis Video Streams support is available through the adapter SDK layer.</Box>
-                      <Box>Manage video ingestion and retrieval via adapter-compatible endpoints.</Box>
+                      <Box>
+                        Kinesis Video Streams support is available through the adapter SDK layer.
+                      </Box>
+                      <Box>
+                        Manage video ingestion and retrieval via adapter-compatible endpoints.
+                      </Box>
                     </SpaceBetween>
-                  </div>
+                  </Box>
                 ),
               },
             ]}
@@ -213,10 +231,21 @@ export default function KinesisPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Data stream name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={streamNameError}>
+            <FormField
+              label={
+                <>
+                  Data stream name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={streamNameError}
+            >
               <Input
                 value={streamName}
-                onChange={(e) => { setStreamName(e.detail.value); setStreamNameError(null); }}
+                onChange={(e) => {
+                  setStreamName(e.detail.value);
+                  setStreamNameError(null);
+                }}
                 placeholder="my-stream"
               />
             </FormField>

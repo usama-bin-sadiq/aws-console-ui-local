@@ -38,7 +38,7 @@ export default function InspectorPage() {
   }, []);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon Inspector</Header>
 
@@ -48,19 +48,17 @@ export default function InspectorPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={<Header variant="h2">Findings ({findings.length})</Header>}
-            items={findings}
-            columnDefinitions={[
-              { header: "Title", cell: (item) => item.title || "—" },
-              { header: "Severity", cell: (item) => item.severity || "—" },
-              { header: "Status", cell: (item) => item.status || "—" },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No findings found.</Box>}
-          />
-        </Container>
+        <Table
+          header={<Header variant="h2">Findings ({findings.length})</Header>}
+          items={findings}
+          columnDefinitions={[
+            { header: "Title", cell: (item) => item.title || "—" },
+            { header: "Severity", cell: (item) => item.severity || "—" },
+            { header: "Status", cell: (item) => item.status || "—" },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No findings found.</Box>}
+        />
       </SpaceBetween>
     </div>
   );

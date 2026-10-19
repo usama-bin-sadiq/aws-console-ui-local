@@ -14,9 +14,9 @@
 export interface S3BucketConfig {
   Name?: string;
   Region?: string;
-  ACL?: 'private' | 'public-read' | 'public-read-write' | 'authenticated-read';
+  ACL?: "private" | "public-read" | "public-read-write" | "authenticated-read";
   Versioning?: boolean;
-  Encryption?: 'AES256' | 'aws:kms';
+  Encryption?: "AES256" | "aws:kms";
   Tags?: Array<{ Key?: string; Value?: string }>;
   BlockPublicAccess?: boolean;
   ObjectLockEnabled?: boolean;
@@ -49,7 +49,7 @@ export interface S3BucketSummary {
 export interface S3ObjectConfig {
   Key?: string;
   Bucket?: string;
-  StorageClass?: 'STANDARD' | 'REDUCED_REDUNDANCY' | 'GLACIER' | 'STANDARD_IA' | string;
+  StorageClass?: "STANDARD" | "REDUCED_REDUNDANCY" | "GLACIER" | "STANDARD_IA" | string;
   Metadata?: Record<string, string>;
   Size?: number;
   LastModified?: string | Date;
@@ -71,8 +71,8 @@ export interface S3BucketPolicy {
 }
 
 export interface S3VersioningConfig {
-  Status?: 'Enabled' | 'Suspended';
-  MFADelete?: 'Enabled' | 'Disabled';
+  Status?: "Enabled" | "Suspended";
+  MFADelete?: "Enabled" | "Disabled";
 }
 
 export interface S3Tag {
@@ -82,7 +82,7 @@ export interface S3Tag {
 
 export interface S3LifecycleRule {
   ID?: string;
-  Status?: 'Enabled' | 'Disabled';
+  Status?: "Enabled" | "Disabled";
   Filter?: Record<string, unknown>;
   Transitions?: Array<{ Days?: number; StorageClass?: string }>;
   Expiration?: { Days?: number; ExpiredObjectDeleteMarker?: boolean };

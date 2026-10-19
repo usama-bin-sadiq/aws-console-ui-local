@@ -66,6 +66,7 @@ export interface UserRecord {
   password: string;
   email: string;
   account_name: string;
+  account_id: string | null;
   permissions: string;
   is_root: number;
   access_key_id: string;
@@ -133,6 +134,7 @@ function toUserRecord(row: any): UserRecord {
     password: row.password,
     email: row.email,
     account_name: row.accountName || "",
+    account_id: row.accountId ?? null,
     permissions: row.permissions,
     is_root: row.isRoot ? 1 : 0,
     access_key_id: row.accessKeyId,
@@ -159,7 +161,9 @@ export async function getWidgetConfigAsync(userId: string = "default"): Promise<
 export async function updateWidgetConfigAsync(
   userId: string,
   widgetId: string,
-  updates: Partial<Pick<WidgetConfig, "position_x" | "position_y" | "width" | "height" | "visible">>
+  updates: Partial<
+    Pick<WidgetConfig, "position_x" | "position_y" | "width" | "height" | "visible">
+  >,
 ) {
   await ensureInitialized();
   const setClause: Record<string, unknown> = { updatedAt: sql`CURRENT_TIMESTAMP` };
@@ -172,10 +176,7 @@ export async function updateWidgetConfigAsync(
   await db
     .update(schema.widgetConfig)
     .set(setClause)
-    .where(and(
-      eq(schema.widgetConfig.userId, userId),
-      eq(schema.widgetConfig.widgetId, widgetId)
-    ));
+    .where(and(eq(schema.widgetConfig.userId, userId), eq(schema.widgetConfig.widgetId, widgetId)));
 }
 
 export async function resetWidgetConfigAsync(userId: string = "default") {
@@ -194,9 +195,15 @@ export async function getFavoritesAsync(userId: string = "default"): Promise<Fav
   return rows.map(toFavorite);
 }
 
-export async function addFavoriteAsync(userId: string, serviceId: string, serviceName: string, serviceHref: string) {
+export async function addFavoriteAsync(
+  userId: string,
+  serviceId: string,
+  serviceName: string,
+  serviceHref: string,
+) {
   await ensureInitialized();
-  await db.insert(schema.favorites)
+  await db
+    .insert(schema.favorites)
     .values({ userId, serviceId, serviceName, serviceHref })
     .onConflictDoUpdate({
       target: [schema.favorites.userId, schema.favorites.serviceId],
@@ -206,14 +213,15 @@ export async function addFavoriteAsync(userId: string, serviceId: string, servic
 
 export async function removeFavoriteAsync(userId: string, serviceId: string) {
   await ensureInitialized();
-  await db.delete(schema.favorites)
-    .where(and(
-      eq(schema.favorites.userId, userId),
-      eq(schema.favorites.serviceId, serviceId)
-    ));
+  await db
+    .delete(schema.favorites)
+    .where(and(eq(schema.favorites.userId, userId), eq(schema.favorites.serviceId, serviceId)));
 }
 
-export async function getRecentlyVisitedAsync(userId: string = "default", limit: number = 5): Promise<RecentlyVisited[]> {
+export async function getRecentlyVisitedAsync(
+  userId: string = "default",
+  limit: number = 5,
+): Promise<RecentlyVisited[]> {
   await ensureInitialized();
   const rows = await db
     .select()
@@ -224,48 +232,55 @@ export async function getRecentlyVisitedAsync(userId: string = "default", limit:
   return rows.map(toRecentlyVisited);
 }
 
-export async function addRecentlyVisitedAsync(userId: string, serviceId: string, serviceName: string, serviceHref: string) {
+export async function addRecentlyVisitedAsync(
+  userId: string,
+  serviceId: string,
+  serviceName: string,
+  serviceHref: string,
+) {
   await ensureInitialized();
-  await db.insert(schema.recentlyVisited)
+  await db
+    .insert(schema.recentlyVisited)
     .values({ userId, serviceId, serviceName, serviceHref, visitedAt: sql`CURRENT_TIMESTAMP` });
 
-  await db.delete(schema.recentlyVisited)
-    .where(and(
+  await db.delete(schema.recentlyVisited).where(
+    and(
       eq(schema.recentlyVisited.userId, userId),
       sql`${schema.recentlyVisited.id} NOT IN (
         SELECT ${schema.recentlyVisited.id} FROM ${schema.recentlyVisited}
         WHERE ${schema.recentlyVisited.userId} = ${userId}
         ORDER BY ${schema.recentlyVisited.visitedAt} DESC
         LIMIT 50
-      )`
-    ));
+      )`,
+    ),
+  );
 }
 
 export async function addTerminalHistoryAsync(
   sessionId: string,
   command: string,
   output: string,
-  exitCode: number
+  exitCode: number,
 ): Promise<void> {
   await ensureInitialized();
-  await db.insert(schema.terminalHistory)
-    .values({ sessionId, command, output, exitCode });
+  await db.insert(schema.terminalHistory).values({ sessionId, command, output, exitCode });
 
-  await db.delete(schema.terminalHistory)
-    .where(and(
+  await db.delete(schema.terminalHistory).where(
+    and(
       eq(schema.terminalHistory.sessionId, sessionId),
       sql`${schema.terminalHistory.id} NOT IN (
         SELECT ${schema.terminalHistory.id} FROM ${schema.terminalHistory}
         WHERE ${schema.terminalHistory.sessionId} = ${sessionId}
         ORDER BY ${schema.terminalHistory.executedAt} DESC
         LIMIT 500
-      )`
-    ));
+      )`,
+    ),
+  );
 }
 
 export async function getTerminalHistoryAsync(
   sessionId: string,
-  limit: number = 100
+  limit: number = 100,
 ): Promise<TerminalHistoryEntry[]> {
   await ensureInitialized();
   const rows = await db
@@ -289,13 +304,15 @@ export async function getUserByUsernameAsync(username: string): Promise<UserReco
   return rows[0] ? toUserRecord(rows[0]) : undefined;
 }
 
+export async function getUserByEmailAsync(email: string): Promise<UserRecord | undefined> {
+  await ensureInitialized();
+  const rows = await db.select().from(schema.users).where(eq(schema.users.email, email)).limit(1);
+  return rows[0] ? toUserRecord(rows[0]) : undefined;
+}
+
 export async function getUserByIdAsync(id: number): Promise<UserRecord | undefined> {
   await ensureInitialized();
-  const rows = await db
-    .select()
-    .from(schema.users)
-    .where(eq(schema.users.id, id))
-    .limit(1);
+  const rows = await db.select().from(schema.users).where(eq(schema.users.id, id)).limit(1);
   return rows[0] ? toUserRecord(rows[0]) : undefined;
 }
 
@@ -307,6 +324,7 @@ export async function getAllUsersAsync(): Promise<Omit<UserRecord, "password" | 
       username: schema.users.username,
       email: schema.users.email,
       accountName: schema.users.accountName,
+      accountId: schema.users.accountId,
       permissions: schema.users.permissions,
       isRoot: schema.users.isRoot,
       accessKeyId: schema.users.accessKeyId,
@@ -316,11 +334,12 @@ export async function getAllUsersAsync(): Promise<Omit<UserRecord, "password" | 
       lastLogin: schema.users.lastLogin,
     })
     .from(schema.users);
-  return rows.map(r => ({
+  return rows.map((r) => ({
     id: r.id,
     username: r.username,
     email: r.email,
     account_name: r.accountName || "",
+    account_id: r.accountId ?? null,
     permissions: r.permissions,
     is_root: r.isRoot ? 1 : 0,
     access_key_id: r.accessKeyId,
@@ -336,6 +355,7 @@ export async function createUserAsync(data: {
   password: string;
   email: string;
   accountName?: string;
+  accountId?: string;
   permissions?: string[];
   isRoot?: boolean;
 }): Promise<UserRecord> {
@@ -343,12 +363,14 @@ export async function createUserAsync(data: {
   const accessKeyId = `AKIA${data.username.toUpperCase().slice(0, 12).padEnd(12, "X")}0002`;
   const secretAccessKey = `wJalrXUtnFEMI/${data.username}/${Date.now()}/secret`;
   const passwordHash = bcrypt.hashSync(data.password, BCRYPT_ROUNDS);
+  const accountId = data.accountId ?? generateAccountId();
 
   await db.insert(schema.users).values({
     username: data.username,
     password: passwordHash,
     email: data.email,
     accountName: data.accountName || `${data.username}-account`,
+    accountId,
     permissions: JSON.stringify(data.permissions || ["*"]),
     isRoot: data.isRoot ?? false,
     accessKeyId,
@@ -368,7 +390,11 @@ export async function updateUserLastLoginAsync(username: string): Promise<void> 
     .where(eq(schema.users.username, username));
 }
 
-export async function updateUserMFAAsync(username: string, mfaEnabled: boolean, mfaSecret?: string | null): Promise<void> {
+export async function updateUserMFAAsync(
+  username: string,
+  mfaEnabled: boolean,
+  mfaSecret?: string | null,
+): Promise<void> {
   await ensureInitialized();
   await db
     .update(schema.users)
@@ -376,7 +402,10 @@ export async function updateUserMFAAsync(username: string, mfaEnabled: boolean, 
     .where(eq(schema.users.username, username));
 }
 
-export async function updateUserPasswordAsync(username: string, newPassword: string): Promise<void> {
+export async function updateUserPasswordAsync(
+  username: string,
+  newPassword: string,
+): Promise<void> {
   await ensureInitialized();
   const passwordHash = bcrypt.hashSync(newPassword, BCRYPT_ROUNDS);
   await db
@@ -387,18 +416,34 @@ export async function updateUserPasswordAsync(username: string, newPassword: str
 
 export async function deleteUserAsync(username: string): Promise<boolean> {
   await ensureInitialized();
-  const result = await db
-    .delete(schema.users)
-    .where(eq(schema.users.username, username));
+  const result = await db.delete(schema.users).where(eq(schema.users.username, username));
   return (result as any).changes > 0 || (result as any).rowsAffected > 0;
 }
 
-export async function validateUserAsync(username: string, password: string): Promise<UserRecord | undefined> {
+export async function validateUserAsync(
+  username: string,
+  password: string,
+): Promise<UserRecord | undefined> {
   const user = await getUserByUsernameAsync(username);
   if (user && bcrypt.compareSync(password, user.password)) {
     return user;
   }
   return undefined;
+}
+
+// Validate a password against an already-resolved user record (used by the
+// email / account-ID sign-in paths where the user is looked up first).
+export function validateUserRecord(user: UserRecord, password: string): boolean {
+  return bcrypt.compareSync(password, user.password);
+}
+
+// Generate a 12-digit AWS-style account ID ("63" + 10 random digits).
+function generateAccountId(): string {
+  let digits = "63";
+  for (let i = 0; i < 10; i++) {
+    digits += Math.floor(Math.random() * 10);
+  }
+  return digits;
 }
 
 export async function getUserPermissionsAsync(username: string): Promise<string[]> {
@@ -411,106 +456,4 @@ export async function getUserPermissionsAsync(username: string): Promise<string[
   } catch {
     return ["*"];
   }
-}
-
-// ─── Synchronous backward-compatible API (deprecated, will be removed) ─────────
-// These throw errors directing callers to use async versions
-
-export function getWidgetConfig(userId: string = "default"): WidgetConfig[] {
-  throw new Error("getWidgetConfig is now async. Use getWidgetConfigAsync instead.");
-}
-
-export function updateWidgetConfig(
-  userId: string,
-  widgetId: string,
-  updates: Partial<Pick<WidgetConfig, "position_x" | "position_y" | "width" | "height" | "visible">>
-) {
-  throw new Error("updateWidgetConfig is now async. Use updateWidgetConfigAsync instead.");
-}
-
-export function resetWidgetConfig(userId: string = "default") {
-  throw new Error("resetWidgetConfig is now async. Use resetWidgetConfigAsync instead.");
-}
-
-export function getFavorites(userId: string = "default"): Favorite[] {
-  throw new Error("getFavorites is now async. Use getFavoritesAsync instead.");
-}
-
-export function addFavorite(userId: string, serviceId: string, serviceName: string, serviceHref: string) {
-  throw new Error("addFavorite is now async. Use addFavoriteAsync instead.");
-}
-
-export function removeFavorite(userId: string, serviceId: string) {
-  throw new Error("removeFavorite is now async. Use removeFavoriteAsync instead.");
-}
-
-export function getRecentlyVisited(userId: string = "default", limit: number = 5): RecentlyVisited[] {
-  throw new Error("getRecentlyVisited is now async. Use getRecentlyVisitedAsync instead.");
-}
-
-export function addRecentlyVisited(userId: string, serviceId: string, serviceName: string, serviceHref: string) {
-  throw new Error("addRecentlyVisited is now async. Use addRecentlyVisitedAsync instead.");
-}
-
-export function addTerminalHistory(
-  sessionId: string,
-  command: string,
-  output: string,
-  exitCode: number
-): void {
-  throw new Error("addTerminalHistory is now async. Use addTerminalHistoryAsync instead.");
-}
-
-export function getTerminalHistory(
-  sessionId: string,
-  limit: number = 100
-): TerminalHistoryEntry[] {
-  throw new Error("getTerminalHistory is now async. Use getTerminalHistoryAsync instead.");
-}
-
-export function getUserByUsername(username: string): UserRecord | undefined {
-  throw new Error("getUserByUsername is now async. Use getUserByUsernameAsync instead.");
-}
-
-export function getUserById(id: number): UserRecord | undefined {
-  throw new Error("getUserById is now async. Use getUserByIdAsync instead.");
-}
-
-export function getAllUsers(): Omit<UserRecord, "password" | "mfa_secret">[] {
-  throw new Error("getAllUsers is now async. Use getAllUsersAsync instead.");
-}
-
-export function createUser(data: {
-  username: string;
-  password: string;
-  email: string;
-  accountName?: string;
-  permissions?: string[];
-  isRoot?: boolean;
-}): UserRecord {
-  throw new Error("createUser is now async. Use createUserAsync instead.");
-}
-
-export function updateUserLastLogin(username: string): void {
-  throw new Error("updateUserLastLogin is now async. Use updateUserLastLoginAsync instead.");
-}
-
-export function updateUserMFA(username: string, mfaEnabled: boolean, mfaSecret?: string | null): void {
-  throw new Error("updateUserMFA is now async. Use updateUserMFAAsync instead.");
-}
-
-export function updateUserPassword(username: string, newPassword: string): void {
-  throw new Error("updateUserPassword is now async. Use updateUserPasswordAsync instead.");
-}
-
-export function deleteUser(username: string): boolean {
-  throw new Error("deleteUser is now async. Use deleteUserAsync instead.");
-}
-
-export function validateUser(username: string, password: string): UserRecord | undefined {
-  throw new Error("validateUser is now async. Use validateUserAsync instead.");
-}
-
-export function getUserPermissions(username: string): string[] {
-  throw new Error("getUserPermissions is now async. Use getUserPermissionsAsync instead.");
 }

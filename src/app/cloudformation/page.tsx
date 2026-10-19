@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 /**
  * VERIFICATION GATE CHECKLIST — Phase 11: CloudFormation Stacks (Complete)
  * Source: docs/prd-aws-management-console-v1.3.md §9.2.8, §15.11
@@ -116,13 +117,16 @@ export default function CloudFormationPage() {
     pageSize: 25,
     visibleContent: VISIBLE_COLUMNS,
   });
-  const [confirmDelete, setConfirmDelete] = useState<{ visible: boolean; onConfirm: () => void } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{
+    visible: boolean;
+    onConfirm: () => void;
+  } | null>(null);
 
   const fetchStacks = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/cloudformation");
+      const res = await apiFetch("/api/cloudformation");
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
       setStacks(data.stacks || []);
@@ -141,9 +145,12 @@ export default function CloudFormationPage() {
   const deleteStack = useCallback(
     async (stackName: string) => {
       try {
-        const res = await fetch(`/api/cloudformation?stackName=${encodeURIComponent(stackName)}`, {
-          method: "DELETE",
-        });
+        const res = await apiFetch(
+          `/api/cloudformation?stackName=${encodeURIComponent(stackName)}`,
+          {
+            method: "DELETE",
+          },
+        );
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || `Failed to delete ${stackName}`);
         fetchStacks();
@@ -151,7 +158,7 @@ export default function CloudFormationPage() {
         setError(err instanceof Error ? err.message : `Failed to delete ${stackName}`);
       }
     },
-    [fetchStacks]
+    [fetchStacks],
   );
 
   const handleDeleteSelected = useCallback(() => {
@@ -219,6 +226,8 @@ export default function CloudFormationPage() {
         { text: "CloudFormation", href: "#" },
       ]}
       headerActions={headerActions}
+
+      headingLevel="h2"
     >
       <SpaceBetween size="l">
         <Header variant="h1" counter={`(${stacks.length})`}>
@@ -231,102 +240,100 @@ export default function CloudFormationPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            columnDefinitions={COLUMN_DEFINITIONS}
-            items={pagedItems}
-            loading={loading}
-            loadingText="Loading stacks..."
-            selectionType="multi"
-            selectedItems={selectedItems}
-            onSelectionChange={({ detail }) => setSelectedItems(detail.selectedItems as StackSummary[])}
-            trackBy="StackName"
-            sortingColumn={COLUMN_DEFINITIONS[0]}
-            sortingDescending
-            filter={
-              <TextFilter
-                filteringText={filteringText}
-                filteringPlaceholder="Find stacks"
-                filteringAriaLabel="Find stacks"
-                onChange={({ detail }) => {
-                  setFilteringText(detail.filteringText);
-                  setCurrentPage(1);
-                }}
-                countText={
-                  filteringText
-                    ? `${filteredItems.length} match${filteredItems.length !== 1 ? "es" : ""}`
-                    : `${stacks.length} stacks`
-                }
-              />
-            }
-            pagination={
-              <Pagination
-                currentPageIndex={currentPage}
-                pagesCount={totalPages}
-                onChange={({ detail }) => setCurrentPage(detail.currentPageIndex)}
-                ariaLabels={{
-                  nextPageLabel: "Next page",
-                  previousPageLabel: "Previous page",
-                  pageLabel: (n) => `Page ${n}`,
-                }}
-              />
-            }
-            preferences={
-              <CollectionPreferences
-                title="Preferences"
-                confirmLabel="Confirm"
-                cancelLabel="Cancel"
-                preferences={preferences}
-                pageSizePreference={{
-                  title: "Page size",
-                  options: [
-                    { value: 10, label: "10 stacks" },
-                    { value: 25, label: "25 stacks" },
-                    { value: 50, label: "50 stacks" },
-                    { value: 100, label: "100 stacks" },
-                  ],
-                }}
-                visibleContentPreference={{
-                  title: "Select visible columns",
-                  options: [
-                    {
-                      label: "Columns",
-                      options: COLUMN_DEFINITIONS.map((col) => ({
-                        id: col.id!,
-                        label: (col.header?.toString() ?? col.id!) as string,
-                        editable: true,
-                      })),
-                    },
-                  ],
-                }}
-                onConfirm={({ detail }) => {
-                  setPageSize(detail.pageSize ?? 25);
-                  setPreferences({
-                    pageSize: detail.pageSize ?? 25,
-                    visibleContent: (detail.visibleContent as string[]) ?? VISIBLE_COLUMNS,
-                  });
-                }}
-              />
-            }
-            empty={
-              <Box textAlign="center" color="inherit">
-                <Box variant="strong" textAlign="center" color="inherit">
-                  No stacks found
-                </Box>
-                <Box variant="p" padding={{ bottom: "s" }} color="inherit">
-                  {filteringText
-                    ? "No stacks match your filter. Try a different search."
-                    : "To get started, create a stack."}
-                </Box>
-                {!filteringText && (
-                  <Button onClick={() => router.push("/cloudformation/create")}>
-                    Create stack
-                  </Button>
-                )}
+        <Table
+          columnDefinitions={COLUMN_DEFINITIONS}
+          items={pagedItems}
+          loading={loading}
+          loadingText="Loading stacks..."
+          selectionType="multi"
+          selectedItems={selectedItems}
+          onSelectionChange={({ detail }) =>
+            setSelectedItems(detail.selectedItems as StackSummary[])
+          }
+          trackBy="StackName"
+          sortingColumn={COLUMN_DEFINITIONS[0]}
+          sortingDescending
+          filter={
+            <TextFilter
+              filteringText={filteringText}
+              filteringPlaceholder="Find stacks"
+              filteringAriaLabel="Find stacks"
+              onChange={({ detail }) => {
+                setFilteringText(detail.filteringText);
+                setCurrentPage(1);
+              }}
+              countText={
+                filteringText
+                  ? `${filteredItems.length} match${filteredItems.length !== 1 ? "es" : ""}`
+                  : `${stacks.length} stacks`
+              }
+            />
+          }
+          pagination={
+            <Pagination
+              currentPageIndex={currentPage}
+              pagesCount={totalPages}
+              onChange={({ detail }) => setCurrentPage(detail.currentPageIndex)}
+              ariaLabels={{
+                nextPageLabel: "Next page",
+                previousPageLabel: "Previous page",
+                pageLabel: (n) => `Page ${n}`,
+              }}
+            />
+          }
+          preferences={
+            <CollectionPreferences
+              title="Preferences"
+              confirmLabel="Confirm"
+              cancelLabel="Cancel"
+              preferences={preferences}
+              pageSizePreference={{
+                title: "Page size",
+                options: [
+                  { value: 10, label: "10 stacks" },
+                  { value: 25, label: "25 stacks" },
+                  { value: 50, label: "50 stacks" },
+                  { value: 100, label: "100 stacks" },
+                ],
+              }}
+              visibleContentPreference={{
+                title: "Select visible columns",
+                options: [
+                  {
+                    label: "Columns",
+                    options: COLUMN_DEFINITIONS.map((col) => ({
+                      id: col.id!,
+                      label: (col.header?.toString() ?? col.id!) as string,
+                      editable: true,
+                    })),
+                  },
+                ],
+              }}
+              onConfirm={({ detail }) => {
+                setPageSize(detail.pageSize ?? 25);
+                setPreferences({
+                  pageSize: detail.pageSize ?? 25,
+                  visibleContent: (detail.visibleContent as string[]) ?? VISIBLE_COLUMNS,
+                });
+              }}
+            />
+          }
+          empty={
+            <Box textAlign="center" color="inherit">
+              <Box variant="strong" textAlign="center" color="inherit">
+                No stacks found
               </Box>
-            }
-          />
-        </Container>
+              <Box variant="p" padding={{ bottom: "s" }} color="inherit">
+                {filteringText
+                  ? "No stacks match your filter. Try a different search."
+                  : "To get started, create a stack."}
+              </Box>
+              {!filteringText && (
+                <Button onClick={() => router.push("/cloudformation/create")}>Create stack</Button>
+              )}
+            </Box>
+          }
+        />
       </SpaceBetween>
 
       <CrossServiceLinks links={CROSS_SERVICE_LINKS["/cloudformation"] || []} />

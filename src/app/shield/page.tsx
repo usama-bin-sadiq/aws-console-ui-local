@@ -9,16 +9,23 @@ import Alert from "@cloudscape-design/components/alert";
 
 export default function ShieldPage() {
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Shield</Header>
         <Alert type="info" header="Shield Standard is automatic">
-          AWS Shield Standard provides automatic DDoS protection for all AWS customers at no additional cost. Shield Advanced requires a subscription and is not available in local emulation.
+          AWS Shield Standard provides automatic DDoS protection for all AWS customers at no
+          additional cost. Shield Advanced requires a subscription and is not available in local
+          emulation.
         </Alert>
         <Container>
           <SpaceBetween size="xs">
-            <Box><strong>Shield Standard:</strong> Active — automatically protects all AWS resources</Box>
-            <Box><strong>Shield Advanced:</strong> Requires subscription — not available in local emulation</Box>
+            <Box>
+              <strong>Shield Standard:</strong> Active — automatically protects all AWS resources
+            </Box>
+            <Box>
+              <strong>Shield Advanced:</strong> Requires subscription — not available in local
+              emulation
+            </Box>
           </SpaceBetween>
         </Container>
       </SpaceBetween>

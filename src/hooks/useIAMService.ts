@@ -2,10 +2,10 @@
  * useIAMService — IAM adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { iam } from '@/lib/aws-clients'
-import { ListUsersCommand } from '@aws-sdk/client-iam';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { iam } from "@/lib/aws-clients";
+import { ListUsersCommand } from "@aws-sdk/client-iam";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface IAMServiceState {
   users: unknown[];

@@ -37,7 +37,7 @@ export default function RDSInstanceDetailsPage({
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       const found = (data.instances || []).find(
-        (i: RDSInstance) => i.DBInstanceIdentifier === params.dbInstanceIdentifier
+        (i: RDSInstance) => i.DBInstanceIdentifier === params.dbInstanceIdentifier,
       );
       if (!found) throw new Error("DB instance not found");
       setInstance(found);
@@ -53,7 +53,10 @@ export default function RDSInstanceDetailsPage({
       const res = await apiFetch("/api/rds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "describeSnapshots", dbInstanceIdentifier: params.dbInstanceIdentifier }),
+        body: JSON.stringify({
+          action: "describeSnapshots",
+          dbInstanceIdentifier: params.dbInstanceIdentifier,
+        }),
       });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || "Failed to load snapshots");
@@ -88,16 +91,16 @@ export default function RDSInstanceDetailsPage({
         setError(err instanceof Error ? err.message : `Failed to ${action}`);
       }
     },
-    [params.dbInstanceIdentifier, fetchInstance]
+    [params.dbInstanceIdentifier, fetchInstance],
   );
 
   const isAvailable = instance?.DBInstanceStatus === "available";
 
   if (loading) {
     return (
-      <div style={{ padding: "16px" }}>
+      <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
-          <Header variant="h1">DB Instance {params.dbInstanceIdentifier}</Header>
+          <Header variant="h2">DB Instance {params.dbInstanceIdentifier}</Header>
           <Box textAlign="center">
             <Spinner size="large" />
             <Box variant="p" padding={{ top: "s" }}>
@@ -111,9 +114,9 @@ export default function RDSInstanceDetailsPage({
 
   if (error || !instance) {
     return (
-      <div style={{ padding: "16px" }}>
+      <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
-          <Header variant="h1">DB Instance {params.dbInstanceIdentifier}</Header>
+          <Header variant="h2">DB Instance {params.dbInstanceIdentifier}</Header>
           <Alert type="error">{error || "DB instance not found"}</Alert>
           <Button onClick={() => router.push("/rds")}>Back to RDS</Button>
         </SpaceBetween>
@@ -166,7 +169,9 @@ export default function RDSInstanceDetailsPage({
           <Box variant="small" color="text-label">
             Endpoint
           </Box>
-          <Box>{instance.Endpoint?.Address || "—"}:{instance.Endpoint?.Port || "—"}</Box>
+          <Box>
+            {instance.Endpoint?.Address || "—"}:{instance.Endpoint?.Port || "—"}
+          </Box>
         </div>
         <div>
           <Box variant="small" color="text-label">
@@ -191,7 +196,9 @@ export default function RDSInstanceDetailsPage({
             Created
           </Box>
           <Box>
-            {instance.InstanceCreateTime ? new Date(instance.InstanceCreateTime).toLocaleString() : "—"}
+            {instance.InstanceCreateTime
+              ? new Date(instance.InstanceCreateTime).toLocaleString()
+              : "—"}
           </Box>
         </div>
         <div>
@@ -208,28 +215,43 @@ export default function RDSInstanceDetailsPage({
     <Container header={<Header variant="h2">Configuration</Header>}>
       <ColumnLayout columns={2} variant="default">
         <div>
-          <Box variant="small" color="text-label">DB Instance Class</Box>
+          <Box variant="small" color="text-label">
+            DB Instance Class
+          </Box>
           <Box>{instance.DBInstanceClass || "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Engine</Box>
+          <Box variant="small" color="text-label">
+            Engine
+          </Box>
           <Box>{instance.Engine || "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Allocated Storage (GB)</Box>
+          <Box variant="small" color="text-label">
+            Allocated Storage (GB)
+          </Box>
           <Box>{instance.AllocatedStorage ? `${instance.AllocatedStorage}` : "—"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Multi-AZ</Box>
+          <Box variant="small" color="text-label">
+            Multi-AZ
+          </Box>
           <Box>{instance.MultiAZ ? "Yes" : "No"}</Box>
         </div>
         <div>
-          <Box variant="small" color="text-label">Storage Encrypted</Box>
+          <Box variant="small" color="text-label">
+            Storage Encrypted
+          </Box>
           <Box>{instance.StorageEncrypted ? "Yes" : "No"}</Box>
         </div>
       </ColumnLayout>
       <SpaceBetween size="m" direction="horizontal">
-        <Button onClick={() => executeAction("modifyInstance", { DBInstanceClass: instance.DBInstanceClass })} formAction="none">
+        <Button
+          onClick={() =>
+            executeAction("modifyInstance", { DBInstanceClass: instance.DBInstanceClass })
+          }
+          formAction="none"
+        >
           Modify instance
         </Button>
       </SpaceBetween>
@@ -237,12 +259,15 @@ export default function RDSInstanceDetailsPage({
   );
 
   const tagsContent = (
-    <Container header={<Header variant="h2">Tags</Header>}>
+    <Container header={<Header variant="h2">Tags</Header>} className="aws-table-card">
       {instance.Tags && instance.Tags.length > 0 ? (
         <Table
           columnDefinitions={[
             { header: "Key", cell: (item: { Key?: string; Value?: string }) => item.Key || "—" },
-            { header: "Value", cell: (item: { Key?: string; Value?: string }) => item.Value || "—" },
+            {
+              header: "Value",
+              cell: (item: { Key?: string; Value?: string }) => item.Value || "—",
+            },
           ]}
           items={instance.Tags}
           header={<Header variant="h3">Tags ({instance.Tags.length})</Header>}
@@ -254,7 +279,7 @@ export default function RDSInstanceDetailsPage({
   );
 
   const snapshotsContent = (
-    <Container header={<Header variant="h2">DB Snapshots</Header>}>
+    <Container header={<Header variant="h2">DB Snapshots</Header>} className="aws-table-card">
       {loadingSnapshots ? (
         <Spinner />
       ) : snapshots.length > 0 ? (
@@ -285,10 +310,10 @@ export default function RDSInstanceDetailsPage({
   );
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
-          variant="h1"
+          variant="h2"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
               {isAvailable && (
@@ -322,7 +347,9 @@ export default function RDSInstanceDetailsPage({
                       if (d.error) throw new Error(d.error);
                       fetchSnapshots();
                     })
-                    .catch((err) => setError(err instanceof Error ? err.message : "Snapshot creation failed"))
+                    .catch((err) =>
+                      setError(err instanceof Error ? err.message : "Snapshot creation failed"),
+                    )
                 }
                 formAction="none"
               >

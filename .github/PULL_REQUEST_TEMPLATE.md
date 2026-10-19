@@ -5,11 +5,13 @@
 ## Related Issue(s)
 
 <!-- Link related issues using "Fixes #123" or "Closes #123". -->
+
 Fixes #
 
 ## Type of Change
 
 <!-- Mark the appropriate option: -->
+
 - [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
 - [ ] ✨ New feature (non-breaking change which adds functionality)
 - [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
@@ -40,16 +42,16 @@ Fixes #
 <!-- Provide a brief summary of all changes made in this PR. -->
 
 | File | Change |
-|------|--------|
-| | |
+| ---- | ------ |
+|      |        |
 
 ## Screenshots (if UI changed)
 
 <!-- Add screenshots of the UI changes here. -->
 
 | Before | After |
-|--------|-------|
-| | |
+| ------ | ----- |
+|        |       |
 
 ## Backend Impact
 
@@ -63,12 +65,14 @@ Fixes #
 <!-- Describe the tests you ran and how to verify this PR manually. -->
 
 ### Manual Testing
+
 1. Run `pnpm dev:localstack`
 2. Go to http://localhost:3000
 3. [Steps to test the feature]
 4. [Expected result]
 
 ### Automated Testing
+
 ```bash
 pnpm test -- --run          # Unit + integration
 pnpm test:e2e               # E2E tests

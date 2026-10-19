@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -53,7 +54,7 @@ export default function SQSPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/sqs");
+      const res = await apiFetch("/api/sqs");
       const data = await res.json();
       if (data.error) {
         setError(data.error);
@@ -66,12 +67,17 @@ export default function SQSPage() {
           const name = url.split("/").pop() || url;
           let approximateNumberOfMessages = 0;
           try {
-            const attrRes = await fetch(`/api/sqs?action=getAttributes&queueUrl=${encodeURIComponent(url)}`);
+            const attrRes = await apiFetch(
+              `/api/sqs?action=getAttributes&queueUrl=${encodeURIComponent(url)}`,
+            );
             const attrData = await attrRes.json();
-            approximateNumberOfMessages = parseInt(attrData.attributes?.ApproximateNumberOfMessages || "0", 10);
+            approximateNumberOfMessages = parseInt(
+              attrData.attributes?.ApproximateNumberOfMessages || "0",
+              10,
+            );
           } catch {}
           return { url, name, approximateNumberOfMessages };
-        })
+        }),
       );
       setQueues(queueInfos);
     } catch (e) {
@@ -80,18 +86,23 @@ export default function SQSPage() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchQueues(); }, []);
+  useEffect(() => {
+    fetchQueues();
+  }, []);
 
   const createQueue = async () => {
     setError("");
     try {
-      const res = await fetch("/api/sqs", {
+      const res = await apiFetch("/api/sqs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ queueName: newQueue }),
       });
       const data = await res.json();
-      if (data.error) { setError(data.error); return; }
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
       setCreateModal(false);
       setNewQueue("");
       fetchQueues();
@@ -102,16 +113,29 @@ export default function SQSPage() {
 
   const sendMessage = async () => {
     let attrs: Record<string, any> = {};
-    try { attrs = JSON.parse(messageAttributesText); } catch (e) { setError(e instanceof Error ? e.message : "Invalid message attributes JSON"); return; }
+    try {
+      attrs = JSON.parse(messageAttributesText);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Invalid message attributes JSON");
+      return;
+    }
     setError("");
     try {
-      const res = await fetch("/api/sqs", {
+      const res = await apiFetch("/api/sqs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "send", queueUrl: selectedQueue, messageBody, messageAttributes: attrs }),
+        body: JSON.stringify({
+          action: "send",
+          queueUrl: selectedQueue,
+          messageBody,
+          messageAttributes: attrs,
+        }),
       });
       const data = await res.json();
-      if (data.error) { setError(data.error); return; }
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
       setSendModal(false);
       setMessageBody("");
       setMessageAttributesText("{}");
@@ -123,13 +147,20 @@ export default function SQSPage() {
   const sendBatch = async () => {
     setError("");
     try {
-      const res = await fetch("/api/sqs", {
+      const res = await apiFetch("/api/sqs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "sendBatch", queueUrl: selectedQueue, entries: batchEntries }),
+        body: JSON.stringify({
+          action: "sendBatch",
+          queueUrl: selectedQueue,
+          entries: batchEntries,
+        }),
       });
       const data = await res.json();
-      if (data.error) { setError(data.error); return; }
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
       setBatchModal(false);
       setBatchEntries([{ id: "1", body: "" }]);
     } catch (e) {
@@ -140,13 +171,20 @@ export default function SQSPage() {
   const receiveMessages = async () => {
     setError("");
     try {
-      const res = await fetch("/api/sqs", {
+      const res = await apiFetch("/api/sqs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "receive", queueUrl: selectedQueue, maxMessages: parseInt(maxMessages) || 10 }),
+        body: JSON.stringify({
+          action: "receive",
+          queueUrl: selectedQueue,
+          maxMessages: parseInt(maxMessages) || 10,
+        }),
       });
       const data = await res.json();
-      if (data.error) { setError(data.error); return; }
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
       setReceivedMessages(data.messages || []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to receive messages");
@@ -156,13 +194,16 @@ export default function SQSPage() {
   const purgeQueue = async (url: string) => {
     setError("");
     try {
-      const res = await fetch("/api/sqs", {
+      const res = await apiFetch("/api/sqs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "purge", queueUrl: url }),
       });
       const data = await res.json();
-      if (data.error) { setError(data.error); return; }
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
       setPurgeModal(false);
       setPurgeQueueUrl("");
       setPurgeQueueName("");
@@ -175,9 +216,14 @@ export default function SQSPage() {
   const deleteQueue = async (url: string) => {
     setError("");
     try {
-      const res = await fetch(`/api/sqs?queueUrl=${encodeURIComponent(url)}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/sqs?queueUrl=${encodeURIComponent(url)}`, {
+        method: "DELETE",
+      });
       const data = await res.json();
-      if (data.error) { setError(data.error); return; }
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
       setDeleteModal(false);
       setDeleteQueueUrl("");
       setDeleteQueueName("");
@@ -191,13 +237,16 @@ export default function SQSPage() {
   const deleteMessage = async (receiptHandle: string) => {
     setError("");
     try {
-      const res = await fetch("/api/sqs", {
+      const res = await apiFetch("/api/sqs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "deleteMessage", queueUrl: selectedQueue, receiptHandle }),
       });
       const data = await res.json();
-      if (data.error) { setError(data.error); return; }
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
       setReceivedMessages((prev) => prev.filter((m) => m.ReceiptHandle !== receiptHandle));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete message");
@@ -218,7 +267,7 @@ export default function SQSPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
           variant="h1"
@@ -231,53 +280,96 @@ export default function SQSPage() {
           SQS - Simple Queue Service
         </Header>
 
-        {error && <Alert type="error" dismissible onDismiss={() => setError("")}>{error}</Alert>}
+        {error && (
+          <Alert type="error" dismissible onDismiss={() => setError("")}>
+            {error}
+          </Alert>
+        )}
 
-        <Container>
-          <Table
-            header={<Header variant="h2">Queues ({queues.length})</Header>}
-            items={queues}
-            columnDefinitions={[
-              {
-                header: "Queue Name",
-                cell: (item: QueueInfo) => (
+        <Table
+          header={<Header variant="h2">Queues ({queues.length})</Header>}
+          items={queues}
+          columnDefinitions={[
+            {
+              header: "Queue Name",
+              cell: (item: QueueInfo) => (
+                <Button
+                  formAction="none"
+                  variant="link"
+                  onClick={() => {
+                    setSelectedQueue(item.url);
+                    setSelectedQueueName(item.name);
+                    setReceiveModal(true);
+                    receiveMessages();
+                  }}
+                >
+                  {item.name}
+                </Button>
+              ),
+            },
+            {
+              header: "Approximate Number of Messages",
+              cell: (item: QueueInfo) => String(item.approximateNumberOfMessages),
+            },
+            {
+              header: "Actions",
+              cell: (item: QueueInfo) => (
+                <SpaceBetween direction="horizontal" size="xs">
                   <Button
+                    onClick={() => {
+                      setSelectedQueue(item.url);
+                      setSelectedQueueName(item.name);
+                      setSendModal(true);
+                    }}
                     formAction="none"
-                    variant="link"
-                    onClick={() => { setSelectedQueue(item.url); setSelectedQueueName(item.name); setReceiveModal(true); receiveMessages(); }}
+                    ariaLabel={`Send message to ${item.name}`}
                   >
-                    {item.name}
+                    Send
                   </Button>
-                ),
-              },
-              { header: "Approximate Number of Messages", cell: (item: QueueInfo) => String(item.approximateNumberOfMessages) },
-              {
-                header: "Actions",
-                cell: (item: QueueInfo) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button onClick={() => { setSelectedQueue(item.url); setSelectedQueueName(item.name); setSendModal(true); }} formAction="none" ariaLabel={`Send message to ${item.name}`}>
-                      Send
-                    </Button>
-                    <Button onClick={() => { setSelectedQueue(item.url); setSelectedQueueName(item.name); setBatchModal(true); }} formAction="none" ariaLabel={`Batch send to ${item.name}`}>
-                      Batch
-                    </Button>
-                    <Button onClick={() => { setSelectedQueue(item.url); setSelectedQueueName(item.name); setReceiveModal(true); receiveMessages(); }} formAction="none" ariaLabel={`Receive from ${item.name}`}>
-                      Receive
-                    </Button>
-                    <Button onClick={() => openPurgeModal(item)} formAction="none" ariaLabel={`Purge ${item.name}`}>
-                      Purge
-                    </Button>
-                    <Button onClick={() => openDeleteModal(item)} formAction="none" ariaLabel={`Delete ${item.name}`}>
-                      Delete
-                    </Button>
-                  </SpaceBetween>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No queues found.</Box>}
-          />
-        </Container>
+                  <Button
+                    onClick={() => {
+                      setSelectedQueue(item.url);
+                      setSelectedQueueName(item.name);
+                      setBatchModal(true);
+                    }}
+                    formAction="none"
+                    ariaLabel={`Batch send to ${item.name}`}
+                  >
+                    Batch
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setSelectedQueue(item.url);
+                      setSelectedQueueName(item.name);
+                      setReceiveModal(true);
+                      receiveMessages();
+                    }}
+                    formAction="none"
+                    ariaLabel={`Receive from ${item.name}`}
+                  >
+                    Receive
+                  </Button>
+                  <Button
+                    onClick={() => openPurgeModal(item)}
+                    formAction="none"
+                    ariaLabel={`Purge ${item.name}`}
+                  >
+                    Purge
+                  </Button>
+                  <Button
+                    onClick={() => openDeleteModal(item)}
+                    formAction="none"
+                    ariaLabel={`Delete ${item.name}`}
+                  >
+                    Delete
+                  </Button>
+                </SpaceBetween>
+              ),
+            },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No queues found.</Box>}
+        />
 
         <Modal
           visible={createModal}
@@ -285,13 +377,21 @@ export default function SQSPage() {
           header="Create SQS Queue"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreateModal(false)} ariaLabel="Cancel create queue">Cancel</Button>
-              <Button variant="primary" onClick={createQueue} ariaLabel="Create queue">Create</Button>
+              <Button onClick={() => setCreateModal(false)} ariaLabel="Cancel create queue">
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={createQueue} ariaLabel="Create queue">
+                Create
+              </Button>
             </SpaceBetween>
           }
         >
           <FormField label="Queue Name">
-            <Input value={newQueue} onChange={(e: any) => setNewQueue(e.detail.value)} ariaLabel="Queue name input" />
+            <Input
+              value={newQueue}
+              onChange={(e: any) => setNewQueue(e.detail.value)}
+              ariaLabel="Queue name input"
+            />
           </FormField>
         </Modal>
 
@@ -301,16 +401,28 @@ export default function SQSPage() {
           header="Send Message"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setSendModal(false)} ariaLabel="Cancel send message">Cancel</Button>
-              <Button variant="primary" onClick={sendMessage} ariaLabel="Send message">Send</Button>
+              <Button onClick={() => setSendModal(false)} ariaLabel="Cancel send message">
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={sendMessage} ariaLabel="Send message">
+                Send
+              </Button>
             </SpaceBetween>
           }
         >
           <FormField label="Message Body">
-            <Input value={messageBody} onChange={(e: any) => setMessageBody(e.detail.value)} ariaLabel="Message body input" />
+            <Input
+              value={messageBody}
+              onChange={(e: any) => setMessageBody(e.detail.value)}
+              ariaLabel="Message body input"
+            />
           </FormField>
           <FormField label="Message Attributes (JSON)">
-            <Input value={messageAttributesText} onChange={(e: any) => setMessageAttributesText(e.detail.value)} ariaLabel="Message attributes JSON" />
+            <Input
+              value={messageAttributesText}
+              onChange={(e: any) => setMessageAttributesText(e.detail.value)}
+              ariaLabel="Message attributes JSON"
+            />
           </FormField>
         </Modal>
 
@@ -320,8 +432,12 @@ export default function SQSPage() {
           header="Batch Send Messages"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setBatchModal(false)} ariaLabel="Cancel batch send">Cancel</Button>
-              <Button variant="primary" onClick={sendBatch} ariaLabel="Send batch">Send Batch</Button>
+              <Button onClick={() => setBatchModal(false)} ariaLabel="Cancel batch send">
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={sendBatch} ariaLabel="Send batch">
+                Send Batch
+              </Button>
             </SpaceBetween>
           }
         >
@@ -339,7 +455,15 @@ export default function SQSPage() {
                 />
               </FormField>
             ))}
-            <Button onClick={() => setBatchEntries([...batchEntries, { id: String(batchEntries.length + 1), body: "" }])} ariaLabel="Add batch entry">
+            <Button
+              onClick={() =>
+                setBatchEntries([
+                  ...batchEntries,
+                  { id: String(batchEntries.length + 1), body: "" },
+                ])
+              }
+              ariaLabel="Add batch entry"
+            >
               + Add Entry
             </Button>
           </SpaceBetween>
@@ -347,18 +471,35 @@ export default function SQSPage() {
 
         <Modal
           visible={receiveModal}
-          onDismiss={() => { setReceiveModal(false); setReceivedMessages([]); }}
+          onDismiss={() => {
+            setReceiveModal(false);
+            setReceivedMessages([]);
+          }}
           header="Receive Messages"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => { setReceiveModal(false); setReceivedMessages([]); }} ariaLabel="Close receive">Close</Button>
+              <Button
+                onClick={() => {
+                  setReceiveModal(false);
+                  setReceivedMessages([]);
+                }}
+                ariaLabel="Close receive"
+              >
+                Close
+              </Button>
             </SpaceBetween>
           }
         >
           <FormField label="Max Number of Messages">
-            <Input value={maxMessages} onChange={(e: any) => setMaxMessages(e.detail.value)} ariaLabel="Max messages input" />
+            <Input
+              value={maxMessages}
+              onChange={(e: any) => setMaxMessages(e.detail.value)}
+              ariaLabel="Max messages input"
+            />
           </FormField>
-          <Button onClick={receiveMessages} ariaLabel="Refresh received messages">Refresh</Button>
+          <Button onClick={receiveMessages} ariaLabel="Refresh received messages">
+            Refresh
+          </Button>
           <Table
             header={<Header variant="h3">Received Messages</Header>}
             items={receivedMessages.map((m: any, i: number) => ({ ...m, index: i }))}
@@ -384,12 +525,30 @@ export default function SQSPage() {
 
         <Modal
           visible={purgeModal}
-          onDismiss={() => { setPurgeModal(false); setPurgeQueueUrl(""); setPurgeQueueName(""); }}
+          onDismiss={() => {
+            setPurgeModal(false);
+            setPurgeQueueUrl("");
+            setPurgeQueueName("");
+          }}
           header="Purge Queue"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => { setPurgeModal(false); setPurgeQueueUrl(""); setPurgeQueueName(""); }} ariaLabel="Cancel purge">Cancel</Button>
-              <Button variant="primary" onClick={() => purgeQueue(purgeQueueUrl)} disabled={purgeQueueName === ""} ariaLabel="Confirm purge">
+              <Button
+                onClick={() => {
+                  setPurgeModal(false);
+                  setPurgeQueueUrl("");
+                  setPurgeQueueName("");
+                }}
+                ariaLabel="Cancel purge"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => purgeQueue(purgeQueueUrl)}
+                disabled={purgeQueueName === ""}
+                ariaLabel="Confirm purge"
+              >
                 Purge
               </Button>
             </SpaceBetween>
@@ -405,11 +564,26 @@ export default function SQSPage() {
 
         <Modal
           visible={deleteModal}
-          onDismiss={() => { setDeleteModal(false); setDeleteQueueUrl(""); setDeleteQueueName(""); setDeleteConfirmText(""); }}
+          onDismiss={() => {
+            setDeleteModal(false);
+            setDeleteQueueUrl("");
+            setDeleteQueueName("");
+            setDeleteConfirmText("");
+          }}
           header="Delete Queue"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => { setDeleteModal(false); setDeleteQueueUrl(""); setDeleteQueueName(""); setDeleteConfirmText(""); }} ariaLabel="Cancel delete">Cancel</Button>
+              <Button
+                onClick={() => {
+                  setDeleteModal(false);
+                  setDeleteQueueUrl("");
+                  setDeleteQueueName("");
+                  setDeleteConfirmText("");
+                }}
+                ariaLabel="Cancel delete"
+              >
+                Cancel
+              </Button>
               <Button
                 variant="primary"
                 onClick={() => deleteQueue(deleteQueueUrl)}

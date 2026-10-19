@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -26,7 +27,7 @@ export default function IAMSAMLPage() {
   const fetchProviders = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/iam-saml");
+      const res = await apiFetch("/api/iam-saml");
       const data = await res.json();
       setSamlProviders(data.samlProviders || []);
     } catch {}
@@ -38,7 +39,7 @@ export default function IAMSAMLPage() {
   }, []);
 
   const createProvider = async () => {
-    await fetch("/api/iam-saml", {
+    await apiFetch("/api/iam-saml", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: providerName }),
@@ -49,12 +50,12 @@ export default function IAMSAMLPage() {
   };
 
   const deleteProvider = async (arn: string) => {
-    await fetch(`/api/iam-saml?arn=${encodeURIComponent(arn)}`, { method: "DELETE" });
+    await apiFetch(`/api/iam-saml?arn=${encodeURIComponent(arn)}`, { method: "DELETE" });
     fetchProviders();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">IAM SAML Providers</Header>
         <Container
@@ -66,6 +67,7 @@ export default function IAMSAMLPage() {
               SAML Providers
             </Header>
           }
+          className="aws-table-card"
         >
           <Table
             items={samlProviders}

@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useState } from "react";
 import Container from "@cloudscape-design/components/container";
 import Header from "@cloudscape-design/components/header";
@@ -37,7 +38,7 @@ export default function Widget({
     const newSize = size === "regular" ? "extended" : "regular";
     setSize(newSize);
     onResize?.(widgetId, newSize);
-    fetch("/api/widgets", {
+    apiFetch("/api/widgets", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ widgetId, updates: { width: newSize === "extended" ? 2 : 1 } }),
@@ -46,7 +47,7 @@ export default function Widget({
 
   function handleRemove() {
     onRemove?.(widgetId);
-    fetch("/api/widgets", {
+    apiFetch("/api/widgets", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ widgetId, updates: { visible: 0 } }),

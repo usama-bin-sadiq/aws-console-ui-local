@@ -11,6 +11,7 @@ import { NextResponse } from "next/server";
  * [x] Added lifecycle APIs: GetBucketLifecycleConfiguration, PutBucketLifecycleConfiguration
  * [x] Added website APIs: GetBucketWebsite, PutBucketWebsite
  * [x] Added object download endpoint (action=download)
+ * [x] Added PUT handlers for bucket versioning, policy, public access block, ACL
  * [x] No hardcoded *.amazonaws.com endpoints
  * [x] Uses adapter error handler (getAdapterStatus, handleAdapterError)
  */
@@ -49,6 +50,25 @@ import { requirePermission } from "@/lib/data-isolation";
 // ─── Helper to resolve SDK instance using user credentials ──────────────────────
 function getS3Client(request: Request): S3Client {
   return getUserClientFromRequest(S3Client, request);
+}
+
+/**
+ * The four documented PublicAccessBlockConfiguration fields. Returned only when
+ * the body actually carries at least one of them, so an unrelated payload is
+ * rejected with a 400 rather than sent to the emulator as an empty config.
+ */
+function pickPublicAccessBlock(body: Record<string, unknown>): Record<string, boolean> | null {
+  const fields = [
+    "BlockPublicAcls",
+    "IgnorePublicAcls",
+    "BlockPublicPolicy",
+    "RestrictPublicBuckets",
+  ] as const;
+  const config: Record<string, boolean> = {};
+  for (const field of fields) {
+    if (typeof body[field] === "boolean") config[field] = body[field] as boolean;
+  }
+  return Object.keys(config).length > 0 ? config : null;
 }
 
 // ─── GET ────────────────────────────────────────────────────────────────────────
@@ -186,78 +206,111 @@ export async function POST(request: Request) {
 
     // Upload object (via form data or JSON)
     if ((body.file || body.fileName || (body.key && body.buffer)) && !action) {
-      const buffer = body.buffer ? Buffer.from(body.buffer, body.encoding || "base64") : (body.content ? Buffer.from(String(body.content)) : null);
-      await client.send(new PutObjectCommand({
-        Bucket: String(body.bucketName || body.bucket || bucket || ""),
-        Key: String(body.fileName || body.key || body.file?.name || "unknown"),
-        Body: buffer || body.content || "",
-      }));
-      return NextResponse.json({ success: true, key: String(body.fileName || body.key || body.file?.name || "unknown") });
+      const buffer = body.buffer
+        ? Buffer.from(body.buffer, body.encoding || "base64")
+        : body.content
+          ? Buffer.from(String(body.content))
+          : null;
+      await client.send(
+        new PutObjectCommand({
+          Bucket: String(body.bucketName || body.bucket || bucket || ""),
+          Key: String(body.fileName || body.key || body.file?.name || "unknown"),
+          Body: buffer || body.content || "",
+        }),
+      );
+      return NextResponse.json({
+        success: true,
+        key: String(body.fileName || body.key || body.file?.name || "unknown"),
+      });
     }
 
     // Create bucket
     if (action === "create-bucket" || (!action && bucket)) {
-      const regionVal = body.region || 'us-east-1';
-      const config = regionVal === 'us-east-1' ? undefined : { LocationConstraint: regionVal };
-      await client.send(new CreateBucketCommand({ Bucket: String(bucket || body.bucket || body.name || ""), ...(config ? { CreateBucketConfiguration: config } : {}) }));
-      return NextResponse.json({ success: true, bucket: String(bucket || body.bucket || body.name || "") });
+      const regionVal = body.region || "us-east-1";
+      const config = regionVal === "us-east-1" ? undefined : { LocationConstraint: regionVal };
+      await client.send(
+        new CreateBucketCommand({
+          Bucket: String(bucket || body.bucket || body.name || ""),
+          ...(config ? { CreateBucketConfiguration: config } : {}),
+        }),
+      );
+      return NextResponse.json({
+        success: true,
+        bucket: String(bucket || body.bucket || body.name || ""),
+      });
     }
 
     // Put bucket versioning
     if (action === "versioning" && bucket) {
-      await client.send(new PutBucketVersioningCommand({
-        Bucket: String(bucket),
-        VersioningConfiguration: { Status: body.status || body.versioning || "Enabled" },
-      }));
+      await client.send(
+        new PutBucketVersioningCommand({
+          Bucket: String(bucket),
+          VersioningConfiguration: { Status: body.status || body.versioning || "Enabled" },
+        }),
+      );
       return NextResponse.json({ success: true });
     }
 
     // Put bucket encryption
     if (action === "encryption" && bucket) {
-      const config = body.encryption || body.config || {
-        Rules: [{ ApplyServerSideEncryptionByDefault: { SSEAlgorithm: body.algorithm || "AES256" } }],
-      };
-      await client.send(new PutBucketEncryptionCommand({
-        Bucket: String(bucket),
-        ServerSideEncryptionConfiguration: config,
-      }));
+      const config = body.encryption ||
+        body.config || {
+          Rules: [
+            { ApplyServerSideEncryptionByDefault: { SSEAlgorithm: body.algorithm || "AES256" } },
+          ],
+        };
+      await client.send(
+        new PutBucketEncryptionCommand({
+          Bucket: String(bucket),
+          ServerSideEncryptionConfiguration: config,
+        }),
+      );
       return NextResponse.json({ success: true });
     }
 
     // Put bucket policy
     if (action === "policy" && bucket) {
-      const policyStr = typeof body.policy === "string" ? body.policy : JSON.stringify(body.policy || {});
-      await client.send(new PutBucketPolicyCommand({
-        Bucket: String(bucket),
-        Policy: policyStr,
-      }));
+      const policyStr =
+        typeof body.policy === "string" ? body.policy : JSON.stringify(body.policy || {});
+      await client.send(
+        new PutBucketPolicyCommand({
+          Bucket: String(bucket),
+          Policy: policyStr,
+        }),
+      );
       return NextResponse.json({ success: true });
     }
 
     // Put bucket tagging
     if (action === "tags" && bucket) {
-      await client.send(new PutBucketTaggingCommand({
-        Bucket: String(bucket),
-        Tagging: { TagSet: body.tags || body.TagSet || [] },
-      }));
+      await client.send(
+        new PutBucketTaggingCommand({
+          Bucket: String(bucket),
+          Tagging: { TagSet: body.tags || body.TagSet || [] },
+        }),
+      );
       return NextResponse.json({ success: true });
     }
 
     // Put bucket lifecycle
     if (action === "lifecycle" && bucket) {
-      await client.send(new PutBucketLifecycleConfigurationCommand({
-        Bucket: String(bucket),
-        LifecycleConfiguration: { Rules: body.rules || body.Rules || [] },
-      }));
+      await client.send(
+        new PutBucketLifecycleConfigurationCommand({
+          Bucket: String(bucket),
+          LifecycleConfiguration: { Rules: body.rules || body.Rules || [] },
+        }),
+      );
       return NextResponse.json({ success: true });
     }
 
     // Put bucket website
     if (action === "website" && bucket) {
-      await client.send(new PutBucketWebsiteCommand({
-        Bucket: String(bucket),
-        WebsiteConfiguration: body.website || body.config || body.WebsiteConfiguration || {},
-      }));
+      await client.send(
+        new PutBucketWebsiteCommand({
+          Bucket: String(bucket),
+          WebsiteConfiguration: body.website || body.config || body.WebsiteConfiguration || {},
+        }),
+      );
       return NextResponse.json({ success: true });
     }
 
@@ -268,15 +321,139 @@ export async function POST(request: Request) {
       if (!sourceKey || !destKey) {
         return NextResponse.json({ error: "sourceKey and destKey are required" }, { status: 400 });
       }
-      await client.send(new CopyObjectCommand({
-        Bucket: String(bucket),
-        CopySource: `${bucket}/${sourceKey}`,
-        Key: String(destKey),
-      }));
+      await client.send(
+        new CopyObjectCommand({
+          Bucket: String(bucket),
+          CopySource: `${bucket}/${sourceKey}`,
+          Key: String(destKey),
+        }),
+      );
       return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ error: "Invalid request", action, bucket }, { status: 400 });
+  } catch (error: any) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
+  }
+}
+
+// ─── PUT ────────────────────────────────────────────────────────────────────────
+/**
+ * Bucket configuration writes. The bucket detail page saves versioning, policy,
+ * public access block and ACL with `PUT ?bucket=...&action=<name>`, so each of
+ * those needs a PUT handler alongside the matching GET read.
+ */
+export async function PUT(request: Request) {
+  const denied = await requirePermission(request, "PUT");
+  if (denied) return denied;
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get("action") || "";
+    const bucket = searchParams.get("bucket") || searchParams.get("Bucket") || "";
+    if (!bucket) {
+      return NextResponse.json({ error: "bucket is required" }, { status: 400 });
+    }
+    const body = await request.json().catch(() => ({}));
+    const client = getS3Client(request);
+
+    // Put bucket versioning
+    if (action === "versioning") {
+      const status = body.Status || body.status;
+      if (status !== "Enabled" && status !== "Suspended") {
+        return NextResponse.json({ error: "Status must be Enabled or Suspended" }, { status: 400 });
+      }
+      await client.send(
+        new PutBucketVersioningCommand({
+          Bucket: bucket,
+          VersioningConfiguration: {
+            Status: status,
+            MFADelete: body.MFADelete || body.mfaDelete,
+          },
+        }),
+      );
+      return NextResponse.json({ success: true, versioning: status });
+    }
+
+    // Put bucket policy
+    if (action === "policy") {
+      const policy = body.Policy ?? body.policy;
+      if (policy === undefined) {
+        return NextResponse.json({ error: "policy is required" }, { status: 400 });
+      }
+      await client.send(
+        new PutBucketPolicyCommand({
+          Bucket: bucket,
+          Policy: typeof policy === "string" ? policy : JSON.stringify(policy),
+        }),
+      );
+      return NextResponse.json({ success: true });
+    }
+
+    // Put bucket public access block. Accepts the documented
+    // PublicAccessBlockConfiguration object either wrapped or inline, which is
+    // what the bucket detail page posts.
+    if (action === "public-access-block") {
+      const config =
+        body.PublicAccessBlockConfiguration ||
+        body.publicAccessBlockConfiguration ||
+        body.config ||
+        pickPublicAccessBlock(body);
+      if (!config) {
+        return NextResponse.json(
+          { error: "PublicAccessBlockConfiguration is required" },
+          { status: 400 },
+        );
+      }
+      await client.send(
+        new PutPublicAccessBlockCommand({
+          Bucket: bucket,
+          PublicAccessBlockConfiguration: config,
+        }),
+      );
+      return NextResponse.json({ success: true, publicAccessBlock: config });
+    }
+
+    // Put bucket ACL. Accepts a canned ACL name, a full documented
+    // AccessControlPolicy, or a bare Grants array (which is wrapped into the
+    // documented AccessControlPolicy the API expects).
+    if (action === "acl") {
+      const accessControlPolicy = body.AccessControlPolicy || body.accessControlPolicy;
+      const grants = body.Grants || body.grants;
+      const canned = body.ACL || body.acl;
+      if (!accessControlPolicy && !grants && !canned) {
+        return NextResponse.json(
+          { error: "AccessControlPolicy, Grants or ACL is required" },
+          { status: 400 },
+        );
+      }
+      let policy =
+        accessControlPolicy ??
+        (grants ? { Grants: grants, Owner: body.Owner || body.owner } : undefined);
+      if (policy && !policy.Owner) {
+        // The documented AccessControlPolicy makes Owner optional, but the
+        // emulator rejects a grants document without one, so resolve the
+        // bucket owner rather than surfacing a MalformedACLError.
+        const current = await client.send(new GetBucketAclCommand({ Bucket: bucket }));
+        policy = { ...policy, Owner: current.Owner };
+      }
+      await client.send(
+        new PutBucketAclCommand({
+          Bucket: bucket,
+          AccessControlPolicy: policy,
+          ACL: canned,
+        }),
+      );
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json(
+      {
+        error: `Unknown PUT action: ${action || "(none)"}. Supported: versioning, policy, public-access-block, acl`,
+      },
+      { status: 400 },
+    );
   } catch (error: any) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);

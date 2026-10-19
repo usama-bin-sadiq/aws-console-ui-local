@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -32,13 +33,17 @@ export default function NatGatewayPage() {
   const [deleting, setDeleting] = useState(false);
 
   // Subnets for dropdown
-  const [subnets, setSubnets] = useState<Array<{ SubnetId: string; VpcId?: string; AvailabilityZone?: string; CidrBlock?: string }>>([]);
+  const [subnets, setSubnets] = useState<
+    Array<{ SubnetId: string; VpcId?: string; AvailabilityZone?: string; CidrBlock?: string }>
+  >([]);
   // Elastic IPs for dropdown
-  const [elasticIps, setElasticIps] = useState<Array<{ AllocationId?: string; PublicIp?: string }>>([]);
+  const [elasticIps, setElasticIps] = useState<Array<{ AllocationId?: string; PublicIp?: string }>>(
+    [],
+  );
 
   async function loadSubnets() {
     try {
-      const res = await fetch("/api/ec2", {
+      const res = await apiFetch("/api/ec2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "describeSubnets" }),
@@ -52,7 +57,7 @@ export default function NatGatewayPage() {
 
   async function loadElasticIps() {
     try {
-      const res = await fetch("/api/elastic-ip");
+      const res = await apiFetch("/api/elastic-ip");
       const data = await res.json();
       setElasticIps(data.addresses || []);
     } catch {
@@ -64,7 +69,7 @@ export default function NatGatewayPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/nat-gateway");
+      const res = await apiFetch("/api/nat-gateway");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setNatGateways(data.natGateways || []);
@@ -75,12 +80,16 @@ export default function NatGatewayPage() {
     }
   }
 
-  useEffect(() => { load(); loadSubnets(); loadElasticIps(); }, []);
+  useEffect(() => {
+    load();
+    loadSubnets();
+    loadElasticIps();
+  }, []);
 
   async function handleCreate() {
     setCreating(true);
     try {
-      const res = await fetch("/api/nat-gateway", {
+      const res = await apiFetch("/api/nat-gateway", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subnetId, allocationId, connectivityType }),
@@ -104,7 +113,9 @@ export default function NatGatewayPage() {
     setDeleting(true);
     try {
       for (const nat of selected) {
-        const res = await fetch(`/api/nat-gateway?natGatewayId=${nat.NatGatewayId}`, { method: "DELETE" });
+        const res = await apiFetch(`/api/nat-gateway?natGatewayId=${nat.NatGatewayId}`, {
+          method: "DELETE",
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
       }
@@ -118,45 +129,59 @@ export default function NatGatewayPage() {
   }
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
           variant="h1"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh">Refresh</Button>
-              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>Delete</Button>
-              <Button variant="primary" onClick={() => setShowCreate(true)}>Create NAT Gateway</Button>
+              <Button onClick={load} iconName="refresh">
+                Refresh
+              </Button>
+              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>
+                Delete
+              </Button>
+              <Button variant="primary" onClick={() => setShowCreate(true)}>
+                Create NAT Gateway
+              </Button>
             </SpaceBetween>
           }
         >
           NAT Gateways
         </Header>
 
-        {error && <Alert type="error" dismissible onDismiss={() => setError(null)}>{error}</Alert>}
+        {error && (
+          <Alert type="error" dismissible onDismiss={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-        <Container>
-          <Table
-            loading={loading}
-            loadingText="Loading NAT gateways..."
-            items={natGateways}
-            selectionType="multi"
-            selectedItems={selected}
-            onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
-            columnDefinitions={[
-              { id: "natGatewayId", header: "NAT Gateway ID", cell: (item) => item.NatGatewayId },
-              { id: "state", header: "State", cell: (item) => item.State },
-              { id: "subnetId", header: "Subnet ID", cell: (item) => item.SubnetId },
-              { id: "connectivityType", header: "Connectivity Type", cell: (item) => item.ConnectivityType },
-            ]}
-            empty={
-              <Box textAlign="center" color="inherit">
-                <b>No NAT gateways</b>
-                <Box variant="p" color="inherit">No NAT gateways found.</Box>
+        <Table
+          loading={loading}
+          loadingText="Loading NAT gateways..."
+          items={natGateways}
+          selectionType="multi"
+          selectedItems={selected}
+          onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
+          columnDefinitions={[
+            { id: "natGatewayId", header: "NAT Gateway ID", cell: (item) => item.NatGatewayId },
+            { id: "state", header: "State", cell: (item) => item.State },
+            { id: "subnetId", header: "Subnet ID", cell: (item) => item.SubnetId },
+            {
+              id: "connectivityType",
+              header: "Connectivity Type",
+              cell: (item) => item.ConnectivityType,
+            },
+          ]}
+          empty={
+            <Box textAlign="center" color="inherit">
+              <b>No NAT gateways</b>
+              <Box variant="p" color="inherit">
+                No NAT gateways found.
               </Box>
-            }
-          />
-        </Container>
+            </Box>
+          }
+        />
       </SpaceBetween>
 
       <Modal
@@ -167,7 +192,9 @@ export default function NatGatewayPage() {
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button variant="primary" loading={creating} onClick={handleCreate}>Create NAT Gateway</Button>
+              <Button variant="primary" loading={creating} onClick={handleCreate}>
+                Create NAT Gateway
+              </Button>
             </SpaceBetween>
           </Box>
         }
@@ -175,28 +202,55 @@ export default function NatGatewayPage() {
         <SpaceBetween size="m">
           <FormField label="Subnet ID">
             <Select
-              selectedOption={subnetId ? { value: subnetId, label: `${subnetId} (${subnets.find((s) => s.SubnetId === subnetId)?.AvailabilityZone || ""})` } : null}
-              options={subnets.map((s) => ({ value: s.SubnetId, label: `${s.SubnetId} (${s.AvailabilityZone || ""}) - ${s.CidrBlock || ""}` }))}
+              selectedOption={
+                subnetId
+                  ? {
+                      value: subnetId,
+                      label: `${subnetId} (${subnets.find((s) => s.SubnetId === subnetId)?.AvailabilityZone || ""})`,
+                    }
+                  : null
+              }
+              options={subnets.map((s) => ({
+                value: s.SubnetId,
+                label: `${s.SubnetId} (${s.AvailabilityZone || ""}) - ${s.CidrBlock || ""}`,
+              }))}
               placeholder="Select a subnet"
               onChange={({ detail }) => setSubnetId(detail.selectedOption.value || "")}
             />
           </FormField>
           <FormField label="Allocation ID (for public NAT)">
             <Select
-              selectedOption={allocationId ? { value: allocationId, label: `${allocationId} (${elasticIps.find((e) => e.AllocationId === allocationId)?.PublicIp || ""})` } : null}
-              options={elasticIps.filter((e) => e.AllocationId).map((e) => ({ value: e.AllocationId!, label: `${e.AllocationId} (${e.PublicIp || ""})` }))}
+              selectedOption={
+                allocationId
+                  ? {
+                      value: allocationId,
+                      label: `${allocationId} (${elasticIps.find((e) => e.AllocationId === allocationId)?.PublicIp || ""})`,
+                    }
+                  : null
+              }
+              options={elasticIps
+                .filter((e) => e.AllocationId)
+                .map((e) => ({
+                  value: e.AllocationId!,
+                  label: `${e.AllocationId} (${e.PublicIp || ""})`,
+                }))}
               placeholder="Select an Elastic IP"
               onChange={({ detail }) => setAllocationId(detail.selectedOption.value || "")}
             />
           </FormField>
           <FormField label="Connectivity Type">
             <Select
-              selectedOption={{ value: connectivityType, label: connectivityType === "public" ? "Public" : "Private" }}
+              selectedOption={{
+                value: connectivityType,
+                label: connectivityType === "public" ? "Public" : "Private",
+              }}
               options={[
                 { value: "public", label: "Public" },
                 { value: "private", label: "Private" },
               ]}
-              onChange={({ detail }) => setConnectivityType(detail.selectedOption.value || "public")}
+              onChange={({ detail }) =>
+                setConnectivityType(detail.selectedOption.value || "public")
+              }
             />
           </FormField>
         </SpaceBetween>

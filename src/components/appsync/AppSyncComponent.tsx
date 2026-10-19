@@ -2,9 +2,9 @@
  * AppSyncComponent — GraphQL API list.
  */
 
-import React from 'react';
-import SpaceBetween from '@cloudscape-design/components/space-between';
-import Button from '@cloudscape-design/components/button';
+import React from "react";
+import SpaceBetween from "@cloudscape-design/components/space-between";
+import Button from "@cloudscape-design/components/button";
 
 export function AppSyncComponent(): React.ReactElement {
   return (

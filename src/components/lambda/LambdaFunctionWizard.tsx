@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/api-client";
 /**
  * LambdaFunctionWizard — Multi-step Lambda creation wizard.
  * PRD §15.3 (Workflows — Lambda function creation)
@@ -54,7 +55,11 @@ export interface LambdaFunctionWizardProps {
   readonly onCancel?: () => void;
 }
 
-export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: LambdaFunctionWizardProps): React.ReactElement {
+export function LambdaFunctionWizard({
+  visible = false,
+  onCreate,
+  onCancel,
+}: LambdaFunctionWizardProps): React.ReactElement {
   const router = useRouter();
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [creating, setCreating] = useState(false);
@@ -136,18 +141,15 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
         Description: config.description,
         Architecture: config.architecture,
         Environment: config.environment ? { Variables: config.environment } : undefined,
-        Tags: config.tags?.reduce(
-          (acc: Record<string, string>, t) => {
-            if (t.Key) acc[t.Key] = t.Value || "";
-            return acc;
-          },
-          {}
-        ),
+        Tags: config.tags?.reduce((acc: Record<string, string>, t) => {
+          if (t.Key) acc[t.Key] = t.Value || "";
+          return acc;
+        }, {}),
         Code: {
           ZipFile: btoa(config.code || ""),
         },
       };
-      const res = await fetch("/api/lambda", {
+      const res = await apiFetch("/api/lambda", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -187,11 +189,16 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
           {config.authorType === "blueprint" && (
             <FormField label="Select blueprint">
               <Select
-                selectedOption={
-                  { value: config.blueprint || "hello-world", label: LAMBDA_BLUEPRINTS.find((b) => b.value === config.blueprint)?.label || "hello-world" }
-                }
+                selectedOption={{
+                  value: config.blueprint || "hello-world",
+                  label:
+                    LAMBDA_BLUEPRINTS.find((b) => b.value === config.blueprint)?.label ||
+                    "hello-world",
+                }}
                 options={LAMBDA_BLUEPRINTS.map((b) => ({ value: b.value, label: b.label }))}
-                onChange={({ detail }) => updateConfig({ blueprint: detail.selectedOption.value as string })}
+                onChange={({ detail }) =>
+                  updateConfig({ blueprint: detail.selectedOption.value as string })
+                }
               />
             </FormField>
           )}
@@ -213,18 +220,36 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
       content: (
         <SpaceBetween size="l">
           <ColumnLayout columns={2} variant="default">
-            <FormField label={<>Function name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={functionNameError}>
+            <FormField
+              label={
+                <>
+                  Function name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={functionNameError}
+            >
               <Input
                 value={config.functionName || ""}
-                onChange={({ detail }) => { updateConfig({ functionName: detail.value }); setFunctionNameError(null); }}
+                onChange={({ detail }) => {
+                  updateConfig({ functionName: detail.value });
+                  setFunctionNameError(null);
+                }}
                 placeholder="my-lambda-function"
               />
             </FormField>
             <FormField label="Runtime" constraintText="Required">
               <Select
-                selectedOption={{ value: config.runtime || LAMBDA_DEFAULT_RUNTIME, label: LAMBDA_RUNTIMES.find((r) => r.value === config.runtime)?.label || LAMBDA_DEFAULT_RUNTIME }}
+                selectedOption={{
+                  value: config.runtime || LAMBDA_DEFAULT_RUNTIME,
+                  label:
+                    LAMBDA_RUNTIMES.find((r) => r.value === config.runtime)?.label ||
+                    LAMBDA_DEFAULT_RUNTIME,
+                }}
                 options={LAMBDA_RUNTIMES.map((r) => ({ value: r.value, label: r.label }))}
-                onChange={({ detail }) => updateConfig({ runtime: detail.selectedOption.value as string })}
+                onChange={({ detail }) =>
+                  updateConfig({ runtime: detail.selectedOption.value as string })
+                }
               />
             </FormField>
           </ColumnLayout>
@@ -238,24 +263,51 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
             </FormField>
             <FormField label="Memory size (MB)">
               <Select
-                selectedOption={{ value: String(config.memorySize || LAMBDA_DEFAULT_MEMORY), label: LAMBDA_MEMORY_OPTIONS.find((m) => m.value === config.memorySize)?.label || `${LAMBDA_DEFAULT_MEMORY} MB` }}
-                options={LAMBDA_MEMORY_OPTIONS.map((m) => ({ value: String(m.value), label: m.label }))}
-                onChange={({ detail }) => updateConfig({ memorySize: Number(detail.selectedOption.value) })}
+                selectedOption={{
+                  value: String(config.memorySize || LAMBDA_DEFAULT_MEMORY),
+                  label:
+                    LAMBDA_MEMORY_OPTIONS.find((m) => m.value === config.memorySize)?.label ||
+                    `${LAMBDA_DEFAULT_MEMORY} MB`,
+                }}
+                options={LAMBDA_MEMORY_OPTIONS.map((m) => ({
+                  value: String(m.value),
+                  label: m.label,
+                }))}
+                onChange={({ detail }) =>
+                  updateConfig({ memorySize: Number(detail.selectedOption.value) })
+                }
               />
             </FormField>
             <FormField label="Timeout (seconds)">
               <Select
-                selectedOption={{ value: String(config.timeout || LAMBDA_DEFAULT_TIMEOUT), label: LAMBDA_TIMEOUT_OPTIONS.find((t) => t.value === config.timeout)?.label || `${LAMBDA_DEFAULT_TIMEOUT} s` }}
-                options={LAMBDA_TIMEOUT_OPTIONS.map((t) => ({ value: String(t.value), label: t.label }))}
-                onChange={({ detail }) => updateConfig({ timeout: Number(detail.selectedOption.value) })}
+                selectedOption={{
+                  value: String(config.timeout || LAMBDA_DEFAULT_TIMEOUT),
+                  label:
+                    LAMBDA_TIMEOUT_OPTIONS.find((t) => t.value === config.timeout)?.label ||
+                    `${LAMBDA_DEFAULT_TIMEOUT} s`,
+                }}
+                options={LAMBDA_TIMEOUT_OPTIONS.map((t) => ({
+                  value: String(t.value),
+                  label: t.label,
+                }))}
+                onChange={({ detail }) =>
+                  updateConfig({ timeout: Number(detail.selectedOption.value) })
+                }
               />
             </FormField>
           </ColumnLayout>
           <FormField label="Architecture">
             <Select
-              selectedOption={{ value: config.architecture || LAMBDA_DEFAULT_ARCH, label: LAMBDA_ARCHITECTURES.find((a) => a.value === config.architecture)?.label || LAMBDA_DEFAULT_ARCH }}
+              selectedOption={{
+                value: config.architecture || LAMBDA_DEFAULT_ARCH,
+                label:
+                  LAMBDA_ARCHITECTURES.find((a) => a.value === config.architecture)?.label ||
+                  LAMBDA_DEFAULT_ARCH,
+              }}
               options={LAMBDA_ARCHITECTURES.map((a) => ({ value: a.value, label: a.label }))}
-              onChange={({ detail }) => updateConfig({ architecture: detail.selectedOption.value as string })}
+              onChange={({ detail }) =>
+                updateConfig({ architecture: detail.selectedOption.value as string })
+              }
             />
           </FormField>
           <FormField label="Description (optional)">
@@ -274,17 +326,29 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
       content: (
         <SpaceBetween size="l">
           <Box variant="h3">Function code</Box>
-          <FormField label={<>Source code (JavaScript / Python / TypeScript) <span style={{ color: "red" }}>*</span></>} errorText={codeError}>
+          <FormField
+            label={
+              <>
+                Source code (JavaScript / Python / TypeScript){" "}
+                <span style={{ color: "red" }}>*</span>
+              </>
+            }
+            errorText={codeError}
+          >
             <AwsCodeEditor
               value={config.code || ""}
-              onChange={(value) => { updateConfig({ code: value }); setCodeError(null); }}
+              onChange={(value) => {
+                updateConfig({ code: value });
+                setCodeError(null);
+              }}
               language="javascript"
               height={300}
               ariaLabel="Lambda function code editor"
             />
           </FormField>
           <Alert type="info">
-            In a production environment, you would upload a .zip file or reference an S3 bucket. This emulator accepts inline code.
+            In a production environment, you would upload a .zip file or reference an S3 bucket.
+            This emulator accepts inline code.
           </Alert>
         </SpaceBetween>
       ),
@@ -294,10 +358,21 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
       description: "Configure execution role and permissions",
       content: (
         <SpaceBetween size="l">
-          <FormField label={<>Execution role ARN <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={roleError}>
+          <FormField
+            label={
+              <>
+                Execution role ARN <span style={{ color: "red" }}>*</span>
+              </>
+            }
+            constraintText="Required"
+            errorText={roleError}
+          >
             <Input
               value={config.role || ""}
-              onChange={({ detail }) => { updateConfig({ role: detail.value }); setRoleError(null); }}
+              onChange={({ detail }) => {
+                updateConfig({ role: detail.value });
+                setRoleError(null);
+              }}
               placeholder="arn:aws:iam::123456789012:role/lambda-execution-role"
             />
           </FormField>
@@ -434,47 +509,69 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
           <Container header={<Header variant="h3">Review</Header>}>
             <ColumnLayout columns={3} variant="default">
               <div>
-                <Box variant="small" color="text-label">Function name</Box>
+                <Box variant="small" color="text-label">
+                  Function name
+                </Box>
                 <Box>{config.functionName}</Box>
               </div>
               <div>
-                <Box variant="small" color="text-label">Runtime</Box>
+                <Box variant="small" color="text-label">
+                  Runtime
+                </Box>
                 <Box>{config.runtime}</Box>
               </div>
               <div>
-                <Box variant="small" color="text-label">Handler</Box>
+                <Box variant="small" color="text-label">
+                  Handler
+                </Box>
                 <Box>{config.handler}</Box>
               </div>
               <div>
-                <Box variant="small" color="text-label">Memory</Box>
+                <Box variant="small" color="text-label">
+                  Memory
+                </Box>
                 <Box>{config.memorySize} MB</Box>
               </div>
               <div>
-                <Box variant="small" color="text-label">Timeout</Box>
+                <Box variant="small" color="text-label">
+                  Timeout
+                </Box>
                 <Box>{config.timeout} s</Box>
               </div>
               <div>
-                <Box variant="small" color="text-label">Architecture</Box>
+                <Box variant="small" color="text-label">
+                  Architecture
+                </Box>
                 <Box>{config.architecture}</Box>
               </div>
               <div>
-                <Box variant="small" color="text-label">Author type</Box>
+                <Box variant="small" color="text-label">
+                  Author type
+                </Box>
                 <Box>{config.authorType}</Box>
               </div>
               <div>
-                <Box variant="small" color="text-label">Role</Box>
+                <Box variant="small" color="text-label">
+                  Role
+                </Box>
                 <Box>{config.role || "—"}</Box>
               </div>
               <div>
-                <Box variant="small" color="text-label">Tags</Box>
+                <Box variant="small" color="text-label">
+                  Tags
+                </Box>
                 <Box>{(config.tags || []).filter((t) => t.Key).length}</Box>
               </div>
             </ColumnLayout>
           </Container>
           <Container header={<Header variant="h3">Environment variables</Header>}>
-            {Object.entries(config.environment || {}).filter(([k]) => k).map(([k, v]) => (
-              <Box key={k}>{k}: {v}</Box>
-            ))}
+            {Object.entries(config.environment || {})
+              .filter(([k]) => k)
+              .map(([k, v]) => (
+                <Box key={k}>
+                  {k}: {v}
+                </Box>
+              ))}
             {Object.keys(config.environment || {}).filter((k) => k).length === 0 && <Box>None</Box>}
           </Container>
           <Container header={<Header variant="h3">Code preview</Header>}>
@@ -495,12 +592,18 @@ export function LambdaFunctionWizard({ visible = false, onCreate, onCancel }: La
 
   return (
     <SpaceBetween size="l">
-      {stepError && <Alert type="error" dismissible onDismiss={() => setStepError(null)}>{stepError}</Alert>}
+      {stepError && (
+        <Alert type="error" dismissible onDismiss={() => setStepError(null)}>
+          {stepError}
+        </Alert>
+      )}
       {creating ? (
         <Container>
           <Box textAlign="center" padding="xxl">
             <Header variant="h3">Creating function...</Header>
-            <Box variant="p" color="text-body-secondary">This may take a moment.</Box>
+            <Box variant="p" color="text-body-secondary">
+              This may take a moment.
+            </Box>
           </Box>
         </Container>
       ) : (

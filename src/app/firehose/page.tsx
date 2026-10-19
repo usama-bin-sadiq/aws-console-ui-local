@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -34,7 +35,7 @@ export default function FirehosePage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/firehose");
+      const res = await apiFetch("/api/firehose");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch delivery streams");
       const names: string[] = data.deliveryStreamNames || [];
@@ -45,7 +46,7 @@ export default function FirehosePage() {
           status: details[n]?.DeliveryStreamStatus || "ACTIVE",
           deliveryStreamType: details[n]?.DeliveryStreamType || "DirectPut",
           destinations: details[n]?.Destinations ? details[n].Destinations.length : 0,
-        }))
+        })),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch delivery streams");
@@ -66,7 +67,7 @@ export default function FirehosePage() {
     setStreamNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/firehose", {
+      const res = await apiFetch("/api/firehose", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deliveryStreamName: streamName, deliveryStreamType: deliveryType }),
@@ -88,7 +89,7 @@ export default function FirehosePage() {
 
   const deleteStream = async (name: string) => {
     try {
-      const res = await fetch(`/api/firehose?streamName=${encodeURIComponent(name)}`, {
+      const res = await apiFetch(`/api/firehose?streamName=${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -102,7 +103,7 @@ export default function FirehosePage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon Data Firehose</Header>
 
@@ -112,7 +113,7 @@ export default function FirehosePage() {
           </Alert>
         )}
 
-        <Container>
+        <Container className="aws-table-card">
           <Tabs
             tabs={[
               {
@@ -136,8 +137,14 @@ export default function FirehosePage() {
                     columnDefinitions={[
                       { header: "Delivery stream name", cell: (item: FirehoseStream) => item.name },
                       { header: "Status", cell: (item: FirehoseStream) => item.status || "—" },
-                      { header: "Type", cell: (item: FirehoseStream) => item.deliveryStreamType || "—" },
-                      { header: "Destinations", cell: (item: FirehoseStream) => String(item.destinations || 0) },
+                      {
+                        header: "Type",
+                        cell: (item: FirehoseStream) => item.deliveryStreamType || "—",
+                      },
+                      {
+                        header: "Destinations",
+                        cell: (item: FirehoseStream) => String(item.destinations || 0),
+                      },
                       {
                         header: "Actions",
                         cell: (item: FirehoseStream) => (
@@ -156,13 +163,18 @@ export default function FirehosePage() {
                 label: "Configuration",
                 id: "config",
                 content: (
-                  <div style={{ padding: "16px", color: "var(--awsui-color-text-body-secondary)" }}>
+                  <Box padding="m" color="text-body-secondary">
                     <Header variant="h2">Firehose configuration</Header>
                     <SpaceBetween size="s">
-                      <Box>Configure delivery streams for S3, Redshift, OpenSearch, or custom destinations.</Box>
-                      <Box>Adapter SDK handles endpoint routing and authentication automatically.</Box>
+                      <Box>
+                        Configure delivery streams for S3, Redshift, OpenSearch, or custom
+                        destinations.
+                      </Box>
+                      <Box>
+                        Adapter SDK handles endpoint routing and authentication automatically.
+                      </Box>
                     </SpaceBetween>
-                  </div>
+                  </Box>
                 ),
               },
             ]}
@@ -195,10 +207,21 @@ export default function FirehosePage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Delivery stream name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={streamNameError}>
+            <FormField
+              label={
+                <>
+                  Delivery stream name <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={streamNameError}
+            >
               <Input
                 value={streamName}
-                onChange={(e) => { setStreamName(e.detail.value); setStreamNameError(null); }}
+                onChange={(e) => {
+                  setStreamName(e.detail.value);
+                  setStreamNameError(null);
+                }}
                 placeholder="my-delivery-stream"
               />
             </FormField>

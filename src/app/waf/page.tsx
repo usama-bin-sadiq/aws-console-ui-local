@@ -8,7 +8,7 @@ import Link from "@cloudscape-design/components/link";
 
 export default function WAFPage() {
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS WAF</Header>
         <Container>

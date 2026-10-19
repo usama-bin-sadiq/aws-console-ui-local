@@ -18,12 +18,7 @@ export default function TruncatedText({ children, maxLength = 50 }: Props) {
   const truncated = text.slice(0, maxLength) + "...";
 
   return (
-    <Popover
-      position="top"
-      size="medium"
-      triggerType="custom"
-      content={text}
-    >
+    <Popover position="top" size="medium" triggerType="custom" content={text}>
       <span
         style={{
           display: "block",

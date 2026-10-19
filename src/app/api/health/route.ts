@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
-import { ADAPTER_CONFIG } from "@/config/adapter-config";
+import { ADAPTER_CONFIG, getAdapterEndpoint } from "@/config/adapter-config";
+import { getHealthPathForMode, toAdapterMode } from "@/constants/service-compatibility";
 
 export async function GET() {
   const mode = ADAPTER_CONFIG.adapterMode;
-  const endpointUrl = mode === "ministack"
-    ? ADAPTER_CONFIG.endpointConfig.minstackEndpoint
-    : ADAPTER_CONFIG.endpointConfig.localstackEndpoint;
+  const endpointUrl = getAdapterEndpoint(mode);
 
   if (!endpointUrl) {
-    return NextResponse.json({ status: "unreachable", provider: mode, error: "No endpoint configured" }, { status: 503 });
+    return NextResponse.json(
+      { status: "unreachable", provider: mode, error: "No endpoint configured" },
+      { status: 503 },
+    );
   }
 
-  const healthCheckUrl = mode === "ministack"
-    ? `${endpointUrl}/_ministack/health`
-    : `${endpointUrl}/_localstack/health`;
+  const healthCheckUrl = `${endpointUrl}${getHealthPathForMode(toAdapterMode(mode))}`;
 
   try {
     const response = await fetch(healthCheckUrl, {
@@ -40,11 +40,17 @@ export async function GET() {
         return value === false || value === "unavailable" || value === "error";
       });
       return NextResponse.json({
-        status: readiness === "starting" ? "starting" : hasUnavailableService ? "degraded" : "healthy",
+        status:
+          readiness === "starting" ? "starting" : hasUnavailableService ? "degraded" : "healthy",
         provider: mode,
         endpoint: endpointUrl,
         edition: data.edition,
+        runtimeStatus: data.status,
+        runtimeVersion: data.version,
         readiness,
+        // Both LocalEmu and LocalStack publish a per-service map; MiniStack does
+        // too. This field names the source so the UI can explain the origin.
+        capabilitySource: "emulator-health",
         services: data.services || {},
       });
     }
@@ -52,10 +58,13 @@ export async function GET() {
     // Endpoint unreachable — app is still healthy, adapter just not connected
   }
 
-  return NextResponse.json({
-    status: "unreachable",
-    provider: mode,
-    endpoint: endpointUrl,
-    error: `Adapter configured for ${mode} at ${endpointUrl} but endpoint is unreachable`,
-  }, { status: 503 });
+  return NextResponse.json(
+    {
+      status: "unreachable",
+      provider: mode,
+      endpoint: endpointUrl,
+      error: `Adapter configured for ${mode} at ${endpointUrl} but endpoint is unreachable`,
+    },
+    { status: 503 },
+  );
 }

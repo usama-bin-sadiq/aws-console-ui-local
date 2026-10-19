@@ -12,6 +12,7 @@ import {
 import { SFNClient } from "@aws-sdk/client-sfn";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -24,33 +25,29 @@ export async function GET(request: Request) {
     const stateMachineArn = searchParams.get("stateMachineArn");
 
     if (action === "listExecutions" && stateMachineArn) {
-      const res = await sfnClient.send(
-        new ListExecutionsCommand({ stateMachineArn })
-      );
+      const res = await sfnClient.send(new ListExecutionsCommand({ stateMachineArn }));
       return NextResponse.json({ executions: res.executions || [] });
     }
 
     if (action === "describeExecution" && stateMachineArn) {
       const res = await sfnClient.send(
-        new DescribeExecutionCommand({ executionArn: stateMachineArn })
+        new DescribeExecutionCommand({ executionArn: stateMachineArn }),
       );
       return NextResponse.json({ execution: res });
     }
 
     if (action === "getExecutionHistory" && stateMachineArn) {
       const res = await sfnClient.send(
-        new GetExecutionHistoryCommand({ executionArn: stateMachineArn, reverseOrder: true })
+        new GetExecutionHistoryCommand({ executionArn: stateMachineArn, reverseOrder: true }),
       );
       return NextResponse.json({ events: res.events || [] });
     }
 
     const res = await sfnClient.send(new ListStateMachinesCommand({}));
     return NextResponse.json({ stateMachines: res.stateMachines || [] });
-  } catch (error: unknown) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -69,7 +66,7 @@ export async function POST(request: Request) {
           stateMachineArn: body.stateMachineArn,
           input: body.input || "{}",
           name: body.executionName || undefined,
-        })
+        }),
       );
       return NextResponse.json({ executionArn: res.executionArn });
     }
@@ -80,21 +77,21 @@ export async function POST(request: Request) {
           executionArn: body.executionArn,
           error: body.error || "Stopped by user",
           cause: body.cause || "Stopped via AWS Console",
-        })
+        }),
       );
       return NextResponse.json({ executionArn: body.executionArn, stopDate: res.stopDate });
     }
 
     if (action === "describeExecution" || body.action === "describeExecution") {
       const res = await sfnClient.send(
-        new DescribeExecutionCommand({ executionArn: body.executionArn })
+        new DescribeExecutionCommand({ executionArn: body.executionArn }),
       );
       return NextResponse.json({ execution: res });
     }
 
     if (action === "listExecutions" || body.action === "listExecutions") {
       const res = await sfnClient.send(
-        new ListExecutionsCommand({ stateMachineArn: body.stateMachineArn })
+        new ListExecutionsCommand({ stateMachineArn: body.stateMachineArn }),
       );
       return NextResponse.json({ executions: res.executions || [] });
     }
@@ -102,17 +99,17 @@ export async function POST(request: Request) {
     const res = await sfnClient.send(
       new CreateStateMachineCommand({
         name: body.name,
-        definition: body.definition || '{"Comment":"A simple state machine","StartAt":"HelloWorld","States":{"HelloWorld":{"Type":"Pass","End":true}}}',
+        definition:
+          body.definition ||
+          '{"Comment":"A simple state machine","StartAt":"HelloWorld","States":{"HelloWorld":{"Type":"Pass","End":true}}}',
         roleArn: body.roleArn,
         type: body.type || "STANDARD",
-      })
+      }),
     );
     return NextResponse.json({ stateMachineArn: res.stateMachineArn });
-  } catch (error: unknown) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -128,13 +125,11 @@ export async function DELETE(request: Request) {
     await sfnClient.send(
       new DeleteStateMachineCommand({
         stateMachineArn: searchParams.get("arn")!,
-      })
+      }),
     );
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+  } catch (error) {
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

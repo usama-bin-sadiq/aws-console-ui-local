@@ -28,9 +28,7 @@ export async function GET(request: Request) {
     const groupName = searchParams.get("groupName");
 
     if (action === "launchConfigurations") {
-      const res = await autoscalingClient.send(
-        new DescribeLaunchConfigurationsCommand({})
-      );
+      const res = await autoscalingClient.send(new DescribeLaunchConfigurationsCommand({}));
       return NextResponse.json({
         launchConfigurations: res.LaunchConfigurations || [],
       });
@@ -40,7 +38,7 @@ export async function GET(request: Request) {
       const res = await autoscalingClient.send(
         new DescribePoliciesCommand({
           AutoScalingGroupName: groupName,
-        })
+        }),
       );
       return NextResponse.json({ scalingPolicies: res.ScalingPolicies || [] });
     }
@@ -49,7 +47,7 @@ export async function GET(request: Request) {
       const res = await autoscalingClient.send(
         new DescribeScheduledActionsCommand({
           AutoScalingGroupName: groupName,
-        })
+        }),
       );
       const output = res as { ScheduledActions?: any[]; scheduledActions?: any[] };
       return NextResponse.json({
@@ -57,16 +55,14 @@ export async function GET(request: Request) {
       });
     }
 
-    const res = await autoscalingClient.send(
-      new DescribeAutoScalingGroupsCommand({})
-    );
+    const res = await autoscalingClient.send(new DescribeAutoScalingGroupsCommand({}));
     return NextResponse.json({
       autoScalingGroups: res.AutoScalingGroups || [],
     });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -86,7 +82,7 @@ export async function POST(request: Request) {
           MinSize: body.minSize,
           MaxSize: body.maxSize,
           DesiredCapacity: body.desiredCapacity,
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -97,7 +93,7 @@ export async function POST(request: Request) {
           LaunchConfigurationName: body.launchConfigurationName || "my-launch-config",
           ImageId: body.imageId || "ami-123456",
           InstanceType: body.instanceType || "t3.micro",
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -110,7 +106,7 @@ export async function POST(request: Request) {
           PolicyType: body.policyType || "SimpleScaling",
           AdjustmentType: body.adjustmentType || "ChangeInCapacity",
           ScalingAdjustment: body.scalingAdjustment || 1,
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -125,7 +121,7 @@ export async function POST(request: Request) {
           MinSize: body.minSize,
           MaxSize: body.maxSize,
           DesiredCapacity: body.desiredCapacity,
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -138,13 +134,13 @@ export async function POST(request: Request) {
         DesiredCapacity: body.desiredCapacity || 1,
         AvailabilityZones: body.availabilityZones || ["us-east-1a"],
         LaunchConfigurationName: body.launchConfigurationName,
-      })
+      }),
     );
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -165,7 +161,7 @@ export async function DELETE(request: Request) {
         new DeletePolicyCommand({
           AutoScalingGroupName: groupName,
           PolicyName: policyName,
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -175,7 +171,7 @@ export async function DELETE(request: Request) {
         new DeleteScheduledActionCommand({
           AutoScalingGroupName: groupName,
           ScheduledActionName: actionName,
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -185,7 +181,7 @@ export async function DELETE(request: Request) {
         new DeleteAutoScalingGroupCommand({
           AutoScalingGroupName: groupName,
           ForceDelete: true,
-        })
+        }),
       );
       return NextResponse.json({ success: true });
     }
@@ -194,7 +190,7 @@ export async function DELETE(request: Request) {
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -2,9 +2,9 @@
  * AMI Components — AMI filter and actions.
  */
 
-import React from 'react';
-import SpaceBetween from '@cloudscape-design/components/space-between';
-import Button from '@cloudscape-design/components/button';
+import React from "react";
+import SpaceBetween from "@cloudscape-design/components/space-between";
+import Button from "@cloudscape-design/components/button";
 
 export interface AMIComponentProps {
   readonly imageId?: string;

@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -39,7 +40,7 @@ export default function EventBridgePage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/eventbridge");
+      const res = await apiFetch("/api/eventbridge");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch EventBridge data");
       setEventBuses(data.eventBuses || []);
@@ -63,7 +64,7 @@ export default function EventBridgePage() {
     setBusNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/eventbridge", {
+      const res = await apiFetch("/api/eventbridge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: busName }),
@@ -84,7 +85,7 @@ export default function EventBridgePage() {
 
   const deleteBus = async (name: string) => {
     try {
-      const res = await fetch(`/api/eventbridge?busName=${encodeURIComponent(name)}`, {
+      const res = await apiFetch(`/api/eventbridge?busName=${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -98,7 +99,7 @@ export default function EventBridgePage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon EventBridge</Header>
 
@@ -108,7 +109,7 @@ export default function EventBridgePage() {
           </Alert>
         )}
 
-        <Container>
+        <Container className="aws-table-card">
           <Tabs
             tabs={[
               {
@@ -188,10 +189,21 @@ export default function EventBridgePage() {
             </SpaceBetween>
           }
         >
-          <FormField label={<>Event bus name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={busNameError}>
+          <FormField
+            label={
+              <>
+                Event bus name <span style={{ color: "red" }}>*</span>
+              </>
+            }
+            constraintText="Required"
+            errorText={busNameError}
+          >
             <Input
               value={busName}
-              onChange={(e) => { setBusName(e.detail.value); setBusNameError(null); }}
+              onChange={(e) => {
+                setBusName(e.detail.value);
+                setBusNameError(null);
+              }}
               placeholder="my-event-bus"
             />
           </FormField>

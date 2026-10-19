@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -34,7 +35,7 @@ export default function AcmPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/acm");
+      const res = await apiFetch("/api/acm");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch certificates");
       setCertificates(data.certificates || []);
@@ -57,7 +58,7 @@ export default function AcmPage() {
     setDomainNameError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/acm", {
+      const res = await apiFetch("/api/acm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domainName }),
@@ -78,7 +79,7 @@ export default function AcmPage() {
 
   const deleteCertificate = async (arn: string) => {
     try {
-      const res = await fetch(`/api/acm?arn=${encodeURIComponent(arn)}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/acm?arn=${encodeURIComponent(arn)}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to delete certificate");
@@ -93,11 +94,19 @@ export default function AcmPage() {
     <ServiceLayout
       serviceName="AWS Certificate Manager"
       serviceCategory="Security"
-      breadcrumbs={[{ text: "Services", href: "/" }, { text: "Security", href: "#" }, { text: "Certificate Manager", href: "#" }]}
+      breadcrumbs={[
+        { text: "Services", href: "/" },
+        { text: "Security", href: "#" },
+        { text: "Certificate Manager", href: "#" },
+      ]}
       headerActions={
         <SpaceBetween direction="horizontal" size="xs">
           <Button iconName="refresh" onClick={fetchCertificates} ariaLabel="Refresh certificates" />
-          <Button variant="primary" onClick={() => setCreateModal(true)} ariaLabel="Request certificate">
+          <Button
+            variant="primary"
+            onClick={() => setCreateModal(true)}
+            ariaLabel="Request certificate"
+          >
             Request certificate
           </Button>
         </SpaceBetween>
@@ -110,11 +119,12 @@ export default function AcmPage() {
           </Alert>
         )}
 
-        <Container header={<Header variant="h2">Certificates ({certificates.length})</Header>}>
+        <Container
+          header={<Header variant="h2">Certificates ({certificates.length})</Header>}
+          className="aws-table-card"
+        >
           <Table
-            header={
-              <Header variant="h2">Certificates</Header>
-            }
+            header={<Header variant="h2">Certificates</Header>}
             items={certificates}
             columnDefinitions={[
               {
@@ -127,7 +137,15 @@ export default function AcmPage() {
                 id: "status",
                 header: "Status",
                 cell: (item) => (
-                  <StatusIndicator type={item.Status === "ISSUED" ? "success" : item.Status === "PENDING_VALIDATION" ? "warning" : "info"}>
+                  <StatusIndicator
+                    type={
+                      item.Status === "ISSUED"
+                        ? "success"
+                        : item.Status === "PENDING_VALIDATION"
+                          ? "warning"
+                          : "info"
+                    }
+                  >
                     {item.Status || "—"}
                   </StatusIndicator>
                 ),
@@ -141,7 +159,11 @@ export default function AcmPage() {
                 id: "actions",
                 header: "Actions",
                 cell: (item) => (
-                  <Button onClick={() => deleteCertificate(item.CertificateArn)} formAction="none" ariaLabel={`Delete certificate ${item.CertificateArn}`}>
+                  <Button
+                    onClick={() => deleteCertificate(item.CertificateArn)}
+                    formAction="none"
+                    ariaLabel={`Delete certificate ${item.CertificateArn}`}
+                  >
                     Delete
                   </Button>
                 ),
@@ -158,15 +180,30 @@ export default function AcmPage() {
           header="Request certificate"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreateModal(false)} formAction="none">Cancel</Button>
-              <Button variant="primary" onClick={createCertificate} loading={creating}>Request</Button>
+              <Button onClick={() => setCreateModal(false)} formAction="none">
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={createCertificate} loading={creating}>
+                Request
+              </Button>
             </SpaceBetween>
           }
         >
-          <FormField label={<>Domain name <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={domainNameError}>
+          <FormField
+            label={
+              <>
+                Domain name <span style={{ color: "red" }}>*</span>
+              </>
+            }
+            constraintText="Required"
+            errorText={domainNameError}
+          >
             <Input
               value={domainName}
-              onChange={(e) => { setDomainName(e.detail.value); setDomainNameError(null); }}
+              onChange={(e) => {
+                setDomainName(e.detail.value);
+                setDomainNameError(null);
+              }}
               placeholder="example.com"
               ariaLabel="Domain name"
             />

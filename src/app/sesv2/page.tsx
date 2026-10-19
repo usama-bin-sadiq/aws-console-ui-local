@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -29,7 +30,7 @@ export default function SESv2Page() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/sesv2");
+      const res = await apiFetch("/api/sesv2");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setIdentities(data.identities || []);
@@ -45,7 +46,7 @@ export default function SESv2Page() {
   }, []);
 
   const createIdentity = async () => {
-    await fetch("/api/sesv2", {
+    await apiFetch("/api/sesv2", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "createIdentity", identityName }),
@@ -56,50 +57,53 @@ export default function SESv2Page() {
   };
 
   const deleteIdentity = async (name: string) => {
-    await fetch(`/api/sesv2?identityName=${encodeURIComponent(name)}`, { method: "DELETE" });
+    await apiFetch(`/api/sesv2?identityName=${encodeURIComponent(name)}`, { method: "DELETE" });
     fetchIdentities();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">SES v2 — Simple Email Service</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={<Button onClick={() => setCreateModal(true)}>Create identity</Button>}
-              >
-                Email Identities ({identities.length})
-              </Header>
-            }
-            items={identities}
-            loading={loading}
-            columnDefinitions={[
-              { header: "Identity Name", cell: (item) => item.IdentityName },
-              { header: "Identity Type", cell: (item) => item.IdentityType },
-              {
-                header: "Sending Enabled",
-                cell: (item) => (
-                  <StatusIndicator type={item.SendingEnabled ? "success" : "stopped"}>
-                    {item.SendingEnabled ? "Enabled" : "Disabled"}
-                  </StatusIndicator>
-                ),
-              },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button onClick={() => deleteIdentity(item.IdentityName)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No email identities found.</Box>}
-          />
-        </Container>
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create identity</Button>}
+            >
+              Email Identities ({identities.length})
+            </Header>
+          }
+          items={identities}
+          loading={loading}
+          columnDefinitions={[
+            { header: "Identity Name", cell: (item) => item.IdentityName },
+            { header: "Identity Type", cell: (item) => item.IdentityType },
+            {
+              header: "Sending Enabled",
+              cell: (item) => (
+                <StatusIndicator type={item.SendingEnabled ? "success" : "stopped"}>
+                  {item.SendingEnabled ? "Enabled" : "Disabled"}
+                </StatusIndicator>
+              ),
+            },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button onClick={() => deleteIdentity(item.IdentityName)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No email identities found.</Box>}
+        />
+
         <Modal
           visible={createModal}
           onDismiss={() => setCreateModal(false)}

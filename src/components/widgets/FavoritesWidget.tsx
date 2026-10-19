@@ -11,7 +11,7 @@ import Button from "@cloudscape-design/components/button";
 import Header from "@cloudscape-design/components/header";
 import { Favorite } from "@/lib/db";
 import { SERVICE_ICONS } from "@/constants/service-icons";
-import Image from "next/image";
+import { ResourceIcon } from "@/components/ui/ResourceIcon";
 
 export default function FavoritesWidget({
   widgetId = "favorites",
@@ -89,14 +89,7 @@ export default function FavoritesWidget({
           cardDefinition={{
             header: (item: Favorite) => (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {SERVICE_ICONS[item.service_href] ? (
-                  <Image
-                    src={SERVICE_ICONS[item.service_href].small}
-                    alt=""
-                    width={16}
-                    height={16}
-                  />
-                ) : null}
+                <ResourceIcon service={item.service_href} size="small" />
                 <Link
                   fontSize="body-m"
                   href={item.service_href}

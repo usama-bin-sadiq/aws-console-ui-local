@@ -37,15 +37,15 @@ export default function CloudControlPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Cloud Control API</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container
-          header={
-            <Header variant="h2">Resource type selector</Header>
-          }
-        >
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Container header={<Header variant="h2">Resource type selector</Header>}>
           <SpaceBetween size="m">
             <FormField label="Resource type name">
               <Input
@@ -60,28 +60,31 @@ export default function CloudControlPage() {
           </SpaceBetween>
         </Container>
 
-        <Container>
-          <Table
-            header={<Header variant="h2">Resources ({resources.length})</Header>}
-            items={resources}
-            loading={loading}
-            columnDefinitions={[
-              { header: "Identifier", cell: (item) => item.Identifier },
-              {
-                header: "Properties",
-                cell: (item) =>
-                  item.Properties
-                    ? <Box variant="code">{item.Properties.slice(0, 120)}{item.Properties.length > 120 ? "…" : ""}</Box>
-                    : "—",
-              },
-            ]}
-            empty={
-              <Box textAlign="center">
-                Enter a resource type and click &quot;List resources&quot; to browse resources.
-              </Box>
-            }
-          />
-        </Container>
+        <Table
+          header={<Header variant="h2">Resources ({resources.length})</Header>}
+          items={resources}
+          loading={loading}
+          columnDefinitions={[
+            { header: "Identifier", cell: (item) => item.Identifier },
+            {
+              header: "Properties",
+              cell: (item) =>
+                item.Properties ? (
+                  <Box variant="code">
+                    {item.Properties.slice(0, 120)}
+                    {item.Properties.length > 120 ? "…" : ""}
+                  </Box>
+                ) : (
+                  "—"
+                ),
+            },
+          ]}
+          empty={
+            <Box textAlign="center">
+              Enter a resource type and click &quot;List resources&quot; to browse resources.
+            </Box>
+          }
+        />
       </SpaceBetween>
     </div>
   );

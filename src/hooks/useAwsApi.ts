@@ -18,9 +18,7 @@ interface UseAwsApiResult<T> {
   refetch: () => Promise<void>;
 }
 
-export function useAwsApi<T = any>(
-  options: UseAwsApiOptions
-): UseAwsApiResult<T> {
+export function useAwsApi<T = any>(options: UseAwsApiOptions): UseAwsApiResult<T> {
   const { endpoint, method = "GET", autoFetch = true } = options;
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState<boolean>(autoFetch);
@@ -69,14 +67,14 @@ export function useAwsApi<T = any>(
         setLoading(false);
       }
     },
-    [endpoint, method, region, addNotification]
+    [endpoint, method, region, addNotification],
   );
 
   const mutate = useCallback(
     async (body?: any) => {
       await fetchData(body);
     },
-    [fetchData]
+    [fetchData],
   );
 
   const refetch = useCallback(async () => {

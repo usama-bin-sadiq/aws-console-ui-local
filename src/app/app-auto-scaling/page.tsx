@@ -33,7 +33,7 @@ export default function AppAutoScalingPage() {
   }, []);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Application Auto Scaling</Header>
 
@@ -43,21 +43,19 @@ export default function AppAutoScalingPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={<Header variant="h2">Scalable Targets ({targets.length})</Header>}
-            items={targets}
-            columnDefinitions={[
-              { header: "Resource ID", cell: (item) => item.ResourceId },
-              { header: "Service namespace", cell: (item) => item.ServiceNamespace },
-              { header: "Scalable dimension", cell: (item) => item.ScalableDimension },
-              { header: "Min capacity", cell: (item) => String(item.MinCapacity) },
-              { header: "Max capacity", cell: (item) => String(item.MaxCapacity) },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No scalable targets found.</Box>}
-          />
-        </Container>
+        <Table
+          header={<Header variant="h2">Scalable Targets ({targets.length})</Header>}
+          items={targets}
+          columnDefinitions={[
+            { header: "Resource ID", cell: (item) => item.ResourceId },
+            { header: "Service namespace", cell: (item) => item.ServiceNamespace },
+            { header: "Scalable dimension", cell: (item) => item.ScalableDimension },
+            { header: "Min capacity", cell: (item) => String(item.MinCapacity) },
+            { header: "Max capacity", cell: (item) => String(item.MaxCapacity) },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No scalable targets found.</Box>}
+        />
       </SpaceBetween>
     </div>
   );

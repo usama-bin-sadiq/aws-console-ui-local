@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -31,7 +32,7 @@ export default function TransferPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/transfer");
+      const res = await apiFetch("/api/transfer");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setServers(data.servers || []);
@@ -48,7 +49,7 @@ export default function TransferPage() {
 
   const createServer = async () => {
     try {
-      await fetch("/api/transfer", {
+      await apiFetch("/api/transfer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -66,48 +67,49 @@ export default function TransferPage() {
   };
 
   const deleteServer = async (id: string) => {
-    await fetch(`/api/transfer?serverId=${encodeURIComponent(id)}`, { method: "DELETE" });
+    await apiFetch(`/api/transfer?serverId=${encodeURIComponent(id)}`, { method: "DELETE" });
     fetchServers();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Transfer Family</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={<Button onClick={() => setCreateModal(true)}>Create server</Button>}
-              >
-                Servers ({servers.length})
-              </Header>
-            }
-            items={servers}
-            loading={loading}
-            columnDefinitions={[
-              { header: "Server ID", cell: (item) => item.ServerId },
-              { header: "State", cell: (item) => item.State },
-              { header: "Endpoint type", cell: (item) => item.EndpointType },
-              {
-                header: "Protocols",
-                cell: (item) =>
-                  item.Protocols ? item.Protocols.join(", ") : "—",
-              },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button onClick={() => deleteServer(item.ServerId)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No Transfer Family servers found.</Box>}
-          />
-        </Container>
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create server</Button>}
+            >
+              Servers ({servers.length})
+            </Header>
+          }
+          items={servers}
+          loading={loading}
+          columnDefinitions={[
+            { header: "Server ID", cell: (item) => item.ServerId },
+            { header: "State", cell: (item) => item.State },
+            { header: "Endpoint type", cell: (item) => item.EndpointType },
+            {
+              header: "Protocols",
+              cell: (item) => (item.Protocols ? item.Protocols.join(", ") : "—"),
+            },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button onClick={() => deleteServer(item.ServerId)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No Transfer Family servers found.</Box>}
+        />
 
         <Modal
           visible={createModal}
@@ -116,7 +118,9 @@ export default function TransferPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createServer}>Create</Button>
+              <Button variant="primary" onClick={createServer}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >

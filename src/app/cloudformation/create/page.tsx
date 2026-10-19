@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 /**
  * VERIFICATION GATE CHECKLIST — Phase 11: CloudFormation Stack Create/Update
  * Source: docs/prd-aws-management-console-v1.3.md §15.11 (CloudFormation Stack Creation Workflow)
@@ -46,11 +47,13 @@ export default function CloudFormationCreatePage() {
         .split("\n")
         .map((line) => {
           const [k, ...rest] = line.split("=");
-          return k && rest.length ? { ParameterKey: k.trim(), ParameterValue: rest.join("=").trim() } : null;
+          return k && rest.length
+            ? { ParameterKey: k.trim(), ParameterValue: rest.join("=").trim() }
+            : null;
         })
         .filter(Boolean) as Array<{ ParameterKey: string; ParameterValue: string }>;
 
-      const res = await fetch("/api/cloudformation", {
+      const res = await apiFetch("/api/cloudformation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -76,100 +79,108 @@ export default function CloudFormationCreatePage() {
   };
 
   return (
-    <div style={{ padding: "24px", maxWidth: "960px" }}>
-      <SpaceBetween size="l">
-        <Header variant="h1">Create stack</Header>
+    <div style={{ maxWidth: "960px" }}>
+      <Box padding="l">
+        <SpaceBetween size="l">
+          <Header variant="h1">Create stack</Header>
 
-        <Container header={<Header variant="h2">Specify stack details</Header>}>
-          <form onSubmit={handleSubmit}>
-            <SpaceBetween size="m">
-              <FormField label="Stack name">
-                <Input
-                  value={stackName}
-                  onChange={({ detail }) => setStackName(detail.value)}
-                  placeholder="my-stack"
-                  ariaRequired
-                />
-              </FormField>
+          <Container header={<Header variant="h2">Specify stack details</Header>}>
+            <form onSubmit={handleSubmit}>
+              <SpaceBetween size="m">
+                <FormField label="Stack name">
+                  <Input
+                    value={stackName}
+                    onChange={({ detail }) => setStackName(detail.value)}
+                    placeholder="my-stack"
+                    ariaRequired
+                  />
+                </FormField>
 
-              <FormField label="Template body (JSON or YAML)">
-                <Textarea
-                  value={templateBody}
-                  onChange={({ detail }) => setTemplateBody(detail.value)}
-                  placeholder='{"Resources": {"MyBucket": {"Type": "AWS::S3::Bucket"}}}'
-                  rows={8}
-                  ariaRequired
-                />
-              </FormField>
+                <FormField label="Template body (JSON or YAML)">
+                  <Textarea
+                    value={templateBody}
+                    onChange={({ detail }) => setTemplateBody(detail.value)}
+                    placeholder='{"Resources": {"MyBucket": {"Type": "AWS::S3::Bucket"}}}'
+                    rows={8}
+                    ariaRequired
+                  />
+                </FormField>
 
-              <FormField label="Parameters (one per line: Key=Value)">
-                <Textarea
-                  value={parametersText}
-                  onChange={({ detail }) => setParametersText(detail.value)}
-                  placeholder="InstanceType=t3.micro\nKeyName=my-key"
-                  rows={4}
-                />
-              </FormField>
+                <FormField label="Parameters (one per line: Key=Value)">
+                  <Textarea
+                    value={parametersText}
+                    onChange={({ detail }) => setParametersText(detail.value)}
+                    placeholder="InstanceType=t3.micro\nKeyName=my-key"
+                    rows={4}
+                  />
+                </FormField>
 
-              <SpaceBetween size="xs" direction="vertical">
-                <Checkbox
-                  checked={enableTerminationProtection}
-                  onChange={({ detail }) => setEnableTerminationProtection(detail.checked)}
-                >
-                  Enable termination protection
-                </Checkbox>
-                <Checkbox
-                  checked={rollbackOnFailure}
-                  onChange={({ detail }) => setRollbackOnFailure(detail.checked)}
-                >
-                  Rollback on failure
-                </Checkbox>
+                <SpaceBetween size="xs" direction="vertical">
+                  <Checkbox
+                    checked={enableTerminationProtection}
+                    onChange={({ detail }) => setEnableTerminationProtection(detail.checked)}
+                  >
+                    Enable termination protection
+                  </Checkbox>
+                  <Checkbox
+                    checked={rollbackOnFailure}
+                    onChange={({ detail }) => setRollbackOnFailure(detail.checked)}
+                  >
+                    Rollback on failure
+                  </Checkbox>
+                </SpaceBetween>
+
+                <FormField label="Capabilities">
+                  <SpaceBetween size="xs" direction="vertical">
+                    {["CAPABILITY_IAM", "CAPABILITY_NAMED_IAM", "CAPABILITY_AUTO_EXPAND"].map(
+                      (cap) => (
+                        <Checkbox
+                          key={cap}
+                          checked={capabilities.includes(cap)}
+                          onChange={({ detail }) => {
+                            if (detail.checked) setCapabilities([...capabilities, cap]);
+                            else setCapabilities(capabilities.filter((c) => c !== cap));
+                          }}
+                        >
+                          {cap}
+                        </Checkbox>
+                      ),
+                    )}
+                  </SpaceBetween>
+                </FormField>
               </SpaceBetween>
 
-              <FormField label="Capabilities">
-                <SpaceBetween size="xs" direction="vertical">
-                  {[
-                    "CAPABILITY_IAM",
-                    "CAPABILITY_NAMED_IAM",
-                    "CAPABILITY_AUTO_EXPAND",
-                  ].map((cap) => (
-                    <Checkbox
-                      key={cap}
-                      checked={capabilities.includes(cap)}
-                      onChange={({ detail }) => {
-                        if (detail.checked) setCapabilities([...capabilities, cap]);
-                        else setCapabilities(capabilities.filter((c) => c !== cap));
-                      }}
-                    >
-                      {cap}
-                    </Checkbox>
-                  ))}
-                </SpaceBetween>
-              </FormField>
-            </SpaceBetween>
+              {error && (
+                <Box padding={{ vertical: "s" }}>
+                  <Alert type="error">{error}</Alert>
+                </Box>
+              )}
+              {success && (
+                <Box padding={{ vertical: "s" }}>
+                  <Alert type="success">Stack created successfully. Redirecting...</Alert>
+                </Box>
+              )}
 
-            {error && (
-              <Box padding={{ vertical: "s" }}>
-                <Alert type="error">{error}</Alert>
-              </Box>
-            )}
-            {success && (
-              <Box padding={{ vertical: "s" }}>
-                <Alert type="success">Stack created successfully. Redirecting...</Alert>
-              </Box>
-            )}
-
-            <SpaceBetween direction="horizontal" size="xs" alignItems="center">
-              <Button variant="primary" loading={loading} disabled={loading || !stackName || !templateBody}>
-                Create stack
-              </Button>
-              <Button variant="link" onClick={() => router.push("/cloudformation")} formAction="none">
-                Cancel
-              </Button>
-            </SpaceBetween>
-          </form>
-        </Container>
-      </SpaceBetween>
+              <SpaceBetween direction="horizontal" size="xs" alignItems="center">
+                <Button
+                  variant="primary"
+                  loading={loading}
+                  disabled={loading || !stackName || !templateBody}
+                >
+                  Create stack
+                </Button>
+                <Button
+                  variant="link"
+                  onClick={() => router.push("/cloudformation")}
+                  formAction="none"
+                >
+                  Cancel
+                </Button>
+              </SpaceBetween>
+            </form>
+          </Container>
+        </SpaceBetween>
+      </Box>
     </div>
   );
 }

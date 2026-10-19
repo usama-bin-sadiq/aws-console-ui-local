@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { GetResourcesCommand, ResourceGroupsTaggingAPIClient } from "@aws-sdk/client-resource-groups-tagging-api";
+import {
+  GetResourcesCommand,
+  ResourceGroupsTaggingAPIClient,
+} from "@aws-sdk/client-resource-groups-tagging-api";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
 
@@ -8,7 +11,10 @@ export async function GET(request: Request) {
   if (denied) return denied;
 
   try {
-    const resourceGroupsTaggingClient = getUserClientFromRequest(ResourceGroupsTaggingAPIClient, request);
+    const resourceGroupsTaggingClient = getUserClientFromRequest(
+      ResourceGroupsTaggingAPIClient,
+      request,
+    );
     const res = await resourceGroupsTaggingClient.send(new GetResourcesCommand({}));
     return NextResponse.json({ resources: res.ResourceTagMappingList || [] });
   } catch (error: unknown) {

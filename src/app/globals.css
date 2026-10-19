@@ -34,7 +34,6 @@ body {
 
 /* Reduced motion support per PRD §19.1 / §20.2 */
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {
@@ -78,4 +77,105 @@ body {
   *:focus-visible {
     outline: 2px solid LinkText;
   }
+}
+
+/* ── Global loading states ───────────────────────────────────────────────── */
+/* AWS console-style shimmer skeleton for pages while data loads. */
+.aws-loading-skeleton {
+  background: linear-gradient(90deg, #e9ebed 25%, #f2f3f3 50%, #e9ebed 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aws-loading-skeleton {
+    animation: none;
+    background: #e9ebed;
+  }
+  [data-aws-theme="dark"] .aws-loading-skeleton {
+    background: #2a3441;
+  }
+}
+
+/* ── Contrast fixes for Cloudscape components ────────────────────────────── */
+/* AWS blue that passes 4.5:1 on light background (#f2f3f3) */
+.awsui-link,
+a.awsui-link,
+[id*="link-self"],
+[id*="link-self"] > span,
+[id*="link"] > span,
+a[id*="link"] > span,
+.awsui_link > span,
+.awsui-link__text,
+a[href*="/vpc/create"] {
+  color: #006cc0 !important;
+}
+
+/* Sidebar active link — darker link color on highlighted background */
+.sideLinkOn {
+  color: #033160 !important;
+}
+
+/* Tab labels need sufficient contrast (Cloudscape uses hashed class names) */
+[role="tab"] > span,
+[role="tab"] span,
+[role="tab"] {
+  color: #0f141a !important;
+}
+
+[role="tab"][selected] > span,
+[role="tab"][selected] span,
+[role="tab"][selected] {
+  color: #006cc0 !important;
+  font-weight: 700 !important;
+}
+
+/* Primary variant labels (e.g. Lambda primary action labels) */
+.awsui_variant-primary > .awsui_content,
+.awsui_variant-primary .awsui_label {
+  color: #006cc0 !important;
+}
+
+/* Footer links on dark background (#161d26) need light color */
+.foot a,
+footer a {
+  color: #d1d5db !important;
+}
+
+/* In dark mode, links need a lighter shade for contrast */
+[data-aws-theme="dark"] .awsui-link,
+[data-aws-theme="dark"] a.awsui-link,
+[data-aws-theme="dark"] [id*="link-self"],
+[data-aws-theme="dark"] [id*="link-self"] > span,
+[data-aws-theme="dark"] [id*="link"] > span,
+[data-aws-theme="dark"] a[id*="link"] > span,
+[data-aws-theme="dark"] .awsui_link > span,
+[data-aws-theme="dark"] .awsui-link__text,
+[data-aws-theme="dark"] a[href*="/vpc/create"] {
+  color: #a8d4ff !important;
+}
+
+[data-aws-theme="dark"] [role="tab"] > span,
+[data-aws-theme="dark"] [role="tab"] span,
+[data-aws-theme="dark"] [role="tab"] {
+  color: #e9ebed !important;
+}
+
+[data-aws-theme="dark"] [role="tab"][selected] > span,
+[data-aws-theme="dark"] [role="tab"][selected] span,
+[data-aws-theme="dark"] [role="tab"][selected] {
+  color: #7bbcff !important;
+  font-weight: 700 !important;
+}
+
+/* Ensure Cloudscape tabs container has proper contrast */
+.awsui_tabs {
+  color: var(--text, #0f141a) !important;
 }

@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 // VERIFICATION GATE: Phase 4 VPC Full — Subnet functionality per PRD §9.2.4
 // Uses @aws-sdk/client-ec2 commands (DescribeSubnets, CreateSubnet, DeleteSubnet, ModifySubnetAttribute)
 // Cloudscape components only; verification comments added.
@@ -51,7 +52,7 @@ export default function SubnetPage() {
 
   async function loadVpcs() {
     try {
-      const res = await fetch("/api/vpc");
+      const res = await apiFetch("/api/vpc");
       const data = await res.json();
       setVpcs(data.vpcs || []);
     } catch {
@@ -63,7 +64,7 @@ export default function SubnetPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/subnet");
+      const res = await apiFetch("/api/subnet");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setSubnets(data.subnets || []);
@@ -86,7 +87,7 @@ export default function SubnetPage() {
     }
     setCreating(true);
     try {
-      const res = await fetch("/api/subnet", {
+      const res = await apiFetch("/api/subnet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vpcId, cidrBlock }),
@@ -109,7 +110,7 @@ export default function SubnetPage() {
     setDeleting(true);
     try {
       for (const subnet of selected) {
-        const res = await fetch(`/api/subnet?subnetId=${subnet.SubnetId}`, { method: "DELETE" });
+        const res = await apiFetch(`/api/subnet?subnetId=${subnet.SubnetId}`, { method: "DELETE" });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
       }
@@ -126,7 +127,7 @@ export default function SubnetPage() {
     if (!modifySubnet) return;
     setModifying(true);
     try {
-      const res = await fetch("/api/subnet", {
+      const res = await apiFetch("/api/subnet", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -153,7 +154,7 @@ export default function SubnetPage() {
   }, []);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
           variant="h1"
@@ -162,7 +163,12 @@ export default function SubnetPage() {
               <Button onClick={load} iconName="refresh" formAction="none">
                 Refresh
               </Button>
-              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete} formAction="none">
+              <Button
+                disabled={selected.length === 0}
+                loading={deleting}
+                onClick={handleDelete}
+                formAction="none"
+              >
                 Delete
               </Button>
               <Button variant="primary" onClick={() => setShowCreate(true)} formAction="none">
@@ -174,76 +180,80 @@ export default function SubnetPage() {
           Subnets
         </Header>
 
-        {error && <Alert type="error" dismissible onDismiss={() => setError(null)}>{error}</Alert>}
+        {error && (
+          <Alert type="error" dismissible onDismiss={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-        <Container>
-          <Table
-            loading={loading}
-            loadingText="Loading subnets..."
-            items={subnets}
-            selectionType="multi"
-            selectedItems={selected}
-            onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
-            trackBy="SubnetId"
-            columnDefinitions={[
-              {
-                id: "subnetId",
-                header: "Subnet ID",
-                cell: (item: Subnet) => item.SubnetId,
-                sortingField: "SubnetId",
-              },
-              {
-                id: "vpcId",
-                header: "VPC ID",
-                cell: (item: Subnet) => (
-                  <CapabilityLink
-                    label={item.VpcId}
-                    href={`/vpc?resource=${encodeURIComponent(item.VpcId)}`}
-                    enabled={Boolean(item.VpcId)}
-                    reason="missing VPC identifier"
-                  />
-                ),
-              },
-              {
-                id: "cidrBlock",
-                header: "IPv4 CIDR",
-                cell: (item: Subnet) => item.CidrBlock,
-                sortingField: "CidrBlock",
-              },
-              {
-                id: "az",
-                header: "Availability Zone",
-                cell: (item: Subnet) => item.AvailabilityZone,
-                sortingField: "AvailabilityZone",
-              },
-              {
-                id: "state",
-                header: "State",
-                cell: (item: Subnet) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <StatusIndicator type={item.State === "available" ? "success" : "warning"} />
-                    <span>{item.State}</span>
-                  </SpaceBetween>
-                ),
-              },
-              {
-                id: "actions",
-                header: "Actions",
-                cell: (item: Subnet) => (
-                  <Button variant="link" onClick={() => openModify(item)} formAction="none">
-                    Modify
-                  </Button>
-                ),
-              },
-            ]}
-            empty={
-              <Box textAlign="center" color="inherit">
-                <b>No subnets</b>
-                <Box variant="p" color="inherit">No subnets found. Create one or use the VPC wizard.</Box>
+        <Table
+          loading={loading}
+          loadingText="Loading subnets..."
+          items={subnets}
+          selectionType="multi"
+          selectedItems={selected}
+          onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
+          trackBy="SubnetId"
+          columnDefinitions={[
+            {
+              id: "subnetId",
+              header: "Subnet ID",
+              cell: (item: Subnet) => item.SubnetId,
+              sortingField: "SubnetId",
+            },
+            {
+              id: "vpcId",
+              header: "VPC ID",
+              cell: (item: Subnet) => (
+                <CapabilityLink
+                  label={item.VpcId}
+                  href={`/vpc?resource=${encodeURIComponent(item.VpcId)}`}
+                  enabled={Boolean(item.VpcId)}
+                  reason="missing VPC identifier"
+                />
+              ),
+            },
+            {
+              id: "cidrBlock",
+              header: "IPv4 CIDR",
+              cell: (item: Subnet) => item.CidrBlock,
+              sortingField: "CidrBlock",
+            },
+            {
+              id: "az",
+              header: "Availability Zone",
+              cell: (item: Subnet) => item.AvailabilityZone,
+              sortingField: "AvailabilityZone",
+            },
+            {
+              id: "state",
+              header: "State",
+              cell: (item: Subnet) => (
+                <SpaceBetween direction="horizontal" size="xs">
+                  <StatusIndicator type={item.State === "available" ? "success" : "warning"} />
+                  <span>{item.State}</span>
+                </SpaceBetween>
+              ),
+            },
+            {
+              id: "actions",
+              header: "Actions",
+              cell: (item: Subnet) => (
+                <Button variant="link" onClick={() => openModify(item)} formAction="none">
+                  Modify
+                </Button>
+              ),
+            },
+          ]}
+          empty={
+            <Box textAlign="center" color="inherit">
+              <b>No subnets</b>
+              <Box variant="p" color="inherit">
+                No subnets found. Create one or use the VPC wizard.
               </Box>
-            }
-          />
-        </Container>
+            </Box>
+          }
+        />
       </SpaceBetween>
 
       {/* Create Subnet Modal */}
@@ -254,7 +264,9 @@ export default function SubnetPage() {
         footer={
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setShowCreate(false)} formAction="none">Cancel</Button>
+              <Button onClick={() => setShowCreate(false)} formAction="none">
+                Cancel
+              </Button>
               <Button variant="primary" loading={creating} onClick={handleCreate} formAction="none">
                 Create Subnet
               </Button>
@@ -265,14 +277,28 @@ export default function SubnetPage() {
         <SpaceBetween size="m">
           <FormField label="VPC ID" description="The VPC this subnet belongs to">
             <Select
-              selectedOption={vpcId ? { value: vpcId, label: `${vpcId} (${vpcs.find((v) => v.VpcId === vpcId)?.CidrBlock || ""})` } : null}
-              options={vpcs.map((vpc) => ({ value: vpc.VpcId, label: `${vpc.VpcId} (${vpc.CidrBlock || ""})` }))}
+              selectedOption={
+                vpcId
+                  ? {
+                      value: vpcId,
+                      label: `${vpcId} (${vpcs.find((v) => v.VpcId === vpcId)?.CidrBlock || ""})`,
+                    }
+                  : null
+              }
+              options={vpcs.map((vpc) => ({
+                value: vpc.VpcId,
+                label: `${vpc.VpcId} (${vpc.CidrBlock || ""})`,
+              }))}
               placeholder="Select a VPC"
               onChange={({ detail }) => setVpcId(detail.selectedOption.value || "")}
             />
           </FormField>
           <FormField label="IPv4 CIDR Block" description="IP range within the VPC CIDR">
-            <Input value={cidrBlock} onChange={({ detail }) => setCidrBlock(detail.value)} placeholder="10.0.1.0/24" />
+            <Input
+              value={cidrBlock}
+              onChange={({ detail }) => setCidrBlock(detail.value)}
+              placeholder="10.0.1.0/24"
+            />
           </FormField>
         </SpaceBetween>
       </Modal>
@@ -285,8 +311,15 @@ export default function SubnetPage() {
         footer={
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setModifyOpen(false)} formAction="none">Cancel</Button>
-              <Button variant="primary" loading={modifying} onClick={handleModify} formAction="none">
+              <Button onClick={() => setModifyOpen(false)} formAction="none">
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                loading={modifying}
+                onClick={handleModify}
+                formAction="none"
+              >
                 Modify Subnet
               </Button>
             </SpaceBetween>
@@ -295,10 +328,15 @@ export default function SubnetPage() {
       >
         <SpaceBetween size="m">
           <Box>
-            <Box variant="small" color="text-label">Subnet ID</Box>
+            <Box variant="small" color="text-label">
+              Subnet ID
+            </Box>
             <Box>{modifySubnet?.SubnetId}</Box>
           </Box>
-          <Checkbox checked={mapPublicIpOnLaunch} onChange={({ detail }) => setMapPublicIpOnLaunch(detail.checked)}>
+          <Checkbox
+            checked={mapPublicIpOnLaunch}
+            onChange={({ detail }) => setMapPublicIpOnLaunch(detail.checked)}
+          >
             Auto-assign public IPv4 address
           </Checkbox>
         </SpaceBetween>

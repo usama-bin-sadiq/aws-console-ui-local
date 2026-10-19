@@ -1,47 +1,32 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@cloudscape-design/components/header";
-import Table, { TableProps } from "@cloudscape-design/components/table";
-import Button from "@cloudscape-design/components/button";
-import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
-import SpaceBetween from "@cloudscape-design/components/space-between";
-import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
-import TextFilter from "@cloudscape-design/components/text-filter";
-import Pagination from "@cloudscape-design/components/pagination";
-import CollectionPreferences from "@cloudscape-design/components/collection-preferences";
-import Modal from "@cloudscape-design/components/modal";
-import Alert from "@cloudscape-design/components/alert";
-import Image from "next/image";
-import TruncatedText from "@/components/TruncatedText";
+import { Header, Container, Box, SpaceBetween, Button, Alert } from "@cloudscape-design/components";
+import type { TableProps } from "@cloudscape-design/components/table";
+import { ResourceTable } from "@/features/resource-table";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { CopyableText } from "@/components/ui/CopyableText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 import { apiFetch } from "@/lib/api-client";
-import { SERVICE_ICONS } from "@/constants/service-icons";
-import { EC2Instance, EC2InstanceState } from "@/types/ec2";
+import { EC2Instance } from "@/types/ec2";
+import TextFilter from "@cloudscape-design/components/text-filter";
+
+// ── Table Configuration ───────────────────────────────────────────────────
 
 const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<EC2Instance>[] = [
   {
     id: "name",
     header: "Name",
-    cell: (item) => (
-      <Button
-        variant="link"
-        onClick={() => window.location.href = `/ec2/${item.InstanceId}`}
-        formAction="none"
-      >
-        {item.Name || item.InstanceId}
-      </Button>
-    ),
+    cell: (item) => item.Name || item.InstanceId,
     sortingField: "Name",
     isRowHeader: true,
   },
   {
     id: "instanceId",
     header: "Instance ID",
-    cell: (item) => <TruncatedText>{String(item.InstanceId)}</TruncatedText>,
+    cell: (item) => <CopyableText value={String(item.InstanceId)} />,
     sortingField: "InstanceId",
   },
   {
@@ -55,12 +40,12 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<EC2Instance>[] = [
     header: "Instance State",
     cell: (item) => {
       const stateName = item.State?.Name;
-      let type: "success" | "warning" | "error" | "info" = "info";
-      if (stateName === "running") type = "success";
-      else if (stateName === "pending" || stateName === "rebooting") type = "warning";
-      else if (stateName === "terminated" || stateName === "shutting-down") type = "error";
-      else if (stateName === "stopped" || stateName === "stopping") type = "warning";
-      return <StatusIndicator type={type}>{stateName}</StatusIndicator>;
+      let status: "success" | "warning" | "error" | "info" = "info";
+      if (stateName === "running") status = "success";
+      else if (stateName === "pending" || stateName === "rebooting") status = "warning";
+      else if (stateName === "terminated" || stateName === "shutting-down") status = "error";
+      else if (stateName === "stopped" || stateName === "stopping") status = "warning";
+      return <StatusBadge status={status} label={stateName ?? "unknown"} />;
     },
     sortingField: "State",
   },
@@ -71,9 +56,9 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<EC2Instance>[] = [
       const system = item.StatusChecks?.SystemStatus?.Status;
       const instance = item.StatusChecks?.InstanceStatus?.Status;
       if (system === "ok" && instance === "ok") {
-        return <StatusIndicator type="success">2/2 checks passed</StatusIndicator>;
+        return <StatusBadge status="success" label="2/2 checks passed" />;
       }
-      return <StatusIndicator type="warning">N/A</StatusIndicator>;
+      return <StatusBadge status="warning" label="N/A" />;
     },
   },
   {
@@ -104,12 +89,23 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<EC2Instance>[] = [
   {
     id: "launchTime",
     header: "Launch Time",
-    cell: (item) => item.LaunchTime ? new Date(item.LaunchTime).toLocaleString() : "—",
+    cell: (item) => (item.LaunchTime ? new Date(item.LaunchTime).toLocaleString() : "—"),
     sortingField: "LaunchTime",
   },
 ];
 
-const VISIBLE_COLUMNS = ["name", "instanceId", "instanceType", "state", "publicIp", "privateIp", "az", "launchTime"];
+const DEFAULT_VISIBLE_COLUMNS = [
+  "name",
+  "instanceId",
+  "instanceType",
+  "state",
+  "publicIp",
+  "privateIp",
+  "az",
+  "launchTime",
+];
+
+// ── Page Component ────────────────────────────────────────────────────────
 
 export default function EC2Page() {
   const router = useRouter();
@@ -117,20 +113,17 @@ export default function EC2Page() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<EC2Instance[]>([]);
-  const [filteringText, setFilteringText] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
-  const [preferences, setPreferences] = useState({
-    pageSize: 25,
-    visibleContent: VISIBLE_COLUMNS,
-  });
+
+  // Confirmation modal state
   const [confirmModal, setConfirmModal] = useState<{
     visible: boolean;
     title: string;
+    message: string;
+    variant: "warning" | "error";
     onConfirm: () => void;
-    content: React.ReactNode;
-  }>({ visible: false, title: "", onConfirm: () => {}, content: null });
+  }>({ visible: false, title: "", message: "", variant: "warning", onConfirm: () => {} });
 
+  // ── Data Fetching ───────────────────────────────────────────────────────
   const fetchInstances = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -151,269 +144,164 @@ export default function EC2Page() {
     fetchInstances();
   }, [fetchInstances]);
 
-  const executeAction = useCallback(async (action: string, instanceIds: string[], extra?: Record<string, unknown>) => {
-    try {
-      const res = await apiFetch("/api/ec2", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, instanceIds, ...extra }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || `Action ${action} failed`);
+  // ── Actions ─────────────────────────────────────────────────────────────
+  const executeAction = useCallback(
+    async (action: string, instanceIds: string[]) => {
+      try {
+        const res = await apiFetch("/api/ec2", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, instanceIds }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || `Action ${action} failed`);
+        }
+        fetchInstances();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : `Failed to ${action}`);
       }
-      fetchInstances();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : `Failed to ${action}`);
-    }
-  }, [fetchInstances]);
+    },
+    [fetchInstances],
+  );
+
+  const getSelectedIds = useCallback(() => {
+    return selectedItems.map((i) => i.InstanceId!).filter(Boolean);
+  }, [selectedItems]);
 
   const handleStart = useCallback(() => {
-    const ids = selectedItems.map((i) => i.InstanceId!).filter(Boolean);
+    const ids = getSelectedIds();
     if (ids.length === 0) return;
     executeAction("start", ids);
     setSelectedItems([]);
-  }, [selectedItems, executeAction]);
+  }, [getSelectedIds, executeAction]);
 
   const handleStop = useCallback(() => {
-    const ids = selectedItems.map((i) => i.InstanceId!).filter(Boolean);
+    const ids = getSelectedIds();
     if (ids.length === 0) return;
     setConfirmModal({
       visible: true,
       title: `Stop ${ids.length} instance(s)?`,
+      message:
+        "Stopping instances will cause them to be unavailable temporarily. Any data on ephemeral storage will be lost.",
+      variant: "warning",
       onConfirm: () => {
         executeAction("stop", ids);
         setSelectedItems([]);
         setConfirmModal((prev) => ({ ...prev, visible: false }));
       },
-      content: (
-        <Box>
-          <StatusIndicator type="warning">
-            Stopping instances will cause them to be unavailable temporarily.
-            Any data on ephemeral storage will be lost.
-          </StatusIndicator>
-        </Box>
-      ),
     });
-  }, [selectedItems, executeAction]);
+  }, [getSelectedIds, executeAction]);
 
   const handleReboot = useCallback(() => {
-    const ids = selectedItems.map((i) => i.InstanceId!).filter(Boolean);
+    const ids = getSelectedIds();
     if (ids.length === 0) return;
     executeAction("reboot", ids);
     setSelectedItems([]);
-  }, [selectedItems, executeAction]);
+  }, [getSelectedIds, executeAction]);
 
   const handleTerminate = useCallback(() => {
-    const ids = selectedItems.map((i) => i.InstanceId!).filter(Boolean);
+    const ids = getSelectedIds();
     if (ids.length === 0) return;
     setConfirmModal({
       visible: true,
       title: `Terminate ${ids.length} instance(s)?`,
+      message:
+        "Terminating instances will permanently delete them and all associated EBS volumes that have DeleteOnTermination set to true. This action cannot be undone.",
+      variant: "error",
       onConfirm: () => {
         executeAction("terminate", ids);
         setSelectedItems([]);
         setConfirmModal((prev) => ({ ...prev, visible: false }));
       },
-      content: (
-        <Box>
-          <StatusIndicator type="error">
-            Terminating instances will permanently delete them and all associated EBS volumes
-            that have DeleteOnTermination set to true. This action cannot be undone.
-          </StatusIndicator>
-        </Box>
-      ),
     });
-  }, [selectedItems, executeAction]);
+  }, [getSelectedIds, executeAction]);
 
-  const filteredItems = instances.filter((instance) => {
-    if (!filteringText.trim()) return true;
-    const lower = filteringText.toLowerCase();
-    return (
-      instance.InstanceId?.toLowerCase().includes(lower) ||
-      instance.Name?.toLowerCase().includes(lower) ||
-      instance.InstanceType?.toLowerCase().includes(lower) ||
-      instance.State?.Name?.toLowerCase().includes(lower) ||
-      instance.PublicIpAddress?.toLowerCase().includes(lower) ||
-      instance.PrivateIpAddress?.toLowerCase().includes(lower)
-    );
-  });
+  // ── Action Definitions ───────────────────────────────────────────────────
+  const actions = [
+    {
+      id: "start",
+      label: "Start instances",
+      disabled: (items: EC2Instance[]) => !items.some((i) => i.State?.Name !== "running"),
+      onClick: handleStart,
+    },
+    {
+      id: "stop",
+      label: "Stop instances",
+      disabled: (items: EC2Instance[]) => !items.some((i) => i.State?.Name === "running"),
+      onClick: handleStop,
+    },
+    {
+      id: "reboot",
+      label: "Reboot instances",
+      disabled: (items: EC2Instance[]) => !items.some((i) => i.State?.Name === "running"),
+      onClick: handleReboot,
+    },
+    {
+      id: "terminate",
+      label: "Terminate instances",
+      onClick: handleTerminate,
+    },
+  ];
 
-  const totalPages = Math.ceil(filteredItems.length / pageSize);
-  const pagedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-
-  const headerActions = (
-    <SpaceBetween direction="horizontal" size="xs">
-      <Button iconName="refresh" onClick={fetchInstances} ariaLabel="Refresh" />
-      <ButtonDropdown
-        items={[
-          { text: "Start instances", id: "start", disabled: !selectedItems.some((i) => i.State?.Name !== "running") },
-          { text: "Stop instances", id: "stop", disabled: !selectedItems.some((i) => i.State?.Name === "running") },
-          { text: "Reboot instances", id: "reboot", disabled: !selectedItems.some((i) => i.State?.Name === "running") },
-          { text: "Terminate instances", id: "terminate", disabled: selectedItems.length === 0 },
-        ]}
-        onItemClick={({ detail }) => {
-          if (detail.id === "start") handleStart();
-          else if (detail.id === "stop") handleStop();
-          else if (detail.id === "reboot") handleReboot();
-          else if (detail.id === "terminate") handleTerminate();
-        }}
-        disabled={selectedItems.length === 0}
-        ariaLabel="Instance actions"
-      >
-        Actions
-      </ButtonDropdown>
-      <Button
-        variant="primary"
-        onClick={() => router.push("/ec2/launch")}
-        ariaLabel="Launch EC2 instances"
-      >
-        Launch instances
-      </Button>
-    </SpaceBetween>
-  );
-
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 16 }}>
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          counter={`(${instances.length})`}
-          actions={headerActions}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {SERVICE_ICONS["/ec2"] && (
-              <Image src={SERVICE_ICONS["/ec2"].large} alt="" width={32} height={32} />
-            )}
-            EC2 - Elastic Compute Cloud
-          </div>
-        </Header>
-
+        {/* Cross-Service Links */}
         <CrossServiceLinks links={CROSS_SERVICE_LINKS["/ec2"] || []} />
 
+        {/* Error Alert */}
         {error && (
-          <Alert
-            type="error"
-            dismissible
-            onDismiss={() => setError(null)}
+          <div
+            style={{
+              color: "var(--color-text-status-error)",
+              padding: 8,
+              borderRadius: 4,
+              background: "var(--color-background-status-error)",
+            }}
           >
             {error}
-          </Alert>
+            <Button
+              variant="inline-icon"
+              iconName="close"
+              ariaLabel="Dismiss error"
+              onClick={() => setError(null)}
+            />
+          </div>
         )}
 
-          <Table
-            columnDefinitions={COLUMN_DEFINITIONS}
-            items={pagedItems}
-            loading={loading}
-            loadingText="Loading instances..."
-            selectionType="multi"
-            selectedItems={selectedItems}
-            onSelectionChange={({ detail }) => setSelectedItems(detail.selectedItems as EC2Instance[])}
-            trackBy="InstanceId"
-            sortingColumn={COLUMN_DEFINITIONS[0]}
-            sortingDescending
-            filter={
-              <TextFilter
-                filteringText={filteringText}
-                filteringPlaceholder="Filter instances"
-                filteringAriaLabel="Filter instances"
-                onChange={({ detail }) => {
-                  setFilteringText(detail.filteringText);
-                  setCurrentPage(1);
-                }}
-                countText={
-                  filteringText
-                    ? `${filteredItems.length} match${filteredItems.length !== 1 ? "es" : ""}`
-                    : `${instances.length} instances`
-                }
-              />
-            }
-            pagination={
-              <Pagination
-                currentPageIndex={currentPage}
-                pagesCount={Math.ceil(filteredItems.length / pageSize)}
-                onChange={({ detail }) => setCurrentPage(detail.currentPageIndex)}
-                ariaLabels={{
-                  nextPageLabel: "Next page",
-                  previousPageLabel: "Previous page",
-                  pageLabel: (n) => `Page ${n}`,
-                }}
-              />
-            }
-            preferences={
-              <CollectionPreferences
-                title="Preferences"
-                confirmLabel="Confirm"
-                cancelLabel="Cancel"
-                preferences={preferences}
-                pageSizePreference={{
-                  title: "Page size",
-                  options: [
-                    { value: 10, label: "10 instances" },
-                    { value: 25, label: "25 instances" },
-                    { value: 50, label: "50 instances" },
-                    { value: 100, label: "100 instances" },
-                  ],
-                }}
-                visibleContentPreference={{
-                  title: "Select visible columns",
-                  options: [
-                    {
-                      label: "Columns",
-                      options: COLUMN_DEFINITIONS.map((col) => ({
-                        id: col.id!,
-                        label: col.header?.toString() ?? col.id!,
-                        editable: true,
-                      })),
-                    },
-                  ],
-                }}
-                onConfirm={({ detail }) => {
-                  setPageSize(detail.pageSize ?? 25);
-                  setPreferences({
-                    pageSize: detail.pageSize ?? 25,
-                    visibleContent: (detail.visibleContent as string[]) ?? VISIBLE_COLUMNS,
-                  });
-                }}
-              />
-            }
-            empty={
-              <Box textAlign="center" color="inherit">
-                <Box variant="strong" textAlign="center" color="inherit">
-                  No instances found
-                </Box>
-                <Box variant="p" padding={{ bottom: "s" }} color="inherit">
-                  {filteringText
-                    ? "No instances match your filter. Try a different search."
-                    : "To get started, launch an EC2 instance."}
-                </Box>
-                {!filteringText && (
-                  <Button onClick={() => router.push("/ec2/launch")}>
-                    Launch instances
-                  </Button>
-                )}
-              </Box>
-            }
-          />
-      </SpaceBetween>
+        {/* Resource Table */}
+        <ResourceTable
+          config={{
+            serviceKey: "ec2",
+            resourceName: "Instances",
+            columnDefinitions: COLUMN_DEFINITIONS,
+            defaultVisibleColumns: DEFAULT_VISIBLE_COLUMNS,
+            trackBy: "InstanceId",
+            createLabel: "Launch instances",
+            createHref: "/ec2/launch",
+            filterPlaceholder: "Filter instances",
+          }}
+          items={instances as unknown as Record<string, unknown>[]}
+          loading={loading}
+          selectedItems={selectedItems as unknown as Record<string, unknown>[]}
+          onSelectionChange={(items) => setSelectedItems(items as unknown as EC2Instance[])}
+          onRefresh={fetchInstances}
+          actions={actions as any}
+        />
 
-      <Modal
-        visible={confirmModal.visible}
-        onDismiss={() => setConfirmModal((prev) => ({ ...prev, visible: false }))}
-        header={confirmModal.title}
-        footer={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => setConfirmModal((prev) => ({ ...prev, visible: false }))} formAction="none">
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={confirmModal.onConfirm}>
-              Confirm
-            </Button>
-          </SpaceBetween>
-        }
-      >
-        {confirmModal.content}
-      </Modal>
+        {/* Confirmation Modal */}
+        <ConfirmDialog
+          visible={confirmModal.visible}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          variant={confirmModal.variant}
+          confirmLabel="Confirm"
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal((prev) => ({ ...prev, visible: false }))}
+        />
+      </SpaceBetween>
     </div>
   );
 }

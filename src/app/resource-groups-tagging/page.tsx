@@ -25,14 +25,12 @@ export default function ResourceGroupsTaggingPage() {
         setResources(data.resources || []);
         if (data.message) setMessage(data.message);
       })
-      .catch((err) =>
-        setMessage(err instanceof Error ? err.message : "Unknown error")
-      )
+      .catch((err) => setMessage(err instanceof Error ? err.message : "Unknown error"))
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Resource Groups Tagging</Header>
 
@@ -42,24 +40,22 @@ export default function ResourceGroupsTaggingPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={<Header variant="h2">Tagged Resources ({resources.length})</Header>}
-            items={resources}
-            columnDefinitions={[
-              { header: "Resource ARN", cell: (item) => item.ResourceARN },
-              {
-                header: "Tags",
-                cell: (item) =>
-                  item.Tags && item.Tags.length > 0
-                    ? `${item.Tags.length} tag${item.Tags.length !== 1 ? "s" : ""}`
-                    : "No tags",
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No tagged resources found.</Box>}
-          />
-        </Container>
+        <Table
+          header={<Header variant="h2">Tagged Resources ({resources.length})</Header>}
+          items={resources}
+          columnDefinitions={[
+            { header: "Resource ARN", cell: (item) => item.ResourceARN },
+            {
+              header: "Tags",
+              cell: (item) =>
+                item.Tags && item.Tags.length > 0
+                  ? `${item.Tags.length} tag${item.Tags.length !== 1 ? "s" : ""}`
+                  : "No tags",
+            },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No tagged resources found.</Box>}
+        />
       </SpaceBetween>
     </div>
   );

@@ -1,0 +1,28 @@
+# Build context control. Without this the image build ships ~21GB of local
+# state (emulator volumes, .next caches, node_modules) to the daemon.
+node_modules
+.next
+.git
+.scratch
+.vite-hooks
+.lt-debug.mjs
+.lt-e2e.mjs
+
+# Local emulator persistence volume - must never enter the image.
+data
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+
+# Test + verification artefacts
+coverage
+playwright-report
+test-results
+*.log
+
+# Editor / OS
+.DS_Store
+.idea
+.vscode

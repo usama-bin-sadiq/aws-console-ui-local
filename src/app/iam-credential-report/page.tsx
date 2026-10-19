@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
@@ -17,7 +18,7 @@ export default function IAMCredentialReportPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/iam/credential-report", { method: "POST" });
+      const res = await apiFetch("/api/iam/credential-report", { method: "POST" });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setReport(data.report || "Report generated.");
@@ -29,7 +30,7 @@ export default function IAMCredentialReportPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">IAM Credential Report</Header>
         {error && (

@@ -35,10 +35,15 @@ export default function AwsHealthWidget({
         const response = await fetch("/api/health");
         const data = await response.json();
 
-        const providerStatus = data.status === "healthy" ? "healthy" : data.status === "unreachable" ? "error" : "warning";
+        const providerStatus =
+          data.status === "healthy"
+            ? "healthy"
+            : data.status === "unreachable"
+              ? "error"
+              : "warning";
         const services = Object.entries(data.services || {}).map(([name, value]) => ({
           name,
-          status: value === true ? "healthy" as const : "warning" as const,
+          status: value === true ? ("healthy" as const) : ("warning" as const),
         }));
 
         setHealth({
@@ -123,43 +128,51 @@ export default function AwsHealthWidget({
               Service Health
             </div>
             <SpaceBetween size="xs">
-              {health?.services.length ? health.services.map((service) => (
-                <div
-                  key={service.name}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "8px 0",
-                    borderBottom: "1px solid var(--awsui-color-border-divider-default)",
-                  }}
-                >
-                  <span
+              {health?.services.length ? (
+                health.services.map((service) => (
+                  <div
+                    key={service.name}
                     style={{
-                      fontSize: "14px",
-                      color: "var(--awsui-color-text-body-default)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "8px 0",
+                      borderBottom: "1px solid var(--awsui-color-border-divider-default)",
                     }}
                   >
-                    {service.name}
-                  </span>
-                  <StatusIndicator
-                    type={
-                      service.status === "healthy"
-                        ? "success"
-                        : service.status === "warning"
-                          ? "warning"
-                          : "error"
-                    }
-                  >
-                    {service.status === "healthy" ? "Operational" : "Issues detected"}
-                  </StatusIndicator>
-                </div>
-              )) : <Box color="text-body-secondary">No service health data returned by the active emulator.</Box>}
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        color: "var(--awsui-color-text-body-default)",
+                      }}
+                    >
+                      {service.name}
+                    </span>
+                    <StatusIndicator
+                      type={
+                        service.status === "healthy"
+                          ? "success"
+                          : service.status === "warning"
+                            ? "warning"
+                            : "error"
+                      }
+                    >
+                      {service.status === "healthy" ? "Operational" : "Issues detected"}
+                    </StatusIndicator>
+                  </div>
+                ))
+              ) : (
+                <Box color="text-body-secondary">
+                  No service health data returned by the active emulator.
+                </Box>
+              )}
             </SpaceBetween>
           </Box>
 
           <Box textAlign="center">
-            <Box color="text-body-secondary">Health data is read directly from the active emulator.</Box>
+            <Box color="text-body-secondary">
+              Health data is read directly from the active emulator.
+            </Box>
           </Box>
         </SpaceBetween>
       )}

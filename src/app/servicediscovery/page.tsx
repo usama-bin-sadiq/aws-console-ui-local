@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -28,7 +29,7 @@ export default function ServiceDiscoveryPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/servicediscovery");
+      const res = await apiFetch("/api/servicediscovery");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setNamespaces(data.namespaces || []);
@@ -44,7 +45,7 @@ export default function ServiceDiscoveryPage() {
   }, []);
 
   const createNamespace = async () => {
-    await fetch("/api/servicediscovery", {
+    await apiFetch("/api/servicediscovery", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "createNamespace", name: namespaceName }),
@@ -55,43 +56,46 @@ export default function ServiceDiscoveryPage() {
   };
 
   const deleteNamespace = async (id: string) => {
-    await fetch(`/api/servicediscovery?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    await apiFetch(`/api/servicediscovery?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     fetchNamespaces();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Service Discovery</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={<Button onClick={() => setCreateModal(true)}>Create namespace</Button>}
-              >
-                Namespaces ({namespaces.length})
-              </Header>
-            }
-            items={namespaces}
-            loading={loading}
-            columnDefinitions={[
-              { header: "Name", cell: (item) => item.Name },
-              { header: "ID", cell: (item) => item.Id },
-              { header: "Type", cell: (item) => item.Type },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button onClick={() => deleteNamespace(item.Id)} formAction="none">
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No namespaces found.</Box>}
-          />
-        </Container>
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={<Button onClick={() => setCreateModal(true)}>Create namespace</Button>}
+            >
+              Namespaces ({namespaces.length})
+            </Header>
+          }
+          items={namespaces}
+          loading={loading}
+          columnDefinitions={[
+            { header: "Name", cell: (item) => item.Name },
+            { header: "ID", cell: (item) => item.Id },
+            { header: "Type", cell: (item) => item.Type },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button onClick={() => deleteNamespace(item.Id)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No namespaces found.</Box>}
+        />
+
         <Modal
           visible={createModal}
           onDismiss={() => setCreateModal(false)}

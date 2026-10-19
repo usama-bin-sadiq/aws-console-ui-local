@@ -1,0 +1,45 @@
+/*
+ * Cancel the form field `Grid` gutter, so the control stops overhanging the
+ * box that contains it.
+ *
+ * Cloudscape renders a `FormField`'s control area as a `Grid`, and that grid
+ * carries `margin-inline: calc(var(--space-grid-gutter, 20px) / -2)` — a -10px
+ * inline margin on *both* sides. That grid is a flexbox with percentage
+ * colspans, not a CSS grid: there is no `grid-template-columns` and no `fr`
+ * track with a min-content minimum, so the negative margin does nothing except
+ * widen the box by 20px, 10px of which sits past the right edge of the box
+ * containing it. That box is the field's `awsui_controls` wrapper, which has no
+ * inline padding of its own, so it reported a permanent
+ * `scrollWidth - clientWidth === 10` — measured identical at 390px, 768px and
+ * 1440px. A constant is the tell: it is the fixed gutter, not the content, and
+ * no amount of `min-inline-size` can move a margin.
+ *
+ * Cancelling the margin on its own would push every control 10px to the right
+ * of its label, because the grid's single column carries a matching
+ * `padding-inline: 10px` — that padding is what currently puts the control
+ * back on the label's edge. Both halves are cancelled together, so the grid
+ * ends up filling `awsui_controls` exactly: the control keeps the position it
+ * has today and the overhang is gone rather than clipped.
+ *
+ * The selectors are anchored on `awsui_controls`, which only `FormField` emits,
+ * and reach the grid as its child. A bare `[class*="awsui_grid"]` would also
+ * match a `ColumnLayout` or a `Grid` placed on the page, and those are
+ * multi-column: the negative margin is what lines their outer columns up with
+ * the card edge, so cancelling it there would break them.
+ *
+ * `!important` is needed for the same reason as the border resets in
+ * globals.css: Cloudscape's scoped selectors carry `:not(#\9)`, which counts
+ * as an ID for specificity, so a class-plus-attribute selector here would lose
+ * to them on declaration order alone.
+ *
+ * Scoped to this route's own wrapper so it cannot reach another service's
+ * fields. The /kms tree carries a copy of this module, deliberately: the two
+ * must stay independent so neither route can restyle the other.
+ */
+.page [class*="awsui_controls_"] > [class*="awsui_grid_"] {
+  margin-inline: 0 !important;
+}
+
+.page [class*="awsui_controls_"] > [class*="awsui_grid_"] > [class*="awsui_grid-column_"] {
+  padding-inline: 0 !important;
+}

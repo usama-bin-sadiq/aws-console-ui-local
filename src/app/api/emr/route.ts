@@ -7,6 +7,7 @@ import {
 import { EMRClient } from "@aws-sdk/client-emr";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -14,10 +15,13 @@ export async function GET(request: Request) {
 
   try {
     const emrClient = getUserClientFromRequest(EMRClient, request);
-    const res = await emrClient.send(new ListClustersCommand({ ClusterStates: ["RUNNING", "WAITING", "BOOTSTRAPPING"] }));
+    const res = await emrClient.send(
+      new ListClustersCommand({ ClusterStates: ["RUNNING", "WAITING", "BOOTSTRAPPING"] }),
+    );
     return NextResponse.json({ clusters: res.Clusters || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -28,14 +32,21 @@ export async function POST(request: Request) {
   try {
     const emrClient = getUserClientFromRequest(EMRClient, request);
     const body = await request.json();
-    const res = await emrClient.send(new RunJobFlowCommand({
-      Name: body.name,
-      Instances: body.instances || { MasterInstanceType: "m5.xlarge", SlaveInstanceType: "m5.xlarge", InstanceCount: 1 },
-      ReleaseLabel: body.releaseLabel || "emr-6.15.0",
-    }));
+    const res = await emrClient.send(
+      new RunJobFlowCommand({
+        Name: body.name,
+        Instances: body.instances || {
+          MasterInstanceType: "m5.xlarge",
+          SlaveInstanceType: "m5.xlarge",
+          InstanceCount: 1,
+        },
+        ReleaseLabel: body.releaseLabel || "emr-6.15.0",
+      }),
+    );
     return NextResponse.json({ jobFlowId: res.JobFlowId });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -50,6 +61,7 @@ export async function DELETE(request: Request) {
     await emrClient.send(new TerminateJobFlowsCommand({ JobFlowIds: [clusterId] }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

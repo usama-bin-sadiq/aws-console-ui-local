@@ -2,10 +2,10 @@
  * useAppSyncService — AppSync adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { appsync } from '@/lib/aws-clients'
-import { ListGraphqlApisCommand } from '@aws-sdk/client-appsync';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { appsync } from "@/lib/aws-clients";
+import { ListGraphqlApisCommand } from "@aws-sdk/client-appsync";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface AppSyncServiceState {
   apis: unknown[];
@@ -14,7 +14,11 @@ export interface AppSyncServiceState {
 }
 
 export function useAppSyncService() {
-  const [state, setState] = useState<AppSyncServiceState>({ apis: [], loading: false, error: null });
+  const [state, setState] = useState<AppSyncServiceState>({
+    apis: [],
+    loading: false,
+    error: null,
+  });
   const listApis = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {

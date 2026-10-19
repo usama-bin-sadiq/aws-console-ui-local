@@ -129,6 +129,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `security`
 
 Examples:
+
 ```
 feat(ec2): add instance launch wizard
 fix(auth): resolve bcrypt hash verification issue
@@ -138,18 +139,18 @@ test(auth): add rate limiting integration tests
 
 ## 📁 Project Structure Reference
 
-| Path | Purpose |
-|------|---------|
-| `src/app/` | Next.js App Router pages and API routes |
-| `src/components/` | React components organized by service |
-| `src/lib/` | Core utilities (db, adapters, mfa, rate-limiter) |
-| `src/hooks/` | Custom React hooks |
-| `src/constants/` | Configuration (navigation, service-compatibility, icons) |
-| `src/stores/` | Zustand state management |
-| `src/context/` | React Context providers |
-| `public/icons/` | AWS Architecture Service Icons |
-| `docs/adr/` | Architecture Decision Records |
-| `tests/` | Unit, integration, E2E, VRT tests |
+| Path              | Purpose                                                  |
+| ----------------- | -------------------------------------------------------- |
+| `src/app/`        | Next.js App Router pages and API routes                  |
+| `src/components/` | React components organized by service                    |
+| `src/lib/`        | Core utilities (db, adapters, mfa, rate-limiter)         |
+| `src/hooks/`      | Custom React hooks                                       |
+| `src/constants/`  | Configuration (navigation, service-compatibility, icons) |
+| `src/stores/`     | Zustand state management                                 |
+| `src/context/`    | React Context providers                                  |
+| `public/icons/`   | AWS Architecture Service Icons                           |
+| `docs/adr/`       | Architecture Decision Records                            |
+| `tests/`          | Unit, integration, E2E, VRT tests                        |
 
 ## 🐛 Reporting Bugs
 
@@ -224,6 +225,7 @@ For significant architectural changes, please:
 ## 🙏 Recognition
 
 Contributors are recognized in:
+
 - This README's contributors section
 - Release notes
 - Project documentation

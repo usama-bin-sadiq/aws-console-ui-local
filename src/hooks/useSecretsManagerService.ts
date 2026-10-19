@@ -2,10 +2,10 @@
  * useSecretsManagerService — Secrets adapter hook.
  */
 
-import { useState, useCallback } from 'react';
-import { secretsManager } from '@/lib/aws-clients'
-import { ListSecretsCommand } from '@aws-sdk/client-secrets-manager';
-import { ADAPTER_CONFIG } from '@/config/adapter-config';
+import { useState, useCallback } from "react";
+import { secretsManager } from "@/lib/aws-clients";
+import { ListSecretsCommand } from "@aws-sdk/client-secrets-manager";
+import { ADAPTER_CONFIG } from "@/config/adapter-config";
 
 export interface SecretsServiceState {
   secrets: unknown[];
@@ -14,7 +14,11 @@ export interface SecretsServiceState {
 }
 
 export function useSecretsManagerService() {
-  const [state, setState] = useState<SecretsServiceState>({ secrets: [], loading: false, error: null });
+  const [state, setState] = useState<SecretsServiceState>({
+    secrets: [],
+    loading: false,
+    error: null,
+  });
 
   const listSecrets = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));

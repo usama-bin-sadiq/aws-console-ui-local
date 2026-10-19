@@ -1,17 +1,17 @@
 {
   "name": "local-aws-emulator-console",
   "version": "0.1.0",
-  "description": "An open-source Cloudscape console for AWS-compatible services running in local emulators.",
   "private": false,
-  "license": "MIT",
+  "description": "An open-source Cloudscape console for AWS-compatible services running in local emulators.",
   "keywords": [
     "aws",
-    "localstack",
-    "ministack",
     "cloudscape",
+    "console",
     "emulator",
-    "console"
+    "localstack",
+    "ministack"
   ],
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -40,6 +40,7 @@
     "@aws-sdk/client-amplify": "^3.1121.0",
     "@aws-sdk/client-api-gateway": "^3.1121.0",
     "@aws-sdk/client-apigatewayv2": "^3.1121.0",
+    "@aws-sdk/client-appconfig": "^3.1121.0",
     "@aws-sdk/client-application-auto-scaling": "^3.1121.0",
     "@aws-sdk/client-appsync": "^3.1121.0",
     "@aws-sdk/client-athena": "^3.1121.0",
@@ -61,7 +62,10 @@
     "@aws-sdk/client-codedeploy": "^3.1121.0",
     "@aws-sdk/client-codepipeline": "^3.1121.0",
     "@aws-sdk/client-cognito-identity-provider": "^3.1121.0",
+    "@aws-sdk/client-comprehend": "^3.1121.0",
     "@aws-sdk/client-config-service": "^3.1121.0",
+    "@aws-sdk/client-connect": "^3.1121.0",
+    "@aws-sdk/client-device-farm": "^3.1121.0",
     "@aws-sdk/client-docdb": "^3.1121.0",
     "@aws-sdk/client-dynamodb": "^3.1121.0",
     "@aws-sdk/client-dynamodb-streams": "^3.1121.0",
@@ -90,6 +94,7 @@
     "@aws-sdk/client-kms": "^3.1121.0",
     "@aws-sdk/client-lakeformation": "^3.1121.0",
     "@aws-sdk/client-lambda": "^3.1121.0",
+    "@aws-sdk/client-lex-models-v2": "^3.1121.0",
     "@aws-sdk/client-macie2": "^3.1121.0",
     "@aws-sdk/client-mediaconvert": "^3.1121.0",
     "@aws-sdk/client-memorydb": "^3.1121.0",
@@ -99,10 +104,13 @@
     "@aws-sdk/client-organizations": "^3.1121.0",
     "@aws-sdk/client-pinpoint": "^3.1121.0",
     "@aws-sdk/client-pipes": "^3.1121.0",
+    "@aws-sdk/client-polly": "^3.1121.0",
+    "@aws-sdk/client-quicksight": "^3.1121.0",
     "@aws-sdk/client-ram": "^3.1121.0",
     "@aws-sdk/client-rds": "^3.1121.0",
     "@aws-sdk/client-rds-data": "^3.1121.0",
     "@aws-sdk/client-redshift": "^3.1121.0",
+    "@aws-sdk/client-rekognition": "^3.1121.0",
     "@aws-sdk/client-resource-groups": "^3.1121.0",
     "@aws-sdk/client-resource-groups-tagging-api": "^3.1121.0",
     "@aws-sdk/client-route-53": "^3.1121.0",
@@ -160,18 +168,26 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
+    "@testing-library/react": "^16.1.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^26.4.1",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.3.0",
-    "@vitest/coverage-v8": "^1.6.0",
+    "@vitest/coverage-v8": "5.0.3",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9.28.0",
     "eslint-config-next": "16.3.3",
     "typescript": "^5.9.2",
-    "vitest": "^1.6.0"
+    "vite-plus": "^1.1.0",
+    "vitest": "5.0.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite@*": "npm:@voidzero-dev/vite-plus-core@1.1.0",
+      "vitest@*": "5.0.3"
+    }
   },
   "allowScripts": {
     "unrs-resolver@1.12.2": true

@@ -31,6 +31,8 @@ import {
   GetPolicyCommand,
   GetPolicyVersionCommand,
   CreatePolicyCommand,
+  CreatePolicyVersionCommand,
+  SimulatePrincipalPolicyCommand,
   DeletePolicyCommand,
 } from "@aws-sdk/client-iam";
 import { IAMClient } from "@aws-sdk/client-iam";
@@ -67,7 +69,9 @@ export async function GET(request: Request) {
       const userName = searchParams.get("userName")!;
       const userRes = await iamClient.send(new GetUserCommand({ UserName: userName }));
       const groupsRes = await iamClient.send(new ListGroupsForUserCommand({ UserName: userName }));
-      const policiesRes = await iamClient.send(new ListAttachedUserPoliciesCommand({ UserName: userName }));
+      const policiesRes = await iamClient.send(
+        new ListAttachedUserPoliciesCommand({ UserName: userName }),
+      );
       return NextResponse.json({
         user: userRes.User,
         groups: groupsRes.Groups || [],
@@ -79,7 +83,9 @@ export async function GET(request: Request) {
     if (action === "getRole") {
       const roleName = searchParams.get("roleName")!;
       const roleRes = await iamClient.send(new GetRoleCommand({ RoleName: roleName }));
-      const policiesRes = await iamClient.send(new ListAttachedRolePoliciesCommand({ RoleName: roleName }));
+      const policiesRes = await iamClient.send(
+        new ListAttachedRolePoliciesCommand({ RoleName: roleName }),
+      );
       return NextResponse.json({
         role: roleRes.Role,
         attachedPolicies: policiesRes.AttachedPolicies || [],
@@ -97,7 +103,9 @@ export async function GET(request: Request) {
     if (action === "getGroup") {
       const groupName = searchParams.get("groupName")!;
       const groupRes = await iamClient.send(new GetGroupCommand({ GroupName: groupName }));
-      const policiesRes = await iamClient.send(new ListAttachedGroupPoliciesCommand({ GroupName: groupName }));
+      const policiesRes = await iamClient.send(
+        new ListAttachedGroupPoliciesCommand({ GroupName: groupName }),
+      );
       return NextResponse.json({
         group: {
           GroupName: groupRes.Group?.GroupName,
@@ -114,7 +122,9 @@ export async function GET(request: Request) {
     // ListAttachedGroupPolicies
     if (action === "listAttachedGroupPolicies") {
       const groupName = searchParams.get("groupName")!;
-      const res = await iamClient.send(new ListAttachedGroupPoliciesCommand({ GroupName: groupName }));
+      const res = await iamClient.send(
+        new ListAttachedGroupPoliciesCommand({ GroupName: groupName }),
+      );
       return NextResponse.json({ attachedPolicies: res.AttachedPolicies || [] });
     }
 
@@ -124,7 +134,9 @@ export async function GET(request: Request) {
       const res = await iamClient.send(new GetPolicyCommand({ PolicyArn: arn }));
       const defaultVersionId = res.Policy?.DefaultVersionId;
       const version = defaultVersionId
-        ? await iamClient.send(new GetPolicyVersionCommand({ PolicyArn: arn, VersionId: defaultVersionId }))
+        ? await iamClient.send(
+            new GetPolicyVersionCommand({ PolicyArn: arn, VersionId: defaultVersionId }),
+          )
         : undefined;
       return NextResponse.json({ policy: res.Policy, document: version?.PolicyVersion?.Document });
     }
@@ -146,7 +158,9 @@ export async function POST(request: Request) {
     const action = body.action;
 
     if (action === "createUser") {
-      await iamClient.send(new CreateUserCommand({ UserName: body.userName, Path: body.path || "/" }));
+      await iamClient.send(
+        new CreateUserCommand({ UserName: body.userName, Path: body.path || "/" }),
+      );
       return NextResponse.json({ success: true });
     }
 
@@ -161,82 +175,139 @@ export async function POST(request: Request) {
           },
         ],
       });
-      await iamClient.send(new CreateRoleCommand({
-        RoleName: body.roleName,
-        Path: body.path || "/",
-        AssumeRolePolicyDocument: body.assumeRolePolicyDocument || defaultTrustPolicy,
-        Description: body.description || "",
-      }));
+      await iamClient.send(
+        new CreateRoleCommand({
+          RoleName: body.roleName,
+          Path: body.path || "/",
+          AssumeRolePolicyDocument: body.assumeRolePolicyDocument || defaultTrustPolicy,
+          Description: body.description || "",
+        }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "updateUser") {
-      await iamClient.send(new UpdateUserCommand({ UserName: body.userName, NewPath: body.newPath }));
+      await iamClient.send(
+        new UpdateUserCommand({ UserName: body.userName, NewPath: body.newPath }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "updateRole") {
-      await iamClient.send(new UpdateRoleCommand({
-        RoleName: body.roleName,
-        Description: body.description,
-        MaxSessionDuration: body.maxSessionDuration,
-      }));
+      await iamClient.send(
+        new UpdateRoleCommand({
+          RoleName: body.roleName,
+          Description: body.description,
+          MaxSessionDuration: body.maxSessionDuration,
+        }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "attachUserPolicy") {
-      await iamClient.send(new AttachUserPolicyCommand({ UserName: body.userName, PolicyArn: body.policyArn }));
+      await iamClient.send(
+        new AttachUserPolicyCommand({ UserName: body.userName, PolicyArn: body.policyArn }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "detachUserPolicy") {
-      await iamClient.send(new DetachUserPolicyCommand({ UserName: body.userName, PolicyArn: body.policyArn }));
+      await iamClient.send(
+        new DetachUserPolicyCommand({ UserName: body.userName, PolicyArn: body.policyArn }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "attachRolePolicy") {
-      await iamClient.send(new AttachRolePolicyCommand({ RoleName: body.roleName, PolicyArn: body.policyArn }));
+      await iamClient.send(
+        new AttachRolePolicyCommand({ RoleName: body.roleName, PolicyArn: body.policyArn }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "detachRolePolicy") {
-      await iamClient.send(new DetachRolePolicyCommand({ RoleName: body.roleName, PolicyArn: body.policyArn }));
+      await iamClient.send(
+        new DetachRolePolicyCommand({ RoleName: body.roleName, PolicyArn: body.policyArn }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "addUserToGroup") {
-      await iamClient.send(new AddUserToGroupCommand({ GroupName: body.groupName, UserName: body.userName }));
+      await iamClient.send(
+        new AddUserToGroupCommand({ GroupName: body.groupName, UserName: body.userName }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "removeUserFromGroup") {
-      await iamClient.send(new RemoveUserFromGroupCommand({ GroupName: body.groupName, UserName: body.userName }));
+      await iamClient.send(
+        new RemoveUserFromGroupCommand({ GroupName: body.groupName, UserName: body.userName }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "createGroup") {
-      await iamClient.send(new CreateGroupCommand({ GroupName: body.groupName, Path: body.path || "/" }));
+      await iamClient.send(
+        new CreateGroupCommand({ GroupName: body.groupName, Path: body.path || "/" }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "attachGroupPolicy") {
-      await iamClient.send(new AttachGroupPolicyCommand({ GroupName: body.groupName, PolicyArn: body.policyArn }));
+      await iamClient.send(
+        new AttachGroupPolicyCommand({ GroupName: body.groupName, PolicyArn: body.policyArn }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "detachGroupPolicy") {
-      await iamClient.send(new DetachGroupPolicyCommand({ GroupName: body.groupName, PolicyArn: body.policyArn }));
+      await iamClient.send(
+        new DetachGroupPolicyCommand({ GroupName: body.groupName, PolicyArn: body.policyArn }),
+      );
       return NextResponse.json({ success: true });
     }
 
     if (action === "createPolicy") {
-      await iamClient.send(new CreatePolicyCommand({
-        PolicyName: body.policyName,
-        PolicyDocument: body.policyDocument || "{}",
-        Path: body.path || "/",
-        Description: body.description || "",
-      }));
+      await iamClient.send(
+        new CreatePolicyCommand({
+          PolicyName: body.policyName,
+          PolicyDocument: body.policyDocument || "{}",
+          Path: body.path || "/",
+          Description: body.description || "",
+        }),
+      );
       return NextResponse.json({ success: true });
+    }
+
+    if (action === "uploadPolicyVersion") {
+      if (!body.policyArn) {
+        return NextResponse.json({ error: "policyArn is required" }, { status: 400 });
+      }
+      const res = await iamClient.send(
+        new CreatePolicyVersionCommand({
+          PolicyArn: body.policyArn,
+          PolicyDocument: body.policyDocument || "{}",
+          SetAsDefault: true,
+        }),
+      );
+      return NextResponse.json({ success: true, versionId: res.PolicyVersion?.VersionId });
+    }
+
+    if (action === "simulatePolicy") {
+      if (!body.policySourceArn) {
+        return NextResponse.json({ error: "policySourceArn is required" }, { status: 400 });
+      }
+      if (!body.actionName) {
+        return NextResponse.json({ error: "actionName is required" }, { status: 400 });
+      }
+      const res = await iamClient.send(
+        new SimulatePrincipalPolicyCommand({
+          PolicySourceArn: body.policySourceArn,
+          ActionNames: [body.actionName],
+          ResourceArns: body.resource ? [body.resource] : undefined,
+        }),
+      );
+      return NextResponse.json({ success: true, evaluationResults: res.EvaluationResults || [] });
     }
 
     return NextResponse.json({ error: "Unknown POST action" }, { status: 400 });

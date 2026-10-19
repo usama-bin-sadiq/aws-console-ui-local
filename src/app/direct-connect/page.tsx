@@ -8,7 +8,7 @@ import Alert from "@cloudscape-design/components/alert";
 
 export default function DirectConnectPage() {
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">AWS Direct Connect</Header>
         <Alert type="info" header="Not available in local emulation">

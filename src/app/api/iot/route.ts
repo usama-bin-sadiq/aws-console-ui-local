@@ -15,6 +15,7 @@ import { PublishCommand, IoTDataPlaneClient } from "@aws-sdk/client-iot-data-pla
 import { IoTClient } from "@aws-sdk/client-iot";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -36,7 +37,8 @@ export async function GET(request: Request) {
       policies: policiesRes.policies || [],
     });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -49,30 +51,37 @@ export async function POST(request: Request) {
     const iotClient = getUserClientFromRequest(IoTClient, request);
     const body = await request.json();
     if (body.action === "createTopicRule") {
-      await iotClient.send(new CreateTopicRuleCommand({
-        ruleName: body.ruleName,
-        topicRulePayload: body.topicRulePayload,
-      }));
+      await iotClient.send(
+        new CreateTopicRuleCommand({
+          ruleName: body.ruleName,
+          topicRulePayload: body.topicRulePayload,
+        }),
+      );
       return NextResponse.json({ success: true });
     }
     if (body.action === "createPolicy") {
-      await iotClient.send(new CreatePolicyCommand({
-        policyName: body.policyName,
-        policyDocument: body.policyDocument || "{}",
-      }));
+      await iotClient.send(
+        new CreatePolicyCommand({
+          policyName: body.policyName,
+          policyDocument: body.policyDocument || "{}",
+        }),
+      );
       return NextResponse.json({ success: true });
     }
     if (body.action === "publish") {
-      await iotDataClient.send(new PublishCommand({
-        topic: body.topic,
-        payload: Buffer.from(body.payload || ""),
-      }));
+      await iotDataClient.send(
+        new PublishCommand({
+          topic: body.topic,
+          payload: Buffer.from(body.payload || ""),
+        }),
+      );
       return NextResponse.json({ success: true });
     }
     const res = await iotClient.send(new CreateThingCommand({ thingName: body.thingName }));
     return NextResponse.json({ thing: res });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -97,6 +106,7 @@ export async function DELETE(request: Request) {
     await iotClient.send(new DeleteThingCommand({ thingName: name }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

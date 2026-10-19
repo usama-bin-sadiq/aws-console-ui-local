@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -50,7 +51,7 @@ export default function CodeBuildPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/codebuild");
+      const res = await apiFetch("/api/codebuild");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setProjects(data.projects || []);
@@ -67,7 +68,7 @@ export default function CodeBuildPage() {
 
   const createProject = async () => {
     try {
-      await fetch("/api/codebuild", {
+      await apiFetch("/api/codebuild", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create", name: projectName }),
@@ -81,7 +82,7 @@ export default function CodeBuildPage() {
 
   const startBuild = async (name: string) => {
     try {
-      await fetch("/api/codebuild", {
+      await apiFetch("/api/codebuild", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "startBuild", projectName: name }),
@@ -94,7 +95,7 @@ export default function CodeBuildPage() {
 
   const stopBuild = async (buildId: string) => {
     try {
-      await fetch("/api/codebuild", {
+      await apiFetch("/api/codebuild", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "stopBuild", buildId }),
@@ -106,7 +107,7 @@ export default function CodeBuildPage() {
   };
 
   const deleteProject = async (name: string) => {
-    await fetch(`/api/codebuild?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+    await apiFetch(`/api/codebuild?name=${encodeURIComponent(name)}`, { method: "DELETE" });
     fetchProjects();
   };
 
@@ -115,8 +116,8 @@ export default function CodeBuildPage() {
     setBuildError(null);
     setSelectedProject(projectName);
     try {
-      const res = await fetch(
-        `/api/codebuild?action=builds&projectName=${encodeURIComponent(projectName)}`
+      const res = await apiFetch(
+        `/api/codebuild?action=builds&projectName=${encodeURIComponent(projectName)}`,
       );
       const data = await res.json();
       const ids = (data.builds || []) as string[];
@@ -125,8 +126,8 @@ export default function CodeBuildPage() {
         setBuildLoading(false);
         return;
       }
-      const batchRes = await fetch(
-        `/api/codebuild?action=batchGetBuilds&ids=${encodeURIComponent(ids.join(","))}`
+      const batchRes = await apiFetch(
+        `/api/codebuild?action=batchGetBuilds&ids=${encodeURIComponent(ids.join(","))}`,
       );
       const batchData = await batchRes.json();
       setBuilds(batchData.builds || []);
@@ -140,14 +141,17 @@ export default function CodeBuildPage() {
 
   const viewLogs = async (buildId: string) => {
     try {
-      const res = await fetch(
-        `/api/codebuild?action=batchGetBuildLogs&buildId=${encodeURIComponent(buildId)}`
+      const res = await apiFetch(
+        `/api/codebuild?action=batchGetBuildLogs&buildId=${encodeURIComponent(buildId)}`,
       );
       const data = await res.json();
       const logs = data.buildLogs || [];
-      const text = (logs as any[])
-        .map((l: any) => (l?.logLines || []).map((line: any) => `${line?.message || line || ""}`).join("\n"))
-        .join("\n---\n") || "No logs available.";
+      const text =
+        (logs as any[])
+          .map((l: any) =>
+            (l?.logLines || []).map((line: any) => `${line?.message || line || ""}`).join("\n"),
+          )
+          .join("\n---\n") || "No logs available.";
       setLogText(text);
       setViewLogsModal(true);
     } catch (err: unknown) {
@@ -157,12 +161,16 @@ export default function CodeBuildPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">CodeBuild</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
 
-        <Container>
+        <Container className="aws-table-card">
           <Tabs
             tabs={[
               { label: "Projects", id: "projects", content: null },
@@ -214,7 +222,11 @@ export default function CodeBuildPage() {
           {selectedProject && (
             <SpaceBetween size="m">
               <Header variant="h2">Builds for {selectedProject}</Header>
-              {buildError && <Alert type="error" header="Error">{buildError}</Alert>}
+              {buildError && (
+                <Alert type="error" header="Error">
+                  {buildError}
+                </Alert>
+              )}
               <Table
                 items={builds}
                 loading={buildLoading}
@@ -252,7 +264,9 @@ export default function CodeBuildPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createProject}>Create</Button>
+              <Button variant="primary" onClick={createProject}>
+                Create
+              </Button>
             </SpaceBetween>
           }
         >

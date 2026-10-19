@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -33,7 +34,7 @@ export default function RedshiftPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/redshift");
+      const res = await apiFetch("/api/redshift");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch clusters");
       setClusters(data.clusters || []);
@@ -56,7 +57,7 @@ export default function RedshiftPage() {
     setIdentifierError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/redshift", {
+      const res = await apiFetch("/api/redshift", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clusterIdentifier: identifier, nodeType }),
@@ -78,7 +79,7 @@ export default function RedshiftPage() {
 
   const deleteCluster = async (id: string) => {
     try {
-      const res = await fetch(`/api/redshift?identifier=${encodeURIComponent(id)}`, {
+      const res = await apiFetch(`/api/redshift?identifier=${encodeURIComponent(id)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -92,7 +93,7 @@ export default function RedshiftPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon Redshift</Header>
 
@@ -102,42 +103,37 @@ export default function RedshiftPage() {
           </Alert>
         )}
 
-        <Container>
-          <Table
-            header={
-              <Header
-                variant="h2"
-                actions={
-                  <Button variant="primary" onClick={() => setCreateModal(true)}>
-                    Create cluster
-                  </Button>
-                }
-              >
-                Clusters ({clusters.length})
-              </Header>
-            }
-            items={clusters}
-            columnDefinitions={[
-              { header: "Cluster identifier", cell: (item) => item.ClusterIdentifier },
-              { header: "Status", cell: (item) => item.ClusterStatus },
-              { header: "Node type", cell: (item) => item.NodeType },
-              { header: "Nodes", cell: (item) => String(item.NumberOfNodes) },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <Button
-                    onClick={() => deleteCluster(item.ClusterIdentifier)}
-                    formAction="none"
-                  >
-                    Delete
-                  </Button>
-                ),
-              },
-            ]}
-            loading={loading}
-            empty={<Box textAlign="center">No clusters found.</Box>}
-          />
-        </Container>
+        <Table
+          header={
+            <Header
+              variant="h2"
+              actions={
+                <Button variant="primary" onClick={() => setCreateModal(true)}>
+                  Create cluster
+                </Button>
+              }
+            >
+              Clusters ({clusters.length})
+            </Header>
+          }
+          items={clusters}
+          columnDefinitions={[
+            { header: "Cluster identifier", cell: (item) => item.ClusterIdentifier },
+            { header: "Status", cell: (item) => item.ClusterStatus },
+            { header: "Node type", cell: (item) => item.NodeType },
+            { header: "Nodes", cell: (item) => String(item.NumberOfNodes) },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <Button onClick={() => deleteCluster(item.ClusterIdentifier)} formAction="none">
+                  Delete
+                </Button>
+              ),
+            },
+          ]}
+          loading={loading}
+          empty={<Box textAlign="center">No clusters found.</Box>}
+        />
 
         <Modal
           visible={createModal}
@@ -153,10 +149,21 @@ export default function RedshiftPage() {
           }
         >
           <SpaceBetween size="m">
-            <FormField label={<>Cluster identifier <span style={{ color: "red" }}>*</span></>} constraintText="Required" errorText={identifierError}>
+            <FormField
+              label={
+                <>
+                  Cluster identifier <span style={{ color: "red" }}>*</span>
+                </>
+              }
+              constraintText="Required"
+              errorText={identifierError}
+            >
               <Input
                 value={identifier}
-                onChange={(e) => { setIdentifier(e.detail.value); setIdentifierError(null); }}
+                onChange={(e) => {
+                  setIdentifier(e.detail.value);
+                  setIdentifierError(null);
+                }}
                 placeholder="my-redshift-cluster"
               />
             </FormField>

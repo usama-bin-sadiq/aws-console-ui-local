@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -9,7 +10,6 @@ import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Tabs from "@cloudscape-design/components/tabs";
 import TruncatedText from "@/components/TruncatedText";
-
 
 interface FoundationModel {
   modelId?: string;
@@ -35,8 +35,11 @@ export default function BedrockPage() {
     setError(null);
     try {
       const [foundationRes, customRes] = await Promise.all([
-        fetch("/api/bedrock"),
-        fetch("/api/bedrock", { method: "POST", headers: { "Content-Type": "application/json" } }),
+        apiFetch("/api/bedrock"),
+        apiFetch("/api/bedrock", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }),
       ]);
       const foundationData = await foundationRes.json();
       const customData = await customRes.json();
@@ -51,51 +54,65 @@ export default function BedrockPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon Bedrock</Header>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Tabs tabs={[
-            {
-              id: "foundation",
-              label: `Foundation Models (${foundationModels.length})`,
-              content: (
-                <Table
-                  header={<Header variant="h2">Foundation Models</Header>}
-                  items={foundationModels}
-                  loading={loading}
-                  columnDefinitions={[
-                    { header: "Model ID", cell: (i) => i.modelId || "—" },
-                    { header: "Name", cell: (i) => i.modelName || "—" },
-                    { header: "Provider", cell: (i) => i.providerName || "—" },
-                    { header: "ARN", cell: (i) => <TruncatedText>{i.modelArn || "—"}</TruncatedText> },
-                  ]}
-                  empty={<Box textAlign="center">No foundation models found.</Box>}
-                />
-              ),
-            },
-            {
-              id: "custom",
-              label: `Custom Models (${customModels.length})`,
-              content: (
-                <Table
-                  header={<Header variant="h2">Custom Models</Header>}
-                  items={customModels}
-                  loading={loading}
-                  columnDefinitions={[
-                    { header: "Model ID", cell: (i) => i.modelId || "—" },
-                    { header: "Name", cell: (i) => i.modelName || "—" },
-                    { header: "ARN", cell: (i) => <TruncatedText>{i.modelArn || "—"}</TruncatedText> },
-                  ]}
-                  empty={<Box textAlign="center">No custom models found.</Box>}
-                />
-              ),
-            },
-          ]} />
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Container className="aws-table-card">
+          <Tabs
+            tabs={[
+              {
+                id: "foundation",
+                label: `Foundation Models (${foundationModels.length})`,
+                content: (
+                  <Table
+                    header={<Header variant="h2">Foundation Models</Header>}
+                    items={foundationModels}
+                    loading={loading}
+                    columnDefinitions={[
+                      { header: "Model ID", cell: (i) => i.modelId || "—" },
+                      { header: "Name", cell: (i) => i.modelName || "—" },
+                      { header: "Provider", cell: (i) => i.providerName || "—" },
+                      {
+                        header: "ARN",
+                        cell: (i) => <TruncatedText>{i.modelArn || "—"}</TruncatedText>,
+                      },
+                    ]}
+                    empty={<Box textAlign="center">No foundation models found.</Box>}
+                  />
+                ),
+              },
+              {
+                id: "custom",
+                label: `Custom Models (${customModels.length})`,
+                content: (
+                  <Table
+                    header={<Header variant="h2">Custom Models</Header>}
+                    items={customModels}
+                    loading={loading}
+                    columnDefinitions={[
+                      { header: "Model ID", cell: (i) => i.modelId || "—" },
+                      { header: "Name", cell: (i) => i.modelName || "—" },
+                      {
+                        header: "ARN",
+                        cell: (i) => <TruncatedText>{i.modelArn || "—"}</TruncatedText>,
+                      },
+                    ]}
+                    empty={<Box textAlign="center">No custom models found.</Box>}
+                  />
+                ),
+              },
+            ]}
+          />
         </Container>
       </SpaceBetween>
     </div>

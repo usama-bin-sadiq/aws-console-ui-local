@@ -6,25 +6,25 @@ export interface CloudWatchAlarmConfig {
   AlarmDescription?: string;
   MetricName?: string;
   Namespace?: string;
-  Statistic?: 'Average' | 'Sum' | 'Minimum' | 'Maximum';
+  Statistic?: "Average" | "Sum" | "Minimum" | "Maximum";
   Period?: number;
   Threshold?: number;
   ComparisonOperator?:
-    | 'GreaterThanOrEqualToThreshold'
-    | 'GreaterThanThreshold'
-    | 'LessThanThreshold'
-    | 'LessThanOrEqualToThreshold'
-    | 'LessThanLowerOrGreaterThanUpperThreshold'
-    | 'GreaterThanUpperThreshold';
+    | "GreaterThanOrEqualToThreshold"
+    | "GreaterThanThreshold"
+    | "LessThanThreshold"
+    | "LessThanOrEqualToThreshold"
+    | "LessThanLowerOrGreaterThanUpperThreshold"
+    | "GreaterThanUpperThreshold";
   EvaluationPeriods?: number;
-  TreatMissingData?: 'missing' | 'ignore' | 'breaching' | 'notBreaching';
+  TreatMissingData?: "missing" | "ignore" | "breaching" | "notBreaching";
 }
 
 export interface CloudWatchAlarm {
   AlarmName: string;
   AlarmArn?: string;
   AlarmDescription?: string;
-  AlarmState?: 'OK' | 'ALARM' | 'INSUFFICIENT_DATA';
+  AlarmState?: "OK" | "ALARM" | "INSUFFICIENT_DATA";
   MetricName?: string;
   Namespace?: string;
   Statistic?: string;
@@ -32,7 +32,7 @@ export interface CloudWatchAlarm {
   Threshold?: number;
   ComparisonOperator?: string;
   EvaluationPeriods?: number;
-  TreatMissingData?: 'missing' | 'notBreaching' | 'breaching' | 'ignore';
+  TreatMissingData?: "missing" | "notBreaching" | "breaching" | "ignore";
   ActionsEnabled?: boolean;
   Actions?: string[];
   AlarmActions?: string[];
@@ -72,7 +72,7 @@ export interface CloudWatchInsightsQuery {
   endTime?: number;
   limit?: number;
   queryId?: string;
-  status?: 'Scheduled' | 'Running' | 'Complete' | 'Failed' | 'Cancelled';
+  status?: "Scheduled" | "Running" | "Complete" | "Failed" | "Cancelled";
   results?: Array<Record<string, unknown>>;
 }
 

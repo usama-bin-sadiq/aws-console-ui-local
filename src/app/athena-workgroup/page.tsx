@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
@@ -41,7 +42,7 @@ export default function AthenaWorkgroupPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/athena");
+      const res = await apiFetch("/api/athena");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch Athena data");
       setWorkgroups(data.workgroups || []);
@@ -61,7 +62,7 @@ export default function AthenaWorkgroupPage() {
     setRunningQuery(true);
     setQueryResult("");
     try {
-      const res = await fetch("/api/athena", {
+      const res = await apiFetch("/api/athena", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ queryString, workGroup: queryWorkgroup }),
@@ -78,7 +79,7 @@ export default function AthenaWorkgroupPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon Athena</Header>
 
@@ -88,7 +89,7 @@ export default function AthenaWorkgroupPage() {
           </Alert>
         )}
 
-        <Container>
+        <Container className="aws-table-card">
           <Tabs
             tabs={[
               {
@@ -123,9 +124,7 @@ export default function AthenaWorkgroupPage() {
                 id: "catalogs",
                 content: (
                   <Table
-                    header={
-                      <Header variant="h2">Data catalogs ({catalogs.length})</Header>
-                    }
+                    header={<Header variant="h2">Data catalogs ({catalogs.length})</Header>}
                     items={catalogs}
                     columnDefinitions={[
                       { header: "Catalog name", cell: (item) => item.CatalogName },
@@ -143,11 +142,21 @@ export default function AthenaWorkgroupPage() {
         {/* Start Query Modal */}
         <Modal
           visible={queryModal}
-          onDismiss={() => { setQueryModal(false); setQueryResult(""); }}
+          onDismiss={() => {
+            setQueryModal(false);
+            setQueryResult("");
+          }}
           header="Start query execution"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => { setQueryModal(false); setQueryResult(""); }}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setQueryModal(false);
+                  setQueryResult("");
+                }}
+              >
+                Cancel
+              </Button>
               <Button variant="primary" onClick={startQuery} loading={runningQuery}>
                 Run query
               </Button>

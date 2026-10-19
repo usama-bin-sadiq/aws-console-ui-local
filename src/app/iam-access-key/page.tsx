@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -23,13 +24,16 @@ export default function IAMAccessKeyPage() {
   const [loadedUser, setLoadedUser] = useState("");
   const [accessKeys, setAccessKeys] = useState<AccessKey[]>([]);
   const [loading, setLoading] = useState(false);
-  const [newKeyInfo, setNewKeyInfo] = useState<{ AccessKeyId: string; SecretAccessKey: string } | null>(null);
+  const [newKeyInfo, setNewKeyInfo] = useState<{
+    AccessKeyId: string;
+    SecretAccessKey: string;
+  } | null>(null);
 
   const loadKeys = async () => {
     if (!userName) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/iam-access-key?userName=${encodeURIComponent(userName)}`);
+      const res = await apiFetch(`/api/iam-access-key?userName=${encodeURIComponent(userName)}`);
       const data = await res.json();
       setAccessKeys(data.accessKeys || []);
       setLoadedUser(userName);
@@ -40,21 +44,24 @@ export default function IAMAccessKeyPage() {
   const createKey = async () => {
     if (!loadedUser) return;
     try {
-      const res = await fetch("/api/iam-access-key", {
+      const res = await apiFetch("/api/iam-access-key", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userName: loadedUser }),
       });
       const data = await res.json();
       if (data.accessKey) {
-        setNewKeyInfo({ AccessKeyId: data.accessKey.AccessKeyId, SecretAccessKey: data.accessKey.SecretAccessKey });
+        setNewKeyInfo({
+          AccessKeyId: data.accessKey.AccessKeyId,
+          SecretAccessKey: data.accessKey.SecretAccessKey,
+        });
         loadKeys();
       }
     } catch {}
   };
 
   const deactivateKey = async (accessKeyId: string) => {
-    await fetch("/api/iam-access-key", {
+    await apiFetch("/api/iam-access-key", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "deactivate", userName: loadedUser, accessKeyId }),
@@ -63,15 +70,15 @@ export default function IAMAccessKeyPage() {
   };
 
   const deleteKey = async (accessKeyId: string) => {
-    await fetch(
+    await apiFetch(
       `/api/iam-access-key?userName=${encodeURIComponent(loadedUser)}&accessKeyId=${encodeURIComponent(accessKeyId)}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
     loadKeys();
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">IAM Access Keys</Header>
 
@@ -100,8 +107,12 @@ export default function IAMAccessKeyPage() {
             dismissible
           >
             <SpaceBetween size="xs">
-              <Box><strong>Access Key ID:</strong> {newKeyInfo.AccessKeyId}</Box>
-              <Box><strong>Secret Access Key:</strong> {newKeyInfo.SecretAccessKey}</Box>
+              <Box>
+                <strong>Access Key ID:</strong> {newKeyInfo.AccessKeyId}
+              </Box>
+              <Box>
+                <strong>Secret Access Key:</strong> {newKeyInfo.SecretAccessKey}
+              </Box>
             </SpaceBetween>
           </Alert>
         )}
@@ -119,6 +130,7 @@ export default function IAMAccessKeyPage() {
               {loadedUser ? `Access Keys for "${loadedUser}"` : "Access Keys"}
             </Header>
           }
+          className="aws-table-card"
         >
           <Table
             items={accessKeys}
@@ -129,9 +141,7 @@ export default function IAMAccessKeyPage() {
               {
                 header: "Created",
                 cell: (item) =>
-                  item.CreateDate
-                    ? new Date(item.CreateDate).toLocaleString()
-                    : "—",
+                  item.CreateDate ? new Date(item.CreateDate).toLocaleString() : "—",
               },
               {
                 header: "Actions",

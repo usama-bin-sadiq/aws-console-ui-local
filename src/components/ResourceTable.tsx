@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useEffect,
-  useState,
-  useCallback,
-  useMemo,
-  memo,
-} from "react";
+import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import TextFilter from "@cloudscape-design/components/text-filter";
 import Pagination from "@cloudscape-design/components/pagination";
@@ -147,18 +141,13 @@ function ResourceTableInner<T extends object>({
 }: ResourceTableProps<T>) {
   // ── Column ID list ─────────────────────────────────────────────────────────
   const allColumnIds = useMemo(
-    () =>
-      columnDefinitions
-        .map((c) => c.id)
-        .filter((id): id is string => id !== undefined),
-    [columnDefinitions]
+    () => columnDefinitions.map((c) => c.id).filter((id): id is string => id !== undefined),
+    [columnDefinitions],
   );
 
   // ── Internal preferences (used when caller does not control them) ──────────
-  const [internalPageSize, setInternalPageSize] =
-    useState<number>(DEFAULT_PAGE_SIZE);
-  const [internalVisibleColumns, setInternalVisibleColumns] =
-    useState<string[]>(allColumnIds);
+  const [internalPageSize, setInternalPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+  const [internalVisibleColumns, setInternalVisibleColumns] = useState<string[]>(allColumnIds);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [internalCurrentPage, setInternalCurrentPage] = useState(1);
 
@@ -166,11 +155,11 @@ function ResourceTableInner<T extends object>({
     const saved = loadPrefs(serviceKey, allColumnIds);
     setInternalPageSize(saved.pageSize);
     setInternalVisibleColumns(
-      saved.visibleColumns.length > 0 ? saved.visibleColumns : allColumnIds
+      saved.visibleColumns.length > 0 ? saved.visibleColumns : allColumnIds,
     );
     setPrefsLoaded(true);
     // allColumnIds is derived from columnDefinitions; serviceKey never changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceKey]);
 
   const isPrefsControlled = externalPreferences !== undefined;
@@ -180,15 +169,13 @@ function ResourceTableInner<T extends object>({
     : internalPageSize;
 
   const visibleColumns = isPrefsControlled
-    ? ((externalPreferences?.contentDisplay as string[] | undefined) ??
-      allColumnIds)
+    ? ((externalPreferences?.contentDisplay as string[] | undefined) ?? allColumnIds)
     : internalVisibleColumns;
 
   const handlePreferencesConfirm = useCallback(
     ({ detail }: { detail: CollectionPreferencesProps.Preferences }) => {
       const newPageSize = detail.pageSize ?? DEFAULT_PAGE_SIZE;
-      const newVisible =
-        (detail.contentDisplay as string[] | undefined) ?? allColumnIds;
+      const newVisible = (detail.contentDisplay as string[] | undefined) ?? allColumnIds;
 
       if (isPrefsControlled && externalOnPreferencesChange) {
         externalOnPreferencesChange(detail);
@@ -203,13 +190,12 @@ function ResourceTableInner<T extends object>({
       setInternalCurrentPage(1);
     },
 
-    [serviceKey, allColumnIds, isPrefsControlled, externalOnPreferencesChange]
+    [serviceKey, allColumnIds, isPrefsControlled, externalOnPreferencesChange],
   );
 
   // ── Internal filter state ──────────────────────────────────────────────────
   const [internalFilterText, setInternalFilterText] = useState("");
-  const filterText =
-    externalFilterText !== undefined ? externalFilterText : internalFilterText;
+  const filterText = externalFilterText !== undefined ? externalFilterText : internalFilterText;
 
   const setFilterText = useCallback(
     (text: string) => {
@@ -219,12 +205,11 @@ function ResourceTableInner<T extends object>({
         setInternalFilterText(text);
       }
     },
-    [externalOnFilteringChange]
+    [externalOnFilteringChange],
   );
 
   // ── Sorting state ──────────────────────────────────────────────────────────
-  const [sortingColumn, setSortingColumn] =
-    useState<TableProps.SortingColumn<T> | null>(null);
+  const [sortingColumn, setSortingColumn] = useState<TableProps.SortingColumn<T> | null>(null);
   const [sortingDescending, setSortingDescending] = useState(false);
 
   // ── Internal pagination state ──────────────────────────────────────────────
@@ -241,7 +226,7 @@ function ResourceTableInner<T extends object>({
       Object.values(item as Record<string, unknown>).some((val) => {
         if (val === null || val === undefined) return false;
         return String(val).toLowerCase().includes(lower);
-      })
+      }),
     );
   }, [items, filterText]);
 
@@ -271,22 +256,15 @@ function ResourceTableInner<T extends object>({
   }, [filteredItems, sortingColumn, sortingDescending]);
 
   // ── Pagination ─────────────────────────────────────────────────────────────
-  const computedPagesCount = Math.max(
-    1,
-    Math.ceil(sortedItems.length / pageSize)
-  );
+  const computedPagesCount = Math.max(1, Math.ceil(sortedItems.length / pageSize));
 
   // Resolve whether pagination is externally controlled
   const isPaginationControlled =
     externalPageIndex !== undefined && externalPagesCount !== undefined;
 
-  const pagesCount = isPaginationControlled
-    ? externalPagesCount!
-    : computedPagesCount;
+  const pagesCount = isPaginationControlled ? externalPagesCount! : computedPagesCount;
 
-  const rawCurrentPage = isPaginationControlled
-    ? externalPageIndex!
-    : internalCurrentPage;
+  const rawCurrentPage = isPaginationControlled ? externalPageIndex! : internalCurrentPage;
 
   const currentPage = Math.min(rawCurrentPage, pagesCount);
 
@@ -306,18 +284,16 @@ function ResourceTableInner<T extends object>({
         setInternalCurrentPage(page);
       }
     },
-    [isPaginationControlled, externalOnPageChange, setInternalCurrentPage]
+    [isPaginationControlled, externalOnPageChange, setInternalCurrentPage],
   );
 
   // ── Visible column definitions ─────────────────────────────────────────────
   const visibleColumnDefs = useMemo(
     () =>
       prefsLoaded || isPrefsControlled
-        ? columnDefinitions.filter(
-          (c) => c.id === undefined || visibleColumns.includes(c.id)
-        )
+        ? columnDefinitions.filter((c) => c.id === undefined || visibleColumns.includes(c.id))
         : columnDefinitions,
-    [columnDefinitions, visibleColumns, prefsLoaded, isPrefsControlled]
+    [columnDefinitions, visibleColumns, prefsLoaded, isPrefsControlled],
   );
 
   // ── CollectionPreferences shape ────────────────────────────────────────────
@@ -339,13 +315,7 @@ function ResourceTableInner<T extends object>({
       counter={counterLabel}
       actions={
         <SpaceBetween direction="horizontal" size="xs">
-          {onRefresh && (
-            <Button
-              iconName="refresh"
-              onClick={onRefresh}
-              ariaLabel="Refresh"
-            />
-          )}
+          {onRefresh && <Button iconName="refresh" onClick={onRefresh} ariaLabel="Refresh" />}
           {actionButtons}
         </SpaceBetween>
       }
@@ -380,9 +350,7 @@ function ResourceTableInner<T extends object>({
       loadingText={`Loading ${resourceName.toLowerCase()}…`}
       selectionType="multi"
       selectedItems={selectedItems}
-      onSelectionChange={({ detail }) =>
-        onSelectionChange?.(detail.selectedItems as T[])
-      }
+      onSelectionChange={({ detail }) => onSelectionChange?.(detail.selectedItems as T[])}
       sortingColumn={sortingColumn ?? undefined}
       sortingDescending={sortingDescending}
       onSortingChange={({ detail }) => {
@@ -407,9 +375,7 @@ function ResourceTableInner<T extends object>({
         <Pagination
           currentPageIndex={currentPage}
           pagesCount={pagesCount}
-          onChange={({ detail }) =>
-            handlePageChange(detail.currentPageIndex)
-          }
+          onChange={({ detail }) => handlePageChange(detail.currentPageIndex)}
           ariaLabels={{
             nextPageLabel: "Next page",
             previousPageLabel: "Previous page",
@@ -437,10 +403,7 @@ function ResourceTableInner<T extends object>({
             title: "Select visible columns",
             options: allColumnIds.map((id) => ({
               id,
-              label:
-                columnDefinitions
-                  .find((c) => c.id === id)
-                  ?.header?.toString() ?? id,
+              label: columnDefinitions.find((c) => c.id === id)?.header?.toString() ?? id,
               editable: true,
             })),
           }}
@@ -462,7 +425,7 @@ function ResourceTableInner<T extends object>({
  * `localStorage["prefs_{serviceKey}"]` when running in internal mode.
  */
 const ResourceTable = memo(ResourceTableInner) as <T extends object>(
-  props: ResourceTableProps<T>
+  props: ResourceTableProps<T>,
 ) => React.ReactElement;
 
 export default ResourceTable;

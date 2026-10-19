@@ -1,0 +1,69 @@
+/* ── ResourceTable: keep every column inside the card at any viewport width ──
+   Cloudscape sizes the table from its cells' content and only switches to
+   `table-layout: fixed` when `resizableColumns` is on. Because every cell is
+   `white-space: nowrap` by default, a value can never be narrower than its own
+   text, so the table's minimum width is fixed by the data (1361px on the Lambda
+   functions page) no matter how wide the card is. The card does scroll
+   (`overflow-x: auto`) but Cloudscape hides its native scrollbar, so the
+   columns past the edge end up silently off-screen with nothing to tell the
+   user.
+
+   `wrapLines` on the Table lets values break inside their cell, which collapses
+   the table's minimum width to roughly one word per column. Above the
+   fixed-layout breakpoint there is then enough room for the columns to be laid
+   out from their content across the full width of the card, which is what the
+   AWS console does: no horizontal scroll and every column visible.
+
+   Below the breakpoint there is no width left to lay the columns out from, so
+   the table is pinned to the width of its card instead. Pinning is what makes
+   the guarantee unconditional: the table is never wider than the card, so no
+   column can be pushed outside the viewport at any width, whatever the data.
+
+   1360px is where the content-proportional layout stops fitting this console's
+   content column (the widest card below it is ~1049px against a ~1013px
+   minimum). CSS cannot ask a table how wide it wants to be, so the split has
+   to be a viewport width; a table with many more columns than this one would
+   still scroll its card above the breakpoint, where Cloudscape shows its own
+   sticky scrollbar. */
+.awsui_resource-table {
+  box-sizing: border-box;
+  max-inline-size: 100%;
+  /* Never let a flex or grid ancestor stretch the card past its own track. */
+  min-inline-size: 0;
+}
+
+@media (min-width: 1360px) {
+  /* A cell's own text wraps, but a widget inside one should not: Cloudscape's
+     StatusIndicator is an inline-block container, so with wrapping enabled its
+     label breaks mid-word in a column sized from its content ("Activ / e").
+     Only applied where the columns are content-proportional, so the indicator
+     is never clipped by a narrow cell; below the breakpoint a wrapped label
+     still shows more of the value than a clipped one would. */
+  .awsui_resource-table [class*="awsui_body-cell-content"] [class*="awsui_status-"] {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 1359px) {
+  .awsui_resource-table table {
+    table-layout: fixed;
+    inline-size: 100%;
+  }
+
+  /* Equal columns leave little content room, so unbroken values (resource
+     names, ARNs, copyable ids) have to break inside the cell rather than being
+     clipped. This is deliberately scoped to the pinned layout: applying it
+     above the breakpoint as well would let the table fit at any width, but it
+     would also split short labels such as "Runtime" in the
+     content-proportional layout, where there is room for them. */
+  .awsui_resource-table [class*="awsui_body-cell-content"],
+  .awsui_resource-table [class*="awsui_header-cell-text"] {
+    overflow-wrap: anywhere;
+  }
+
+  /* Cloudscape pads cells by 20px a side, which is most of a column here. */
+  .awsui_resource-table th,
+  .awsui_resource-table [class*="awsui_body-cell-content"] {
+    padding-inline: 8px !important;
+  }
+}

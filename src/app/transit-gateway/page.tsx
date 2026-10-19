@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -32,7 +33,7 @@ export default function TransitGatewayPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/transit-gateway");
+      const res = await apiFetch("/api/transit-gateway");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setGateways(data.transitGateways || []);
@@ -43,12 +44,14 @@ export default function TransitGatewayPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function handleCreate() {
     setCreating(true);
     try {
-      const res = await fetch("/api/transit-gateway", {
+      const res = await apiFetch("/api/transit-gateway", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description }),
@@ -70,7 +73,9 @@ export default function TransitGatewayPage() {
     setDeleting(true);
     try {
       for (const tgw of selected) {
-        const res = await fetch(`/api/transit-gateway?tgwId=${tgw.TransitGatewayId}`, { method: "DELETE" });
+        const res = await apiFetch(`/api/transit-gateway?tgwId=${tgw.TransitGatewayId}`, {
+          method: "DELETE",
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
       }
@@ -84,44 +89,54 @@ export default function TransitGatewayPage() {
   }
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
           variant="h1"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh">Refresh</Button>
-              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>Delete</Button>
-              <Button variant="primary" onClick={() => setShowCreate(true)}>Create Transit Gateway</Button>
+              <Button onClick={load} iconName="refresh">
+                Refresh
+              </Button>
+              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>
+                Delete
+              </Button>
+              <Button variant="primary" onClick={() => setShowCreate(true)}>
+                Create Transit Gateway
+              </Button>
             </SpaceBetween>
           }
         >
           Transit Gateways
         </Header>
 
-        {error && <Alert type="error" dismissible onDismiss={() => setError(null)}>{error}</Alert>}
+        {error && (
+          <Alert type="error" dismissible onDismiss={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-        <Container>
-          <Table
-            loading={loading}
-            loadingText="Loading transit gateways..."
-            items={gateways}
-            selectionType="multi"
-            selectedItems={selected}
-            onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
-            columnDefinitions={[
-              { id: "tgwId", header: "Transit Gateway ID", cell: (item) => item.TransitGatewayId },
-              { id: "description", header: "Description", cell: (item) => item.Description || "—" },
-              { id: "state", header: "State", cell: (item) => item.State },
-            ]}
-            empty={
-              <Box textAlign="center" color="inherit">
-                <b>No transit gateways</b>
-                <Box variant="p" color="inherit">No transit gateways found.</Box>
+        <Table
+          loading={loading}
+          loadingText="Loading transit gateways..."
+          items={gateways}
+          selectionType="multi"
+          selectedItems={selected}
+          onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
+          columnDefinitions={[
+            { id: "tgwId", header: "Transit Gateway ID", cell: (item) => item.TransitGatewayId },
+            { id: "description", header: "Description", cell: (item) => item.Description || "—" },
+            { id: "state", header: "State", cell: (item) => item.State },
+          ]}
+          empty={
+            <Box textAlign="center" color="inherit">
+              <b>No transit gateways</b>
+              <Box variant="p" color="inherit">
+                No transit gateways found.
               </Box>
-            }
-          />
-        </Container>
+            </Box>
+          }
+        />
       </SpaceBetween>
 
       <Modal
@@ -132,14 +147,20 @@ export default function TransitGatewayPage() {
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button variant="primary" loading={creating} onClick={handleCreate}>Create Transit Gateway</Button>
+              <Button variant="primary" loading={creating} onClick={handleCreate}>
+                Create Transit Gateway
+              </Button>
             </SpaceBetween>
           </Box>
         }
       >
         <SpaceBetween size="m">
           <FormField label="Description">
-            <Input value={description} onChange={({ detail }) => setDescription(detail.value)} placeholder="My transit gateway" />
+            <Input
+              value={description}
+              onChange={({ detail }) => setDescription(detail.value)}
+              placeholder="My transit gateway"
+            />
           </FormField>
         </SpaceBetween>
       </Modal>

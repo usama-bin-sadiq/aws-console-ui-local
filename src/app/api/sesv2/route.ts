@@ -8,6 +8,7 @@ import {
 import { SESv2Client } from "@aws-sdk/client-sesv2";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
+import { getAdapterStatus, handleAdapterError } from "@/lib/adapter-error-handler";
 
 export async function GET(request: Request) {
   const denied = await requirePermission(request, "GET");
@@ -18,7 +19,8 @@ export async function GET(request: Request) {
     const res = await sesv2Client.send(new ListEmailIdentitiesCommand({}));
     return NextResponse.json({ identities: res.EmailIdentities || [] });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -30,13 +32,22 @@ export async function POST(request: Request) {
     const sesv2Client = getUserClientFromRequest(SESv2Client, request);
     const body = await request.json();
     if (body.action === "send") {
-      await sesv2Client.send(new SendEmailCommand({ FromEmailAddress: body.from, Destination: body.destination, Content: body.content }));
+      await sesv2Client.send(
+        new SendEmailCommand({
+          FromEmailAddress: body.from,
+          Destination: body.destination,
+          Content: body.content,
+        }),
+      );
       return NextResponse.json({ success: true });
     }
-    const res = await sesv2Client.send(new CreateEmailIdentityCommand({ EmailIdentity: body.emailIdentity }));
+    const res = await sesv2Client.send(
+      new CreateEmailIdentityCommand({ EmailIdentity: body.emailIdentity }),
+    );
     return NextResponse.json({ identity: res });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }
 
@@ -51,6 +62,7 @@ export async function DELETE(request: Request) {
     await sesv2Client.send(new DeleteEmailIdentityCommand({ EmailIdentity: identityName }));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    const adapter = getAdapterStatus();
+    return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
 }

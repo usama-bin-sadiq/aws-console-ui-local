@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -12,7 +13,6 @@ import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 
-
 interface CloudFrontDistribution {
   Id: string;
   DomainName: string;
@@ -21,7 +21,6 @@ interface CloudFrontDistribution {
   Enabled?: boolean;
   Origins?: { Quantity?: number; Items?: Array<{ Id?: string; DomainName?: string }> };
 }
-
 
 export default function CloudFrontPage() {
   const [distributions, setDistributions] = useState<CloudFrontDistribution[]>([]);
@@ -38,7 +37,7 @@ export default function CloudFrontPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/cloudfront");
+      const res = await apiFetch("/api/cloudfront");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setDistributions(data.distributions || []);
@@ -54,7 +53,7 @@ export default function CloudFrontPage() {
   }, []);
 
   const createDistribution = async () => {
-    await fetch("/api/cloudfront", {
+    await apiFetch("/api/cloudfront", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "create" }),
@@ -64,7 +63,7 @@ export default function CloudFrontPage() {
   };
 
   const updateDistribution = async () => {
-    await fetch("/api/cloudfront", {
+    await apiFetch("/api/cloudfront", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -80,12 +79,12 @@ export default function CloudFrontPage() {
   };
 
   const deleteDistribution = async (id: string) => {
-    await fetch(`/api/cloudfront?id=${encodeURIComponent(id)}&etag=dummy`, { method: "DELETE" });
+    await apiFetch(`/api/cloudfront?id=${encodeURIComponent(id)}&etag=dummy`, { method: "DELETE" });
     fetchDistributions();
   };
 
   const createInvalidation = async () => {
-    await fetch("/api/cloudfront", {
+    await apiFetch("/api/cloudfront", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -100,7 +99,7 @@ export default function CloudFrontPage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l" direction="vertical">
         <SpaceBetween direction="horizontal" size="m" alignItems="center">
           <Header variant="h1">CloudFront</Header>
@@ -110,54 +109,60 @@ export default function CloudFrontPage() {
             </Button>
           </SpaceBetween>
         </SpaceBetween>
-        {error && <Alert type="error" header="Error">{error}</Alert>}
-        <Container>
-          <Table
-            header={
-              <Header variant="h2">Distributions ({distributions.length})</Header>
-            }
-            items={distributions}
-            loading={loading}
-            columnDefinitions={[
-              { header: "ID", cell: (item) => item.Id, sortingField: "Id" },
-              { header: "Domain Name", cell: (item) => item.DomainName, sortingField: "DomainName" },
-              { header: "Status", cell: (item) => (
-                <StatusIndicator type={item.Status === "Deployed" ? "success" : "pending"}>{item.Status || "Unknown"}</StatusIndicator>
-              ), sortingField: "Status" },
-              { header: "Comment", cell: (item) => item.Comment || "—" },
-              { header: "Enabled", cell: (item) => item.Enabled !== false ? "Yes" : "No" },
-              {
-                header: "Actions",
-                cell: (item) => (
-                  <SpaceBetween direction="horizontal" size="xs">
-                    <Button
-                      onClick={() => {
-                        setSelectedDistributionId(item.Id);
-                        setInvalidationModal(true);
-                      }}
-                      formAction="none"
-                    >
-                      Invalidate
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setUpdateDistributionId(item.Id);
-                        setUpdateModal(true);
-                      }}
-                      formAction="none"
-                    >
-                      Update
-                    </Button>
-                    <Button onClick={() => deleteDistribution(item.Id)} formAction="none">
-                      Delete
-                    </Button>
-                  </SpaceBetween>
-                ),
-              },
-            ]}
-            empty={<Box textAlign="center">No distributions found.</Box>}
-          />
-        </Container>
+        {error && (
+          <Alert type="error" header="Error">
+            {error}
+          </Alert>
+        )}
+        <Table
+          header={<Header variant="h2">Distributions ({distributions.length})</Header>}
+          items={distributions}
+          loading={loading}
+          columnDefinitions={[
+            { header: "ID", cell: (item) => item.Id, sortingField: "Id" },
+            { header: "Domain Name", cell: (item) => item.DomainName, sortingField: "DomainName" },
+            {
+              header: "Status",
+              cell: (item) => (
+                <StatusIndicator type={item.Status === "Deployed" ? "success" : "pending"}>
+                  {item.Status || "Unknown"}
+                </StatusIndicator>
+              ),
+              sortingField: "Status",
+            },
+            { header: "Comment", cell: (item) => item.Comment || "—" },
+            { header: "Enabled", cell: (item) => (item.Enabled !== false ? "Yes" : "No") },
+            {
+              header: "Actions",
+              cell: (item) => (
+                <SpaceBetween direction="horizontal" size="xs">
+                  <Button
+                    onClick={() => {
+                      setSelectedDistributionId(item.Id);
+                      setInvalidationModal(true);
+                    }}
+                    formAction="none"
+                  >
+                    Invalidate
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setUpdateDistributionId(item.Id);
+                      setUpdateModal(true);
+                    }}
+                    formAction="none"
+                  >
+                    Update
+                  </Button>
+                  <Button onClick={() => deleteDistribution(item.Id)} formAction="none">
+                    Delete
+                  </Button>
+                </SpaceBetween>
+              ),
+            },
+          ]}
+          empty={<Box textAlign="center">No distributions found.</Box>}
+        />
 
         <Modal
           visible={createModal}
@@ -173,18 +178,37 @@ export default function CloudFrontPage() {
           }
         >
           <SpaceBetween size="m" direction="vertical">
-            <Box>Create a new CloudFront distribution using adapter SDK clients (CreateDistributionCommand, UpdateDistributionCommand, DeleteDistributionCommand, CreateInvalidationCommand).</Box>
-            <Box>Distribution config uses adapter endpoint and dummy test credentials from adapter layer.</Box>
+            <Box>
+              Create a new CloudFront distribution using adapter SDK clients
+              (CreateDistributionCommand, UpdateDistributionCommand, DeleteDistributionCommand,
+              CreateInvalidationCommand).
+            </Box>
+            <Box>
+              Distribution config uses adapter endpoint and dummy test credentials from adapter
+              layer.
+            </Box>
           </SpaceBetween>
         </Modal>
 
         <Modal
           visible={invalidationModal}
-          onDismiss={() => { setInvalidationModal(false); setSelectedDistributionId(""); setInvalidationPaths("/*"); }}
+          onDismiss={() => {
+            setInvalidationModal(false);
+            setSelectedDistributionId("");
+            setInvalidationPaths("/*");
+          }}
           header="Create invalidation"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => { setInvalidationModal(false); setSelectedDistributionId(""); setInvalidationPaths("/*"); }}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setInvalidationModal(false);
+                  setSelectedDistributionId("");
+                  setInvalidationPaths("/*");
+                }}
+              >
+                Cancel
+              </Button>
               <Button variant="primary" onClick={createInvalidation}>
                 Create invalidation
               </Button>
@@ -196,7 +220,11 @@ export default function CloudFrontPage() {
               <Input value={selectedDistributionId} readOnly />
             </FormField>
             <FormField label="Paths (comma-separated or one per line)">
-              <Input value={invalidationPaths} onChange={({ detail }) => setInvalidationPaths(detail.value)} placeholder="/*" />
+              <Input
+                value={invalidationPaths}
+                onChange={({ detail }) => setInvalidationPaths(detail.value)}
+                placeholder="/*"
+              />
             </FormField>
             <Box>Creates an invalidation batch via adapter SDK CreateInvalidationCommand.</Box>
           </SpaceBetween>
@@ -204,11 +232,21 @@ export default function CloudFrontPage() {
 
         <Modal
           visible={updateModal}
-          onDismiss={() => { setUpdateModal(false); setUpdateDistributionId(""); }}
+          onDismiss={() => {
+            setUpdateModal(false);
+            setUpdateDistributionId("");
+          }}
           header="Update distribution"
           footer={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => { setUpdateModal(false); setUpdateDistributionId(""); }}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setUpdateModal(false);
+                  setUpdateDistributionId("");
+                }}
+              >
+                Cancel
+              </Button>
               <Button variant="primary" onClick={updateDistribution}>
                 Update
               </Button>

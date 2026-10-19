@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -56,7 +57,7 @@ export default function SecurityGroupPage() {
 
   async function loadVpcs() {
     try {
-      const res = await fetch("/api/vpc");
+      const res = await apiFetch("/api/vpc");
       const data = await res.json();
       setVpcs(data.vpcs || []);
     } catch {
@@ -68,7 +69,7 @@ export default function SecurityGroupPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/security-group");
+      const res = await apiFetch("/api/security-group");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setGroups(data.securityGroups || []);
@@ -79,12 +80,15 @@ export default function SecurityGroupPage() {
     }
   }
 
-  useEffect(() => { load(); loadVpcs(); }, []);
+  useEffect(() => {
+    load();
+    loadVpcs();
+  }, []);
 
   async function handleCreate() {
     setCreating(true);
     try {
-      const res = await fetch("/api/security-group", {
+      const res = await apiFetch("/api/security-group", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ groupName, description, vpcId }),
@@ -116,12 +120,14 @@ export default function SecurityGroupPage() {
           IpProtocol: ruleProtocol === "-1" ? "-1" : ruleProtocol,
           FromPort: fromPort,
           ToPort: toPort,
-          IpRanges: ruleCidr ? [{ CidrIp: ruleCidr, Description: ruleDesc || undefined }] : undefined,
+          IpRanges: ruleCidr
+            ? [{ CidrIp: ruleCidr, Description: ruleDesc || undefined }]
+            : undefined,
         },
       ];
 
       const action = type === "inbound" ? "authorizeIngress" : "authorizeEgress";
-      const res = await fetch("/api/security-group", {
+      const res = await apiFetch("/api/security-group", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, groupId: detailGroup.GroupId, ipPermissions }),
@@ -130,9 +136,11 @@ export default function SecurityGroupPage() {
       if (data.error) throw new Error(data.error);
 
       // Refresh detail group from list
-      const refreshed = await fetch("/api/security-group");
+      const refreshed = await apiFetch("/api/security-group");
       const refreshedData = await refreshed.json();
-      const found = (refreshedData.securityGroups || []).find((g: SecurityGroup) => g.GroupId === detailGroup.GroupId);
+      const found = (refreshedData.securityGroups || []).find(
+        (g: SecurityGroup) => g.GroupId === detailGroup.GroupId,
+      );
       if (found) setDetailGroup(found);
       setRulePort("");
       setRuleDesc("");
@@ -149,7 +157,7 @@ export default function SecurityGroupPage() {
     setRemovingRule(true);
     try {
       const action = type === "inbound" ? "revokeIngress" : "revokeEgress";
-      const res = await fetch("/api/security-group", {
+      const res = await apiFetch("/api/security-group", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, groupId: detailGroup.GroupId, ipPermissions: [rule] }),
@@ -157,9 +165,11 @@ export default function SecurityGroupPage() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      const refreshed = await fetch("/api/security-group");
+      const refreshed = await apiFetch("/api/security-group");
       const refreshedData = await refreshed.json();
-      const found = (refreshedData.securityGroups || []).find((g: SecurityGroup) => g.GroupId === detailGroup.GroupId);
+      const found = (refreshedData.securityGroups || []).find(
+        (g: SecurityGroup) => g.GroupId === detailGroup.GroupId,
+      );
       if (found) setDetailGroup(found);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to remove rule");
@@ -173,7 +183,9 @@ export default function SecurityGroupPage() {
     setDeleting(true);
     try {
       for (const sg of selected) {
-        const res = await fetch(`/api/security-group?groupId=${sg.GroupId}`, { method: "DELETE" });
+        const res = await apiFetch(`/api/security-group?groupId=${sg.GroupId}`, {
+          method: "DELETE",
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
       }
@@ -187,60 +199,87 @@ export default function SecurityGroupPage() {
   }
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header
           variant="h1"
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh">Refresh</Button>
-              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>Delete</Button>
-              <Button variant="primary" onClick={() => setShowCreate(true)}>Create Security Group</Button>
+              <Button onClick={load} iconName="refresh">
+                Refresh
+              </Button>
+              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>
+                Delete
+              </Button>
+              <Button variant="primary" onClick={() => setShowCreate(true)}>
+                Create Security Group
+              </Button>
             </SpaceBetween>
           }
         >
           Security Groups
         </Header>
 
-        {error && <Alert type="error" dismissible onDismiss={() => setError(null)}>{error}</Alert>}
+        {error && (
+          <Alert type="error" dismissible onDismiss={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-        <Container>
-          <Table
-            loading={loading}
-            loadingText="Loading security groups..."
-            items={groups}
-            selectionType="multi"
-            selectedItems={selected}
-            onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
-            columnDefinitions={[
-              {
-                id: "groupName",
-                header: "Group Name",
-                cell: (item: SecurityGroup) => (
-                  <Button variant="link" onClick={() => setDetailGroup(item)}>
-                    {item.GroupName}
-                  </Button>
-                ),
-              },
-              { id: "groupId", header: "Group ID", cell: (item) => item.GroupId },
-              { id: "description", header: "Description", cell: (item) => <TruncatedText>{item.Description}</TruncatedText> },
-              { id: "vpcId", header: "VPC ID", cell: (item) => item.VpcId },
-            ]}
-            empty={
-              <Box textAlign="center" color="inherit">
-                <b>No security groups</b>
-                <Box variant="p" color="inherit">No security groups found.</Box>
+        <Table
+          loading={loading}
+          loadingText="Loading security groups..."
+          items={groups}
+          selectionType="multi"
+          selectedItems={selected}
+          onSelectionChange={({ detail }) => setSelected(detail.selectedItems)}
+          columnDefinitions={[
+            {
+              id: "groupName",
+              header: "Group Name",
+              cell: (item: SecurityGroup) => (
+                <Button variant="link" onClick={() => setDetailGroup(item)}>
+                  {item.GroupName}
+                </Button>
+              ),
+            },
+            { id: "groupId", header: "Group ID", cell: (item) => item.GroupId },
+            {
+              id: "description",
+              header: "Description",
+              cell: (item) => <TruncatedText>{item.Description}</TruncatedText>,
+            },
+            { id: "vpcId", header: "VPC ID", cell: (item) => item.VpcId },
+          ]}
+          empty={
+            <Box textAlign="center" color="inherit">
+              <b>No security groups</b>
+              <Box variant="p" color="inherit">
+                No security groups found.
               </Box>
-            }
-          />
-        </Container>
+            </Box>
+          }
+        />
 
         {detailGroup && (
-          <Container header={<Header variant="h2">Security Group: {detailGroup.GroupName} ({detailGroup.GroupId})</Header>}>
+          <Container
+            header={
+              <Header variant="h2">
+                Security Group: {detailGroup.GroupName} ({detailGroup.GroupId})
+              </Header>
+            }
+            className="aws-table-card"
+          >
             <SpaceBetween size="m">
-              <Box variant="small" color="text-label">Description: {detailGroup.Description || "—"}</Box>
-              <Box variant="small" color="text-label">VPC ID: {detailGroup.VpcId}</Box>
-              <Button variant="primary" onClick={() => setDetailGroup(null)}>Back to List</Button>
+              <Box variant="small" color="text-label">
+                Description: {detailGroup.Description || "—"}
+              </Box>
+              <Box variant="small" color="text-label">
+                VPC ID: {detailGroup.VpcId}
+              </Box>
+              <Button variant="primary" onClick={() => setDetailGroup(null)}>
+                Back to List
+              </Button>
 
               <Tabs
                 tabs={[
@@ -252,13 +291,42 @@ export default function SecurityGroupPage() {
                         <Table
                           columnDefinitions={[
                             { header: "Type", cell: (r: SecurityGroupRule) => r.IpProtocol || "—" },
-                            { header: "Port Range", cell: (r: SecurityGroupRule) => `${r.FromPort ?? ""}-${r.ToPort ?? ""}` },
-                            { header: "Source", cell: (r: SecurityGroupRule) => r.IpRanges?.map((i) => i.CidrIp || i.Description || "").join(", ") || r.UserIdGroupPairs?.map((p) => p.GroupId || p.Description || "").join(", ") || "—" },
-                            { header: "Description", cell: (r: SecurityGroupRule) => <TruncatedText>{r.IpRanges?.map((i) => i.Description || "").join(", ") || r.UserIdGroupPairs?.map((p) => p.Description || "").join(", ") || "—"}</TruncatedText> },
+                            {
+                              header: "Port Range",
+                              cell: (r: SecurityGroupRule) =>
+                                `${r.FromPort ?? ""}-${r.ToPort ?? ""}`,
+                            },
+                            {
+                              header: "Source",
+                              cell: (r: SecurityGroupRule) =>
+                                r.IpRanges?.map((i) => i.CidrIp || i.Description || "").join(
+                                  ", ",
+                                ) ||
+                                r.UserIdGroupPairs?.map(
+                                  (p) => p.GroupId || p.Description || "",
+                                ).join(", ") ||
+                                "—",
+                            },
+                            {
+                              header: "Description",
+                              cell: (r: SecurityGroupRule) => (
+                                <TruncatedText>
+                                  {r.IpRanges?.map((i) => i.Description || "").join(", ") ||
+                                    r.UserIdGroupPairs?.map((p) => p.Description || "").join(
+                                      ", ",
+                                    ) ||
+                                    "—"}
+                                </TruncatedText>
+                              ),
+                            },
                             {
                               header: "Actions",
                               cell: (r: SecurityGroupRule) => (
-                                <Button variant="link" loading={removingRule} onClick={() => handleRemoveRule("inbound", r)}>
+                                <Button
+                                  variant="link"
+                                  loading={removingRule}
+                                  onClick={() => handleRemoveRule("inbound", r)}
+                                >
                                   Remove
                                 </Button>
                               ),
@@ -280,19 +348,35 @@ export default function SecurityGroupPage() {
                                   { label: "ICMP", value: "icmp" },
                                   { label: "All traffic", value: "-1" },
                                 ]}
-                                onChange={({ detail }) => setRuleProtocol(detail.selectedOption.value || "tcp")}
+                                onChange={({ detail }) =>
+                                  setRuleProtocol(detail.selectedOption.value || "tcp")
+                                }
                               />
                             </FormField>
                             <FormField label="Port Range">
-                              <Input value={rulePort} onChange={({ detail }) => setRulePort(detail.value)} placeholder="e.g. 80 or 443-443" />
+                              <Input
+                                value={rulePort}
+                                onChange={({ detail }) => setRulePort(detail.value)}
+                                placeholder="e.g. 80 or 443-443"
+                              />
                             </FormField>
                             <FormField label="Source CIDR">
-                              <Input value={ruleCidr} onChange={({ detail }) => setRuleCidr(detail.value)} placeholder="0.0.0.0/0" />
+                              <Input
+                                value={ruleCidr}
+                                onChange={({ detail }) => setRuleCidr(detail.value)}
+                                placeholder="0.0.0.0/0"
+                              />
                             </FormField>
                             <FormField label="Description (optional)">
-                              <Input value={ruleDesc} onChange={({ detail }) => setRuleDesc(detail.value)} placeholder="Optional" />
+                              <Input
+                                value={ruleDesc}
+                                onChange={({ detail }) => setRuleDesc(detail.value)}
+                                placeholder="Optional"
+                              />
                             </FormField>
-                            <Button loading={addingRule} onClick={() => handleAddRule("inbound")}>Add Rule</Button>
+                            <Button loading={addingRule} onClick={() => handleAddRule("inbound")}>
+                              Add Rule
+                            </Button>
                           </SpaceBetween>
                         </Container>
                       </SpaceBetween>
@@ -306,13 +390,42 @@ export default function SecurityGroupPage() {
                         <Table
                           columnDefinitions={[
                             { header: "Type", cell: (r: SecurityGroupRule) => r.IpProtocol || "—" },
-                            { header: "Port Range", cell: (r: SecurityGroupRule) => `${r.FromPort ?? ""}-${r.ToPort ?? ""}` },
-                            { header: "Destination", cell: (r: SecurityGroupRule) => r.IpRanges?.map((i) => i.CidrIp || i.Description || "").join(", ") || r.UserIdGroupPairs?.map((p) => p.GroupId || p.Description || "").join(", ") || "—" },
-                            { header: "Description", cell: (r: SecurityGroupRule) => <TruncatedText>{r.IpRanges?.map((i) => i.Description || "").join(", ") || r.UserIdGroupPairs?.map((p) => p.Description || "").join(", ") || "—"}</TruncatedText> },
+                            {
+                              header: "Port Range",
+                              cell: (r: SecurityGroupRule) =>
+                                `${r.FromPort ?? ""}-${r.ToPort ?? ""}`,
+                            },
+                            {
+                              header: "Destination",
+                              cell: (r: SecurityGroupRule) =>
+                                r.IpRanges?.map((i) => i.CidrIp || i.Description || "").join(
+                                  ", ",
+                                ) ||
+                                r.UserIdGroupPairs?.map(
+                                  (p) => p.GroupId || p.Description || "",
+                                ).join(", ") ||
+                                "—",
+                            },
+                            {
+                              header: "Description",
+                              cell: (r: SecurityGroupRule) => (
+                                <TruncatedText>
+                                  {r.IpRanges?.map((i) => i.Description || "").join(", ") ||
+                                    r.UserIdGroupPairs?.map((p) => p.Description || "").join(
+                                      ", ",
+                                    ) ||
+                                    "—"}
+                                </TruncatedText>
+                              ),
+                            },
                             {
                               header: "Actions",
                               cell: (r: SecurityGroupRule) => (
-                                <Button variant="link" loading={removingRule} onClick={() => handleRemoveRule("outbound", r)}>
+                                <Button
+                                  variant="link"
+                                  loading={removingRule}
+                                  onClick={() => handleRemoveRule("outbound", r)}
+                                >
                                   Remove
                                 </Button>
                               ),
@@ -334,19 +447,35 @@ export default function SecurityGroupPage() {
                                   { label: "ICMP", value: "icmp" },
                                   { label: "All traffic", value: "-1" },
                                 ]}
-                                onChange={({ detail }) => setRuleProtocol(detail.selectedOption.value || "tcp")}
+                                onChange={({ detail }) =>
+                                  setRuleProtocol(detail.selectedOption.value || "tcp")
+                                }
                               />
                             </FormField>
                             <FormField label="Port Range">
-                              <Input value={rulePort} onChange={({ detail }) => setRulePort(detail.value)} placeholder="e.g. 80 or 443-443" />
+                              <Input
+                                value={rulePort}
+                                onChange={({ detail }) => setRulePort(detail.value)}
+                                placeholder="e.g. 80 or 443-443"
+                              />
                             </FormField>
                             <FormField label="Destination CIDR">
-                              <Input value={ruleCidr} onChange={({ detail }) => setRuleCidr(detail.value)} placeholder="0.0.0.0/0" />
+                              <Input
+                                value={ruleCidr}
+                                onChange={({ detail }) => setRuleCidr(detail.value)}
+                                placeholder="0.0.0.0/0"
+                              />
                             </FormField>
                             <FormField label="Description (optional)">
-                              <Input value={ruleDesc} onChange={({ detail }) => setRuleDesc(detail.value)} placeholder="Optional" />
+                              <Input
+                                value={ruleDesc}
+                                onChange={({ detail }) => setRuleDesc(detail.value)}
+                                placeholder="Optional"
+                              />
                             </FormField>
-                            <Button loading={addingRule} onClick={() => handleAddRule("outbound")}>Add Rule</Button>
+                            <Button loading={addingRule} onClick={() => handleAddRule("outbound")}>
+                              Add Rule
+                            </Button>
                           </SpaceBetween>
                         </Container>
                       </SpaceBetween>
@@ -367,22 +496,42 @@ export default function SecurityGroupPage() {
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button variant="primary" loading={creating} onClick={handleCreate}>Create Security Group</Button>
+              <Button variant="primary" loading={creating} onClick={handleCreate}>
+                Create Security Group
+              </Button>
             </SpaceBetween>
           </Box>
         }
       >
         <SpaceBetween size="m">
           <FormField label="Group Name">
-            <Input value={groupName} onChange={({ detail }) => setGroupName(detail.value)} placeholder="my-security-group" />
+            <Input
+              value={groupName}
+              onChange={({ detail }) => setGroupName(detail.value)}
+              placeholder="my-security-group"
+            />
           </FormField>
           <FormField label="Description">
-            <Input value={description} onChange={({ detail }) => setDescription(detail.value)} placeholder="My security group" />
+            <Input
+              value={description}
+              onChange={({ detail }) => setDescription(detail.value)}
+              placeholder="My security group"
+            />
           </FormField>
           <FormField label="VPC ID">
             <Select
-              selectedOption={vpcId ? { value: vpcId, label: `${vpcId} (${vpcs.find((v) => v.VpcId === vpcId)?.CidrBlock || ""})` } : null}
-              options={vpcs.map((vpc) => ({ value: vpc.VpcId, label: `${vpc.VpcId} (${vpc.CidrBlock || ""})` }))}
+              selectedOption={
+                vpcId
+                  ? {
+                      value: vpcId,
+                      label: `${vpcId} (${vpcs.find((v) => v.VpcId === vpcId)?.CidrBlock || ""})`,
+                    }
+                  : null
+              }
+              options={vpcs.map((vpc) => ({
+                value: vpc.VpcId,
+                label: `${vpc.VpcId} (${vpc.CidrBlock || ""})`,
+              }))}
               placeholder="Select a VPC"
               onChange={({ detail }) => setVpcId(detail.selectedOption.value || "")}
             />

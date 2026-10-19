@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api-client";
 import React, { useState } from "react";
 import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
@@ -25,7 +26,7 @@ export default function BedrockRuntimePage() {
     setError(null);
     setResponse(null);
     try {
-      const res = await fetch("/api/bedrock-runtime", {
+      const res = await apiFetch("/api/bedrock-runtime", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -37,9 +38,7 @@ export default function BedrockRuntimePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to invoke model");
       setResponse(
-        typeof data.response === "string"
-          ? data.response
-          : JSON.stringify(data.response, null, 2)
+        typeof data.response === "string" ? data.response : JSON.stringify(data.response, null, 2),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -49,7 +48,7 @@ export default function BedrockRuntimePage() {
   };
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
         <Header variant="h1">Amazon Bedrock Runtime</Header>
 
@@ -97,9 +96,7 @@ export default function BedrockRuntimePage() {
             )}
 
             {response === null && !loading && (
-              <Box color="text-status-inactive">
-                Response will appear here after invocation.
-              </Box>
+              <Box color="text-status-inactive">Response will appear here after invocation.</Box>
             )}
           </SpaceBetween>
         </Container>

@@ -1,0 +1,88 @@
+# Docker Compose — LocalEmu Mode Only
+# Adapter: ACTIVE_BACKEND=localemu (port 4566, same edge port as LocalStack)
+# Usage: docker compose -f docker-compose.localemu.yml up -d
+#
+# LocalEmu is the community continuation of the archived LocalStack codebase
+# (Apache-2.0). It is "totally free": no account, no auth token, no tiers, no
+# usage limits, no telemetry.
+#
+# Facts from localemu.cloud/docs and the project README that this file relies on:
+#   - Gateway edge port 4566
+#   - Health endpoint: GET /_localemu/health  ->  per-service map + edition + version
+#   - 132 services, each with a published fidelity tier ("Full emulation" 27,
+#     "Good emulation" 20, "API compatible" 85). The console honours those tiers.
+#   - Persistence volume: /var/lib/localemu (PERSISTENCE=1)
+#   - SERVICES unset means every service is started, which is what the console
+#     wants; set it to a comma-separated list to run a subset.
+#   - DASHBOARD_API_OPEN=1 is required for /_localemu/dashboard to answer from a
+#     browser: a port-mapped request arrives from the Docker bridge rather than
+#     127.0.0.1 inside the container, so without it the dashboard returns 403.
+#   - Ten services are backed by real containers and need the Docker socket:
+#     EC2, Lambda, ECS, EKS, RDS, OpenSearch, Redshift, MQ, MSK and VPC
+#     networking. Everything else is pure Python and works without Docker.
+#   - On Docker Desktop for macOS the socket is owned by root inside the
+#     container, so `user: root` is required for those engine-backed services.
+#     On Linux, adding the `docker` group is sufficient instead.
+#   - IAM enforcement is opt-in: IAM_ENFORCEMENT=1 (strict), =soft (audit), or off.
+#     It is off by default so the console is not locked out by policy evaluation.
+
+services:
+  localemu:
+    image: localemu/localemu:latest
+    container_name: aws-console-localemu
+    ports:
+      - "4566:4566"
+      # External service ports used by engine-backed services (RDS, OpenSearch).
+      - "4510-4559:4510-4559"
+    environment:
+      - PERSISTENCE=1
+      - DEBUG=0
+      - GATEWAY_LISTEN=0.0.0.0:4566
+      # Required so the built-in LocalEmu dashboard answers a browser request.
+      - DASHBOARD_API_OPEN=1
+      # LocalEmu treats the canonical AWS example credentials as root access.
+      - AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+      - AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - ./data/localemu/state:/var/lib/localemu
+      - /var/run/docker.sock:/var/run/docker.sock
+    # Required on Docker Desktop (macOS) for the container-backed services.
+    user: root
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localemu/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  # NOTE: an earlier "localemu-health" wait-loop sidecar was removed. Its
+  # command exits 0 on the first successful curl, which `restart: unless-stopped`
+  # then restarts forever, producing an endless crash-loop and log spam. The
+  # `localemu` service already declares a real healthcheck against
+  # /_localemu/health, and `aws-console` depends on that directly.
+
+  aws-console:
+    build: .
+    container_name: aws-console-app-localemu
+    ports:
+      # Host 3000 is often taken by another local dev server, so publish on 3100.
+      # The container still listens on 3000 (see PORT in the Dockerfile).
+      - "3100:3000"
+    environment:
+      - ACTIVE_BACKEND=localemu
+      - LOCALEMU_HOSTNAME=localemu
+      - LOCALEMU_EDGE_PORT=4566
+      - LOCALEMU_ENDPOINT=http://localemu:4566
+      - LOCALEMU_SSL_ENABLED=false
+      - AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+      - AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+      - AWS_DEFAULT_REGION=us-east-1
+    depends_on:
+      localemu:
+        condition: service_healthy
+    # next.config.ts sets output:"standalone", so the image runs `node server.js`
+    # rather than `next start`. The host tree is intentionally NOT mounted over
+    # /app: that would shadow the built server with the unbaked source.
+    command: ["node", "server.js"]

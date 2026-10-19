@@ -43,49 +43,66 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "startInstance") {
-      const res = await rdsClient.send(new StartDBInstanceCommand({ DBInstanceIdentifier: body.dbInstanceIdentifier }));
+      const res = await rdsClient.send(
+        new StartDBInstanceCommand({ DBInstanceIdentifier: body.dbInstanceIdentifier }),
+      );
       return NextResponse.json({ success: true, DBInstance: res.DBInstance });
     }
 
     if (body.action === "stopInstance") {
-      const res = await rdsClient.send(new StopDBInstanceCommand({ DBInstanceIdentifier: body.dbInstanceIdentifier }));
+      const res = await rdsClient.send(
+        new StopDBInstanceCommand({ DBInstanceIdentifier: body.dbInstanceIdentifier }),
+      );
       return NextResponse.json({ success: true, DBInstance: res.DBInstance });
     }
 
     if (body.action === "rebootInstance") {
-      const res = await rdsClient.send(new RebootDBInstanceCommand({ DBInstanceIdentifier: body.dbInstanceIdentifier }));
+      const res = await rdsClient.send(
+        new RebootDBInstanceCommand({ DBInstanceIdentifier: body.dbInstanceIdentifier }),
+      );
       return NextResponse.json({ success: true, DBInstance: res.DBInstance });
     }
 
     if (body.action === "modifyInstance") {
-      const res = await rdsClient.send(new ModifyDBInstanceCommand({ DBInstanceIdentifier: body.dbInstanceIdentifier, ...body.params }));
+      const res = await rdsClient.send(
+        new ModifyDBInstanceCommand({
+          DBInstanceIdentifier: body.dbInstanceIdentifier,
+          ...body.params,
+        }),
+      );
       return NextResponse.json({ success: true, DBInstance: res.DBInstance });
     }
 
     if (body.action === "createSnapshot") {
-      const res = await rdsClient.send(new CreateDBSnapshotCommand({
-        DBInstanceIdentifier: body.dbInstanceIdentifier,
-        DBSnapshotIdentifier: body.snapshotIdentifier,
-        Tags: body.tags,
-      }));
+      const res = await rdsClient.send(
+        new CreateDBSnapshotCommand({
+          DBInstanceIdentifier: body.dbInstanceIdentifier,
+          DBSnapshotIdentifier: body.snapshotIdentifier,
+          Tags: body.tags,
+        }),
+      );
       return NextResponse.json({ success: true, DBSnapshot: res.DBSnapshot });
     }
 
     if (body.action === "describeSnapshots") {
-      const res = await rdsClient.send(new DescribeDBSnapshotsCommand({
-        DBInstanceIdentifier: body.dbInstanceIdentifier,
-        DBSnapshotIdentifier: body.snapshotIdentifier,
-      }));
+      const res = await rdsClient.send(
+        new DescribeDBSnapshotsCommand({
+          DBInstanceIdentifier: body.dbInstanceIdentifier,
+          DBSnapshotIdentifier: body.snapshotIdentifier,
+        }),
+      );
       return NextResponse.json({ snapshots: res.DBSnapshots || [] });
     }
 
     if (body.action === "deleteInstance") {
-      await rdsClient.send(new DeleteDBInstanceCommand({
-        DBInstanceIdentifier: body.dbInstanceIdentifier,
-        SkipFinalSnapshot: body.skipFinalSnapshot ?? true,
-        FinalDBSnapshotIdentifier: body.finalDBSnapshotIdentifier,
-        DeleteAutomatedBackups: body.deleteAutomatedBackups ?? true,
-      }));
+      await rdsClient.send(
+        new DeleteDBInstanceCommand({
+          DBInstanceIdentifier: body.dbInstanceIdentifier,
+          SkipFinalSnapshot: body.skipFinalSnapshot ?? true,
+          FinalDBSnapshotIdentifier: body.finalDBSnapshotIdentifier,
+          DeleteAutomatedBackups: body.deleteAutomatedBackups ?? true,
+        }),
+      );
       return NextResponse.json({ success: true });
     }
 
@@ -104,10 +121,12 @@ export async function DELETE(request: Request) {
     const rdsClient = getUserClientFromRequest(RDSClient, request);
     const { searchParams } = new URL(request.url);
     const dbInstanceIdentifier = searchParams.get("dbInstanceIdentifier");
-    await rdsClient.send(new DeleteDBInstanceCommand({
-      DBInstanceIdentifier: dbInstanceIdentifier!,
-      SkipFinalSnapshot: true,
-    }));
+    await rdsClient.send(
+      new DeleteDBInstanceCommand({
+        DBInstanceIdentifier: dbInstanceIdentifier!,
+        SkipFinalSnapshot: true,
+      }),
+    );
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const adapter = getAdapterStatus();

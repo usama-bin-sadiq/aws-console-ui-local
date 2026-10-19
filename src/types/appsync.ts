@@ -3,5 +3,5 @@
  */
 export interface AppSyncAPIConfig {
   Name?: string;
-  AuthenticationType?: 'API_KEY' | 'AWS_IAM';
+  AuthenticationType?: "API_KEY" | "AWS_IAM";
 }

@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { ResourceIcon } from "@/components/ui/ResourceIcon";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import Cards from "@cloudscape-design/components/cards";
@@ -12,8 +11,14 @@ import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Link from "@cloudscape-design/components/link";
-import { AdapterMode, EmulatorHealthStatus, findServiceCompatibility, getServiceAvailability } from "@/constants/service-compatibility";
+import {
+  EmulatorHealthStatus,
+  findServiceCompatibility,
+  getServiceAvailability,
+  toAdapterMode,
+} from "@/constants/service-compatibility";
 import { SERVICE_ICONS } from "@/constants/service-icons";
+import { useSettingsStore } from "@/stores/settings";
 
 interface Service {
   name: string;
@@ -24,52 +29,208 @@ interface Service {
 }
 
 const ALL_SERVICES: Service[] = [
-  { name: "Amazon S3", description: "Scalable object storage", href: "/s3", icon: "folder", category: "Storage" },
-  { name: "EBS Volumes", description: "Block storage volumes", href: "/volume", icon: "folder", category: "Storage" },
-  { name: "EBS Snapshots", description: "Volume snapshots", href: "/snapshot", icon: "folder", category: "Storage" },
-  { name: "EFS", description: "Elastic file system", href: "/efs", icon: "folder", category: "Storage" },
-  { name: "Backup", description: "Centralized backup", href: "/backup", icon: "folder", category: "Storage" },
+  {
+    name: "Amazon S3",
+    description: "Scalable object storage",
+    href: "/s3",
+    icon: "folder",
+    category: "Storage",
+  },
+  {
+    name: "EBS Volumes",
+    description: "Block storage volumes",
+    href: "/volume",
+    icon: "folder",
+    category: "Storage",
+  },
+  {
+    name: "EBS Snapshots",
+    description: "Volume snapshots",
+    href: "/snapshot",
+    icon: "folder",
+    category: "Storage",
+  },
+  {
+    name: "EFS",
+    description: "Elastic file system",
+    href: "/efs",
+    icon: "folder",
+    category: "Storage",
+  },
+  {
+    name: "Backup",
+    description: "Centralized backup",
+    href: "/backup",
+    icon: "folder",
+    category: "Storage",
+  },
 
-  { name: "Amazon EC2", description: "Virtual servers", href: "/ec2", icon: "status-positive", category: "Compute" },
-  { name: "AWS Lambda", description: "Serverless compute", href: "/lambda", icon: "status-positive", category: "Compute" },
-  { name: "ECS Clusters", description: "Container orchestration", href: "/ecs-cluster", icon: "status-positive", category: "Compute" },
-  { name: "EKS Clusters", description: "Kubernetes service", href: "/eks-cluster", icon: "status-positive", category: "Compute" },
+  {
+    name: "Amazon EC2",
+    description: "Virtual servers",
+    href: "/ec2",
+    icon: "status-positive",
+    category: "Compute",
+  },
+  {
+    name: "AWS Lambda",
+    description: "Serverless compute",
+    href: "/lambda",
+    icon: "status-positive",
+    category: "Compute",
+  },
+  {
+    name: "ECS Clusters",
+    description: "Container orchestration",
+    href: "/ecs-cluster",
+    icon: "status-positive",
+    category: "Compute",
+  },
+  {
+    name: "EKS Clusters",
+    description: "Kubernetes service",
+    href: "/eks-cluster",
+    icon: "status-positive",
+    category: "Compute",
+  },
 
-  { name: "Amazon DynamoDB", description: "NoSQL database", href: "/dynamodb", icon: "status-info", category: "Database" },
-  { name: "Amazon RDS", description: "Relational database", href: "/rds", icon: "status-info", category: "Database" },
-  { name: "ElastiCache", description: "In-memory caching", href: "/elasticache", icon: "status-info", category: "Database" },
+  {
+    name: "Amazon DynamoDB",
+    description: "NoSQL database",
+    href: "/dynamodb",
+    icon: "status-info",
+    category: "Database",
+  },
+  {
+    name: "Amazon RDS",
+    description: "Relational database",
+    href: "/rds",
+    icon: "status-info",
+    category: "Database",
+  },
+  {
+    name: "ElastiCache",
+    description: "In-memory caching",
+    href: "/elasticache",
+    icon: "status-info",
+    category: "Database",
+  },
 
-  { name: "Amazon VPC", description: "Virtual private cloud", href: "/vpc", icon: "status-positive", category: "Networking" },
-  { name: "Route 53", description: "DNS and domain names", href: "/route53", icon: "status-positive", category: "Networking" },
-  { name: "CloudFront", description: "Content delivery network", href: "/cloudfront", icon: "status-positive", category: "Networking" },
+  {
+    name: "Amazon VPC",
+    description: "Virtual private cloud",
+    href: "/vpc",
+    icon: "status-positive",
+    category: "Networking",
+  },
+  {
+    name: "Route 53",
+    description: "DNS and domain names",
+    href: "/route53",
+    icon: "status-positive",
+    category: "Networking",
+  },
+  {
+    name: "CloudFront",
+    description: "Content delivery network",
+    href: "/cloudfront",
+    icon: "status-positive",
+    category: "Networking",
+  },
 
-  { name: "AWS IAM", description: "Identity & access", href: "/iam", icon: "user-profile", category: "Security" },
-  { name: "AWS KMS", description: "Key management service", href: "/kms", icon: "unlocked", category: "Security" },
-  { name: "Secrets Manager", description: "Secrets rotation", href: "/secrets-manager", icon: "unlocked", category: "Security" },
-  { name: "ACM", description: "SSL/TLS certificates", href: "/acm", icon: "unlocked", category: "Security" },
+  {
+    name: "AWS IAM",
+    description: "Identity & access",
+    href: "/iam",
+    icon: "user-profile",
+    category: "Security",
+  },
+  {
+    name: "AWS KMS",
+    description: "Key management service",
+    href: "/kms",
+    icon: "unlocked",
+    category: "Security",
+  },
+  {
+    name: "Secrets Manager",
+    description: "Secrets rotation",
+    href: "/secrets-manager",
+    icon: "unlocked",
+    category: "Security",
+  },
+  {
+    name: "ACM",
+    description: "SSL/TLS certificates",
+    href: "/acm",
+    icon: "unlocked",
+    category: "Security",
+  },
 
-  { name: "Amazon CloudWatch", description: "Monitoring", href: "/cloudwatch", icon: "status-info", category: "Monitoring" },
-  { name: "CloudWatch Logs", description: "Log management", href: "/cloudwatch-logs", icon: "status-info", category: "Monitoring" },
-  { name: "X-Ray", description: "Distributed tracing", href: "/x-ray", icon: "status-info", category: "Monitoring" },
+  {
+    name: "Amazon CloudWatch",
+    description: "Monitoring",
+    href: "/cloudwatch",
+    icon: "status-info",
+    category: "Monitoring",
+  },
+  {
+    name: "CloudWatch Logs",
+    description: "Log management",
+    href: "/cloudwatch-logs",
+    icon: "status-info",
+    category: "Monitoring",
+  },
+  {
+    name: "X-Ray",
+    description: "Distributed tracing",
+    href: "/x-ray",
+    icon: "status-info",
+    category: "Monitoring",
+  },
 
-  { name: "Amazon SQS", description: "Message queuing", href: "/sqs", icon: "envelope", category: "Application Integration" },
-  { name: "Amazon SNS", description: "Pub/sub messaging", href: "/sns", icon: "envelope", category: "Application Integration" },
-  { name: "Step Functions", description: "Workflow orchestration", href: "/step-functions", icon: "envelope", category: "Application Integration" },
+  {
+    name: "Amazon SQS",
+    description: "Message queuing",
+    href: "/sqs",
+    icon: "envelope",
+    category: "Application Integration",
+  },
+  {
+    name: "Amazon SNS",
+    description: "Pub/sub messaging",
+    href: "/sns",
+    icon: "envelope",
+    category: "Application Integration",
+  },
+  {
+    name: "Step Functions",
+    description: "Workflow orchestration",
+    href: "/step-functions",
+    icon: "envelope",
+    category: "Application Integration",
+  },
 ];
 
 export default function Dashboard() {
-  const router = useRouter();
   const [provider, setProvider] = useState<string>("checking...");
   const [healthStatus, setHealthStatus] = useState<EmulatorHealthStatus>("checking");
   const [healthServices, setHealthServices] = useState<Record<string, unknown>>({});
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const { favorites: persistedFavorites, addFavorite, removeFavorite } = useSettingsStore();
+  const [legacyFavorites, setLegacyFavorites] = useState<string[]>([]);
   const [recentlyVisited, setRecentlyVisited] = useState<Service[]>([]);
+  const favorites = Array.from(
+    new Set([...persistedFavorites.map((favorite) => favorite.serviceHref), ...legacyFavorites]),
+  );
 
   useEffect(() => {
     const savedFavorites = localStorage.getItem("aws_favorites");
     if (savedFavorites) {
       try {
-        setFavorites(JSON.parse(savedFavorites));
+        const parsed = JSON.parse(savedFavorites);
+        if (Array.isArray(parsed)) {
+          setLegacyFavorites(parsed.filter((href): href is string => typeof href === "string"));
+        }
       } catch {
         // Ignore errors
       }
@@ -78,7 +239,17 @@ export default function Dashboard() {
     const savedRecent = localStorage.getItem("aws_recently_visited");
     if (savedRecent) {
       try {
-        setRecentlyVisited(JSON.parse(savedRecent));
+        const parsed = JSON.parse(savedRecent);
+        const recentHrefs = Array.isArray(parsed)
+          ? parsed
+              .map((item) => (typeof item === "string" ? item : item?.href))
+              .filter((href): href is string => typeof href === "string")
+          : [];
+        setRecentlyVisited(
+          recentHrefs
+            .map((href) => ALL_SERVICES.find((service) => service.href === href))
+            .filter((service): service is Service => Boolean(service)),
+        );
       } catch {
         // Ignore errors
       }
@@ -88,7 +259,15 @@ export default function Dashboard() {
       .then((r) => r.json())
       .then((d) => {
         setProvider(d.provider || "unknown");
-        setHealthStatus(d.status === "healthy" ? "healthy" : d.status === "degraded" ? "degraded" : d.status === "starting" ? "starting" : "unreachable");
+        setHealthStatus(
+          d.status === "healthy"
+            ? "healthy"
+            : d.status === "degraded"
+              ? "degraded"
+              : d.status === "starting"
+                ? "starting"
+                : "unreachable",
+        );
         setHealthServices(d.services || {});
       })
       .catch(() => {
@@ -98,20 +277,56 @@ export default function Dashboard() {
   }, []);
 
   const toggleFavorite = (serviceHref: string) => {
-    const newFavorites = favorites.includes(serviceHref)
-      ? favorites.filter((f) => f !== serviceHref)
+    const service = ALL_SERVICES.find((item) => item.href === serviceHref);
+    const isFavorite = favorites.includes(serviceHref);
+    const newFavorites = isFavorite
+      ? favorites.filter((favorite) => favorite !== serviceHref)
       : [...favorites, serviceHref];
-    setFavorites(newFavorites);
+    setLegacyFavorites(newFavorites);
     localStorage.setItem("aws_favorites", JSON.stringify(newFavorites));
+
+    if (isFavorite) {
+      removeFavorite(serviceHref);
+    } else {
+      addFavorite({
+        serviceId: serviceHref,
+        serviceName: service?.name || serviceHref,
+        serviceHref,
+      });
+    }
   };
 
-  const activeMode = provider === AdapterMode.MINSTACK ? AdapterMode.MINSTACK : AdapterMode.LOCALSTACK;
+  const activeMode = toAdapterMode(provider);
   const availableServices = ALL_SERVICES.filter((service) => {
     const compatibility = findServiceCompatibility(service.href);
-    return compatibility !== undefined && getServiceAvailability(compatibility, activeMode, healthStatus, healthServices).enabled;
+    return (
+      compatibility !== undefined &&
+      getServiceAvailability(compatibility, activeMode, healthStatus, healthServices).enabled
+    );
   });
   const favoriteServices = availableServices.filter((s) => favorites.includes(s.href));
-  const categories = ["Compute", "Storage", "Database", "Networking", "Security", "Monitoring", "Application Integration", "Machine Learning", "Mobile & IoT", "Customer Engagement", "Analytics", "Developer Tools", "Migration & Transfer", "Management & Governance", "Cost Management", "Business Applications", "End User Computing", "Containers", "IoT", "Containers"];
+  const categories = [
+    "Compute",
+    "Storage",
+    "Database",
+    "Networking",
+    "Security",
+    "Monitoring",
+    "Application Integration",
+    "Machine Learning",
+    "Mobile & IoT",
+    "Customer Engagement",
+    "Analytics",
+    "Developer Tools",
+    "Migration & Transfer",
+    "Management & Governance",
+    "Cost Management",
+    "Business Applications",
+    "End User Computing",
+    "Containers",
+    "IoT",
+    "Containers",
+  ];
 
   return (
     <SpaceBetween size="l">
@@ -122,21 +337,31 @@ export default function Dashboard() {
       <Container>
         <Grid gridDefinition={[{ colspan: 6 }, { colspan: 6 }]}>
           <SpaceBetween size="s">
-            <Box variant="h3">Service Health</Box>
-            <StatusIndicator
-              type={
-                healthStatus === "healthy"
-                  ? "success"
-                  : "error"
-              }
-            >
+            <Header variant="h2">Service Health</Header>
+            <StatusIndicator type={healthStatus === "healthy" ? "success" : "error"}>
               {provider}
             </StatusIndicator>
           </SpaceBetween>
           <SpaceBetween size="s">
-            <Box variant="h3">Endpoint</Box>
-            <StatusIndicator type={healthStatus === "healthy" ? "success" : healthStatus === "degraded" ? "warning" : healthStatus === "starting" ? "in-progress" : "info"}>
-              {healthStatus === "healthy" ? "Connected to local emulator" : healthStatus === "degraded" ? "Connected with limited service support" : healthStatus === "starting" ? "Emulator is starting" : "Waiting for emulator capability data"}
+            <Header variant="h2">Endpoint</Header>
+            <StatusIndicator
+              type={
+                healthStatus === "healthy"
+                  ? "success"
+                  : healthStatus === "degraded"
+                    ? "warning"
+                    : healthStatus === "starting"
+                      ? "in-progress"
+                      : "info"
+              }
+            >
+              {healthStatus === "healthy"
+                ? "Connected to local emulator"
+                : healthStatus === "degraded"
+                  ? "Connected with limited service support"
+                  : healthStatus === "starting"
+                    ? "Emulator is starting"
+                    : "Waiting for emulator capability data"}
             </StatusIndicator>
           </SpaceBetween>
         </Grid>
@@ -147,14 +372,9 @@ export default function Dashboard() {
           <Cards
             cardDefinition={{
               header: (item) => {
-                const icon = SERVICE_ICONS[item.href];
                 return (
                   <SpaceBetween direction="horizontal" size="xs">
-                    {icon ? (
-                      <Image src={icon.small} alt={item.name} width={24} height={24} />
-                    ) : (
-                      <span style={{ display: "inline-block", width: 24, height: 24 }} />
-                    )}
+                    <ResourceIcon service={item.href} size="small" />
                     <Link href={item.href}>{item.name}</Link>
                   </SpaceBetween>
                 );
@@ -178,28 +398,19 @@ export default function Dashboard() {
               ],
             }}
             items={favoriteServices}
-            cardsPerRow={[
-              { cards: 1 },
-              { minWidth: 500, cards: 2 },
-              { minWidth: 900, cards: 4 },
-            ]}
+            cardsPerRow={[{ cards: 1 }, { minWidth: 500, cards: 2 }, { minWidth: 900, cards: 4 }]}
           />
         </Container>
       )}
 
-      {recentlyVisited.length > 0 && (
-        <Container header={<Header variant="h2">Recently visited</Header>}>
+      <Container header={<Header variant="h2">Recently visited</Header>}>
+        {recentlyVisited.length > 0 ? (
           <Cards
             cardDefinition={{
               header: (item) => {
-                const icon = SERVICE_ICONS[item.href];
                 return (
                   <SpaceBetween direction="horizontal" size="xs">
-                    {icon ? (
-                      <Image src={icon.small} alt={item.name} width={24} height={24} />
-                    ) : (
-                      <span style={{ display: "inline-block", width: 24, height: 24 }} />
-                    )}
+                    <ResourceIcon service={item.href} size="small" />
                     <Link href={item.href}>{item.name}</Link>
                   </SpaceBetween>
                 );
@@ -212,14 +423,30 @@ export default function Dashboard() {
               ],
             }}
             items={recentlyVisited.slice(0, 5)}
-            cardsPerRow={[
-              { cards: 1 },
-              { minWidth: 500, cards: 2 },
-              { minWidth: 900, cards: 5 },
-            ]}
+            cardsPerRow={[{ cards: 1 }, { minWidth: 500, cards: 2 }, { minWidth: 900, cards: 5 }]}
           />
-        </Container>
-      )}
+        ) : (
+          <Box textAlign="center" color="text-body-secondary" padding="l">
+            <Box key="recent-empty-title" variant="p">
+              No recently visited services
+            </Box>
+            <Box key="recent-empty-description" variant="small">
+              Explore a service to add it to this widget.
+            </Box>
+            <SpaceBetween key="recent-empty-links" direction="horizontal" size="m">
+              {availableServices
+                .filter((service) =>
+                  ["/iam", "/ec2", "/s3", "/rds", "/lambda"].includes(service.href),
+                )
+                .map((service) => (
+                  <Link key={service.href} href={service.href}>
+                    {service.name}
+                  </Link>
+                ))}
+            </SpaceBetween>
+          </Box>
+        )}
+      </Container>
 
       {categories.map((category) => {
         const categoryServices = availableServices.filter((s) => s.category === category);
@@ -230,14 +457,9 @@ export default function Dashboard() {
             <Cards
               cardDefinition={{
                 header: (item) => {
-                  const icon = SERVICE_ICONS[item.href];
                   return (
                     <SpaceBetween direction="horizontal" size="xs">
-                      {icon ? (
-                        <Image src={icon.small} alt={item.name} width={24} height={24} />
-                      ) : (
-                        <span style={{ display: "inline-block", width: 24, height: 24 }} />
-                      )}
+                      <ResourceIcon service={item.href} size="small" />
                       <Link href={item.href}>{item.name}</Link>
                     </SpaceBetween>
                   );
@@ -261,11 +483,7 @@ export default function Dashboard() {
                 ],
               }}
               items={categoryServices}
-              cardsPerRow={[
-                { cards: 1 },
-                { minWidth: 500, cards: 2 },
-                { minWidth: 900, cards: 3 },
-              ]}
+              cardsPerRow={[{ cards: 1 }, { minWidth: 500, cards: 2 }, { minWidth: 900, cards: 3 }]}
             />
           </Container>
         );

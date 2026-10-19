@@ -5,17 +5,26 @@
 
 export interface LambdaFunctionConfig {
   FunctionName?: string;
-  Runtime?: 'nodejs20.x' | 'python3.12' | 'python3.11' | 'java21' | 'java17' | 'dotnet8' | 'ruby3.3' | 'go1.x';
+  FunctionArn?: string;
+  Runtime?:
+    | "nodejs20.x"
+    | "python3.12"
+    | "python3.11"
+    | "java21"
+    | "java17"
+    | "dotnet8"
+    | "ruby3.3"
+    | "go1.x";
   Handler?: string;
   MemorySize?: number;
   Timeout?: number;
   Role?: string;
   Description?: string;
-  Architecture?: 'x86_64' | 'arm64';
+  Architecture?: "x86_64" | "arm64";
   Environment?: Record<string, string>;
   Tags?: Array<{ Key?: string; Value?: string }>;
   Code?: { ZipFile?: string; S3Bucket?: string; S3Key?: string };
-  State?: 'Active' | 'Failed' | 'Inactive' | 'Pending';
+  State?: "Active" | "Failed" | "Inactive" | "Pending";
   LastModified?: string;
   CodeSize?: number;
   CodeSha256?: string;
@@ -23,6 +32,7 @@ export interface LambdaFunctionConfig {
 
 export interface LambdaAliasConfig {
   AliasName?: string;
+  AliasArn?: string;
   FunctionName?: string;
   FunctionVersion?: string;
   Description?: string;
@@ -35,6 +45,9 @@ export interface LambdaVersionConfig {
   CodeSize?: number;
   MemorySize?: number;
   Runtime?: string;
+  LastModified?: string;
+  CodeSha256?: string;
+  State?: string;
 }
 
 export interface LambdaPermissionConfig {
@@ -54,11 +67,11 @@ export interface LambdaEventSourceMappingConfig {
   EventSourceArn?: string;
   BatchSize?: number;
   MaximumBatchingWindowInSeconds?: number;
-  State?: 'Creating' | 'Enabling' | 'Enabled' | 'Disabling' | 'Disabled';
+  State?: "Creating" | "Enabling" | "Enabled" | "Disabling" | "Disabled";
 }
 
 export interface LambdaTriggerConfig {
-  TriggerType?: 's3' | 'sns' | 'sqs' | 'eventbridge' | 'api-gateway';
+  TriggerType?: "s3" | "sns" | "sqs" | "eventbridge" | "api-gateway";
   SourceArn?: string;
   SourceAccount?: string;
 }
