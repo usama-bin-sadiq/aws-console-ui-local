@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { sql } from "drizzle-orm";
 import * as schema from "./schema";
 import bcrypt from "bcryptjs";
+import { mkdirSync } from "node:fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -11,7 +12,12 @@ const __dirname = path.dirname(__filename);
 
 const BCRYPT_ROUNDS = 12;
 
-const dbUrl = process.env.DATABASE_URL || `file:${path.join(process.cwd(), "data", "console.db")}`;
+const defaultDbPath = path.join(process.cwd(), "data", "console.db");
+if (!process.env.DATABASE_URL) {
+  mkdirSync(path.dirname(defaultDbPath), { recursive: true });
+}
+
+const dbUrl = process.env.DATABASE_URL || `file:${defaultDbPath}`;
 
 export const client = createClient({ url: dbUrl });
 export const db = drizzle(client, { schema });
