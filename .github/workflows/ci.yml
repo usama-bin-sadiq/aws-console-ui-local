@@ -251,23 +251,19 @@ jobs:
           echo "LocalEmu did not become ready in time" >&2
           exit 1
 
-      - name: Start application
-        run: |
-          export ACTIVE_BACKEND=localemu
-          export LOCALEMU_HOSTNAME=localhost
-          export LOCALEMU_EDGE_PORT=4566
-          export LOCALEMU_ENDPOINT=http://localhost:4566
-          export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-          export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-          export AWS_DEFAULT_REGION=us-east-1
-          pnpm dev &
-          sleep 15
-
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
 
       - name: Run E2E tests
         run: pnpm test:e2e
+        env:
+          ACTIVE_BACKEND: localemu
+          LOCALEMU_HOSTNAME: localhost
+          LOCALEMU_EDGE_PORT: 4566
+          LOCALEMU_ENDPOINT: http://localhost:4566
+          AWS_ACCESS_KEY_ID: AKIAIOSFODNN7EXAMPLE
+          AWS_SECRET_ACCESS_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+          AWS_DEFAULT_REGION: us-east-1
 
       - name: Upload test results
         uses: actions/upload-artifact@v7.0.2
