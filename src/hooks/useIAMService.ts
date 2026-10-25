@@ -20,7 +20,7 @@ export function useIAMService() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await iam.send(new ListUsersCommand({}));
-      setState((prev) => ({ ...prev, users: (result as any)?.Users || [], loading: false }));
+      setState((prev) => ({ ...prev, users: result.Users || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

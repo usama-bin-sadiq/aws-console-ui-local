@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
@@ -22,6 +21,8 @@ import LaunchTemplateDeleteModal from "./LaunchTemplateDeleteModal";
 import TruncatedText from "@/components/TruncatedText";
 import { CrossServiceLinks, CrossServiceLink } from "@/components/CrossServiceLinks";
 import { LaunchTemplate, DescribeLaunchTemplatesResponse } from "@/types/launch-template";
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -72,6 +73,7 @@ export default function LaunchTemplateListPage() {
   const router = useRouter();
   const [items, setItems] = useState<LaunchTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<LaunchTemplate[]>([]);
@@ -243,28 +245,21 @@ export default function LaunchTemplateListPage() {
   return (
     <Box padding="m">
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          counter={`(${items.length})`}
-          actions={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button iconName="refresh" onClick={load} ariaLabel="Refresh">
-                Refresh
-              </Button>
-              <Button
-                disabled={selectedItems.length === 0}
-                onClick={() => openDelete(selectedItems)}
-              >
-                Delete
-              </Button>
-              <Button variant="primary" onClick={() => router.push("/launch-template/create")}>
-                Create launch template
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          Launch templates
-        </Header>
+        <AwsServiceHeader
+          serviceName="Refresh openDelete(selectedItems)} > Delete router"
+          serviceIcon={SERVICE_ICONS["/launch-template"]?.small}
+          counter={items?.length ?? 0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/launch-template/create")}>
+            Create template
+        </button>
+        actions={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={load} iconName="refresh" formAction="none">
+              Refresh
+            </Button>
+          </SpaceBetween>
+        }
+        />
 
         <CrossServiceLinks links={RELATED_LINKS} />
 

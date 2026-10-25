@@ -1,17 +1,28 @@
 "use client";
 
 import React from "react";
-import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Alert from "@cloudscape-design/components/alert";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 export default function BudgetPage() {
-  return (
+
+  const router = useRouter();  return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">AWS Budgets</Header>
+        <AwsServiceHeader
+          serviceName="AWS Budgets"
+          serviceIcon={SERVICE_ICONS["/budget"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/budget/create")}>
+            Create budget
+        </button>
+
+        />
         <Alert type="info" header="Budgets">
           AWS Budgets lets you set custom cost and usage budgets with alerts. Not available in local
           emulation.

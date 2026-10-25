@@ -1,6 +1,7 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -12,6 +13,8 @@ import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Textarea from "@cloudscape-design/components/textarea";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface Repository {
   repositoryName: string;
@@ -62,6 +65,7 @@ export default function ECRPage() {
   const [policyText, setPolicyText] = useState("");
   const [currentPolicy, setCurrentPolicy] = useState<string | null>(null);
   const [savingPolicy, setSavingPolicy] = useState(false);
+  const router = useRouter();
 
   const fetchRepositories = async () => {
     setLoadingRepos(true);
@@ -194,7 +198,20 @@ export default function ECRPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Amazon Elastic Container Registry (ECR)</Header>
+        <AwsServiceHeader
+          serviceName="Amazon ECR"
+          serviceIcon={SERVICE_ICONS["/ecr-repo"]?.small}
+          counter={repositories.length}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => setRepoModal(true)}
+            >
+              Create repository
+            </button>
+          }
+        />
         {error && (
           <Alert type="error" onDismiss={() => setError("")}>
             {error}

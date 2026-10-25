@@ -2,7 +2,6 @@
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import { CodeView } from "@cloudscape-design/code-view";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -12,6 +11,10 @@ import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface GlueJob {
   Name: string;
@@ -23,7 +26,8 @@ interface GlueJob {
 export default function GlueJobPage() {
   const [jobs, setJobs] = useState<GlueJob[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const router = useRouter();  const [error, setError] = useState("");
 
   const [startModal, setStartModal] = useState(false);
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
@@ -87,7 +91,15 @@ export default function GlueJobPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">AWS Glue ETL Jobs</Header>
+        <AwsServiceHeader
+          serviceName="AWS Glue ETL Jobs"
+          serviceIcon={SERVICE_ICONS["/glue-job"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/glue-job/create")}>
+            Create job
+        </button>
+
+        />
 
         {error && (
           <Alert type="error" onDismiss={() => setError("")}>

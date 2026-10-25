@@ -1,17 +1,21 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Alert from "@cloudscape-design/components/alert";
 import Table from "@cloudscape-design/components/table";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 export default function SNSSMSPage() {
   const [topics, setTopics] = useState<{ TopicArn: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/sns")
@@ -27,7 +31,15 @@ export default function SNSSMSPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">SNS — SMS Notifications</Header>
+        <AwsServiceHeader
+          serviceName="SNS — SMS Notifications"
+          serviceIcon={SERVICE_ICONS["/sns-sms"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/sns-sms/create")}>
+            Create SMS
+        </button>
+
+        />
         {error && (
           <Alert type="error" header="Error">
             {error}

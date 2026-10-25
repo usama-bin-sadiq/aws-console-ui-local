@@ -16,12 +16,16 @@ import Input from "@cloudscape-design/components/input";
 import Select, { SelectProps } from "@cloudscape-design/components/select";
 import Textarea from "@cloudscape-design/components/textarea";
 import Alert from "@cloudscape-design/components/alert";
+import { useRouter } from "next/navigation";
 import Link from "@cloudscape-design/components/link";
 import TextFilter from "@cloudscape-design/components/text-filter";
 import Pagination from "@cloudscape-design/components/pagination";
 import CollectionPreferences from "@cloudscape-design/components/collection-preferences";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 import { AWACS_DESIGN_TOKENS } from "@/constants/design-tokens";
+import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface SecretData {
   SecretName?: string;
@@ -132,6 +136,7 @@ export default function SecretsManagerPage() {
   const [filteringText, setFilteringText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const router = useRouter();
   const [preferences, setPreferences] = useState({
     pageSize: 25,
     visibleContent: VISIBLE_COLUMNS,
@@ -364,26 +369,41 @@ export default function SecretsManagerPage() {
       headerActions={headerActions}
     >
       <SpaceBetween size="m" direction="vertical">
-        <Container header={<Header variant="h2">Secrets</Header>} className="aws-table-card">
-          {error && (
-            <Alert type="error" dismissible onDismiss={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
+        <AwsServiceHeader
+          serviceName="Secrets Manager"
+          serviceIcon={SERVICE_ICONS["/secrets-manager"]?.small}
+          counter={secrets.length}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/secrets-manager/create")}
+            >
+              Store secret
+            </button>
+          }
+          actions={headerActions}
+        />
 
-          <Table
-            columnDefinitions={COLUMN_DEFINITIONS}
-            items={pagedItems}
-            loading={loading}
-            loadingText="Loading secrets..."
-            selectionType="multi"
-            selectedItems={selectedItems}
-            onSelectionChange={({ detail }) =>
-              setSelectedItems(detail.selectedItems as SecretData[])
-            }
-            trackBy="SecretName"
-            sortingColumn={COLUMN_DEFINITIONS[0]}
-            sortingDescending={false}
+        {error && (
+          <Alert type="error" dismissible onDismiss={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        <Table
+          columnDefinitions={COLUMN_DEFINITIONS}
+          items={pagedItems}
+          loading={loading}
+          loadingText="Loading secrets..."
+          selectionType="multi"
+          selectedItems={selectedItems}
+          onSelectionChange={({ detail }) =>
+            setSelectedItems(detail.selectedItems as SecretData[])
+          }
+          trackBy="SecretName"
+          sortingColumn={COLUMN_DEFINITIONS[0]}
+          sortingDescending={false}
             filter={
               <TextFilter
                 filteringText={filteringText}
@@ -464,8 +484,7 @@ export default function SecretsManagerPage() {
               </Box>
             }
           />
-        </Container>
-      </SpaceBetween>
+        </SpaceBetween>
 
       {/* Create Secret Modal */}
       <Modal

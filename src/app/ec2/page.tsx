@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Header, Container, Box, SpaceBetween, Button, Alert } from "@cloudscape-design/components";
+import { Alert } from "@cloudscape-design/components";
 import type { TableProps } from "@cloudscape-design/components/table";
-import { ResourceTable } from "@/features/resource-table";
+import { ResourceTable, type ActionDefinition } from "@/features/resource-table";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { CopyableText } from "@/components/ui/CopyableText";
@@ -12,6 +12,8 @@ import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServic
 import { apiFetch } from "@/lib/api-client";
 import { EC2Instance } from "@/types/ec2";
 import TextFilter from "@cloudscape-design/components/text-filter";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 // ── Table Configuration ───────────────────────────────────────────────────
 
@@ -218,7 +220,7 @@ export default function EC2Page() {
   }, [getSelectedIds, executeAction]);
 
   // ── Action Definitions ───────────────────────────────────────────────────
-  const actions = [
+  const actions: ActionDefinition<EC2Instance>[] = [
     {
       id: "start",
       label: "Start instances",
@@ -246,62 +248,62 @@ export default function EC2Page() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: 16 }}>
-      <SpaceBetween size="l">
-        {/* Cross-Service Links */}
-        <CrossServiceLinks links={CROSS_SERVICE_LINKS["/ec2"] || []} />
-
-        {/* Error Alert */}
-        {error && (
-          <div
-            style={{
-              color: "var(--color-text-status-error)",
-              padding: 8,
-              borderRadius: 4,
-              background: "var(--color-background-status-error)",
-            }}
+    <div className="aws-service-page">
+      <AwsServiceHeader
+        serviceName="EC2"
+        serviceIcon={SERVICE_ICONS["/ec2"]?.small}
+        counter={instances.length}
+        primaryAction={
+          <button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/ec2/launch")}
           >
-            {error}
-            <Button
-              variant="inline-icon"
-              iconName="close"
-              ariaLabel="Dismiss error"
-              onClick={() => setError(null)}
-            />
-          </div>
-        )}
+            Launch instances
+          </button>
+        }
+      />
 
-        {/* Resource Table */}
-        <ResourceTable
-          config={{
-            serviceKey: "ec2",
-            resourceName: "Instances",
-            columnDefinitions: COLUMN_DEFINITIONS,
-            defaultVisibleColumns: DEFAULT_VISIBLE_COLUMNS,
-            trackBy: "InstanceId",
-            createLabel: "Launch instances",
-            createHref: "/ec2/launch",
-            filterPlaceholder: "Filter instances",
-          }}
-          items={instances as unknown as Record<string, unknown>[]}
-          loading={loading}
-          selectedItems={selectedItems as unknown as Record<string, unknown>[]}
-          onSelectionChange={(items) => setSelectedItems(items as unknown as EC2Instance[])}
-          onRefresh={fetchInstances}
-          actions={actions as any}
-        />
+      {/* Error Alert */}
+      {error && (
+        <Alert type="error" dismissible onDismiss={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
-        {/* Confirmation Modal */}
-        <ConfirmDialog
-          visible={confirmModal.visible}
-          title={confirmModal.title}
-          message={confirmModal.message}
-          variant={confirmModal.variant}
-          confirmLabel="Confirm"
-          onConfirm={confirmModal.onConfirm}
-          onCancel={() => setConfirmModal((prev) => ({ ...prev, visible: false }))}
-        />
-      </SpaceBetween>
+      {/* Resource Table */}
+      <ResourceTable
+        config={{
+          serviceKey: "ec2",
+          resourceName: "Instances",
+          columnDefinitions: COLUMN_DEFINITIONS,
+          defaultVisibleColumns: DEFAULT_VISIBLE_COLUMNS,
+          trackBy: "InstanceId",
+          createLabel: "Launch instances",
+          createHref: "/ec2/launch",
+          filterPlaceholder: "Filter instances",
+        }}
+        items={instances as unknown as Record<string, unknown>[]}
+        loading={loading}
+        selectedItems={selectedItems as unknown as Record<string, unknown>[]}
+        onSelectionChange={(items) => setSelectedItems(items as unknown as EC2Instance[])}
+        onRefresh={fetchInstances}
+        actions={actions as unknown as ActionDefinition<Record<string, unknown>>[]}
+      />
+
+      {/* Cross-Service Links */}
+      <CrossServiceLinks links={CROSS_SERVICE_LINKS["/ec2"] || []} />
+
+      {/* Confirmation Modal */}
+      <ConfirmDialog
+        visible={confirmModal.visible}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmLabel="Confirm"
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, visible: false }))}
+      />
     </div>
   );
 }

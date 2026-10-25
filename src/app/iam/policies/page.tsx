@@ -218,7 +218,7 @@ export default function IAMPoliciesPage() {
             <FormField label="Policy Name">
               <Input
                 value={policyName}
-                onChange={(e) => setPolicyName((e as any).detail?.value || "")}
+                onChange={(e: { detail?: { value?: string } }) => setPolicyName((e.detail?.value || ""))}
               />
             </FormField>
             <IamPolicyEditor

@@ -133,7 +133,7 @@ export async function POST(request: Request) {
         InstanceInitiatedShutdownBehavior: body.shutdownBehavior || "stop",
         NetworkInterfaces: body.networkInterfaces || undefined,
       };
-      const res = await ec2Client.send(new RunInstancesCommand(params as any));
+      const res = await ec2Client.send(new RunInstancesCommand(params as unknown as import("@aws-sdk/client-ec2").RunInstancesCommandInput));
       return NextResponse.json({
         success: true,
         instances: res.Instances?.map((i) => ({

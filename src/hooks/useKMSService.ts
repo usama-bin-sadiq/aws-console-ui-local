@@ -20,7 +20,7 @@ export function useKMSService() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await kms.send(new ListKeysCommand({}));
-      setState((prev) => ({ ...prev, keys: (result as any)?.Keys || [], loading: false }));
+      setState((prev) => ({ ...prev, keys: result.Keys || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

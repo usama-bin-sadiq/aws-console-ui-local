@@ -1,16 +1,27 @@
 "use client";
 import React from "react";
-import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Alert from "@cloudscape-design/components/alert";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 export default function DirectConnectPage() {
-  return (
+
+  const router = useRouter();  return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">AWS Direct Connect</Header>
+        <AwsServiceHeader
+          serviceName="AWS Direct Connect"
+          serviceIcon={SERVICE_ICONS["/direct-connect"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/direct-connect/create")}>
+            Create connection
+        </button>
+
+        />
         <Alert type="info" header="Not available in local emulation">
           Direct Connect provides dedicated network connectivity from your premises to AWS. This
           requires physical network infrastructure and is not supported in Ministack or LocalStack

@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface ScalableTarget {
   ServiceNamespace: string;
@@ -19,7 +22,8 @@ interface ScalableTarget {
 export default function AppAutoScalingPage() {
   const [targets, setTargets] = useState<ScalableTarget[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const router = useRouter();  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/app-auto-scaling")
@@ -35,7 +39,15 @@ export default function AppAutoScalingPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Application Auto Scaling</Header>
+        <AwsServiceHeader
+          serviceName="Application Auto Scaling"
+          serviceIcon={SERVICE_ICONS["/app-auto-scaling"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/app-auto-scaling/create")}>
+            Create scaling policy
+        </button>
+
+        />
 
         {error && (
           <Alert type="error" onDismiss={() => setError("")}>

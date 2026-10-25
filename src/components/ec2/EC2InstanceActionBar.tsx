@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
+import ButtonDropdown, { type ButtonDropdownProps } from "@cloudscape-design/components/button-dropdown";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Modal from "@cloudscape-design/components/modal";
 import Button from "@cloudscape-design/components/button";
@@ -30,11 +30,11 @@ export function EC2InstanceActionBar({
       <ButtonDropdown
         items={
           [
-            { text: "Start", id: "start", iconName: "play" },
-            { text: "Stop", id: "stop", iconName: "stop" },
-            { text: "Reboot", id: "reboot", iconName: "refresh" },
-            { text: "Terminate", id: "terminate", iconName: "delete-marker" },
-          ] as any
+            { text: "Start", id: "start" as string, iconName: "play" },
+            { text: "Stop", id: "stop" as string, iconName: "stop" },
+            { text: "Reboot", id: "reboot" as string, iconName: "refresh" },
+            { text: "Terminate", id: "terminate" as string, iconName: "delete-marker" },
+          ] as ButtonDropdownProps.Item[]
         }
         onItemClick={({ detail }) => {
           if (detail.id === "start") onStart?.();

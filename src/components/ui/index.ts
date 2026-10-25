@@ -20,3 +20,7 @@ export { SpaceBetween } from "./SpaceBetween";
 export { TokenGroup } from "./TokenGroup";
 export { JsonViewer } from "./JsonViewer";
 export { TruncatedText } from "./TruncatedText";
+
+export { AwsServiceHeader } from "./AwsServiceHeader";
+export { AwsServicePage } from "./AwsServicePage";
+export { WizardStepper } from "@/components/WizardStepper";

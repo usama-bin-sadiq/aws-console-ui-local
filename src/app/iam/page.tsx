@@ -24,6 +24,8 @@ import { ResourceTable } from "@/features/resource-table";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { CopyableText } from "@/components/ui/CopyableText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface UserDetail {
   UserName: string;
@@ -73,7 +75,7 @@ const USER_COLUMN_DEFINITIONS: TableProps.ColumnDefinition<Record<string, unknow
   {
     id: "userName",
     header: "Name",
-    cell: (item) => String((item as any).UserName || ""),
+    cell: (item) => String(item.UserName || ""),
     sortingField: "UserName",
     isRowHeader: true,
   },
@@ -85,23 +87,23 @@ const USER_COLUMN_DEFINITIONS: TableProps.ColumnDefinition<Record<string, unknow
   {
     id: "createDate",
     header: "Created",
-    cell: (item) => String((item as any).CreateDate || ""),
+    cell: (item) => String(item.CreateDate || ""),
     sortingField: "CreateDate",
   },
   {
     id: "arn",
     header: "ARN",
-    cell: (item) => <CopyableText value={String((item as any).Arn || "")} />,
+    cell: (item) => <CopyableText value={String(item.Arn || "")} />,
     sortingField: "Arn",
   },
-  { id: "path", header: "Path", cell: (item) => String((item as any).Path || "/") },
+  { id: "path", header: "Path", cell: (item) => String(item.Path || "/") },
 ];
 
 const ROLE_COLUMN_DEFINITIONS: TableProps.ColumnDefinition<Record<string, unknown>>[] = [
   {
     id: "roleName",
     header: "Name",
-    cell: (item) => String((item as any).RoleName || ""),
+    cell: (item) => String(item.RoleName || ""),
     sortingField: "RoleName",
     isRowHeader: true,
   },
@@ -113,36 +115,36 @@ const ROLE_COLUMN_DEFINITIONS: TableProps.ColumnDefinition<Record<string, unknow
   {
     id: "createDate",
     header: "Created",
-    cell: (item) => String((item as any).CreateDate || ""),
+    cell: (item) => String(item.CreateDate || ""),
     sortingField: "CreateDate",
   },
   {
     id: "arn",
     header: "ARN",
-    cell: (item) => <CopyableText value={String((item as any).Arn || "")} />,
+    cell: (item) => <CopyableText value={String(item.Arn || "")} />,
     sortingField: "Arn",
   },
-  { id: "path", header: "Path", cell: (item) => String((item as any).Path || "/") },
+  { id: "path", header: "Path", cell: (item) => String(item.Path || "/") },
 ];
 
 const POLICY_COLUMN_DEFINITIONS: TableProps.ColumnDefinition<Record<string, unknown>>[] = [
   {
     id: "policyName",
     header: "Name",
-    cell: (item) => String((item as any).PolicyName || ""),
+    cell: (item) => String(item.PolicyName || ""),
     sortingField: "PolicyName",
     isRowHeader: true,
   },
   {
     id: "arn",
     header: "ARN",
-    cell: (item) => <CopyableText value={String((item as any).Arn || "")} />,
+    cell: (item) => <CopyableText value={String(item.Arn || "")} />,
     sortingField: "Arn",
   },
   {
     id: "createDate",
     header: "Created",
-    cell: (item) => String((item as any).CreateDate || ""),
+    cell: (item) => String(item.CreateDate || ""),
     sortingField: "CreateDate",
   },
 ];
@@ -151,7 +153,7 @@ const GROUP_COLUMN_DEFINITIONS: TableProps.ColumnDefinition<Record<string, unkno
   {
     id: "groupName",
     header: "Group Name",
-    cell: (item) => String((item as any).GroupName || ""),
+    cell: (item) => String(item.GroupName || ""),
     sortingField: "GroupName",
     isRowHeader: true,
   },
@@ -163,14 +165,14 @@ const GROUP_COLUMN_DEFINITIONS: TableProps.ColumnDefinition<Record<string, unkno
   {
     id: "arn",
     header: "ARN",
-    cell: (item) => <CopyableText value={String((item as any).Arn || "")} />,
+    cell: (item) => <CopyableText value={String(item.Arn || "")} />,
     sortingField: "Arn",
   },
-  { id: "path", header: "Path", cell: (item) => String((item as any).Path || "/") },
+  { id: "path", header: "Path", cell: (item) => String(item.Path || "/") },
   {
     id: "createDate",
     header: "Created",
-    cell: (item) => String((item as any).CreateDate || ""),
+    cell: (item) => String(item.CreateDate || ""),
     sortingField: "CreateDate",
   },
 ];
@@ -258,8 +260,8 @@ export default function IAMPage() {
       setPolicyOptions(
         (d.policies || []).map((p: any) => ({ label: p.PolicyName || "", value: p.Arn || "" })),
       );
-    } catch (e: any) {
-      setError(e.message || "Failed to load IAM data");
+    } catch (e: unknown) {
+      setError((e as Error).message || "Failed to load IAM data");
     }
     setLoading(false);
   }, []);
@@ -288,8 +290,8 @@ export default function IAMPage() {
         Groups: d.groups || [],
         AttachedPolicies: d.attachedPolicies || [],
       });
-    } catch (e: any) {
-      setActionError(e.message || "Failed to load user detail");
+    } catch (e: unknown) {
+      setActionError((e as Error).message || "Failed to load user detail");
     }
     setUserDetailLoading(false);
   }, []);
@@ -314,8 +316,8 @@ export default function IAMPage() {
         AssumeRolePolicyDocument: d.role?.AssumeRolePolicyDocument || "",
         AttachedPolicies: d.attachedPolicies || [],
       });
-    } catch (e: any) {
-      setActionError(e.message || "Failed to load role detail");
+    } catch (e: unknown) {
+      setActionError((e as Error).message || "Failed to load role detail");
     }
     setRoleDetailLoading(false);
   }, []);
@@ -339,8 +341,8 @@ export default function IAMPage() {
         Users: d.users || [],
         AttachedPolicies: d.attachedPolicies || [],
       });
-    } catch (e: any) {
-      setActionError(e.message || "Failed to load group detail");
+    } catch (e: unknown) {
+      setActionError((e as Error).message || "Failed to load group detail");
     }
     setGroupDetailLoading(false);
   }, []);
@@ -365,8 +367,8 @@ export default function IAMPage() {
         CreateDate: d.policy?.CreateDate || "",
         Document: d.document || "",
       });
-    } catch (e: any) {
-      setActionError(e.message || "Failed to load policy detail");
+    } catch (e: unknown) {
+      setActionError((e as Error).message || "Failed to load policy detail");
     }
     setPolicyDetailLoading(false);
   }, []);
@@ -384,8 +386,8 @@ export default function IAMPage() {
       setCreateUserModal(false);
       setNewUserName("");
       fetchData();
-    } catch (e: any) {
-      setActionError(e.message);
+    } catch (e: unknown) {
+      setActionError((e as Error).message);
     }
   };
 
@@ -406,8 +408,8 @@ export default function IAMPage() {
       setNewRoleName("");
       setPolicyDoc(JSON.stringify({ Version: "2012-10-17", Statement: [] }, null, 2));
       fetchData();
-    } catch (e: any) {
-      setActionError(e.message);
+    } catch (e: unknown) {
+      setActionError((e as Error).message);
     }
   };
 
@@ -423,8 +425,8 @@ export default function IAMPage() {
       setCreateGroupModal(false);
       setNewGroupName("");
       fetchData();
-    } catch (e: any) {
-      setActionError(e.message);
+    } catch (e: unknown) {
+      setActionError((e as Error).message);
     }
   };
 
@@ -445,8 +447,8 @@ export default function IAMPage() {
       setNewPolicyName("");
       setPolicyDoc(JSON.stringify({ Version: "2012-10-17", Statement: [] }, null, 2));
       fetchData();
-    } catch (e: any) {
-      setActionError(e.message);
+    } catch (e: unknown) {
+      setActionError((e as Error).message);
     }
   };
 
@@ -475,8 +477,8 @@ export default function IAMPage() {
         setSelectedGroups([]);
       }
       setDeleteConfirm(null);
-    } catch (e: any) {
-      setActionError(e.message);
+    } catch (e: unknown) {
+      setActionError((e as Error).message);
       setDeleteConfirm(null);
     }
   };
@@ -516,8 +518,8 @@ export default function IAMPage() {
       if (attachTarget.type === "group" && attachTarget.name === selectedGroup)
         fetchGroupDetail(attachTarget.name);
       fetchData();
-    } catch (e: any) {
-      setActionError(e.message);
+    } catch (e: unknown) {
+      setActionError((e as Error).message);
     }
   };
 
@@ -543,8 +545,8 @@ export default function IAMPage() {
       if (type === "role" && targetName === selectedRole) fetchRoleDetail(targetName);
       if (type === "group" && targetName === selectedGroup) fetchGroupDetail(targetName);
       fetchData();
-    } catch (e: any) {
-      setActionError(e.message);
+    } catch (e: unknown) {
+      setActionError((e as Error).message);
     }
   };
 
@@ -564,8 +566,8 @@ export default function IAMPage() {
       setAddUserToGroupModal(false);
       fetchGroupDetail(addUserToGroupTarget);
       fetchData();
-    } catch (e: any) {
-      setActionError(e.message);
+    } catch (e: unknown) {
+      setActionError((e as Error).message);
     }
   };
 
@@ -578,8 +580,8 @@ export default function IAMPage() {
       });
       if (!res.ok) throw new Error("Failed to remove user from group");
       fetchGroupDetail(groupName);
-    } catch (e: any) {
-      setActionError(e.message);
+    } catch (e: unknown) {
+      setActionError((e as Error).message);
     }
   };
 
@@ -895,24 +897,24 @@ export default function IAMPage() {
       {
         id: "view",
         label: "View",
-        onClick: (items: any[]) => {
-          if (items[0]) fetchUserDetail(items[0].UserName);
+        onClick: (items: Record<string, unknown>[]) => {
+          if (items[0]) fetchUserDetail(String(items[0].UserName));
         },
       },
       {
         id: "attach",
         label: "Attach Policy",
-        onClick: (items: any[]) => {
-          if (items[0]) openAttachPolicy("user", items[0].UserName);
+        onClick: (items: Record<string, unknown>[]) => {
+          if (items[0]) openAttachPolicy("user", String(items[0].UserName));
         },
       },
       {
         id: "delete",
         label: "Delete",
-        onClick: (items: any[]) => {
-          if (items[0]) setDeleteConfirm({ type: "user", name: items[0].UserName });
+        onClick: (items: Record<string, unknown>[]) => {
+          if (items[0]) setDeleteConfirm({ type: "user", name: String(items[0].UserName) });
         },
-        危险: true,
+        danger: true,
       },
     ],
     [fetchUserDetail],
@@ -923,24 +925,24 @@ export default function IAMPage() {
       {
         id: "view",
         label: "View",
-        onClick: (items: any[]) => {
-          if (items[0]) fetchRoleDetail(items[0].RoleName);
+        onClick: (items: Record<string, unknown>[]) => {
+          if (items[0]) fetchRoleDetail(String(items[0].RoleName));
         },
       },
       {
         id: "attach",
         label: "Attach Policy",
-        onClick: (items: any[]) => {
-          if (items[0]) openAttachPolicy("role", items[0].RoleName);
+        onClick: (items: Record<string, unknown>[]) => {
+          if (items[0]) openAttachPolicy("role", String(items[0].RoleName));
         },
       },
       {
         id: "delete",
         label: "Delete",
-        onClick: (items: any[]) => {
-          if (items[0]) setDeleteConfirm({ type: "role", name: items[0].RoleName });
+        onClick: (items: Record<string, unknown>[]) => {
+          if (items[0]) setDeleteConfirm({ type: "role", name: String(items[0].RoleName) });
         },
-        危险: true,
+        danger: true,
       },
     ],
     [fetchRoleDetail],
@@ -951,17 +953,17 @@ export default function IAMPage() {
       {
         id: "view",
         label: "View",
-        onClick: (items: any[]) => {
-          if (items[0]) fetchPolicyDetail(items[0].Arn, items[0].PolicyName);
+        onClick: (items: Record<string, unknown>[]) => {
+          if (items[0]) fetchPolicyDetail(String(items[0].Arn), String(items[0].PolicyName));
         },
       },
       {
         id: "delete",
         label: "Delete",
-        onClick: (items: any[]) => {
-          if (items[0]) setDeleteConfirm({ type: "policy", name: items[0].Arn });
+        onClick: (items: Record<string, unknown>[]) => {
+          if (items[0]) setDeleteConfirm({ type: "policy", name: String(items[0].Arn) });
         },
-        危险: true,
+        danger: true,
       },
     ],
     [fetchPolicyDetail],
@@ -972,24 +974,24 @@ export default function IAMPage() {
       {
         id: "view",
         label: "View",
-        onClick: (items: any[]) => {
-          if (items[0]) fetchGroupDetail(items[0].GroupName);
+        onClick: (items: Record<string, unknown>[]) => {
+          if (items[0]) fetchGroupDetail(String(items[0].GroupName));
         },
       },
       {
         id: "attach",
         label: "Attach Policy",
-        onClick: (items: any[]) => {
-          if (items[0]) openAttachPolicy("group", items[0].GroupName);
+        onClick: (items: Record<string, unknown>[]) => {
+          if (items[0]) openAttachPolicy("group", String(items[0].GroupName));
         },
       },
       {
         id: "delete",
         label: "Delete",
-        onClick: (items: any[]) => {
-          if (items[0]) setDeleteConfirm({ type: "group", name: items[0].GroupName });
+        onClick: (items: Record<string, unknown>[]) => {
+          if (items[0]) setDeleteConfirm({ type: "group", name: String(items[0].GroupName) });
         },
-        危险: true,
+        danger: true,
       },
     ],
     [fetchGroupDetail],
@@ -998,13 +1000,21 @@ export default function IAMPage() {
   // ── Render ─────────────────────────────────────────────────
   return (
     <div style={{ padding: 0 }}>
-      <SpaceBetween size="l">
-        <Header variant="h1">IAM — Identity & Access Management</Header>
+      <AwsServiceHeader
+        serviceName="IAM"
+        serviceIcon={SERVICE_ICONS["/iam"]?.small}
+        counter={data.users.length + data.roles.length + data.policies.length + data.groups.length}
+        primaryAction={
+          <button type="button" className="aws-service-page__create">
+            Create user
+          </button>
+        }
+      />
 
-        {error && (
-          <Alert type="error" dismissible onDismiss={() => setError(null)}>
-            {error}
-          </Alert>
+      {error && (
+        <Alert type="error" dismissible onDismiss={() => setError(null)}>
+          {error}
+        </Alert>
         )}
         {actionError && (
           <Alert type="error" dismissible onDismiss={() => setActionError(null)}>
@@ -1042,7 +1052,7 @@ export default function IAMPage() {
                     }}
                     onRefresh={fetchData}
                     onCreateClick={() => setCreateUserModal(true)}
-                    actions={userActions as any}
+                    actions={userActions}
                   />
 
                   {selectedUser && userDetail && (
@@ -1136,7 +1146,7 @@ export default function IAMPage() {
                     }}
                     onRefresh={fetchData}
                     onCreateClick={() => setCreateRoleModal(true)}
-                    actions={roleActions as any}
+                    actions={roleActions}
                   />
 
                   {selectedRole && roleDetail && (
@@ -1231,7 +1241,7 @@ export default function IAMPage() {
                     }}
                     onRefresh={fetchData}
                     onCreateClick={() => setCreatePolicyModal(true)}
-                    actions={policyActions as any}
+                    actions={policyActions}
                   />
 
                   {selectedPolicy && policyDetail && (
@@ -1304,7 +1314,7 @@ export default function IAMPage() {
                     }}
                     onRefresh={fetchData}
                     onCreateClick={() => setCreateGroupModal(true)}
-                    actions={groupActions as any}
+                    actions={groupActions}
                   />
 
                   {selectedGroup && groupDetail && (
@@ -1384,10 +1394,7 @@ export default function IAMPage() {
           }
         >
           <FormField label="User Name">
-            <Input
-              value={newUserName}
-              onChange={(e) => setNewUserName((e as any).detail?.value || "")}
-            />
+            <Input value={newUserName} onChange={(e) => setNewUserName(e.detail.value || "")} />
           </FormField>
         </Modal>
 
@@ -1406,10 +1413,7 @@ export default function IAMPage() {
           }
         >
           <FormField label="Role Name">
-            <Input
-              value={newRoleName}
-              onChange={(e) => setNewRoleName((e as any).detail?.value || "")}
-            />
+            <Input value={newRoleName} onChange={(e) => setNewRoleName(e.detail.value || "")} />
           </FormField>
           <IamPolicyEditor label="Trust Policy" value={policyDoc} onChange={setPolicyDoc} />
         </Modal>
@@ -1429,10 +1433,7 @@ export default function IAMPage() {
           }
         >
           <FormField label="Policy Name">
-            <Input
-              value={newPolicyName}
-              onChange={(e) => setNewPolicyName((e as any).detail?.value || "")}
-            />
+            <Input value={newPolicyName} onChange={(e) => setNewPolicyName(e.detail.value || "")} />
           </FormField>
           <IamPolicyEditor
             label="Policy Document (JSON)"
@@ -1456,10 +1457,7 @@ export default function IAMPage() {
           }
         >
           <FormField label="Group Name">
-            <Input
-              value={newGroupName}
-              onChange={(e) => setNewGroupName((e as any).detail?.value || "")}
-            />
+            <Input value={newGroupName} onChange={(e) => setNewGroupName(e.detail.value || "")} />
           </FormField>
         </Modal>
 
@@ -1525,8 +1523,6 @@ export default function IAMPage() {
             onDismiss={() => setDeleteConfirm(null)}
           />
         )}
-      </SpaceBetween>
-
       <CrossServiceLinks links={CROSS_SERVICE_LINKS["/iam"] || []} />
     </div>
   );

@@ -1,7 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import Container from "@cloudscape-design/components/container";
@@ -11,7 +10,11 @@ import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
+import Header from "@cloudscape-design/components/header";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface IoTAnalyticsChannel {
   name?: string;
@@ -24,7 +27,8 @@ interface IoTAnalyticsChannel {
 export default function IotAnalyticsPage() {
   const [channels, setChannels] = useState<IoTAnalyticsChannel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [channelName, setChannelName] = useState("");
   const [deleteChannelName, setDeleteChannelName] = useState<string | null>(null);

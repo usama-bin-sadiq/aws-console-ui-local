@@ -142,7 +142,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ error: "Unknown GET action" }, { status: 400 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -311,7 +311,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: "Unknown POST action" }, { status: 400 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -337,7 +337,7 @@ export async function DELETE(request: Request) {
       await iamClient.send(new DeleteGroupCommand({ GroupName: name! }));
     }
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }

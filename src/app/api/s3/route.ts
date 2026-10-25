@@ -166,7 +166,7 @@ export async function GET(request: Request) {
     // List all buckets
     const res = await client.send(new ListBucketsCommand({}));
     return NextResponse.json({ buckets: res.Buckets || [] });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -197,7 +197,7 @@ export async function POST(request: Request) {
         body.fileName = fileObj.name;
       }
     } else {
-      body = await request.json().catch(() => ({}));
+      body = await request.json().catch(() => ({} as any));
     }
 
     const action = actionParam || body.action || "";
@@ -215,7 +215,7 @@ export async function POST(request: Request) {
         new PutObjectCommand({
           Bucket: String(body.bucketName || body.bucket || bucket || ""),
           Key: String(body.fileName || body.key || body.file?.name || "unknown"),
-          Body: buffer || body.content || "",
+          Body: (buffer || body.content || "") as any,
         }),
       );
       return NextResponse.json({
@@ -226,7 +226,7 @@ export async function POST(request: Request) {
 
     // Create bucket
     if (action === "create-bucket" || (!action && bucket)) {
-      const regionVal = body.region || "us-east-1";
+      const regionVal = (body.region || "us-east-1") as any;
       const config = regionVal === "us-east-1" ? undefined : { LocationConstraint: regionVal };
       await client.send(
         new CreateBucketCommand({
@@ -245,7 +245,9 @@ export async function POST(request: Request) {
       await client.send(
         new PutBucketVersioningCommand({
           Bucket: String(bucket),
-          VersioningConfiguration: { Status: body.status || body.versioning || "Enabled" },
+          VersioningConfiguration: {
+            Status: (body.status || body.versioning || "Enabled") as any,
+          },
         }),
       );
       return NextResponse.json({ success: true });
@@ -262,7 +264,7 @@ export async function POST(request: Request) {
       await client.send(
         new PutBucketEncryptionCommand({
           Bucket: String(bucket),
-          ServerSideEncryptionConfiguration: config,
+          ServerSideEncryptionConfiguration: config as any,
         }),
       );
       return NextResponse.json({ success: true });
@@ -286,7 +288,7 @@ export async function POST(request: Request) {
       await client.send(
         new PutBucketTaggingCommand({
           Bucket: String(bucket),
-          Tagging: { TagSet: body.tags || body.TagSet || [] },
+          Tagging: { TagSet: (body.tags || body.TagSet || []) as any },
         }),
       );
       return NextResponse.json({ success: true });
@@ -297,7 +299,7 @@ export async function POST(request: Request) {
       await client.send(
         new PutBucketLifecycleConfigurationCommand({
           Bucket: String(bucket),
-          LifecycleConfiguration: { Rules: body.rules || body.Rules || [] },
+          LifecycleConfiguration: { Rules: (body.rules || body.Rules || []) as any },
         }),
       );
       return NextResponse.json({ success: true });
@@ -332,7 +334,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: "Invalid request", action, bucket }, { status: 400 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -454,7 +456,7 @@ export async function PUT(request: Request) {
       },
       { status: 400 },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -481,7 +483,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: true, bucket });
     }
     return NextResponse.json({ error: "Invalid delete request" }, { status: 400 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }

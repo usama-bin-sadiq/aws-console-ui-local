@@ -39,6 +39,8 @@ import Alert from "@cloudscape-design/components/alert";
 import Link from "@cloudscape-design/components/link";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface StackSummary {
   StackName?: string;
@@ -230,9 +232,17 @@ export default function CloudFormationPage() {
       headingLevel="h2"
     >
       <SpaceBetween size="l">
-        <Header variant="h1" counter={`(${stacks.length})`}>
-          Stacks
-        </Header>
+        <AwsServiceHeader
+          serviceName="CloudFormation"
+          serviceIcon={SERVICE_ICONS["/cloudformation"]?.small}
+          counter={stacks.length}
+          primaryAction={
+            <button type="button" className="aws-service-page__create" onClick={() => router.push("/cloudformation/create")}>
+              Create stack
+            </button>
+          }
+          actions={headerActions}
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

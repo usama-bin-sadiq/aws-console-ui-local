@@ -71,7 +71,7 @@ export default function AwsCodeEditor({
   height = 300,
   ariaLabel,
 }: Props) {
-  const [ace, setAce] = useState<any>(null);
+  const [ace, setAce] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [preferences, setPreferences] = useState<CodeEditorProps.Preferences>({
     wrapLines: true,

@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from "react";
 import Header from "@cloudscape-design/components/header";
 import Input from "@cloudscape-design/components/input";
-import Cards from "@cloudscape-design/components/cards";
+import Cards, { CardsProps } from "@cloudscape-design/components/cards";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Container from "@cloudscape-design/components/container";
@@ -137,7 +137,7 @@ export default function Dashboard() {
                     ),
                   },
                 ],
-              } as any
+              } as CardsProps.CardDefinition<{ name: string; href: string; icon: string }>
             }
             items={
               [
@@ -171,7 +171,7 @@ export default function Dashboard() {
                   href: "/cloudformation",
                   icon: "/icons/Architecture-Service/Arch_Management-Tools/32/Arch_AWS-CloudFormation_32.svg",
                 },
-              ] as any
+              ] as { name: string; href: string; icon: string }[]
             }
           />
         </Container>
@@ -305,9 +305,9 @@ export default function Dashboard() {
                     content: (item: any) => <span>{item.content || "0"}</span>,
                   },
                 ],
-              } as any
+              } as CardsProps.CardDefinition<{ name: string; content: string }>
             }
-            items={dashboardCards as any}
+            items={dashboardCards as { name: string; content: string }[]}
           />
         </Container>
       </SpaceBetween>

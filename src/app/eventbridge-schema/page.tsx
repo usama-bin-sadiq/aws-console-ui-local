@@ -2,7 +2,6 @@
 
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -13,6 +12,10 @@ import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Tabs from "@cloudscape-design/components/tabs";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface EventBus {
   Name: string;
@@ -30,7 +33,8 @@ export default function EventBridgePage() {
   const [eventBuses, setEventBuses] = useState<EventBus[]>([]);
   const [rules, setRules] = useState<EventRule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const router = useRouter();  const [error, setError] = useState("");
   const [createModal, setCreateModal] = useState(false);
   const [busName, setBusName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -101,7 +105,15 @@ export default function EventBridgePage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Amazon EventBridge</Header>
+        <AwsServiceHeader
+          serviceName="Amazon EventBridge"
+          serviceIcon={SERVICE_ICONS["/eventbridge-schema"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/eventbridge-schema/create")}>
+            Create schema
+        </button>
+
+        />
 
         {error && (
           <Alert type="error" onDismiss={() => setError("")}>

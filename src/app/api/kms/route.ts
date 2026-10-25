@@ -89,7 +89,7 @@ export async function GET(request: Request) {
       Alias: aliasMap.get(key.KeyId) || "—",
     }));
     return NextResponse.json({ keys: enrichedKeys, aliases: aliasesRes.Aliases || [] });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -202,7 +202,7 @@ export async function POST(request: Request) {
       },
       { status: 400 },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }

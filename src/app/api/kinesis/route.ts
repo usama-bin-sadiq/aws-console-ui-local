@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const kinesisClient = getUserClientFromRequest(KinesisClient, request);
     const [listRes, describePromises] = [
       kinesisClient.send(new ListStreamsCommand({})).catch(() => ({ StreamNames: [] })),
-      Promise.resolve({} as any),
+      Promise.resolve({} as unknown),
     ];
     const res = await listRes;
     const streamNames: string[] = res.StreamNames || [];

@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -9,8 +10,13 @@ import Cards from "@cloudscape-design/components/cards";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import Alert from "@cloudscape-design/components/alert";
+import Modal from "@cloudscape-design/components/modal";
+import { apiFetch } from "@/lib/api-client";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 import { AWACS_DESIGN_TOKENS } from "@/constants/design-tokens";
+import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface Route53Zone {
   Id?: string;
@@ -58,8 +64,10 @@ function toArray<T = Record<string, unknown>>(d: unknown): T[] {
 export default function Page() {
   const [zones, setZones] = useState<Route53Zone[]>([]);
   const [healthChecks, setHealthChecks] = useState<Route53HealthCheck[]>([]);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ zoneId: string; zoneName: string } | null>(null);
   // Live emulator state, so the overview cards report what is actually running.
   const [provider, setProvider] = useState<string>("");
   const [route53State, setRoute53State] = useState<string>("");
@@ -107,6 +115,22 @@ export default function Page() {
     }
   };
 
+  const deleteHostedZone = (zoneId: string) => {
+    apiFetch("/api/route53", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "deleteZone", hostedZoneId: zoneId }),
+    })
+      .then(async (res: Response) => {
+        if (!res.ok) throw new Error("Failed to delete hosted zone");
+        setDeleteModal(null);
+        fetchData();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "Failed to delete hosted zone");
+      });
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -122,7 +146,21 @@ export default function Page() {
       ]}
     >
       <SpaceBetween size="m" direction="vertical">
-        <Container header={<Header variant="h2">Overview</Header>}>
+        <AwsServiceHeader
+          serviceName="Route 53"
+          serviceIcon={SERVICE_ICONS["/route53"]?.small}
+          counter={zones.length}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/route53/create")}
+            >
+              Create hosted zone
+            </button>
+          }
+        />
+        <Container>
           <Cards
             cardDefinition={{
               header: (item: any) => <Header variant="h3">{item.name}</Header>,
@@ -171,6 +209,24 @@ export default function Page() {
                   header: "Record Count",
                   cell: (item) => (item.records ? item.records.length : 0).toString(),
                 },
+                {
+                  header: "Actions",
+                  cell: (item) => (
+                    <SpaceBetween direction="horizontal" size="xs">
+                      <Button
+                        variant="inline-link"
+                        onClick={() => {
+                          if (item.Id && item.Name) {
+                            setDeleteModal({ zoneId: item.Id, zoneName: item.Name });
+                          }
+                        }}
+                        formAction="none"
+                      >
+                        Delete
+                      </Button>
+                    </SpaceBetween>
+                  ),
+                },
               ]}
               empty={<Box textAlign="center">No hosted zones found.</Box>}
             />
@@ -206,6 +262,27 @@ export default function Page() {
           </Box>
         </Container>
       </SpaceBetween>
-    </ServiceLayout>
+
+        {deleteModal && (
+          <Modal
+            visible
+            onDismiss={() => setDeleteModal(null)}
+            header="Delete hosted zone"
+            footer={
+              <SpaceBetween direction="horizontal" size="xs">
+                <Button onClick={() => setDeleteModal(null)}>Cancel</Button>
+                <Button variant="primary" onClick={() => deleteHostedZone(deleteModal.zoneId)}>
+                  Delete
+                </Button>
+              </SpaceBetween>
+            }
+          >
+            <Box variant="p">
+              Are you sure you want to delete the hosted zone{" "}
+              <strong>{deleteModal.zoneName}</strong>?
+            </Box>
+          </Modal>
+        )}
+      </ServiceLayout>
   );
 }

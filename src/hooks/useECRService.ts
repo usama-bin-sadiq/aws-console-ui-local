@@ -20,7 +20,7 @@ export function useECRService() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await ecr.send(new DescribeRepositoriesCommand({}));
-      setState((prev) => ({ ...prev, repos: (result as any)?.repositories || [], loading: false }));
+      setState((prev) => ({ ...prev, repos: result.repositories || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

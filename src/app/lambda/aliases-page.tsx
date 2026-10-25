@@ -12,11 +12,11 @@ import { AWACS_DESIGN_TOKENS } from "@/constants/design-tokens";
 export default function Page() {
   return (
     <ServiceLayout
-      serviceName="AWS Service"
+      serviceName="Lambda Aliases"
       serviceCategory="Compute"
       breadcrumbs={[
         { text: "Services", href: "/" },
-        { text: "AWS Service", href: "#" },
+        { text: "Lambda Aliases", href: "/lambda/aliases" },
       ]}
     >
       <SpaceBetween size="m" direction="vertical">

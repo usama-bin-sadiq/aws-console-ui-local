@@ -22,6 +22,8 @@ import {
   DeleteStackCommand,
   DescribeStackEventsCommand,
   ListStackResourcesCommand,
+  StackStatus,
+  StackSummary,
 } from "@aws-sdk/client-cloudformation";
 import { CloudFormationClient } from "@aws-sdk/client-cloudformation";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
@@ -57,7 +59,7 @@ export async function GET(request: Request) {
               Tags: stack.Tags,
               Outputs: stack.Outputs,
               Parameters: stack.Parameters,
-              TemplateDescription: (stack as any).TemplateDescription,
+              TemplateDescription: (stack as StackSummary).TemplateDescription,
               NotificationARNs: stack.NotificationARNs,
             }
           : null,
@@ -84,11 +86,11 @@ export async function GET(request: Request) {
           "DELETE_IN_PROGRESS",
           "DELETE_COMPLETE",
           "DELETE_FAILED",
-        ] as any,
+        ] as StackStatus[],
       }),
     );
     return NextResponse.json({ stacks: res.StackSummaries || [] });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -135,7 +137,7 @@ export async function POST(request: Request) {
       }),
     );
     return NextResponse.json({ success: true, action: "create" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -154,7 +156,7 @@ export async function DELETE(request: Request) {
     }
     await cloudformationClient.send(new DeleteStackCommand({ StackName: stackName }));
     return NextResponse.json({ success: true, action: "delete" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }

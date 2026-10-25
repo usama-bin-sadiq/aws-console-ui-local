@@ -24,7 +24,7 @@ export function useSecretsManagerService() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await secretsManager.send(new ListSecretsCommand({}));
-      setState((prev) => ({ ...prev, secrets: (result as any)?.SecretList || [], loading: false }));
+      setState((prev) => ({ ...prev, secrets: result.SecretList || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

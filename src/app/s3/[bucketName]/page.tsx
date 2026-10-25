@@ -37,6 +37,46 @@ import { apiFetch } from "@/lib/api-client";
 import { lookupBucket, type BucketState } from "../bucket-lookup";
 import { BucketNotFound, BucketUnreadable } from "../BucketNotice";
 
+interface EncryptionRule {
+  ApplyServerSideEncryptionByDefault?: {
+    SSEAlgorithm?: string;
+    KMSMasterKeyID?: string;
+  };
+}
+
+interface EncryptionConfig {
+  Rules?: EncryptionRule[];
+}
+
+interface WebsiteConfig {
+  IndexDocument?: { Suffix?: string };
+  ErrorDocument?: { Key?: string };
+}
+
+interface PublicAccessBlockConfiguration {
+  BlockPublicAcls?: boolean;
+  IgnorePublicAcls?: boolean;
+  BlockPublicPolicy?: boolean;
+  RestrictPublicBuckets?: boolean;
+}
+
+interface Grantee {
+  Type?: string;
+  ID?: string;
+  DisplayName?: string;
+  EmailAddress?: string;
+  URI?: string;
+}
+
+interface Grant {
+  Grantee?: Grantee;
+  Permission?: string;
+}
+
+interface Acl {
+  Grants?: Grant[];
+}
+
 export default function S3BucketDetailPage() {
   const params = useParams() as { bucketName: string };
   const bucketName = decodeURIComponent(params.bucketName || "");
@@ -48,11 +88,11 @@ export default function S3BucketDetailPage() {
   const [versioning, setVersioning] = useState<{ Status?: string; MFADelete?: string } | null>(
     null,
   );
-  const [encryption, setEncryption] = useState<any>(null);
+  const [encryption, setEncryption] = useState<EncryptionConfig | null>(null);
   const [tags, setTags] = useState<Array<{ Key?: string; Value?: string }>>([]);
-  const [policy, setPolicy] = useState<any>(null);
-  const [website, setWebsite] = useState<any>(null);
-  const [lifecycle, setLifecycle] = useState<any>(null);
+  const [policy, setPolicy] = useState<unknown>(null);
+  const [website, setWebsite] = useState<WebsiteConfig | null>(null);
+  const [lifecycle, setLifecycle] = useState<unknown>(null);
   const [region, setRegion] = useState("us-east-1");
   const [policyEditModal, setPolicyEditModal] = useState(false);
   const [policyText, setPolicyText] = useState("");
@@ -63,7 +103,9 @@ export default function S3BucketDetailPage() {
     value: "Enabled",
   });
   const [versioningSaving, setVersioningSaving] = useState(false);
-  const [publicAccessBlock, setPublicAccessBlock] = useState<any>(null);
+  const [publicAccessBlock, setPublicAccessBlock] = useState<PublicAccessBlockConfiguration | null>(
+    null,
+  );
   const [publicAccessBlockModal, setPublicAccessBlockModal] = useState(false);
   const [publicAccessBlockSaving, setPublicAccessBlockSaving] = useState(false);
   const [publicAccessBlockConfig, setPublicAccessBlockConfig] = useState({
@@ -72,10 +114,10 @@ export default function S3BucketDetailPage() {
     BlockPublicPolicy: true,
     RestrictPublicBuckets: true,
   });
-  const [acl, setAcl] = useState<any>(null);
+  const [acl, setAcl] = useState<Acl | null>(null);
   const [aclModal, setAclModal] = useState(false);
   const [aclSaving, setAclSaving] = useState(false);
-  const [aclConfig, setAclConfig] = useState<any[]>([]);
+  const [aclConfig, setAclConfig] = useState<Grant[]>([]);
 
   const fetchDetails = useCallback(async () => {
     setLoading(true);

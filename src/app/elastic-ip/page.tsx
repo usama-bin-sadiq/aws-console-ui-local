@@ -1,7 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import { useEffect, useState, useCallback } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
@@ -12,6 +11,9 @@ import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Select from "@cloudscape-design/components/select";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface ElasticIp {
   AllocationId: string;
@@ -24,7 +26,8 @@ interface ElasticIp {
 export default function ElasticIpPage() {
   const [addresses, setAddresses] = useState<ElasticIp[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
   const [allocating, setAllocating] = useState(false);
   const [selected, setSelected] = useState<ElasticIp[]>([]);
 
@@ -154,45 +157,27 @@ export default function ElasticIpPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
+        <AwsServiceHeader
+          serviceName="Elastic IP"
+          serviceIcon={SERVICE_ICONS["/elastic-ip"]?.small}
+          counter={addresses?.length ?? 0}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/elastic-ip/create")}
+            >
+              Allocate address
+            </button>
+          }
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh">
+              <Button onClick={load} iconName="refresh" formAction="none">
                 Refresh
-              </Button>
-              <ButtonDropdown
-                items={[
-                  { text: "Release", id: "release", disabled: selected.length === 0 },
-                  {
-                    text: "Associate to instance",
-                    id: "associate",
-                    disabled: selected.length !== 1 || !!selected[0]?.InstanceId,
-                  },
-                  {
-                    text: "Disassociate",
-                    id: "disassociate",
-                    disabled: selected.length !== 1 || !selected[0]?.AssociationId,
-                  },
-                ]}
-                onItemClick={({ detail }) => {
-                  if (detail.id === "release") handleRelease();
-                  else if (detail.id === "associate") setShowAssociate(true);
-                  else if (detail.id === "disassociate") handleDisassociate();
-                }}
-                disabled={selected.length === 0}
-                ariaLabel="Elastic IP actions"
-              >
-                Actions
-              </ButtonDropdown>
-              <Button variant="primary" loading={allocating} onClick={handleAllocate}>
-                Allocate Elastic IP
               </Button>
             </SpaceBetween>
           }
-        >
-          Elastic IPs
-        </Header>
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

@@ -1,16 +1,20 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Alert from "@cloudscape-design/components/alert";
+import Header from "@cloudscape-design/components/header";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 export default function LexPage() {
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const router = useRouter();  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 

@@ -26,7 +26,7 @@ export function useRDSService() {
       const result = await rds.send(new DescribeDBInstancesCommand({}));
       setState((prev) => ({
         ...prev,
-        instances: (result as any)?.DBInstances || [],
+        instances: result.DBInstances || [],
         loading: false,
       }));
     } catch (err: unknown) {

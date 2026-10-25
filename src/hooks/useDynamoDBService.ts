@@ -24,7 +24,7 @@ export function useDynamoDBService() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await dynamodb.send(new ListTablesCommand({}));
-      setState((prev) => ({ ...prev, tables: (result as any)?.TableNames || [], loading: false }));
+      setState((prev) => ({ ...prev, tables: result.TableNames || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

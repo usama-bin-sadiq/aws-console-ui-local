@@ -1,0 +1,72 @@
+/* replica/design/tokens.css — generated from tokens.json */
+/* Apply these as CSS custom properties on :root; Tailwind maps them via theme. */
+
+:root {
+  /* Colour roles */
+  --aws-replica-bg: #f2f3f3;
+  --aws-replica-surface: #ffffff;
+  --aws-replica-border: #d5dbdb;
+  --aws-replica-border-input: #7a8593;
+  --aws-replica-text: #0f141a;
+  --aws-replica-text-muted: #5f6b7a;
+  --aws-replica-accent: #0055a0;
+  --aws-replica-on-accent: #ffffff;
+  --aws-replica-danger: #d91515;
+  --aws-replica-success: #1d8102;
+  --aws-replica-warning: #9a5a00;
+  --aws-replica-nav-bg: #232f3e;
+  --aws-replica-nav-text: #ffffff;
+  --aws-replica-nav-border: #3b4a5c;
+  --aws-replica-nav-hover: #3b4a5c;
+  --aws-replica-search-bg: #ffffff;
+  --aws-replica-search-border: #ccd6dd;
+
+  /* Typography */
+  --aws-replica-font-sans: "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  --aws-replica-font-mono: "Menlo", "Monaco", "Consolas", monospace;
+
+  /* Type scale (rem) */
+  --aws-replica-type-xs: 0.75rem;
+  --aws-replica-type-xs-line: 1rem;
+  --aws-replica-type-sm: 0.875rem;
+  --aws-replica-type-sm-line: 1.25rem;
+  --aws-replica-type-base: 1rem;
+  --aws-replica-type-base-line: 1.5rem;
+  --aws-replica-type-lg: 1.25rem;
+  --aws-replica-type-lg-line: 1.75rem;
+  --aws-replica-type-xl: 1.75rem;
+  --aws-replica-type-xl-line: 2.125rem;
+  --aws-replica-type-display: 2.5rem;
+  --aws-replica-type-display-line: 2.75rem;
+
+  /* Spacing (rem) */
+  --aws-replica-space-0: 0;
+  --aws-replica-space-1: 0.25rem;
+  --aws-replica-space-2: 0.5rem;
+  --aws-replica-space-3: 0.75rem;
+  --aws-replica-space-4: 1rem;
+  --aws-replica-space-5: 1.5rem;
+  --aws-replica-space-6: 2rem;
+  --aws-replica-space-7: 3rem;
+  --aws-replica-space-8: 4rem;
+
+  /* Radius */
+  --aws-replica-radius-sm: 2px;
+  --aws-replica-radius-md: 4px;
+  --aws-replica-radius-lg: 8px;
+  --aws-replica-radius-pill: 9999px;
+
+  /* Shadow */
+  --aws-replica-shadow-card: 0 1px 3px rgba(0,0,0,0.12);
+  --aws-replica-shadow-pop: 0 8px 24px rgba(0,7,22,0.25);
+
+  /* Motion */
+  --aws-replica-motion-fast: 120ms;
+  --aws-replica-motion-base: 200ms;
+  --aws-replica-motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Layout */
+  --aws-replica-layout-header-height: 44px;
+  --aws-replica-layout-sidebar-width: 250px;
+  --aws-replica-layout-max-content-width: 1400px;
+}

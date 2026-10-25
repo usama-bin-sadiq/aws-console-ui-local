@@ -2,7 +2,6 @@
 
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import Modal from "@cloudscape-design/components/modal";
@@ -11,6 +10,10 @@ import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface VirtualMFADevice {
   SerialNumber: string;
@@ -21,7 +24,8 @@ interface VirtualMFADevice {
 export default function IAMVirtualMFAPage() {
   const [mfaDevices, setMfaDevices] = useState<VirtualMFADevice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createModal, setCreateModal] = useState(false);
+
+  const router = useRouter();  const [createModal, setCreateModal] = useState(false);
   const [deviceName, setDeviceName] = useState("");
 
   const fetchDevices = async () => {
@@ -59,7 +63,15 @@ export default function IAMVirtualMFAPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">IAM Virtual MFA Devices</Header>
+        <AwsServiceHeader
+          serviceName="IAM Virtual MFA Devices"
+          serviceIcon={SERVICE_ICONS["/iam-virtual-mfa"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/iam-virtual-mfa/create")}>
+            Create MFA device
+        </button>
+
+        />
         <Container
           header={
             <Header

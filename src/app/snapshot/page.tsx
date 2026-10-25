@@ -2,7 +2,6 @@
 
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState, useCallback } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -15,6 +14,9 @@ import Input from "@cloudscape-design/components/input";
 import Select from "@cloudscape-design/components/select";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import TruncatedText from "@/components/TruncatedText";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface Snapshot {
   SnapshotId: string;
@@ -28,7 +30,8 @@ interface Snapshot {
 export default function SnapshotPage() {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const router = useRouter();  const [error, setError] = useState("");
   const [createModal, setCreateModal] = useState(false);
   const [volumeId, setVolumeId] = useState("");
   const [description, setDescription] = useState("");
@@ -134,28 +137,21 @@ export default function SnapshotPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          actions={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={fetchSnapshots} iconName="refresh">
-                Refresh
-              </Button>
-              <Button
-                disabled={selected.length === 0}
-                loading={deleting}
-                onClick={handleBulkDelete}
-              >
-                Delete
-              </Button>
-              <Button variant="primary" onClick={() => setCreateModal(true)}>
-                Create snapshot
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          EBS Snapshots
-        </Header>
+        <AwsServiceHeader
+          serviceName="Refresh Delete setCreateModal(true)}> Create snaps"
+          serviceIcon={SERVICE_ICONS["/snapshot"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/snapshot/create")}>
+            Create snapshot
+        </button>
+        actions={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={fetchSnapshots} iconName="refresh" formAction="none">
+              Refresh
+            </Button>
+          </SpaceBetween>
+        }
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError("")}>

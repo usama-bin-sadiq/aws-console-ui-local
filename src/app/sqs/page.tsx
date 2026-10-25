@@ -2,6 +2,7 @@
 
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -13,6 +14,8 @@ import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
 import Alert from "@cloudscape-design/components/alert";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface QueueInfo {
   url: string;
@@ -49,6 +52,7 @@ export default function SQSPage() {
   const [deleteQueueUrl, setDeleteQueueUrl] = useState("");
   const [deleteQueueName, setDeleteQueueName] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const router = useRouter();
 
   const fetchQueues = async () => {
     setLoading(true);
@@ -269,16 +273,20 @@ export default function SQSPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          actions={
-            <Button variant="primary" onClick={() => setCreateModal(true)} ariaLabel="Create Queue">
+        <AwsServiceHeader
+          serviceName="SQS"
+          serviceIcon={SERVICE_ICONS["/sqs"]?.small}
+          counter={queues.length}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => setCreateModal(true)}
+            >
               Create Queue
-            </Button>
+            </button>
           }
-        >
-          SQS - Simple Queue Service
-        </Header>
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError("")}>

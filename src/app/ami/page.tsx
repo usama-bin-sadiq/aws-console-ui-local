@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown, { ButtonDropdownProps } from "@cloudscape-design/components/button-dropdown";
@@ -29,6 +28,8 @@ import {
 } from "@/types/ami";
 import { amiDelete, amiGet, useQueryParam } from "./ami-api";
 import { CreateSnapshotModal, DeregisterImageModal } from "./image-modals";
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -71,6 +72,7 @@ export default function AMIListPage() {
 
   const [items, setItems] = useState<AMI[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<AMI[]>([]);
@@ -325,41 +327,27 @@ export default function AMIListPage() {
   return (
     <Box padding="m">
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          counter={`(${items.length})`}
+        <AwsServiceHeader
+          serviceName="AMI"
+          serviceIcon={SERVICE_ICONS["/ami"]?.small}
+          counter={items?.length ?? 0}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/ami/create")}
+            >
+              Create AMI
+            </button>
+          }
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button iconName="refresh" onClick={() => void load()} ariaLabel="Refresh images">
+              <Button onClick={load} iconName="refresh" formAction="none">
                 Refresh
               </Button>
-              <ButtonDropdown
-                ariaLabel="Image actions"
-                disabled={selectedItems.length === 0}
-                onItemClick={({ detail }) => handleBulkAction(String(detail.id))}
-                items={bulkActions}
-              >
-                Actions
-              </ButtonDropdown>
-              <ButtonDropdown
-                variant="primary"
-                ariaLabel="Create image"
-                onItemClick={({ detail }) => {
-                  if (detail.id === "copy") router.push("/ami/copy");
-                  else if (detail.id === "register") router.push("/ami/register");
-                }}
-                items={[
-                  { id: "copy", text: "Copy image" },
-                  { id: "register", text: "Register image" },
-                ]}
-              >
-                Create image
-              </ButtonDropdown>
             </SpaceBetween>
           }
-        >
-          Amazon Machine Images
-        </Header>
+        />
 
         <CrossServiceLinks links={RELATED_LINKS} />
 

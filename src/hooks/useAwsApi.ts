@@ -58,8 +58,8 @@ export function useAwsApi<T = any>(options: UseAwsApiOptions): UseAwsApiResult<T
         const result = await response.json();
         setData(result);
         return result;
-      } catch (err: any) {
-        const errorMessage = err.message || "An error occurred";
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
         setError(errorMessage);
         addNotification("error", "API Error", errorMessage);
         throw err;

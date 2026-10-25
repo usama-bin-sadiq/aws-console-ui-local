@@ -23,7 +23,7 @@ export function useCognitoService() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await cognitoIdp.send(new ListUserPoolsCommand({ MaxResults: 10 }));
-      setState((prev) => ({ ...prev, pools: (result as any)?.UserPools || [], loading: false }));
+      setState((prev) => ({ ...prev, pools: result.UserPools || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

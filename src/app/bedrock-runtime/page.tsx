@@ -3,7 +3,6 @@
 import { apiFetch } from "@/lib/api-client";
 import React, { useState } from "react";
 import { CodeView } from "@cloudscape-design/code-view";
-import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -12,10 +11,15 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Textarea from "@cloudscape-design/components/textarea";
 import Alert from "@cloudscape-design/components/alert";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 export default function BedrockRuntimePage() {
   const [modelId, setModelId] = useState("anthropic.claude-v2");
-  const [prompt, setPrompt] = useState("");
+
+  const router = useRouter();  const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +54,15 @@ export default function BedrockRuntimePage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Amazon Bedrock Runtime</Header>
+        <AwsServiceHeader
+          serviceName="Amazon Bedrock Runtime"
+          serviceIcon={SERVICE_ICONS["/bedrock-runtime"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/bedrock-runtime/create")}>
+            Create model
+        </button>
+
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

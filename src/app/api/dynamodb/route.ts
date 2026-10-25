@@ -167,7 +167,7 @@ export async function GET(request: Request) {
       tables.push(desc.Table);
     }
     return NextResponse.json({ tables });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -308,7 +308,7 @@ export async function POST(request: Request) {
       },
       { status: 400 },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -324,7 +324,7 @@ export async function DELETE(request: Request) {
     const tableName = searchParams.get("tableName");
     await dynamodbClient.send(new DeleteTableCommand({ TableName: tableName! }));
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }

@@ -91,8 +91,7 @@ const nextConfig: NextConfig = {
     optimizePackageImports: [
       "@cloudscape-design/components",
       "@cloudscape-design/collection-hooks",
-      "@cloudscape-design/board-components",
-      "@cloudscape-design/chart-components",
+      "@cloudscape-design/code-view",
       "next/image",
       "next/link",
       "next/navigation",

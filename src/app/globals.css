@@ -19,6 +19,35 @@ body {
   }
 }
 
+@media (max-width: 760px) {
+  /* Collapse ColumnLayout grids to a single column on narrow screens */
+  .awsui-column-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Service header: stack left block and action block vertically */
+  .aws-service-header__row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  .aws-service-header__left {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+  }
+  .aws-service-header__left > span {
+    margin-left: 0 !important;
+  }
+  .aws-service-header__action {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+  .aws-service-header__action > * {
+    width: 100% !important;
+  }
+}
+
 @media (max-width: 640px) {
   .awsui-header {
     margin-bottom: 0.5rem !important;
@@ -178,4 +207,28 @@ footer a {
 /* Ensure Cloudscape tabs container has proper contrast */
 .awsui_tabs {
   color: var(--text, #0f141a) !important;
+}
+
+/* ── Service layout container overrides ───────────────────────────────────── */
+/* The service layout's container (AppLayout) needs its border removed because
+   Cloudscape's Table draws its own card border. Without this override, tables
+   inside a container get a double border. */
+.aws-service-layout__container {
+  border: none !important;
+  border-block: none !important;
+  border-inline: none !important;
+}
+
+.aws-table-card {
+  border: none !important;
+  border-block: none !important;
+  border-inline: none !important;
+}
+
+/* ── Shell content area ───────────────────────────────────────────────────── */
+/* The shell applies its own page inset once. If the inner layout or a page
+   adds another inset, the page title and the content it titles end up on
+   different axes. The service content area must not add its own inset. */
+.service-content {
+  padding: 0 !important;
 }

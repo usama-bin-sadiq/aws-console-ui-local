@@ -25,7 +25,7 @@ export function useCloudFormationService() {
       const result = await cloudformation.send(new ListStacksCommand({}));
       setState((prev) => ({
         ...prev,
-        stacks: (result as any)?.StackSummaries || [],
+        stacks: result.StackSummaries || [],
         loading: false,
       }));
     } catch (err: unknown) {

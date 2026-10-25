@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 
 interface User {
   username: string;
@@ -130,19 +130,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [user],
   );
 
+  const getRegion = useCallback(() => REGION, []);
+
+  const value = useMemo(() => ({
+    user,
+    loading,
+    signIn,
+    signOut,
+    isRootUser: user?.username === ROOT_USERNAME,
+    isSuperAdmin: user?.isSuperAdmin === true,
+    hasPermission,
+    getRegion,
+  }), [user, loading, signIn, signOut, hasPermission, getRegion]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        signIn,
-        signOut,
-        isRootUser: user?.username === ROOT_USERNAME,
-        isSuperAdmin: user?.isSuperAdmin === true,
-        hasPermission,
-        getRegion: () => REGION,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

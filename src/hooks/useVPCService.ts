@@ -20,7 +20,7 @@ export function useVPCService() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await ec2.send(new DescribeVpcsCommand({}));
-      setState((prev) => ({ ...prev, vpcs: (result as any)?.Vpcs || [], loading: false }));
+      setState((prev) => ({ ...prev, vpcs: result.Vpcs || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

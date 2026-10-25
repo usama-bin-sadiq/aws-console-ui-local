@@ -1,7 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
@@ -14,7 +13,11 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Textarea from "@cloudscape-design/components/textarea";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Header from "@cloudscape-design/components/header";
 import TruncatedText from "@/components/TruncatedText";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface ECSServiceSummary {
   serviceName: string;
@@ -43,7 +46,8 @@ interface TaskSummary {
 
 export default function ECSPage() {
   const [clusterInput, setClusterInput] = useState("");
-  const [clusterName, setClusterName] = useState("default");
+
+  const router = useRouter();  const [clusterName, setClusterName] = useState("default");
   const [services, setServices] = useState<ECSServiceSummary[]>([]);
   const [taskDefs, setTaskDefs] = useState<TaskDefinitionSummary[]>([]);
   const [tasks, setTasks] = useState<TaskSummary[]>([]);
@@ -235,7 +239,15 @@ export default function ECSPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Amazon ECS — Container Services</Header>
+        <AwsServiceHeader
+          serviceName="Amazon ECS — Container Services"
+          serviceIcon={SERVICE_ICONS["/ecs"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/ecs/create")}>
+            Create cluster
+        </button>
+
+        />
         {error && (
           <Alert type="error" onDismiss={() => setError(null)} header="Error">
             {error}

@@ -11,10 +11,12 @@ import SpaceBetween from "@cloudscape-design/components/space-between";
 import FormField from "@cloudscape-design/components/form-field";
 import Alert from "@cloudscape-design/components/alert";
 import type { TableProps } from "@cloudscape-design/components/table";
-import { ResourceTable } from "@/features/resource-table";
+import { ResourceTable, type ActionDefinition } from "@/features/resource-table";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { CopyableText } from "@/components/ui/CopyableText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -261,6 +263,17 @@ export default function DynamoDBPage() {
           </Alert>
         )}
 
+      <AwsServiceHeader
+        serviceName="Amazon DynamoDB"
+        serviceIcon={SERVICE_ICONS["/dynamodb"]?.small}
+        counter={tables.length}
+        primaryAction={
+          <button type="button" className="aws-service-page__create" onClick={() => router.push("/dynamodb/create")}>
+            Create table
+          </button>
+        }
+      />
+
         <ResourceTable
           config={{
             serviceKey: "dynamodb",
@@ -277,7 +290,7 @@ export default function DynamoDBPage() {
           selectedItems={selectedItems as unknown as Record<string, unknown>[]}
           onSelectionChange={(items) => setSelectedItems(items as unknown as DynamoTable[])}
           onRefresh={fetchTables}
-          actions={actions as any}
+          actions={actions as unknown as ActionDefinition<Record<string, unknown>>[]}
         />
 
         {/* Create Table Modal */}

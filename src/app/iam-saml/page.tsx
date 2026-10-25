@@ -2,7 +2,6 @@
 
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import Modal from "@cloudscape-design/components/modal";
@@ -11,6 +10,10 @@ import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface SAMLProvider {
   Arn?: string;
@@ -21,7 +24,8 @@ interface SAMLProvider {
 export default function IAMSAMLPage() {
   const [samlProviders, setSamlProviders] = useState<SAMLProvider[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createModal, setCreateModal] = useState(false);
+
+  const router = useRouter();  const [createModal, setCreateModal] = useState(false);
   const [providerName, setProviderName] = useState("");
 
   const fetchProviders = async () => {
@@ -57,7 +61,15 @@ export default function IAMSAMLPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">IAM SAML Providers</Header>
+        <AwsServiceHeader
+          serviceName="IAM SAML Providers"
+          serviceIcon={SERVICE_ICONS["/iam-saml"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/iam-saml/create")}>
+            Create provider
+        </button>
+
+        />
         <Container
           header={
             <Header

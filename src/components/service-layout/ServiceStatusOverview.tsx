@@ -47,7 +47,11 @@ function readPath(obj: any, path: string): any {
  * /api/health, resource counts come from each service's own route.
  */
 export function ServiceStatusOverview({ serviceName, emulatorKey, counts = [] }: Props) {
-  const [health, setHealth] = React.useState<any>(null);
+  const [health, setHealth] = React.useState<{
+    provider?: string;
+    services?: Record<string, string>;
+    region?: string;
+  } | null>(null);
   const [provider, setProvider] = React.useState<string>("");
   const [loading, setLoading] = React.useState(true);
   const [results, setResults] = React.useState<Record<string, number | null>>({});
@@ -102,7 +106,7 @@ export function ServiceStatusOverview({ serviceName, emulatorKey, counts = [] }:
 
   const keys = Array.isArray(emulatorKey) ? emulatorKey : [emulatorKey];
   const found = keys.find((k) => health?.services?.[k]);
-  const state: string = (found && health.services[found]) || "unknown";
+  const state: string = (found && health?.services?.[found]) || "unknown";
   const stateType = state === "running" ? "success" : state === "available" ? "info" : "warning";
   const stateLabel =
     state === "running"
@@ -127,7 +131,23 @@ export function ServiceStatusOverview({ serviceName, emulatorKey, counts = [] }:
               status: loading ? (
                 <StatusIndicator type="loading">Loading</StatusIndicator>
               ) : (
-                <StatusIndicator type={stateType as any}>{stateLabel}</StatusIndicator>
+                <StatusIndicator
+                  type={
+                    stateType as
+                      | "success"
+                      | "info"
+                      | "warning"
+                      | "error"
+                      | "stopped"
+                      | "pending"
+                      | "in-progress"
+                      | "loading"
+                      | "not-started"
+                      | "log"
+                  }
+                >
+                  {stateLabel}
+                </StatusIndicator>
               ),
             },
             {

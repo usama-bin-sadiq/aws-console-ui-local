@@ -1,6 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
@@ -27,6 +28,8 @@ import {
 } from "@/types/cloudwatch";
 import TruncatedText from "@/components/TruncatedText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 export default function CloudWatchPage() {
   const [alarms, setAlarms] = useState<CloudWatchAlarm[]>([]);
@@ -59,6 +62,7 @@ export default function CloudWatchPage() {
   const [insightsQuery, setInsightsQuery] = useState(
     "fields @timestamp, @message | sort @timestamp desc | limit 20",
   );
+  const router = useRouter();
   const [insightsResults, setInsightsResults] = useState<Record<string, unknown>[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [insightsQueryId, setInsightsQueryId] = useState<string | null>(null);
@@ -445,9 +449,17 @@ export default function CloudWatchPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1" counter={`(${alarms.length})`} actions={headerActions}>
-          CloudWatch
-        </Header>
+        <AwsServiceHeader
+          serviceName="Amazon CloudWatch"
+          serviceIcon={SERVICE_ICONS["/cloudwatch"]?.small}
+          counter={alarms.length}
+          primaryAction={
+            <button type="button" className="aws-service-page__create" onClick={openCreateAlarm}>
+              Create alarm
+            </button>
+          }
+          actions={headerActions}
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>
@@ -702,7 +714,7 @@ export default function CloudWatchPage() {
                     : null
                 }
                 onChange={({ detail }) =>
-                  setAlarmForm({ ...alarmForm, Statistic: detail.selectedOption?.value as any })
+                  setAlarmForm({ ...alarmForm, Statistic: detail.selectedOption?.value as string })
                 }
                 options={[
                   { label: "Average", value: "Average" },
@@ -743,7 +755,7 @@ export default function CloudWatchPage() {
                 onChange={({ detail }) =>
                   setAlarmForm({
                     ...alarmForm,
-                    ComparisonOperator: detail.selectedOption?.value as any,
+                    ComparisonOperator: detail.selectedOption?.value as string,
                   })
                 }
                 options={[

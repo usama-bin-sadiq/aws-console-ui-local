@@ -12,9 +12,11 @@ import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Link from "@cloudscape-design/components/link";
 import {
+  AdapterStatus,
   EmulatorHealthStatus,
   findServiceCompatibility,
   getServiceAvailability,
+  SERVICE_REGISTRY,
   toAdapterMode,
 } from "@/constants/service-compatibility";
 import { SERVICE_ICONS } from "@/constants/service-icons";
@@ -219,6 +221,7 @@ export default function Dashboard() {
   const { favorites: persistedFavorites, addFavorite, removeFavorite } = useSettingsStore();
   const [legacyFavorites, setLegacyFavorites] = useState<string[]>([]);
   const [recentlyVisited, setRecentlyVisited] = useState<Service[]>([]);
+  const [serviceCounts, setServiceCounts] = useState<{ full: number; partial: number; notSupported: number }>({ full: 0, partial: 0, notSupported: 0 });
   const favorites = Array.from(
     new Set([...persistedFavorites.map((favorite) => favorite.serviceHref), ...legacyFavorites]),
   );
@@ -297,6 +300,25 @@ export default function Dashboard() {
   };
 
   const activeMode = toAdapterMode(provider);
+
+  // Compute resource summary counts from the service registry
+  const counts = SERVICE_REGISTRY.reduce(
+    (acc, entry) => {
+      const status =
+        activeMode === "localstack"
+          ? entry.adapterStatusLocalStack
+          : activeMode === "ministack"
+          ? entry.adapterStatusMinStack
+          : AdapterStatus.FULL;
+      if (status === AdapterStatus.FULL) acc.full++;
+      else if (status === AdapterStatus.PARTIAL) acc.partial++;
+      else acc.notSupported++;
+      return acc;
+    },
+    { full: 0, partial: 0, notSupported: 0 },
+  );
+  setServiceCounts(counts);
+
   const availableServices = ALL_SERVICES.filter((service) => {
     const compatibility = findServiceCompatibility(service.href);
     return (
@@ -363,6 +385,39 @@ export default function Dashboard() {
                     ? "Emulator is starting"
                     : "Waiting for emulator capability data"}
             </StatusIndicator>
+          </SpaceBetween>
+        </Grid>
+      </Container>
+
+      <Container header={<Header variant="h2">Resource Summary</Header>}>
+        <Grid gridDefinition={[{ colspan: 4 }, { colspan: 4 }, { colspan: 4 }]}>
+          <SpaceBetween size="s">
+            <Header variant="h3">Full Support</Header>
+            <Box variant="p">{serviceCounts.full}</Box>
+            <Box variant="small" color="text-body-secondary">
+              Services with full adapter support
+            </Box>
+          </SpaceBetween>
+          <SpaceBetween size="s">
+            <Header variant="h3">Partial Support</Header>
+            <Box variant="p">{serviceCounts.partial}</Box>
+            <Box variant="small" color="text-body-secondary">
+              Services with partial adapter support
+            </Box>
+          </SpaceBetween>
+          <SpaceBetween size="s">
+            <Header variant="h3">Not Supported</Header>
+            <Box variant="p">{serviceCounts.notSupported}</Box>
+            <Box variant="small" color="text-body-secondary">
+              Services without adapter support
+            </Box>
+          </SpaceBetween>
+          <SpaceBetween size="s">
+            <Header variant="h3">Total Services</Header>
+            <Box variant="p">{serviceCounts.full + serviceCounts.partial + serviceCounts.notSupported}</Box>
+            <Box variant="small" color="text-body-secondary">
+              Services in the registry
+            </Box>
           </SpaceBetween>
         </Grid>
       </Container>

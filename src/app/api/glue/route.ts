@@ -13,6 +13,7 @@ import {
   StartJobRunCommand,
   StartCrawlerCommand,
   GetCrawlerCommand,
+  GetCrawlersCommandOutput,
 } from "@aws-sdk/client-glue";
 import { GlueClient } from "@aws-sdk/client-glue";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
@@ -36,7 +37,10 @@ export async function GET(request: Request) {
     return NextResponse.json({
       databases: dbRes.DatabaseList || [],
       tables: tableRes.TableList || [],
-      crawlers: (crawlerRes as any).CrawlerNames || (crawlerRes as any).Crawlers || [],
+      crawlers:
+        (crawlerRes as { CrawlerNames?: string[] }).CrawlerNames ||
+        (crawlerRes as GetCrawlersCommandOutput).Crawlers ||
+        [],
       jobs: jobRes.Jobs || [],
     });
   } catch (error: unknown) {

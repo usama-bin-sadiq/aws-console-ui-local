@@ -38,6 +38,7 @@ import {
   type InstanceStatus,
   type Region,
   type AvailabilityZone,
+  type RunInstancesCommandInput,
 } from "@aws-sdk/client-ec2";
 
 // ─── State Types ───────────────────────────────────────────────────────────
@@ -156,7 +157,9 @@ export function useEC2Service() {
           }));
         }
 
-        const result = await ec2.send(new RunInstancesCommand(commandParams as any));
+        const result = await ec2.send(
+          new RunInstancesCommand(commandParams as unknown as RunInstancesCommandInput),
+        );
         setState((prev) => ({
           ...prev,
           instances: [...prev.instances, ...(result.Instances || [])],

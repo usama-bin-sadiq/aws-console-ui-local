@@ -417,7 +417,8 @@ export async function updateUserPasswordAsync(
 export async function deleteUserAsync(username: string): Promise<boolean> {
   await ensureInitialized();
   const result = await db.delete(schema.users).where(eq(schema.users.username, username));
-  return (result as any).changes > 0 || (result as any).rowsAffected > 0;
+  const deleted = result as { changes?: number; rowsAffected?: number };
+  return (deleted.changes ?? 0) > 0 || (deleted.rowsAffected ?? 0) > 0;
 }
 
 export async function validateUserAsync(

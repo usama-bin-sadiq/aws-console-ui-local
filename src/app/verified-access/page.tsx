@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface VerifiedAccessInstance {
   VerifiedAccessInstanceId: string;
@@ -17,7 +20,8 @@ interface VerifiedAccessInstance {
 export default function VerifiedAccessPage() {
   const [instances, setInstances] = useState<VerifiedAccessInstance[]>([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+
+  const router = useRouter();  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const fetchInstances = async () => {
@@ -39,7 +43,15 @@ export default function VerifiedAccessPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">AWS Verified Access</Header>
+        <AwsServiceHeader
+          serviceName="AWS Verified Access"
+          serviceIcon={SERVICE_ICONS["/verified-access"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/verified-access/create")}>
+            Create trust policy
+        </button>
+
+        />
 
         {message && (
           <Alert type="info" header="Verified Access not available">

@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     }
     const res = await sqsClient.send(new ListQueuesCommand({}));
     return NextResponse.json({ queues: res.QueueUrls || [] });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -136,7 +136,7 @@ export async function POST(request: Request) {
       queueUrl: res.QueueUrl,
       queue: { QueueUrl: res.QueueUrl },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -166,7 +166,7 @@ export async function DELETE(request: Request) {
     const queueUrl = searchParams.get("QueueUrl") || searchParams.get("queueUrl");
     await sqsClient.send(new DeleteQueueCommand({ QueueUrl: queueUrl! }));
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }

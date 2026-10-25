@@ -7,7 +7,6 @@ import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
 import ColumnLayout from "@cloudscape-design/components/column-layout";
 import Container from "@cloudscape-design/components/container";
-import Header from "@cloudscape-design/components/header";
 import Link from "@cloudscape-design/components/link";
 import type { LinkProps } from "@cloudscape-design/components/link";
 import List from "@cloudscape-design/components/list";
@@ -16,6 +15,7 @@ import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import type { StatusIndicatorProps } from "@cloudscape-design/components/status-indicator";
 import Tabs from "@cloudscape-design/components/tabs";
 import type { TabsProps } from "@cloudscape-design/components/tabs";
+import Header from "@cloudscape-design/components/header";
 import { useRouter } from "next/navigation";
 import { CrossServiceLinks } from "@/components/CrossServiceLinks";
 import type { CrossServiceLink } from "@/components/CrossServiceLinks";
@@ -26,6 +26,8 @@ import {
   toAdapterMode,
 } from "@/constants/service-compatibility";
 import type { EmulatorHealthStatus, ServiceAvailability } from "@/constants/service-compatibility";
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 /**
  * Fargate overview page.
@@ -507,6 +509,7 @@ export default function FargatePage() {
   const router = useRouter();
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
 
   const fetchHealth = useCallback(async (): Promise<void> => {

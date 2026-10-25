@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Alert from "@cloudscape-design/components/alert";
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
@@ -12,6 +13,8 @@ import Modal from "@cloudscape-design/components/modal";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Table from "@cloudscape-design/components/table";
 import { apiFetch } from "@/lib/api-client";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface RestApi {
   id?: string;
@@ -29,6 +32,7 @@ export default function ApiGatewayPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [creating, setCreating] = useState(false);
+  const router = useRouter();
 
   const fetchApis = useCallback(async () => {
     setLoading(true);
@@ -95,23 +99,21 @@ export default function ApiGatewayPage() {
 
   return (
     <SpaceBetween size="l">
-      <Header variant="h1">Amazon API Gateway</Header>
-      {error && (
-        <Alert type="error" header="Request failed">
-          {error}
-        </Alert>
-      )}
-      <Container
-        header={
-          <Header
-            variant="h2"
-            actions={<Button onClick={() => setCreateVisible(true)}>Create REST API</Button>}
+      <AwsServiceHeader
+        serviceName="API Gateway"
+        serviceIcon={SERVICE_ICONS["/api"]?.small}
+        counter={apis.length}
+        primaryAction={
+          <button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => setCreateVisible(true)}
           >
-            REST APIs ({apis.length})
-          </Header>
+            Create REST API
+          </button>
         }
-        className="aws-table-card"
-      >
+      />
+      <Container className="aws-table-card">
         <Table
           items={apis}
           loading={loading}

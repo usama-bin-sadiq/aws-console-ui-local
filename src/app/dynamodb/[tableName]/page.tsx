@@ -115,7 +115,7 @@ export default function DynamoDBTableDetailPage() {
     setItemsLoading(true);
     setError(null);
     try {
-      const body: any = {
+      const body: Record<string, any> = {
         action: "query",
         tableName,
         keyConditionExpression: `#pk = :pk`,

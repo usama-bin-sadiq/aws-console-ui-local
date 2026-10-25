@@ -1,7 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -15,7 +14,11 @@ import Textarea from "@cloudscape-design/components/textarea";
 import Tabs from "@cloudscape-design/components/tabs";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Badge from "@cloudscape-design/components/badge";
+import Header from "@cloudscape-design/components/header";
 import TruncatedText from "@/components/TruncatedText";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface EventRule {
   Name?: string;
@@ -43,7 +46,8 @@ export default function EventBridgePage() {
   const [eventBuses, setEventBuses] = useState<EventBus[]>([]);
   const [targets, setTargets] = useState<Record<string, RuleTarget[]>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
   const [createModal, setCreateModal] = useState(false);
   const [targetsModal, setTargetsModal] = useState(false);
   const [ruleName, setRuleName] = useState("");
@@ -192,7 +196,15 @@ export default function EventBridgePage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Amazon EventBridge</Header>
+        <AwsServiceHeader
+          serviceName="Amazon EventBridge"
+          serviceIcon={SERVICE_ICONS["/eventbridge"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/eventbridge/create")}>
+            Create event bus
+        </button>
+
+        />
         {error && (
           <Alert type="error" onDismiss={() => setError(null)} header="Error">
             {error}

@@ -597,7 +597,7 @@ export async function GET(request: Request) {
       },
       { status: 400 },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -835,7 +835,7 @@ export async function POST(request: Request) {
       },
       { status: 400 },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -854,7 +854,7 @@ export async function DELETE(request: Request) {
     }
     await lambdaClient.send(new DeleteFunctionCommand({ FunctionName: functionName }));
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }

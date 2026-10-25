@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
@@ -28,11 +27,15 @@ import Checkbox from "@cloudscape-design/components/checkbox";
 import Tabs from "@cloudscape-design/components/tabs";
 import ColumnLayout from "@cloudscape-design/components/column-layout";
 import Link from "@cloudscape-design/components/link";
+import Header from "@cloudscape-design/components/header";
 import { apiFetch } from "@/lib/api-client";
 import { CrossServiceLinks, CrossServiceLink } from "@/components/CrossServiceLinks";
 import ConfirmModal from "@/components/ConfirmModal";
 import TagEditor, { Tag } from "@/components/TagEditor";
 import TruncatedText from "@/components/TruncatedText";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -190,7 +193,8 @@ function publicIpv4(eni: NetworkInterfaceInfo): string | undefined {
 export default function EC2NetworkInterfacePage() {
   const [items, setItems] = useState<NetworkInterfaceInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<NetworkInterfaceInfo[]>([]);
   const [filteringText, setFilteringText] = useState("");
@@ -890,7 +894,15 @@ export default function EC2NetworkInterfacePage() {
     return (
       <Box padding="m">
         <SpaceBetween size="l">
-          <Header variant="h1">Create network interface</Header>
+          <AwsServiceHeader
+          serviceName="Create network interface"
+          serviceIcon={SERVICE_ICONS["/ec2-network-interface"]?.small}
+          counter={items?.length ?? 0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/ec2-network-interface/create")}>
+            Create interface
+        </button>
+
+        />
           {error && (
             <Alert type="error" dismissible onDismiss={() => setError(null)}>
               {error}

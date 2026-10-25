@@ -46,17 +46,25 @@ git clone https://github.com/your-org/aws-console.git
 cd aws-console
 pnpm install
 
+# Copy environment configuration
+cp .env.example .env.local
+
 # Start LocalStack + Console
 pnpm dev:localstack
 
 # Open http://localhost:3000
-# Login: root / root123
+# Login: root / root123 (change NEXT_PUBLIC_ROOT_PASSWORD in .env.local)
 ```
 
 ### Option 2: MiniStack (Lightweight — Partial Coverage)
 
 ```bash
+# Clone and install
 pnpm install
+
+# Copy environment configuration
+cp .env.example .env.local
+
 pnpm dev:ministack
 
 # Open http://localhost:3000

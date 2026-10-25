@@ -1,8 +1,8 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
+import Header from "@cloudscape-design/components/header";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -22,6 +22,8 @@ import {
   toIpAddresses,
   validateEndpointAddresses,
 } from "./endpoint-addresses";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface ResolverEndpoint {
   Id: string;
@@ -46,6 +48,7 @@ function updateRowError(
 export default function Route53ResolverPage() {
   const [endpoints, setEndpoints] = useState<ResolverEndpoint[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
   const [createModal, setCreateModal] = useState(false);
   const [endpointName, setEndpointName] = useState("");
@@ -173,7 +176,15 @@ export default function Route53ResolverPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Route 53 Resolver</Header>
+        <AwsServiceHeader
+          serviceName="Route 53 Resolver"
+          serviceIcon={SERVICE_ICONS["/ec2-resolver"]?.small}
+          counter={endpoints?.length ?? 0}
+          primaryAction=<button type="button" className="aws-service-page__create" disabled>
+            Create resolver
+        </button>
+
+        />
         {error && (
           <Alert type="error" header="Error">
             {error}

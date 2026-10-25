@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CodeView } from "@cloudscape-design/code-view";
-import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
@@ -21,10 +20,13 @@ import RadioGroup from "@cloudscape-design/components/radio-group";
 import Textarea from "@cloudscape-design/components/textarea";
 import Flashbar, { FlashbarProps } from "@cloudscape-design/components/flashbar";
 import Icon from "@cloudscape-design/components/icon";
+import Header from "@cloudscape-design/components/header";
 import TruncatedText from "@/components/TruncatedText";
 import { KeyPair, KeyPairType, KeyPairFormat, KeyPairApiResponse } from "@/types/key-pair";
 import { apiFetch } from "@/lib/api-client";
 import DeleteKeyPairModal from "./DeleteKeyPairModal";
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 // ─── Constants & helpers ─────────────────────────────────────────────────────
 
@@ -82,6 +84,7 @@ export default function KeyPairPage() {
   const router = useRouter();
   const [keyPairs, setKeyPairs] = useState<KeyPair[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
   const [successItem, setSuccessItem] = useState<FlashbarProps.MessageDefinition | null>(null);
   const [selectedItems, setSelectedItems] = useState<KeyPair[]>([]);
@@ -409,41 +412,20 @@ export default function KeyPairPage() {
   return (
     <Box padding="m">
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          counter={`(${keyPairs.length})`}
-          actions={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button
-                iconName="refresh"
-                onClick={fetchKeyPairs}
-                ariaLabel="Refresh"
-                formAction="none"
-                loading={loading}
-              >
-                Refresh
-              </Button>
-              <ButtonDropdown
-                items={[
-                  { text: "Delete key pairs", id: "delete", disabled: selectedItems.length === 0 },
-                ]}
-                onItemClick={({ detail }) => {
-                  if (detail.id === "delete") openDelete(selectedItems);
-                }}
-                disabled={selectedItems.length === 0}
-                ariaLabel="Key pair actions"
-              >
-                Actions
-              </ButtonDropdown>
-              <Button variant="primary" onClick={openCreateModal}>
-                Create key pair
-              </Button>
-              <Button onClick={openImportModal}>Import key pair</Button>
-            </SpaceBetween>
+        <AwsServiceHeader
+          serviceName="Key Pair"
+          serviceIcon={SERVICE_ICONS["/key-pair"]?.small}
+          counter={keyPairs?.length ?? 0}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/key-pair/create")}
+            >
+              Create key pair
+            </button>
           }
-        >
-          Key pairs
-        </Header>
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

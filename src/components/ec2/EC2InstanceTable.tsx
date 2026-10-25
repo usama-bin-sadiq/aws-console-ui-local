@@ -4,7 +4,7 @@ import Header from "@cloudscape-design/components/header";
  */
 
 import React, { useState } from "react";
-import Table from "@cloudscape-design/components/table";
+import Table, { TableProps } from "@cloudscape-design/components/table";
 import PropertyFilter from "@cloudscape-design/components/property-filter";
 import Pagination from "@cloudscape-design/components/pagination";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -87,7 +87,7 @@ export function EC2InstanceTable({
             allItemsSelectionLabel: "Select all",
             itemSelectionLabel: (data: any, item: any) =>
               item.InstanceId ? `Select ${item.InstanceId}` : "Select item",
-          } as any
+          } as unknown as TableProps.AriaLabels<any>
         }
         empty={<div>No instances found</div>}
         header={<Header variant="h2">Instances</Header>}

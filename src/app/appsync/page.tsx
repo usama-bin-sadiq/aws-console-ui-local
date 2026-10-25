@@ -2,7 +2,6 @@
 
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -13,6 +12,10 @@ import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Select from "@cloudscape-design/components/select";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface GraphQLApi {
   apiId: string;
@@ -31,7 +34,8 @@ const AUTH_TYPES = [
 export default function AppSyncPage() {
   const [apis, setApis] = useState<GraphQLApi[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const router = useRouter();  const [error, setError] = useState("");
   const [createModal, setCreateModal] = useState(false);
   const [apiName, setApiName] = useState("");
   const [authType, setAuthType] = useState({ label: "API Key", value: "API_KEY" });
@@ -103,7 +107,15 @@ export default function AppSyncPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">API Gateway / AppSync</Header>
+        <AwsServiceHeader
+          serviceName="API Gateway / AppSync"
+          serviceIcon={SERVICE_ICONS["/appsync"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/appsync/create")}>
+            Create API
+        </button>
+
+        />
 
         {error && (
           <Alert type="error" onDismiss={() => setError("")}>

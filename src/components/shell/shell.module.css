@@ -12,30 +12,32 @@
  */
 
 .shell {
+  /* AWS Console palette — dark top band, light body (#f2f3f3 = Cloudscape background-main) */
   --bg: #f2f3f3;
   --surface: #ffffff;
   --text: #0f141a;
   --muted: #5f6b7a;
   --border: #d5dbdb;
   --border2: #e9ebed;
-  --link: #0972d3;
-  --linkh: #033160;
-  --hl: #f0f8ff;
+  --link: #0066c0;
+  --linkh: #004d99;
+  --hl: #eaf3fb;
   --accent: #006ce0;
-  --pri: #006ce0;
-  --prih: #1853b0;
+  --pri: #0066c0;
+  --prih: #004d99;
   --err: #d91515;
-  --ok: #037f0c;
-  --warn: #855900;
+  --ok: #1d8102;
+  --warn: #b36a00;
   --brand: #ff9900;
   --brandText: #161d26;
-  --navBg: #161d26;
-  --navText: #fff;
-  --navBorder: #414d5c;
-  --navHover: #2e3947;
-  --searchBg: #0f141a;
-  --fieldBorder: #8c97a5;
-  --footBg: #161d26;
+  /* AWS Console dark top band #232f3e */
+  --navBg: #232f3e;
+  --navText: #ffffff;
+  --navBorder: #3b4a5c;
+  --navHover: #3b4a5c;
+  --searchBg: #ffffff;
+  --fieldBorder: #ccd6dd;
+  --footBg: #232f3e;
   --footText: #d1d5db;
 
   display: flex;
@@ -43,7 +45,7 @@
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
   line-height: normal;
   container-type: inline-size;
 }
@@ -64,7 +66,13 @@
   --err: #ff8a8a;
   --ok: #2ea043;
   --warn: #e0a30c;
-  --navBorder: #2a3441;
+  --navBg: #232f3e;
+  --navText: #ffffff;
+  --navBorder: #3b4a5c;
+  --navHover: #3b4a5c;
+  --searchBg: #ffffff;
+  --fieldBorder: #ccd6dd;
+  --footBg: #232f3e;
   --footText: #d1d5db;
   color-scheme: dark;
 }
@@ -85,14 +93,15 @@
   background: var(--navBg);
   color: var(--navText);
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  padding: 8px 16px;
+  gap: 0;
+  padding: 0 12px 0 8px;
   border-bottom: 1px solid var(--navBorder);
   position: sticky;
   top: 0;
   z-index: 20;
+  min-height: 44px;
+  width: 100%;
 }
 
 .brand {
@@ -102,20 +111,32 @@
   color: var(--navText);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: none;
+  text-decoration: none;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 2px;
 }
 .brand:hover {
   color: var(--navText);
+  background: rgba(255, 255, 255, 0.08);
   text-decoration: none;
 }
 
+/* AWS smiling-arrow logo mark (matches the AWS Console wordmark mark). */
 .brandMark {
-  background: var(--brand);
-  color: var(--brandText);
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 15px;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.brandMark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .navbtn {
@@ -123,107 +144,116 @@
   border: 1px solid transparent;
   color: var(--navText);
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  min-height: 44px;
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 36px;
   padding: 0 12px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border-radius: 4px;
+  gap: 6px;
+  border-radius: 2px;
   cursor: pointer;
+  white-space: nowrap;
 }
 .navbtn:hover {
-  background: var(--navHover);
+  background: rgba(255, 255, 255, 0.08);
   text-decoration: none;
 }
 
+.navbtn .kbdHint {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
 .search {
-  flex: 1 1 280px;
-  min-width: 0;
-  position: relative;
-  max-width: 620px;
+  display: flex;
+  height: 32px;
+  min-width: 220px;
+  flex: 0 1 auto;
+  border: 1px solid var(--fieldBorder);
+  border-radius: 2px;
+  background: var(--searchBg);
+  overflow: hidden;
+  align-items: center;
+  margin: 6px 0;
 }
 .search input {
-  width: 100%;
-  height: 36px;
-  border-radius: 2px;
-  border: 1px solid var(--fieldBorder);
-  background: var(--searchBg);
-  color: var(--navText);
-  padding: 0 56px 0 36px;
-  font:
-    14px "Open Sans",
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #0f141a;
+  padding: 0 8px 0 34px;
+  font: 13px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
 }
 .search input::placeholder {
-  color: #b6bec9;
+  color: #6b7785;
 }
 .search svg {
-  position: absolute;
-  left: 10px;
-  top: 10px;
+  width: 14px;
+  height: 14px;
+  margin-left: 10px;
+  color: #6b7785;
+  flex: none;
 }
 .search kbd {
-  position: absolute;
-  right: 8px;
-  top: 7px;
-  font:
-    12px "Open Sans",
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-  color: #d1d5db;
-  border: 1px solid var(--fieldBorder);
-  border-radius: 3px;
-  padding: 1px 6px;
+  font: 11px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  color: #6b7785;
+  border: 1px solid #ccd6dd;
+  border-radius: 2px;
+  padding: 1px 5px;
   pointer-events: none;
+  margin-left: 6px;
+  background: #f2f3f3;
 }
 
 .navRight {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0 4px;
-  margin-left: auto;
+  gap: 0;
+  margin-left: 12px;
 }
 .navDivider {
   width: 1px;
-  height: 20px;
+  height: 24px;
   background: var(--navBorder);
-  margin: 0 12px;
+  margin: 0 8px;
+  flex: none;
 }
 
 .navLabel {
   color: var(--navText);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 4px;
-  min-height: 44px;
-  padding: 0 12px;
+  border-radius: 2px;
+  min-height: 36px;
+  padding: 0 10px;
   cursor: pointer;
-  font-family: inherit;
+  white-space: nowrap;
 }
 .navLabel:hover {
-  background: var(--navHover);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* Unread-notification dot, pinned to the bell's top-right corner. */
 .navBadge {
   position: absolute;
-  top: 9px;
-  right: 9px;
+  top: 6px;
+  right: 6px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--err);
+  background: #ff3d00;
+  box-shadow: 0 0 0 1px var(--navBg);
 }
 
 /* ── Body: side nav + content ──────────────────────────────────────────── */
@@ -237,28 +267,31 @@
 }
 
 .side {
-  flex: 0 0 272px;
+  flex: 0 0 250px;
   background: var(--surface);
   border-right: 1px solid var(--border);
-  padding: 12px 12px 24px;
+  padding: 12px 0 24px;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 .sidehead {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px 12px;
-  margin-bottom: 6px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
   border-bottom: 1px solid var(--border2);
   font-size: 16px;
   font-weight: 700;
+  color: var(--text);
 }
 .sidehead i {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
-  background: #006ce0;
-  color: #fff;
+  border-radius: 4px;
+  background: #ff9900;
+  color: #161d26;
   font-style: normal;
   font-size: 14px;
   display: inline-flex;
@@ -267,27 +300,28 @@
   flex: none;
 }
 .side h3 {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
-  padding: 16px 12px 6px;
+  padding: 16px 16px 6px;
   margin: 0;
 }
 .sideLink {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 12px;
-  min-height: 36px;
+  padding: 0 16px;
+  min-height: 32px;
   font-size: 14px;
   color: var(--text);
-  border-radius: 8px;
-  margin: 1px 0;
+  border-radius: 0;
+  margin: 0;
+  text-decoration: none;
 }
 .sideLink:hover {
-  background: var(--bg);
+  background: var(--hl);
   text-decoration: none;
 }
 .sideLinkOn {
@@ -308,10 +342,10 @@
 .side hr {
   border: 0;
   border-top: 1px solid var(--border2);
-  margin: 10px 8px;
+  margin: 10px 0;
 }
 
-/* Stats cards (from new canvas) */
+/* Stats cards */
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -343,11 +377,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
-  padding: 0 14px;
+  min-height: 32px;
+  padding: 0 12px;
   border: 1px solid var(--border);
-  border-radius: 18px;
-  font-size: 14px;
+  border-radius: 16px;
+  font-size: 13px;
   background: var(--surface);
   color: var(--text);
 }
@@ -361,7 +395,7 @@
   flex-wrap: wrap;
   padding: 12px 20px;
   border-top: 1px solid var(--border2);
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
 }
 .pager nav {
@@ -374,8 +408,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 3px;
   color: var(--text);
+  text-decoration: none;
 }
 .pager a.on {
   background: var(--hl);
@@ -390,14 +425,14 @@
   top: calc(100% + 4px);
   left: 0;
   z-index: 30;
-  min-width: 240px;
-  max-width: 320px;
+  min-width: 220px;
+  max-width: 360px;
   background: var(--surface);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 7, 22, 0.25);
-  padding: 6px 0;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px 0;
   text-align: left;
 }
 .ddRight {
@@ -407,22 +442,20 @@
 .ddItem {
   display: flex;
   align-items: center;
-  min-height: 40px;
+  min-height: 36px;
   width: 100%;
   padding: 0 16px;
   background: transparent;
   border: 0;
   color: var(--text);
-  font:
-    400 14px "Open Sans",
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
+  font: 400 13px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
   text-align: left;
   cursor: pointer;
+  text-decoration: none;
 }
 .ddItem:hover {
   background: var(--hl);
+  text-decoration: none;
 }
 .ddItemSel {
   font-weight: 700;
@@ -436,7 +469,7 @@
   background: var(--surface);
   color: var(--text);
   padding: 12px 16px;
-  border-radius: 0 0 8px 0;
+  border-radius: 0 0 4px 0;
 }
 .skipNav:focus {
   left: 0;
@@ -459,15 +492,12 @@
 .content {
   flex: 1 1 560px;
   min-width: 0;
-  padding: 20px 24px 40px;
+  padding: 24px 32px 40px;
 }
 
 /* Holds the content column and the optional terminal side by side. */
 .mainRow {
   display: flex;
-  /* Zero basis, not auto: an auto basis resolves from the content width, which
-     exceeds the space beside the 260px rail and wraps the row onto a new line.
-     A zero basis lets the row shrink to whatever the rail leaves behind. */
   flex: 1 1 0;
   min-width: 0;
   align-items: stretch;
@@ -478,10 +508,7 @@
   flex: 0 0 auto;
 }
 
-/*
- * Terminal panel. It docks to the right at desktop widths and drops below the
- * content on narrow ones, matching how the AWS console reflows the split view.
- */
+/* Terminal panel. */
 .terminal {
   flex: 0 0 520px;
   min-width: 0;
@@ -492,8 +519,8 @@
 }
 
 .crumbs {
-  font-size: 14px;
-  margin-bottom: 8px;
+  font-size: 12px;
+  margin-bottom: 4px;
   color: var(--muted);
   display: flex;
   flex-wrap: wrap;
@@ -501,13 +528,11 @@
   align-items: center;
 }
 .crumbs a {
-  /*
-   * The design's --link (#0972d3) on --bg (#f2f3f3) measures 4.30:1, just under
-   * the 4.5:1 AA floor, and breadcrumbs are 14px body text so "large text" does
-   * not apply. --linkh is the design's own darker link token and clears it at
-   * 10.7:1.
-   */
-  color: var(--linkh);
+  color: var(--link);
+  text-decoration: none;
+}
+.crumbs a:hover {
+  text-decoration: underline;
 }
 .crumbsCurrent {
   color: var(--text);
@@ -519,17 +544,19 @@
   gap: 12px 16px;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 .head h1 {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.25;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--text);
 }
 .head h1 small {
   font-size: 12px;
   font-weight: 600;
   margin-left: 8px;
+  color: var(--muted);
 }
 
 .btns {
@@ -546,14 +573,10 @@
   padding: 0 12px;
   margin-bottom: 12px;
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 2px;
   background: var(--surface);
   color: var(--text);
-  font:
-    600 14px "Open Sans",
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
+  font: 600 13px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
   cursor: pointer;
 }
 
@@ -562,15 +585,20 @@
 .foot {
   background: var(--footBg);
   color: var(--footText);
-  font-size: 12px;
-  padding: 12px 24px;
+  font-size: 11px;
+  padding: 10px 24px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px 24px;
   align-items: center;
+  border-top: 1px solid var(--navBorder);
 }
 .foot a {
-  color: #fff;
+  color: #a8bace;
+  text-decoration: none;
+}
+.foot a:hover {
+  text-decoration: underline;
 }
 .footRight {
   display: flex;
@@ -584,19 +612,19 @@
     padding: 16px 16px 32px;
   }
   .head h1 {
-    font-size: 24px;
+    font-size: 22px;
   }
 }
 
 @container (max-width: 760px) {
   .nav {
-    gap: 8px;
-    padding: 8px 12px;
+    padding: 0 8px;
   }
   .search {
     order: 5;
     flex: 1 1 100%;
     max-width: none;
+    margin: 6px 0 4px;
   }
   .side {
     flex: 1 1 100%;
@@ -614,7 +642,7 @@
     flex: 1 1 140px;
   }
   .foot {
-    padding: 12px 16px;
+    padding: 10px 16px;
   }
   .mainRow {
     flex-direction: column;
@@ -632,4 +660,134 @@
   flex: 1 1 auto;
   min-height: 320px;
   padding: 10px;
+}
+
+/* ── Responsive service header ─────────────────────────────────────────── */
+
+.aws-service-header__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.aws-service-header__action {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@container (max-width: 760px) {
+  .aws-service-header__row {
+    gap: 8px;
+  }
+  .aws-service-header__left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .aws-service-header__left > span {
+    margin-left: 0 !important;
+  }
+  .aws-service-header__action {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .aws-service-header__action > * {
+    width: 100%;
+  }
+}
+
+/* ── Tables: horizontal scroll on narrow screens ───────────────────────── */
+
+.aws-table-scroll {
+  overflow-x: auto;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── ColumnLayout: collapse columns on narrow screens ─────────────────── */
+
+@container (max-width: 760px) {
+  .aws-column-layout-responsive > div {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Narrow container adjustments ─────────────────────────────────────── */
+
+@container (max-width: 760px) {
+  .content {
+    padding: 16px 16px 32px;
+  }
+  .head h1 {
+    font-size: 22px;
+  }
+}
+
+/* ── Service page create button ────────────────────────────────────────── */
+
+.aws-service-page__create {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 16px;
+  border: 1px solid var(--fieldBorder);
+  border-radius: 3px;
+  background: var(--surface);
+  color: var(--text);
+  font: 500 13px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  cursor: pointer;
+}
+.aws-service-page__create:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.aws-service-page__create:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Service header icon */
+.aws-service-header__icon {
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+  background: #fff;
+}
+
+/* ── Service page action buttons ───────────────────────────────────────── */
+
+.aws-service-page__actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.aws-service-page__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text);
+  font: 500 13px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  cursor: pointer;
+}
+.aws-service-page__action:hover {
+  background: var(--hl);
+}
+.aws-service-page__action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.aws-service-page__action--danger {
+  color: var(--err);
+}
+.aws-service-page__action--danger:hover {
+  background: #fdecea;
+  border-color: var(--err);
 }

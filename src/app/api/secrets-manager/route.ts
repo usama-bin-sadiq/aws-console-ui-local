@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const secretsManagerClient = getUserClientFromRequest(SecretsManagerClient, request);
     const res = await secretsManagerClient.send(new ListSecretsCommand({}));
     return NextResponse.json({ secrets: res.SecretList || [] });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       }),
     );
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -92,7 +92,7 @@ export async function DELETE(request: Request) {
       }),
     );
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }

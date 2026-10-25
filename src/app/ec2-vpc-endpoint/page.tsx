@@ -1,7 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -11,6 +10,9 @@ import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface VpcEndpoint {
   VpcEndpointId: string;
@@ -23,7 +25,8 @@ interface VpcEndpoint {
 export default function VpcEndpointPage() {
   const [endpoints, setEndpoints] = useState<VpcEndpoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [vpcId, setVpcId] = useState("");
   const [serviceName, setServiceName] = useState("");
@@ -94,24 +97,21 @@ export default function VpcEndpointPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          actions={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh">
-                Refresh
-              </Button>
-              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>
-                Delete
-              </Button>
-              <Button variant="primary" onClick={() => setShowCreate(true)}>
-                Create VPC Endpoint
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          VPC Endpoints
-        </Header>
+        <AwsServiceHeader
+          serviceName="Refresh Delete setShowCreate(true)}> Create VPC En"
+          serviceIcon={SERVICE_ICONS["/ec2-vpc-endpoint"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/ec2-vpc-endpoint/create")}>
+            Create endpoint
+        </button>
+        actions={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={load} iconName="refresh" formAction="none">
+              Refresh
+            </Button>
+          </SpaceBetween>
+        }
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

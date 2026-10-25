@@ -1,7 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -11,6 +10,9 @@ import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Select from "@cloudscape-design/components/select";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface InternetGateway {
   InternetGatewayId: string;
@@ -21,7 +23,8 @@ interface InternetGateway {
 export default function InternetGatewayPage() {
   const [gateways, setGateways] = useState<InternetGateway[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
   const [showAttach, setShowAttach] = useState(false);
   const [attachIgwId, setAttachIgwId] = useState("");
   const [attachVpcId, setAttachVpcId] = useState("");
@@ -143,25 +146,21 @@ export default function InternetGatewayPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          actions={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh">
-                Refresh
-              </Button>
-              <Button disabled={selected.length === 0} loading={deleting} onClick={handleDelete}>
-                Delete
-              </Button>
-              <Button onClick={() => setShowAttach(true)}>Attach to VPC</Button>
-              <Button variant="primary" loading={submitting} onClick={handleCreate}>
-                Create Internet Gateway
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          Internet Gateways
-        </Header>
+        <AwsServiceHeader
+          serviceName="Refresh Delete setShowAttach(true)}>Attach to VPC "
+          serviceIcon={SERVICE_ICONS["/internet-gateway"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/internet-gateway/create")}>
+            Create gateway
+        </button>
+        actions={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={load} iconName="refresh" formAction="none">
+              Refresh
+            </Button>
+          </SpaceBetween>
+        }
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

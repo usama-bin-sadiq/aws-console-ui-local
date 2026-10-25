@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
@@ -22,6 +21,8 @@ import Link from "@cloudscape-design/components/link";
 import TruncatedText from "@/components/TruncatedText";
 import { apiFetch } from "@/lib/api-client";
 import { LambdaAliasConfig, LambdaFunctionConfig, LambdaVersionConfig } from "@/types/lambda";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<LambdaAliasConfig>[] = [
   {
@@ -277,20 +278,20 @@ export default function LambdaAliasesPage() {
 
   return (
     <SpaceBetween size="l">
-      <Header
-        variant="h2"
-        counter={`(${aliases.length})`}
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button iconName="refresh" onClick={fetchAliases} ariaLabel="Refresh" />
-            <Button variant="primary" onClick={openCreate}>
-              Create alias
-            </Button>
-          </SpaceBetween>
+      <AwsServiceHeader
+        serviceName="Lambda Aliases"
+        serviceIcon={SERVICE_ICONS["/lambda"]?.small}
+        counter={aliases.length}
+        primaryAction={
+          <button
+            type="button"
+            className="aws-service-page__create"
+            onClick={openCreate}
+          >
+            Create alias
+          </button>
         }
-      >
-        Aliases
-      </Header>
+      />
 
       {successItem && <Flashbar items={[successItem]} />}
 

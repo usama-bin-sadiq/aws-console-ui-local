@@ -1,7 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -11,6 +10,10 @@ import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface LogGroup {
   logGroupName: string;
@@ -22,7 +25,8 @@ interface LogGroup {
 export default function CloudWatchLogsPage() {
   const [logGroups, setLogGroups] = useState<LogGroup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
 
   const [createModal, setCreateModal] = useState(false);
   const [logGroupName, setLogGroupName] = useState("");
@@ -70,7 +74,15 @@ export default function CloudWatchLogsPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">CloudWatch Logs</Header>
+        <AwsServiceHeader
+          serviceName="CloudWatch Logs"
+          serviceIcon={SERVICE_ICONS["/cloudwatch-logs"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/cloudwatch-logs/create")}>
+            Create log group
+        </button>
+
+        />
         {error && (
           <Alert type="error" header="Error">
             {error}

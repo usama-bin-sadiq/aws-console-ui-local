@@ -26,7 +26,7 @@ export function useLambdaService() {
       const result = await lambda.send(new ListFunctionsCommand({}));
       setState((prev) => ({
         ...prev,
-        functions: (result as any)?.Functions || [],
+        functions: result.Functions || [],
         loading: false,
       }));
     } catch (err: unknown) {

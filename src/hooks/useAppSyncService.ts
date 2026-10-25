@@ -23,7 +23,7 @@ export function useAppSyncService() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await appsync.send(new ListGraphqlApisCommand({}));
-      setState((prev) => ({ ...prev, apis: (result as any)?.graphqlApis || [], loading: false }));
+      setState((prev) => ({ ...prev, apis: result.graphqlApis || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

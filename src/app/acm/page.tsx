@@ -2,8 +2,8 @@
 
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
+import Header from "@cloudscape-design/components/header";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -15,6 +15,9 @@ import Input from "@cloudscape-design/components/input";
 import Alert from "@cloudscape-design/components/alert";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 import TruncatedText from "@/components/TruncatedText";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface Certificate {
   CertificateArn: string;
@@ -25,7 +28,8 @@ interface Certificate {
 export default function AcmPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const router = useRouter();  const [error, setError] = useState("");
   const [createModal, setCreateModal] = useState(false);
   const [domainName, setDomainName] = useState("");
   const [creating, setCreating] = useState(false);

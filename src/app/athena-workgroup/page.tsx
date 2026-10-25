@@ -3,7 +3,6 @@
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
 import { CodeView } from "@cloudscape-design/code-view";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Tabs from "@cloudscape-design/components/tabs";
 import Button from "@cloudscape-design/components/button";
@@ -15,6 +14,10 @@ import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Textarea from "@cloudscape-design/components/textarea";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface AthenaWorkgroup {
   Name: string;
@@ -30,7 +33,8 @@ export default function AthenaWorkgroupPage() {
   const [workgroups, setWorkgroups] = useState<AthenaWorkgroup[]>([]);
   const [catalogs, setCatalogs] = useState<AthenaCatalog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const router = useRouter();  const [error, setError] = useState("");
 
   const [queryModal, setQueryModal] = useState(false);
   const [queryString, setQueryString] = useState("");
@@ -81,7 +85,15 @@ export default function AthenaWorkgroupPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Amazon Athena</Header>
+        <AwsServiceHeader
+          serviceName="Amazon Athena"
+          serviceIcon={SERVICE_ICONS["/athena-workgroup"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/athena-workgroup/create")}>
+            Create workgroup
+        </button>
+
+        />
 
         {error && (
           <Alert type="error" onDismiss={() => setError("")}>

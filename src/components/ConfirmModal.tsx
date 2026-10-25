@@ -64,7 +64,7 @@ export default function ConfirmModal({
   useEffect(() => {
     if (visible) {
       const prevActive = document.activeElement as HTMLElement | null;
-      (window as any).__prevConfirmFocus = prevActive;
+      (window as { __prevConfirmFocus?: HTMLElement | null }).__prevConfirmFocus = prevActive;
       // Move focus into modal after a brief delay
       const timer = setTimeout(() => {
         const firstInput = document.querySelector('input[type="text"]') as HTMLElement | null;
@@ -72,7 +72,7 @@ export default function ConfirmModal({
       }, 50);
       return () => clearTimeout(timer);
     } else {
-      const prev = (window as any).__prevConfirmFocus;
+      const prev = (window as { __prevConfirmFocus?: HTMLElement | null }).__prevConfirmFocus;
       if (prev && typeof prev.focus === "function") {
         const timer = setTimeout(() => prev.focus(), 50);
         return () => clearTimeout(timer);

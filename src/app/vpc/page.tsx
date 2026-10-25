@@ -20,6 +20,8 @@ import Checkbox from "@cloudscape-design/components/checkbox";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Link from "@cloudscape-design/components/link";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface Vpc {
   VpcId: string;
@@ -132,33 +134,31 @@ export default function VpcPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          actions={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh" formAction="none">
-                Refresh
-              </Button>
-              <Button
-                disabled={selected.length === 0}
-                loading={deleting}
-                onClick={handleDelete}
-                formAction="none"
-              >
-                Delete
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => router.push("/vpc/create")}
-                formAction="none"
-              >
-                Create VPC
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          VPCs
-        </Header>
+      <AwsServiceHeader
+        serviceName="VPC"
+        serviceIcon={SERVICE_ICONS["/vpc"]?.small}
+        counter={vpcs.length}
+        primaryAction={
+          <button type="button" className="aws-service-page__create" onClick={() => router.push("/vpc/create")}>
+            Create VPC
+          </button>
+        }
+        actions={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={load} iconName="refresh" formAction="none">
+              Refresh
+            </Button>
+            <Button
+              disabled={selected.length === 0}
+              loading={deleting}
+              onClick={handleDelete}
+              formAction="none"
+            >
+              Delete
+            </Button>
+          </SpaceBetween>
+        }
+      />
 
         <Box variant="small" color="text-body-secondary">
           Manage your Virtual Private Cloud resources. Navigate to{" "}

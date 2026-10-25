@@ -64,7 +64,9 @@ export async function PUT(request: Request) {
       params.MapPublicIpOnLaunch = { Value: body.mapPublicIpOnLaunch };
     if (body.assignIpv6AddressOnCreation !== undefined)
       params.AssignIpv6AddressOnCreation = { Value: body.assignIpv6AddressOnCreation };
-    await ec2Client.send(new ModifySubnetAttributeCommand(params as any));
+    await ec2Client.send(
+      new ModifySubnetAttributeCommand(params as unknown as import("@aws-sdk/client-ec2").ModifySubnetAttributeCommandInput),
+    );
     return NextResponse.json({ success: true, action: "modify-subnet-attribute", params });
   } catch (error) {
     const adapter = getAdapterStatus();

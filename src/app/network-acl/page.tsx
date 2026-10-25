@@ -1,7 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import { useEffect, useState, useCallback } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -13,6 +12,10 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Select from "@cloudscape-design/components/select";
 import Tabs from "@cloudscape-design/components/tabs";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface NetworkAclEntry {
   RuleNumber?: number;
@@ -39,7 +42,8 @@ interface NetworkAcl {
 export default function NetworkAclPage() {
   const [acls, setAcls] = useState<NetworkAcl[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [vpcId, setVpcId] = useState("");
   const [creating, setCreating] = useState(false);
@@ -199,16 +203,21 @@ export default function NetworkAclPage() {
     return (
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
-          <Header
-            variant="h1"
-            actions={
-              <Button variant="primary" onClick={() => setDetailAcl(null)}>
-                Back to List
-              </Button>
-            }
-          >
-            Network ACL: {detailAcl.NetworkAclId}
-          </Header>
+          <AwsServiceHeader
+          serviceName="setDetailAcl(null)}> Back to List } > Network ACL:"
+          serviceIcon={SERVICE_ICONS["/network-acl"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/network-acl/create")}>
+            Create ACL
+        </button>
+        actions={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={load} iconName="refresh" formAction="none">
+              Refresh
+            </Button>
+          </SpaceBetween>
+        }
+        />
           {error && (
             <Alert type="error" dismissible onDismiss={() => setError(null)}>
               {error}

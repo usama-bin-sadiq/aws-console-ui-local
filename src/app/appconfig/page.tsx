@@ -1,7 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import React, { useCallback, useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
@@ -14,6 +13,9 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 // Application shape per @aws-sdk/client-appconfig Application:
 // { Id?, Name?, Description? } — the SDK type has no CreationTime field.
@@ -39,7 +41,8 @@ async function postAppConfig(payload: Record<string, unknown>): Promise<Record<s
 export default function AppConfigPage() {
   const [applications, setApplications] = useState<AppConfigApplication[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const router = useRouter();  const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [message, setMessage] = useState("");
 
@@ -192,29 +195,27 @@ export default function AppConfigPage() {
       headingLevel="h2"
     >
       <SpaceBetween size="l" direction="vertical">
-        <Header
-          variant="h1"
+        <AwsServiceHeader
+          serviceName="AppConfig"
+          serviceIcon={SERVICE_ICONS["/appconfig"]?.small}
+          counter={applications?.length ?? 0}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/appconfig/create")}
+            >
+              Create configuration
+            </button>
+          }
           actions={
             <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={loadData} loading={loading} iconName="refresh">
+              <Button onClick={loadData} iconName="refresh" formAction="none">
                 Refresh
-              </Button>
-              <Button
-                variant="primary"
-                iconName="add-plus"
-                onClick={() => {
-                  setCreateName("");
-                  setCreateDescription("");
-                  setCreateVisible(true);
-                }}
-              >
-                Create application
               </Button>
             </SpaceBetween>
           }
-        >
-          AWS AppConfig — Applications
-        </Header>
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError("")}>

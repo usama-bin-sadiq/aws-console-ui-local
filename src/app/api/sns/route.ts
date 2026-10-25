@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     }
     const res = await snsClient.send(new ListTopicsCommand({}));
     return NextResponse.json({ topics: res.Topics || [] });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       topicArn: res.TopicArn,
       topic: { TopicArn: res.TopicArn },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -155,7 +155,7 @@ export async function DELETE(request: Request) {
     }
     await snsClient.send(new DeleteTopicCommand({ TopicArn: topicArn! }));
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }

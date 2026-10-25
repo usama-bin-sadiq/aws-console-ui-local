@@ -1,20 +1,21 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import Button from "@cloudscape-design/components/button";
-import SpaceBetween from "@cloudscape-design/components/space-between";
+import { useRouter } from "next/navigation";
 import Alert from "@cloudscape-design/components/alert";
+import Button from "@cloudscape-design/components/button";
 import Modal from "@cloudscape-design/components/modal";
 import Box from "@cloudscape-design/components/box";
+import SpaceBetween from "@cloudscape-design/components/space-between";
 import type { TableProps } from "@cloudscape-design/components/table";
-import { ResourceTable } from "@/features/resource-table";
-// StatusBadge and EmptyState are imported per architecture requirement and available for future status/empty-state columns.
+import { ResourceTable, type ActionDefinition } from "@/features/resource-table";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CopyableText } from "@/components/ui/CopyableText";
-import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 import { apiFetch } from "@/lib/api-client";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -45,10 +46,10 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<Record<string, unknown>>[]
     header: "Bucket name",
     cell: (item) => (
       <a
-        href={`/s3/${encodeURIComponent((item as any).Name)}`}
-        aria-label={`Open bucket ${(item as any).Name}`}
+        href={`/s3/${encodeURIComponent(String(item.Name))}`}
+        aria-label={`Open bucket ${item.Name}`}
       >
-        <CopyableText value={(item as any).Name} truncate={false} />
+        <CopyableText value={String(item.Name)} truncate={false} />
       </a>
     ),
     sortingField: "Name",
@@ -58,7 +59,7 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<Record<string, unknown>>[]
     id: "region",
     header: "Region",
     cell: (item) => {
-      const region = (item as any).Region || "us-east-1";
+      const region = String(item.Region || "us-east-1");
       return <CopyableText value={region} truncate={false} />;
     },
     sortingField: "Region",
@@ -66,7 +67,7 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<Record<string, unknown>>[]
   {
     id: "created",
     header: "Creation date",
-    cell: (item) => (item as any).CreationDate || "—",
+    cell: (item) => String(item.CreationDate || "—"),
     sortingField: "CreationDate",
   },
 ];
@@ -85,6 +86,7 @@ export default function S3BucketsPage() {
   const [emptying, setEmptying] = useState(false);
   const [emptyBucketObjects, setEmptyBucketObjects] = useState<string[]>([]);
   const [emptyBucketLoading, setEmptyBucketLoading] = useState(false);
+  const router = useRouter();
 
   // ── Data Fetching ───────────────────────────────────────────────────────
 
@@ -201,11 +203,11 @@ export default function S3BucketsPage() {
     }
   }, [selectedItems, deleteBucket]);
 
-  const actions = [
+  const actions: ActionDefinition<Record<string, unknown>>[] = [
     {
       id: "empty",
       label: "Empty bucket",
-      disabled: (items: S3BucketItem[]) => items.length !== 1,
+      disabled: (items: Record<string, unknown>[]) => items.length !== 1,
       onClick: handleEmpty,
     },
     {
@@ -218,44 +220,48 @@ export default function S3BucketsPage() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <ServiceLayout
-      serviceName="S3"
-      showServiceHeader={false}
-      serviceCategory="Storage"
-      breadcrumbs={[
-        { text: "Services", href: "/" },
-        { text: "Storage", href: "/" },
-        { text: "S3", href: "/s3" },
-      ]}
-    >
-      <SpaceBetween size="l" direction="vertical">
-        {error && (
-          <Alert type="error" dismissible onDismiss={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
+    <div className="aws-service-page">
+      <AwsServiceHeader
+        serviceName="Amazon S3"
+        serviceIcon={SERVICE_ICONS["/s3"]?.small}
+        counter={buckets.length}
+        primaryAction={
+          <button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/s3/create")}
+          >
+            Create bucket
+          </button>
+        }
+      />
 
-        <ResourceTable
-          config={{
-            serviceKey: "s3",
-            resourceName: "Buckets",
-            columnDefinitions: COLUMN_DEFINITIONS,
-            defaultVisibleColumns: DEFAULT_VISIBLE_COLUMNS,
-            trackBy: "Name",
-            createLabel: "Create bucket",
-            createHref: "/s3/create",
-            filterPlaceholder: "Filter buckets",
-          }}
-          items={buckets as unknown as Record<string, unknown>[]}
-          loading={loading}
-          selectedItems={selectedItems as unknown as Record<string, unknown>[]}
-          onSelectionChange={(items) => setSelectedItems(items as unknown as S3BucketItem[])}
-          onRefresh={fetchBuckets}
-          actions={actions as any}
-        />
+      {error && (
+        <Alert type="error" dismissible onDismiss={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
-        <CrossServiceLinks links={CROSS_SERVICE_LINKS["/s3"] || []} />
-      </SpaceBetween>
+      <ResourceTable
+        config={{
+          serviceKey: "s3",
+          resourceName: "Buckets",
+          columnDefinitions: COLUMN_DEFINITIONS,
+          defaultVisibleColumns: DEFAULT_VISIBLE_COLUMNS,
+          trackBy: "Name",
+          createLabel: "Create bucket",
+          createHref: "/s3/create",
+          filterPlaceholder: "Filter buckets",
+        }}
+        items={buckets as unknown as Record<string, unknown>[]}
+        loading={loading}
+        selectedItems={selectedItems as unknown as Record<string, unknown>[]}
+        onSelectionChange={(items) => setSelectedItems(items as unknown as S3BucketItem[])}
+        onRefresh={fetchBuckets}
+        actions={actions}
+      />
+
+      <CrossServiceLinks links={CROSS_SERVICE_LINKS["/s3"] || []} />
 
       {/* Delete Modal */}
       <Modal
@@ -351,6 +357,6 @@ export default function S3BucketsPage() {
           )}
         </Box>
       </Modal>
-    </ServiceLayout>
-  );
-}
+      </div>
+    );
+  }

@@ -23,7 +23,7 @@ export function useCloudTrailService() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await cloudtrail.send(new DescribeTrailsCommand({}));
-      setState((prev) => ({ ...prev, trails: (result as any)?.trailList || [], loading: false }));
+      setState((prev) => ({ ...prev, trails: result.trailList || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

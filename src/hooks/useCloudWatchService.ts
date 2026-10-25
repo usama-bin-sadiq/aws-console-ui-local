@@ -25,7 +25,7 @@ export function useCloudWatchService() {
       const result = await cloudwatch.send(new DescribeAlarmsCommand({}));
       setState((prev) => ({
         ...prev,
-        alarms: (result as any)?.MetricAlarms || [],
+        alarms: result.MetricAlarms || [],
         loading: false,
       }));
     } catch (err: unknown) {

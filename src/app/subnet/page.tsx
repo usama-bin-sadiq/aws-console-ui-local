@@ -5,7 +5,6 @@ import { apiFetch } from "@/lib/api-client";
 // Cloudscape components only; verification comments added.
 
 import React, { useEffect, useState, useCallback } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -19,6 +18,9 @@ import Select from "@cloudscape-design/components/select";
 import Checkbox from "@cloudscape-design/components/checkbox";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import CapabilityLink from "@/components/CapabilityLink";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface Subnet {
   SubnetId: string;
@@ -31,7 +33,8 @@ interface Subnet {
 export default function SubnetPage() {
   const [subnets, setSubnets] = useState<Subnet[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Subnet[]>([]);
   const [deleting, setDeleting] = useState(false);
 
@@ -156,29 +159,20 @@ export default function SubnetPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          actions={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={load} iconName="refresh" formAction="none">
-                Refresh
-              </Button>
-              <Button
-                disabled={selected.length === 0}
-                loading={deleting}
-                onClick={handleDelete}
-                formAction="none"
-              >
-                Delete
-              </Button>
-              <Button variant="primary" onClick={() => setShowCreate(true)} formAction="none">
-                Create Subnet
-              </Button>
-            </SpaceBetween>
+        <AwsServiceHeader
+          serviceName="Subnet"
+          serviceIcon={SERVICE_ICONS["/subnet"]?.small}
+          counter={subnets?.length ?? 0}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/subnet/create")}
+            >
+              Create subnet
+            </button>
           }
-        >
-          Subnets
-        </Header>
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

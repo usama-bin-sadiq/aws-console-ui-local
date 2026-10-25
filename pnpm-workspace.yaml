@@ -1,38 +1,10 @@
-# This repo is a single package, not a workspace. The file carries the pnpm 12
-# settings (catalog / overrides / peer rules) that moved out of package.json.
-#
-# Two pnpm majors read config from different places, so the same overrides are
-# declared in BOTH files and must be kept identical:
-#   - pnpm 12 (`vp install` locally) reads this file and IGNORES pnpm.overrides
-#   - pnpm 9  (Dockerfile) reads package.json pnpm.overrides and ignores this
-# A divergence between the two fails the build with
-# ERR_PNPM_LOCKFILE_CONFIG_MISMATCH against pnpm-lock.yaml.
-#
-# `packages` is required because pnpm treats this file as a workspace root and
-# otherwise errors with "packages field missing or empty".
-packages:
-  - "."
-
 allowBuilds:
-  "@parcel/watcher": false
+  '@parcel/watcher': true
   better-sqlite3: true
   esbuild: true
   unrs-resolver: true
-catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@1.1.0
-  vitest: 5.0.3
-  vite-plus: 1.1.0
-  "@vitest/coverage-v8": 5.0.3
-# Keep in sync with package.json "pnpm.overrides" - see the note above.
-# Written as resolved versions (not the "catalog:" alias) because
-# --frozen-lockfile compares these against pnpm-lock.yaml literally.
+# pnpm workspace settings
+# Moved from package.json "pnpm" field (pnpm v11+ no longer reads it)
 overrides:
   vite@*: npm:@voidzero-dev/vite-plus-core@1.1.0
-  vitest@*: 5.0.3
-peerDependencyRules:
-  allowAny:
-    - vite
-    - vitest
-  allowedVersions:
-    vite: "*"
-    vitest: "*"
+  vitest@*: "5.0.3"

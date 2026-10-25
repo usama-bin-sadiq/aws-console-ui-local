@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import AppLayout from "@cloudscape-design/components/app-layout";
-import SideNavigation from "@cloudscape-design/components/side-navigation";
+import SideNavigation, { SideNavigationProps } from "@cloudscape-design/components/side-navigation";
 import ContentLayout from "@cloudscape-design/components/content-layout";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Header from "@cloudscape-design/components/header";
@@ -78,7 +78,7 @@ export function ResponsiveServiceLayout({
                 text: item.text,
                 href: item.href,
               };
-            }) as any
+            }) as SideNavigationProps.Item[]
           }
           onFollow={(event) => {
             if (!event.detail.external) {

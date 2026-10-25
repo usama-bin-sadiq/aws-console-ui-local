@@ -1,7 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -12,6 +11,10 @@ import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Select from "@cloudscape-design/components/select";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface SSMParameter {
   Name: string;
@@ -28,7 +31,8 @@ const TYPE_OPTIONS = [
 export default function SSMParameterStorePage() {
   const [parameters, setParameters] = useState<SSMParameter[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
 
   const [createModal, setCreateModal] = useState(false);
   const [paramName, setParamName] = useState("");
@@ -83,7 +87,15 @@ export default function SSMParameterStorePage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Systems Manager — Parameter Store</Header>
+        <AwsServiceHeader
+          serviceName="Systems Manager — Parameter Store"
+          serviceIcon={SERVICE_ICONS["/systems-manager-parameter-store"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/systems-manager-parameter-store/create")}>
+            Create parameter
+        </button>
+
+        />
         {error && (
           <Alert type="error" header="Error">
             {error}

@@ -1,7 +1,0 @@
-username,password,email,account_name,permissions,is_root,access_key_id,secret_access_key,mfa_enabled
-root,root123,root@localhost,root-account,"[""*"]",true,test,test,false
-admin,admin123,admin@localhost,admin-account,"[""*"]",false,AKIAADMIN000000000,admin_secret_key_000,false
-readonly,readonly123,readonly@localhost,readonly-account,"[""s3:GetObject"",""ec2:Describe*"",""rds:Describe*"",""lambda:List*"",""iam:Get*""]",false,AKIAREADONLY000000,readonly_secret_key_00,false
-developer,dev12345,dev@localhost,dev-account,"[""ec2:*"",""s3:*"",""lambda:*"",""dynamodb:*"",""iam:PassRole""]",false,AKIADEVELOPER000,dev_secret_key_0000,false
-readonly-billing,bill123,billing@localhost,billing-account,"[""ce:*"",""budgets:*"",""billing:*""]",false,AKIABILLING0000000,billing_secret_key_00,false
-audit,audit123,audit@localhost,audit-account,"[""cloudtrail:*"",""config:*"",""securityhub:*"",""guardduty:*""]",false,AKIAAUDIT000000000,audit_secret_key_000,false

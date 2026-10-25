@@ -23,7 +23,7 @@ export function useConfigService() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await configService.send(new DescribeConfigRulesCommand({}));
-      setState((prev) => ({ ...prev, rules: (result as any)?.ConfigRules || [], loading: false }));
+      setState((prev) => ({ ...prev, rules: result.ConfigRules || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

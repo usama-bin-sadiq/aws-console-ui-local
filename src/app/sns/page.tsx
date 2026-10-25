@@ -2,6 +2,7 @@
 
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -16,11 +17,21 @@ import Select from "@cloudscape-design/components/select";
 import Alert from "@cloudscape-design/components/alert";
 import TruncatedText from "@/components/TruncatedText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface TopicInfo {
   arn: string;
   name: string;
   subscriptionCount: number;
+}
+
+interface SubscriptionDetail {
+  SubscriptionArn?: string;
+  Protocol?: string;
+  Endpoint?: string;
+  FilterPolicy?: string;
+  RedrivePolicy?: string;
 }
 
 export default function SNSPage() {
@@ -46,12 +57,13 @@ export default function SNSPage() {
   const [subLoading, setSubLoading] = useState(false);
 
   const [detailModal, setDetailModal] = useState(false);
-  const [detailSub, setDetailSub] = useState<any>(null);
+  const [detailSub, setDetailSub] = useState<SubscriptionDetail | null>(null);
 
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteTopicArn, setDeleteTopicArn] = useState("");
   const [deleteTopicName, setDeleteTopicName] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const router = useRouter();
 
   const fetchTopics = async () => {
     setLoading(true);
@@ -245,16 +257,20 @@ export default function SNSPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          actions={
-            <Button variant="primary" onClick={() => setCreateModal(true)} ariaLabel="Create Topic">
+        <AwsServiceHeader
+          serviceName="SNS"
+          serviceIcon={SERVICE_ICONS["/sns"]?.small}
+          counter={topics.length}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => setCreateModal(true)}
+            >
               Create Topic
-            </Button>
+            </button>
           }
-        >
-          SNS - Simple Notification Service
-        </Header>
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError("")}>

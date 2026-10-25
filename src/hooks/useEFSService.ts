@@ -26,7 +26,7 @@ export function useEFSService() {
       const result = await efs.send(new DescribeFileSystemsCommand({}));
       setState((prev) => ({
         ...prev,
-        fileSystems: (result as any)?.FileSystems || [],
+        fileSystems: result.FileSystems || [],
         loading: false,
       }));
     } catch (err: unknown) {

@@ -2,7 +2,6 @@
 
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState, useCallback } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
@@ -20,11 +19,15 @@ import Pagination from "@cloudscape-design/components/pagination";
 import TruncatedText from "@/components/TruncatedText";
 import { EC2Volume } from "@/types/ec2";
 import { EC2_VOLUME_TYPES } from "@/constants/ec2-constants";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 export default function VolumePage() {
   const [volumes, setVolumes] = useState<EC2Volume[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<EC2Volume[]>([]);
   const [filteringText, setFilteringText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -172,46 +175,20 @@ export default function VolumePage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header
-          variant="h1"
-          counter={`(${volumes.length})`}
-          actions={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button iconName="refresh" onClick={fetchVolumes} ariaLabel="Refresh" />
-              <ButtonDropdown
-                items={[
-                  {
-                    text: "Attach",
-                    id: "attach",
-                    disabled:
-                      selectedIds.length !== 1 || selectedItems.some((v) => v.State === "in-use"),
-                  },
-                  {
-                    text: "Detach",
-                    id: "detach",
-                    disabled:
-                      selectedIds.length !== 1 || selectedItems.some((v) => v.State !== "in-use"),
-                  },
-                  { text: "Delete", id: "delete", disabled: selectedIds.length === 0 },
-                ]}
-                onItemClick={({ detail }) => {
-                  if (detail.id === "attach") setAttachModal(true);
-                  else if (detail.id === "detach") handleDetach();
-                  else if (detail.id === "delete") handleDelete();
-                }}
-                disabled={selectedIds.length === 0 || selectedIds.length !== 1}
-                ariaLabel="Volume actions"
-              >
-                Actions
-              </ButtonDropdown>
-              <Button variant="primary" onClick={() => setCreateModal(true)}>
-                Create volume
-              </Button>
-            </SpaceBetween>
+        <AwsServiceHeader
+          serviceName="EBS Volume"
+          serviceIcon={SERVICE_ICONS["/volume"]?.small}
+          counter={volumes?.length ?? 0}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/volume/create")}
+            >
+              Create volume
+            </button>
           }
-        >
-          EBS Volumes
-        </Header>
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

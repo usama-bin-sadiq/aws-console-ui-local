@@ -23,6 +23,8 @@ import TruncatedText from "@/components/TruncatedText";
 import { RDS_ENGINE_OPTIONS } from "@/constants/rds-constants";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 import { apiFetch } from "@/lib/api-client";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<RDSInstance>[] = [
   {
@@ -391,9 +393,16 @@ export default function RDSPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1" counter={`(${instances.length})`} actions={headerActions}>
-          RDS — Relational Database Service
-        </Header>
+      <AwsServiceHeader
+        serviceName="Amazon RDS"
+        serviceIcon={SERVICE_ICONS["/rds"]?.small}
+        counter={instances.length}
+        primaryAction={
+          <button type="button" className="aws-service-page__create" onClick={() => router.push("/rds/create")}>
+            Create database
+          </button>
+        }
+      />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Alert from "@cloudscape-design/components/alert";
 import Box from "@cloudscape-design/components/box";
@@ -13,6 +14,8 @@ import { apiFetch } from "@/lib/api-client";
 import { formatDateTime } from "@/lib/format";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 import { MetricTile } from "@/components/MetricTile";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 /**
  * Lambda overview.
@@ -59,6 +62,7 @@ export default function LambdaOverviewPage() {
   const [functions, setFunctions] = useState<LambdaFunctionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const fetchFunctions = useCallback(async () => {
     setLoading(true);
@@ -94,32 +98,28 @@ export default function LambdaOverviewPage() {
         </Alert>
       )}
 
-      <Container
-        header={
-          <Header
-            variant="h2"
-            description="Run code without provisioning a server"
-            actions={
-              <SpaceBetween size="s" direction="horizontal">
-                <Button onClick={fetchFunctions} loading={loading} loadingText="Loading">
-                  Refresh
-                </Button>
-                <Button variant="primary" href="/lambda/create">
-                  Create function
-                </Button>
-              </SpaceBetween>
-            }
-          >
-            Lambda
-          </Header>
+      <AwsServiceHeader
+        serviceName="Lambda"
+        serviceIcon={SERVICE_ICONS["/lambda"]?.small}
+        counter={functions.length}
+        primaryAction={
+          <button type="button" className="aws-service-page__create" onClick={() => router.push("/lambda/create")}>
+            Create function
+          </button>
         }
-      >
+        actions={
+          <SpaceBetween size="s" direction="horizontal">
+            <Button onClick={fetchFunctions} loading={loading} loadingText="Loading">
+              Refresh
+            </Button>
+          </SpaceBetween>
+        }
+      />
         <Box variant="p">
           Lambda runs functions in response to events, on demand, and scales automatically. This
           console is backed by the LocalEmu adapter, so the functions, layers and metrics below come
           from the local emulator rather than an AWS account.
         </Box>
-      </Container>
 
       <Container header={<Header variant="h2">At a glance</Header>}>
         <Grid gridDefinition={glanceGrid}>

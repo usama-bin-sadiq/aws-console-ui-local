@@ -25,7 +25,7 @@ export function useCloudFrontService() {
       const result = await cloudfront.send(new ListDistributionsCommand({}));
       setState((prev) => ({
         ...prev,
-        distributions: (result as any)?.DistributionList?.Items || [],
+        distributions: result.DistributionList?.Items || [],
         loading: false,
       }));
     } catch (err: unknown) {

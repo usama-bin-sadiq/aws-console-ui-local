@@ -25,7 +25,7 @@ export function useSSMService() {
       const result = await ssm.send(new DescribeParametersCommand({}));
       setState((prev) => ({
         ...prev,
-        parameters: (result as any)?.Parameters || [],
+        parameters: result.Parameters || [],
         loading: false,
       }));
     } catch (err: unknown) {

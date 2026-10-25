@@ -1,7 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -12,6 +11,10 @@ import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface EKSCluster {
   name: string;
@@ -35,7 +38,8 @@ export default function EKSPPage() {
   const [clusters, setClusters] = useState<EKSCluster[]>([]);
   const [nodegroups, setNodegroups] = useState<NodegroupSummary[]>([]);
   const [loadingClusters, setLoadingClusters] = useState(true);
-  const [loadingNodegroups, setLoadingNodegroups] = useState(false);
+
+  const router = useRouter();  const [loadingNodegroups, setLoadingNodegroups] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<string>("");
 
@@ -150,7 +154,15 @@ export default function EKSPPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Amazon EKS — Kubernetes Clusters</Header>
+        <AwsServiceHeader
+          serviceName="Amazon EKS — Kubernetes Clusters"
+          serviceIcon={SERVICE_ICONS["/eks"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/eks/create")}>
+            Create cluster
+        </button>
+
+        />
         {error && (
           <Alert type="error" onDismiss={() => setError(null)} header="Error">
             {error}

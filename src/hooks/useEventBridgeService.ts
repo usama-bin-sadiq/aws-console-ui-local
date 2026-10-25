@@ -23,7 +23,7 @@ export function useEventBridgeService() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await eventbridge.send(new ListEventBusesCommand({}));
-      setState((prev) => ({ ...prev, buses: (result as any)?.EventBuses || [], loading: false }));
+      setState((prev) => ({ ...prev, buses: result.EventBuses || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

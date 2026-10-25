@@ -12,6 +12,15 @@
     "ministack"
   ],
   "license": "MIT",
+  "author": "AWS Console Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/aws-console.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/aws-console/issues"
+  },
+  "homepage": "https://github.com/your-org/aws-console#readme",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -167,6 +176,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.48.0",
     "@testing-library/react": "^16.1.0",
     "@types/better-sqlite3": "^7.6.12",
@@ -182,12 +192,6 @@
     "typescript": "^5.9.2",
     "vite-plus": "^1.1.0",
     "vitest": "5.0.3"
-  },
-  "pnpm": {
-    "overrides": {
-      "vite@*": "npm:@voidzero-dev/vite-plus-core@1.1.0",
-      "vitest@*": "5.0.3"
-    }
   },
   "allowScripts": {
     "unrs-resolver@1.12.2": true

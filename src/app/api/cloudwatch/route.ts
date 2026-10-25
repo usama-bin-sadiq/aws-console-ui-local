@@ -7,6 +7,8 @@ import {
   DeleteAlarmsCommand,
   ListMetricsCommand,
   GetMetricStatisticsCommand,
+  type MetricAlarm,
+  type Metric,
 } from "@aws-sdk/client-cloudwatch";
 import {
   CloudWatchLogsClient,
@@ -19,6 +21,7 @@ import {
   GetLogEventsCommand,
   PutRetentionPolicyCommand,
   DeleteRetentionPolicyCommand,
+  type LogGroup,
 } from "@aws-sdk/client-cloudwatch-logs";
 import { getUserClientFromRequest } from "@/lib/aws-clients";
 import { requirePermission } from "@/lib/data-isolation";
@@ -124,11 +127,11 @@ export async function GET(request: Request) {
       cloudwatchLogsClient.send(new DescribeLogGroupsCommand({})).catch(() => ({ logGroups: [] })),
     ]);
     return NextResponse.json({
-      alarms: (alarmsRes as any).MetricAlarms || [],
-      metrics: (metricsRes as any).Metrics || [],
-      logGroups: (logGroupsRes as any).logGroups || [],
+      alarms: (alarmsRes as { MetricAlarms?: MetricAlarm[] }).MetricAlarms || [],
+      metrics: (metricsRes as { Metrics?: Metric[] }).Metrics || [],
+      logGroups: (logGroupsRes as { logGroups?: LogGroup[] }).logGroups || [],
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -214,7 +217,7 @@ export async function POST(request: Request) {
       );
       return NextResponse.json({
         queryId: res.queryId,
-        status: (res as any).status || "Scheduled",
+        status: (res as { status?: string }).status || "Scheduled",
       });
     }
 
@@ -227,7 +230,7 @@ export async function POST(request: Request) {
       }),
     );
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -265,7 +268,7 @@ export async function PUT(request: Request) {
     }
 
     return NextResponse.json({ error: "Unknown PUT action" }, { status: 400 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }
@@ -294,7 +297,7 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ error: "alarmNames or logGroupName required" }, { status: 400 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const adapter = getAdapterStatus();
     return handleAdapterError(error, adapter.mode, adapter.endpoint);
   }

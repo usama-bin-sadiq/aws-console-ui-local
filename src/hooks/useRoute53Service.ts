@@ -23,7 +23,7 @@ export function useRoute53Service() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await route53.send(new ListHostedZonesCommand({}));
-      setState((prev) => ({ ...prev, zones: (result as any)?.HostedZones || [], loading: false }));
+      setState((prev) => ({ ...prev, zones: result.HostedZones || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }

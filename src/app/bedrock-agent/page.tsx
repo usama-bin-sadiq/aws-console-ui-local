@@ -2,7 +2,6 @@
 
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -13,6 +12,10 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Alert from "@cloudscape-design/components/alert";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface BedrockAgent {
   agentId: string;
@@ -23,7 +26,8 @@ interface BedrockAgent {
 export default function BedrockAgentPage() {
   const [agents, setAgents] = useState<BedrockAgent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();  const [error, setError] = useState<string | null>(null);
   const [createModal, setCreateModal] = useState(false);
   const [agentName, setAgentName] = useState("");
   const [foundationModel, setFoundationModel] = useState("anthropic.claude-v2");
@@ -85,7 +89,15 @@ export default function BedrockAgentPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">Amazon Bedrock Agents</Header>
+        <AwsServiceHeader
+          serviceName="Amazon Bedrock Agents"
+          serviceIcon={SERVICE_ICONS["/bedrock-agent"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/bedrock-agent/create")}>
+            Create agent
+        </button>
+
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

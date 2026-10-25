@@ -2,7 +2,6 @@
 
 import { apiFetch } from "@/lib/api-client";
 import React, { useEffect, useState, useCallback } from "react";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import Modal from "@cloudscape-design/components/modal";
@@ -15,6 +14,10 @@ import Tabs from "@cloudscape-design/components/tabs";
 import Select from "@cloudscape-design/components/select";
 import PropertyFilter from "@cloudscape-design/components/property-filter";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
+import Header from "@cloudscape-design/components/header";
+import { useRouter } from 'next/navigation';
+import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
+import { SERVICE_ICONS } from '@/constants/service-icons';
 
 interface IamGroupDetail {
   GroupName: string;
@@ -40,7 +43,8 @@ interface UserItem {
 export default function IAMGroupPage() {
   const [groups, setGroups] = useState<IamGroupDetail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createModal, setCreateModal] = useState(false);
+
+  const router = useRouter();  const [createModal, setCreateModal] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [groupDetail, setGroupDetail] = useState<IamGroupDetail | null>(null);
@@ -186,7 +190,15 @@ export default function IAMGroupPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-        <Header variant="h1">IAM Groups</Header>
+        <AwsServiceHeader
+          serviceName="IAM Groups"
+          serviceIcon={SERVICE_ICONS["/iam-group"]?.small}
+          counter={0}
+          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/iam-group/create")}>
+            Create group
+        </button>
+
+        />
         <Tabs
           tabs={[
             {
@@ -355,8 +367,8 @@ export default function IAMGroupPage() {
           >
             <Input
               value={groupName}
-              onChange={(e) => {
-                setGroupName((e as any).detail?.value || "");
+              onChange={(e: { detail?: { value?: string } }) => {
+                setGroupName((e.detail?.value || ""));
                 setGroupNameError(null);
               }}
             />

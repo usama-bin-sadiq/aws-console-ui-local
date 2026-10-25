@@ -20,7 +20,7 @@ export function useS3Service() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const result = await s3.send(new ListBucketsCommand({}));
-      setState((prev) => ({ ...prev, buckets: (result as any)?.Buckets || [], loading: false }));
+      setState((prev) => ({ ...prev, buckets: result.Buckets || [], loading: false }));
     } catch (err: unknown) {
       setState((prev) => ({ ...prev, error: String(err), loading: false }));
     }
