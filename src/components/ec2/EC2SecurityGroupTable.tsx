@@ -3,7 +3,7 @@ import Header from "@cloudscape-design/components/header";
  * EC2SecurityGroupTable — SG list with inbound/outbound rule counts.
  */
 
-import React, { useState } from "react";
+import React from "react";
 import Table from "@cloudscape-design/components/table";
 import Pagination from "@cloudscape-design/components/pagination";
 import SpaceBetween from "@cloudscape-design/components/space-between";

@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -7,7 +6,6 @@ import Box from "@cloudscape-design/components/box";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Cards from "@cloudscape-design/components/cards";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
-import { AWACS_DESIGN_TOKENS } from "@/constants/design-tokens";
 
 export default function Page() {
   return (

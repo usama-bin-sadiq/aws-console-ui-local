@@ -6,7 +6,6 @@ import {
   PutMetricAlarmCommand,
   DeleteAlarmsCommand,
   ListMetricsCommand,
-  GetMetricStatisticsCommand,
   type MetricAlarm,
   type Metric,
 } from "@aws-sdk/client-cloudwatch";

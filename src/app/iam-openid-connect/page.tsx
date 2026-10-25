@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import Modal from "@cloudscape-design/components/modal";
@@ -11,9 +11,9 @@ import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface OIDCProvider {
   Arn?: string;
@@ -23,7 +23,8 @@ export default function IAMOpenIDConnectPage() {
   const [providers, setProviders] = useState<OIDCProvider[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [createModal, setCreateModal] = useState(false);
+  const router = useRouter();
+  const [createModal, setCreateModal] = useState(false);
   const [providerUrl, setProviderUrl] = useState("");
   const [clientId, setClientId] = useState("");
 
@@ -38,7 +39,9 @@ export default function IAMOpenIDConnectPage() {
   };
 
   useEffect(() => {
-    fetchProviders();
+    queueMicrotask(() => {
+      fetchProviders();
+    });
   }, []);
 
   const createProvider = async () => {
@@ -65,10 +68,13 @@ export default function IAMOpenIDConnectPage() {
           serviceName="IAM OIDC Providers"
           serviceIcon={SERVICE_ICONS["/iam-openid-connect"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/iam-openid-connect/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/iam-openid-connect/create")}
+          >
             Create provider
-        </button>
-
+          </button>
         />
         <Container
           header={

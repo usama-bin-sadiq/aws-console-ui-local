@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -48,7 +47,9 @@ export default function RDSDetailPage({
       const res = await apiFetch("/api/rds");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const found = (data.instances || []).find((i: any) => i.DBInstanceIdentifier === dbInstanceIdentifier);
+      const found = (data.instances || []).find(
+        (i: any) => i.DBInstanceIdentifier === dbInstanceIdentifier,
+      );
       if (!found) throw new Error(`DB instance "${dbInstanceIdentifier}" not found`);
       setInstance(found);
     } catch (err: unknown) {
@@ -59,7 +60,9 @@ export default function RDSDetailPage({
   }, [dbInstanceIdentifier]);
 
   useEffect(() => {
-    fetchDBInstance();
+    queueMicrotask(() => {
+      fetchDBInstance();
+    });
   }, [fetchDBInstance]);
 
   if (loading) {
@@ -68,7 +71,11 @@ export default function RDSDetailPage({
         <SpaceBetween size="l">
           <Header variant="h2">DB Instance {dbInstanceIdentifier || "Loading..."}</Header>
           <Box textAlign="center">
-            <Box nativeAttributes={{ style: { fontSize: "18px", color: "#545b64", marginBottom: "12px" } }}>
+            <Box
+              nativeAttributes={{
+                style: { fontSize: "18px", color: "#545b64", marginBottom: "12px" },
+              }}
+            >
               Loading instance details...
             </Box>
           </Box>
@@ -114,19 +121,31 @@ export default function RDSDetailPage({
           <SpaceBetween size="l">
             <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">DB Instance Identifier</Box>
+                <Box variant="small" color="text-label">
+                  DB Instance Identifier
+                </Box>
                 <Box>{instance.DBInstanceIdentifier}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Status</Box>
-                <StatusIndicator type={instance.DBInstanceStatus === "available" ? "success" : "warning"}>{instance.DBInstanceStatus}</StatusIndicator>
+                <Box variant="small" color="text-label">
+                  Status
+                </Box>
+                <StatusIndicator
+                  type={instance.DBInstanceStatus === "available" ? "success" : "warning"}
+                >
+                  {instance.DBInstanceStatus}
+                </StatusIndicator>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Engine</Box>
+                <Box variant="small" color="text-label">
+                  Engine
+                </Box>
                 <Box>{instance.Engine}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Instance Class</Box>
+                <Box variant="small" color="text-label">
+                  Instance Class
+                </Box>
                 <Box>{instance.DBInstanceClass}</Box>
               </SpaceBetween>
             </Box>

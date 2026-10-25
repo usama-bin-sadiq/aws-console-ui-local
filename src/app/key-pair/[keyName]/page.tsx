@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Tabs from "@cloudscape-design/components/tabs";
@@ -71,7 +71,10 @@ export default function KeyPairDetailPage() {
   }, [keyName]);
 
   useEffect(() => {
-    if (keyName) fetchKeyPair();
+    if (keyName)
+      queueMicrotask(() => {
+        fetchKeyPair();
+      });
   }, [keyName, fetchKeyPair]);
 
   const handleDelete = useCallback(async () => {

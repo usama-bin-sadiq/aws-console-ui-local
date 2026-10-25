@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Tabs from "@cloudscape-design/components/tabs";
 import Button from "@cloudscape-design/components/button";
@@ -13,9 +13,9 @@ import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface FirehoseStream {
   name: string;
@@ -28,7 +28,8 @@ export default function FirehosePage() {
   const [streams, setStreams] = useState<FirehoseStream[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState("");
+  const router = useRouter();
+  const [error, setError] = useState("");
   const [createModal, setCreateModal] = useState(false);
   const [streamName, setStreamName] = useState("");
   const [deliveryType, setDeliveryType] = useState("DirectPut");
@@ -60,7 +61,9 @@ export default function FirehosePage() {
   };
 
   useEffect(() => {
-    fetchStreams();
+    queueMicrotask(() => {
+      fetchStreams();
+    });
   }, []);
 
   const createStream = async () => {
@@ -113,10 +116,13 @@ export default function FirehosePage() {
           serviceName="Amazon Data Firehose"
           serviceIcon={SERVICE_ICONS["/firehose"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/firehose/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/firehose/create")}
+          >
             Create delivery stream
-        </button>
-
+          </button>
         />
 
         {error && (

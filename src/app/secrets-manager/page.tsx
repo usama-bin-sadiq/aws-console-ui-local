@@ -1,14 +1,12 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState, useCallback } from "react";
-import Header from "@cloudscape-design/components/header";
+import { useEffect, useState, useCallback } from "react";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
@@ -22,7 +20,6 @@ import TextFilter from "@cloudscape-design/components/text-filter";
 import Pagination from "@cloudscape-design/components/pagination";
 import CollectionPreferences from "@cloudscape-design/components/collection-preferences";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
-import { AWACS_DESIGN_TOKENS } from "@/constants/design-tokens";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
 import { SERVICE_ICONS } from "@/constants/service-icons";
@@ -183,7 +180,9 @@ export default function SecretsManagerPage() {
   }, []);
 
   useEffect(() => {
-    fetchSecrets();
+    queueMicrotask(() => {
+      fetchSecrets();
+    });
   }, [fetchSecrets]);
 
   useEffect(() => {
@@ -398,93 +397,91 @@ export default function SecretsManagerPage() {
           loadingText="Loading secrets..."
           selectionType="multi"
           selectedItems={selectedItems}
-          onSelectionChange={({ detail }) =>
-            setSelectedItems(detail.selectedItems as SecretData[])
-          }
+          onSelectionChange={({ detail }) => setSelectedItems(detail.selectedItems as SecretData[])}
           trackBy="SecretName"
           sortingColumn={COLUMN_DEFINITIONS[0]}
           sortingDescending={false}
-            filter={
-              <TextFilter
-                filteringText={filteringText}
-                filteringPlaceholder="Filter secrets"
-                filteringAriaLabel="Filter secrets"
-                onChange={({ detail }) => {
-                  setFilteringText(detail.filteringText);
-                  setCurrentPage(1);
-                }}
-                countText={
-                  filteringText
-                    ? `${filteredItems.length} match${filteredItems.length !== 1 ? "es" : ""}`
-                    : `${secrets.length} secrets`
-                }
-              />
-            }
-            pagination={
-              <Pagination
-                currentPageIndex={currentPage}
-                pagesCount={totalPages}
-                onChange={({ detail }) => setCurrentPage(detail.currentPageIndex)}
-                ariaLabels={{
-                  nextPageLabel: "Next page",
-                  previousPageLabel: "Previous page",
-                  pageLabel: (n) => `Page ${n}`,
-                }}
-              />
-            }
-            preferences={
-              <CollectionPreferences
-                title="Preferences"
-                confirmLabel="Confirm"
-                cancelLabel="Cancel"
-                preferences={preferences}
-                pageSizePreference={{
-                  title: "Page size",
-                  options: [
-                    { value: 10, label: "10 secrets" },
-                    { value: 25, label: "25 secrets" },
-                    { value: 50, label: "50 secrets" },
-                  ],
-                }}
-                visibleContentPreference={{
-                  title: "Select visible columns",
-                  options: [
-                    {
-                      label: "Columns",
-                      options: COLUMN_DEFINITIONS.map((col) => ({
-                        id: col.id!,
-                        label: (col.header?.toString() ?? col.id!) as string,
-                        editable: true,
-                      })),
-                    },
-                  ],
-                }}
-                onConfirm={({ detail }) => {
-                  setPageSize(detail.pageSize ?? 25);
-                  setPreferences({
-                    pageSize: detail.pageSize ?? 25,
-                    visibleContent: (detail.visibleContent as string[]) ?? VISIBLE_COLUMNS,
-                  });
-                }}
-              />
-            }
-            empty={
-              <Box textAlign="center" color="inherit">
-                <Box variant="strong" textAlign="center" color="inherit">
-                  No secrets found
-                </Box>
-                <Box variant="p" padding={{ bottom: "s" }} color="inherit">
-                  {filteringText
-                    ? "No secrets match your filter."
-                    : "To get started, create a secret."}
-                </Box>
-                {!filteringText && (
-                  <Button onClick={() => setCreateModal(true)}>Store new secret</Button>
-                )}
+          filter={
+            <TextFilter
+              filteringText={filteringText}
+              filteringPlaceholder="Filter secrets"
+              filteringAriaLabel="Filter secrets"
+              onChange={({ detail }) => {
+                setFilteringText(detail.filteringText);
+                setCurrentPage(1);
+              }}
+              countText={
+                filteringText
+                  ? `${filteredItems.length} match${filteredItems.length !== 1 ? "es" : ""}`
+                  : `${secrets.length} secrets`
+              }
+            />
+          }
+          pagination={
+            <Pagination
+              currentPageIndex={currentPage}
+              pagesCount={totalPages}
+              onChange={({ detail }) => setCurrentPage(detail.currentPageIndex)}
+              ariaLabels={{
+                nextPageLabel: "Next page",
+                previousPageLabel: "Previous page",
+                pageLabel: (n) => `Page ${n}`,
+              }}
+            />
+          }
+          preferences={
+            <CollectionPreferences
+              title="Preferences"
+              confirmLabel="Confirm"
+              cancelLabel="Cancel"
+              preferences={preferences}
+              pageSizePreference={{
+                title: "Page size",
+                options: [
+                  { value: 10, label: "10 secrets" },
+                  { value: 25, label: "25 secrets" },
+                  { value: 50, label: "50 secrets" },
+                ],
+              }}
+              visibleContentPreference={{
+                title: "Select visible columns",
+                options: [
+                  {
+                    label: "Columns",
+                    options: COLUMN_DEFINITIONS.map((col) => ({
+                      id: col.id!,
+                      label: (col.header?.toString() ?? col.id!) as string,
+                      editable: true,
+                    })),
+                  },
+                ],
+              }}
+              onConfirm={({ detail }) => {
+                setPageSize(detail.pageSize ?? 25);
+                setPreferences({
+                  pageSize: detail.pageSize ?? 25,
+                  visibleContent: (detail.visibleContent as string[]) ?? VISIBLE_COLUMNS,
+                });
+              }}
+            />
+          }
+          empty={
+            <Box textAlign="center" color="inherit">
+              <Box variant="strong" textAlign="center" color="inherit">
+                No secrets found
               </Box>
-            }
-          />
-        </SpaceBetween>
+              <Box variant="p" padding={{ bottom: "s" }} color="inherit">
+                {filteringText
+                  ? "No secrets match your filter."
+                  : "To get started, create a secret."}
+              </Box>
+              {!filteringText && (
+                <Button onClick={() => setCreateModal(true)}>Store new secret</Button>
+              )}
+            </Box>
+          }
+        />
+      </SpaceBetween>
 
       {/* Create Secret Modal */}
       <Modal

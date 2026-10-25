@@ -12,7 +12,6 @@ import {
   DeleteCrawlerCommand,
   StartJobRunCommand,
   StartCrawlerCommand,
-  GetCrawlerCommand,
   GetCrawlersCommandOutput,
 } from "@aws-sdk/client-glue";
 import { GlueClient } from "@aws-sdk/client-glue";

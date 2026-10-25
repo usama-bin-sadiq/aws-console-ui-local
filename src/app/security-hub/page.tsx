@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -9,8 +9,6 @@ import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
-import FormField from "@cloudscape-design/components/form-field";
-import Input from "@cloudscape-design/components/input";
 import { useRouter } from "next/navigation";
 import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
 import { SERVICE_ICONS } from "@/constants/service-icons";
@@ -45,7 +43,9 @@ export default function SecurityHubPage() {
   }, []);
 
   useEffect(() => {
-    fetchDetectors();
+    queueMicrotask(() => {
+      fetchDetectors();
+    });
   }, [fetchDetectors]);
 
   const createDetector = async () => {
@@ -65,12 +65,9 @@ export default function SecurityHubPage() {
 
   const deleteDetector = async (detectorId: string) => {
     try {
-      const res = await apiFetch(
-        `/api/security-hub?detectorId=${encodeURIComponent(detectorId)}`,
-        {
-          method: "DELETE",
-        },
-      );
+      const res = await apiFetch(`/api/security-hub?detectorId=${encodeURIComponent(detectorId)}`, {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error("Failed to delete detector");
       setDeleteModal(null);
       fetchDetectors();

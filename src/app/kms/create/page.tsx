@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
-import Box from "@cloudscape-design/components/box";
 import Alert from "@cloudscape-design/components/alert";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
@@ -113,7 +112,9 @@ export default function CreateKMSKeyPage() {
                   { label: "Encrypt/Decrypt", value: "ENCRYPT_DECRYPT" },
                   { label: "Sign/Verify", value: "SIGN_VERIFY" },
                 ]}
-                onChange={(e) => setForm({ ...form, keyUsage: e.detail.selectedOption.value || "" })}
+                onChange={(e) =>
+                  setForm({ ...form, keyUsage: e.detail.selectedOption.value || "" })
+                }
               />
             </FormField>
             <FormField label="Description (optional)">

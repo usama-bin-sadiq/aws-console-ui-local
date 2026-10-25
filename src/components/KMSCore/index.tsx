@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Form from "@cloudscape-design/components/form";
 import FormField from "@cloudscape-design/components/form-field";
@@ -94,7 +94,9 @@ export default function KMSCore() {
   }, []);
 
   useEffect(() => {
-    loadKeys();
+    queueMicrotask(() => {
+      loadKeys();
+    });
   }, [loadKeys]);
 
   const run = async (op: string, fn: () => Promise<void>) => {

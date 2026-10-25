@@ -79,7 +79,7 @@ function declarationsFor(css: string, selector: string): string {
 /** Cloudscape's own grid-root inline margin, and what it costs per side. */
 function cloudscapeGridGutter(): { declaration: string; overhangPerSide: number } {
   const css = readFileSync(CLOUDSCAPE_GRID_CSS, "utf8");
-  const root = rules(css).find(([sel]) => /^\.awsui_grid_[A-Za-z0-9_]+_141:not\(#/.test(sel));
+  const root = rules(css).find(([sel]) => /^\.awsui_grid_[A-Za-z0-9_]+:not\(#/.test(sel));
   if (!root) throw new Error("Cloudscape's grid root selector changed shape");
   const margin = root[1].match(/margin-inline:\s*([^;]+);/);
   if (!margin) throw new Error("the grid root no longer sets margin-inline");
@@ -91,9 +91,7 @@ function cloudscapeGridGutter(): { declaration: string; overhangPerSide: number 
 /** The Cloudscape grid-column inline padding, resolved the same way. */
 function cloudscapeColumnPadding(): string {
   const css = readFileSync(CLOUDSCAPE_GRID_CSS, "utf8");
-  const column = rules(css).find(([sel]) =>
-    /^\.awsui_grid-column_[A-Za-z0-9_]+_182:not\(#/.test(sel),
-  );
+  const column = rules(css).find(([sel]) => /^\.awsui_grid-column_[A-Za-z0-9_]+:not\(#/.test(sel));
   if (!column) throw new Error("Cloudscape's grid-column selector changed shape");
   const padding = column[1].match(/padding-inline:\s*([^;]+);/);
   if (!padding) throw new Error("the grid column no longer sets padding-inline");

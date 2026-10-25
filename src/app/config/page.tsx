@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -13,9 +13,9 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Tabs from "@cloudscape-design/components/tabs";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface ConfigRule {
   ConfigRuleName: string;
@@ -33,7 +33,8 @@ export default function ConfigPage() {
   const [rules, setRules] = useState<ConfigRule[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState("");
+  const router = useRouter();
+  const [error, setError] = useState("");
   const [createModal, setCreateModal] = useState(false);
   const [ruleName, setRuleName] = useState("");
   const [sourceIdentifier, setSourceIdentifier] = useState("");
@@ -64,7 +65,9 @@ export default function ConfigPage() {
   };
 
   useEffect(() => {
-    fetchConfig();
+    queueMicrotask(() => {
+      fetchConfig();
+    });
   }, []);
 
   const createRule = async () => {
@@ -149,10 +152,13 @@ export default function ConfigPage() {
           serviceName="AWS Config"
           serviceIcon={SERVICE_ICONS["/config"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/config/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/config/create")}
+          >
             Create configuration
-        </button>
-
+          </button>
         />
 
         {error && (

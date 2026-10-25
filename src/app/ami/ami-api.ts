@@ -58,7 +58,9 @@ export async function amiDelete(params: Record<string, string>): Promise<AmiApiR
 export function useQueryParam(name: string): string | null {
   const [value, setValue] = useState<string | null>(null);
   useEffect(() => {
-    setValue(new URLSearchParams(window.location.search).get(name));
+    queueMicrotask(() => {
+      setValue(new URLSearchParams(window.location.search).get(name));
+    });
   }, [name]);
   return value;
 }

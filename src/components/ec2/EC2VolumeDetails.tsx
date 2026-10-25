@@ -3,7 +3,6 @@
  */
 
 import React from "react";
-import Container from "@cloudscape-design/components/container";
 import Header from "@cloudscape-design/components/header";
 import Tabs from "@cloudscape-design/components/tabs";
 import SpaceBetween from "@cloudscape-design/components/space-between";

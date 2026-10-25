@@ -22,17 +22,23 @@ export function useResourcePreferences(serviceKey: string, defaultVisibleColumns
       const raw = localStorage.getItem(`prefs_${serviceKey}`);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<PersistedPrefs>;
-        setPageSize(parsed.pageSize ?? DEFAULT_PAGE_SIZE);
-        setVisibleColumns(
-          parsed.visibleColumns && parsed.visibleColumns.length > 0
-            ? parsed.visibleColumns
-            : defaultVisibleColumns,
-        );
+        queueMicrotask(() => {
+          setPageSize(parsed.pageSize ?? DEFAULT_PAGE_SIZE);
+        });
+        queueMicrotask(() => {
+          setVisibleColumns(
+            parsed.visibleColumns && parsed.visibleColumns.length > 0
+              ? parsed.visibleColumns
+              : defaultVisibleColumns,
+          );
+        });
       }
     } catch {
       // Ignore corrupt data
     }
-    setLoaded(true);
+    queueMicrotask(() => {
+      setLoaded(true);
+    });
   }, [serviceKey, defaultVisibleColumns]);
 
   // Save to localStorage

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -24,21 +23,17 @@ interface VPC {
   Tags?: Array<{ Key?: string; Value?: string }>;
 }
 
-export default function VPCDetailPage({
-  params,
-}: {
-  params: Promise<{ vpcId: string }>;
-}) {
+export default function VPCDetailPage({ params }: { params: Promise<{ vpcId: string }> }) {
   const router = useRouter();
   const [vpc, setVpc] = useState<VPC | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [vpcId, setVpcId] = useState<string>("");
-  
+
   useEffect(() => {
     params.then((p) => setVpcId(p.vpcId));
   }, [params]);
-  
+
   const fetchVPC = useCallback(async () => {
     if (!vpcId) return;
     setLoading(true);
@@ -56,18 +51,24 @@ export default function VPCDetailPage({
       setLoading(false);
     }
   }, [vpcId]);
-  
+
   useEffect(() => {
-    fetchVPC();
+    queueMicrotask(() => {
+      fetchVPC();
+    });
   }, [fetchVPC]);
-  
+
   if (loading) {
     return (
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
           <Header variant="h2">VPC {vpcId || "Loading..."}</Header>
           <Box textAlign="center">
-            <Box nativeAttributes={{ style: { fontSize: "18px", color: "#545b64", marginBottom: "12px" } }}>
+            <Box
+              nativeAttributes={{
+                style: { fontSize: "18px", color: "#545b64", marginBottom: "12px" },
+              }}
+            >
               Loading VPC details...
             </Box>
           </Box>
@@ -75,7 +76,7 @@ export default function VPCDetailPage({
       </div>
     );
   }
-  
+
   if (error || !vpc) {
     return (
       <div style={{ padding: 0 }}>
@@ -90,7 +91,7 @@ export default function VPCDetailPage({
       </div>
     );
   }
-  
+
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
@@ -108,34 +109,46 @@ export default function VPCDetailPage({
             </button>
           }
         />
-        
+
         <Container header={<Header variant="h2">Details</Header>}>
           <SpaceBetween size="l">
             <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">VPC ID</Box>
+                <Box variant="small" color="text-label">
+                  VPC ID
+                </Box>
                 <Box>{vpc.VpcId}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">State</Box>
-                <StatusIndicator type={vpc.State === "available" ? "success" : "warning"}>{vpc.State}</StatusIndicator>
+                <Box variant="small" color="text-label">
+                  State
+                </Box>
+                <StatusIndicator type={vpc.State === "available" ? "success" : "warning"}>
+                  {vpc.State}
+                </StatusIndicator>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">CIDR Block</Box>
+                <Box variant="small" color="text-label">
+                  CIDR Block
+                </Box>
                 <Box>{vpc.CidrBlock}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Tenancy</Box>
+                <Box variant="small" color="text-label">
+                  Tenancy
+                </Box>
                 <Box>{vpc.Tenancy}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Default VPC</Box>
+                <Box variant="small" color="text-label">
+                  Default VPC
+                </Box>
                 <Box>{vpc.IsDefault ? "Yes" : "No"}</Box>
               </SpaceBetween>
             </Box>
           </SpaceBetween>
         </Container>
-        
+
         <CrossServiceLinks links={CROSS_SERVICE_LINKS["/vpc"] || []} />
       </SpaceBetween>
     </div>

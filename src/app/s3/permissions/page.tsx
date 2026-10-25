@@ -118,7 +118,9 @@ export default function S3PermissionsPage() {
   }, []);
 
   useEffect(() => {
-    fetchPermissions();
+    queueMicrotask(() => {
+      fetchPermissions();
+    });
   }, [fetchPermissions]);
 
   const columnDefinitions: TableProps.ColumnDefinition<PermissionRow>[] = [

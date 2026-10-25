@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterAll } from "vite-plus/test";
+import { describe, it, expect } from "vite-plus/test";
 import { createAdapter } from "@/lib/localstack-adapter";
 
 describe("LocalStack Adapter", () => {

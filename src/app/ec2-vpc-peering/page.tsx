@@ -1,18 +1,17 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface VpcPeeringConnection {
   VpcPeeringConnectionId: string;
@@ -25,7 +24,8 @@ export default function VpcPeeringPage() {
   const [connections, setConnections] = useState<VpcPeeringConnection[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [vpcId, setVpcId] = useState("");
   const [peerVpcId, setPeerVpcId] = useState("");
@@ -49,7 +49,9 @@ export default function VpcPeeringPage() {
   }
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => {
+      load();
+    });
   }, []);
 
   async function handleCreate() {
@@ -101,16 +103,20 @@ export default function VpcPeeringPage() {
           serviceName="Refresh Delete setShowCreate(true)}> Create Peerin"
           serviceIcon={SERVICE_ICONS["/ec2-vpc-peering"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/ec2-vpc-peering/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/ec2-vpc-peering/create")}
+          >
             Create peering connection
-        </button>
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={load} iconName="refresh" formAction="none">
-              Refresh
-            </Button>
-          </SpaceBetween>
-        }
+          </button>
+          actions={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={load} iconName="refresh" formAction="none">
+                Refresh
+              </Button>
+            </SpaceBetween>
+          }
         />
 
         {error && (

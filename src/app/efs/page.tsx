@@ -1,18 +1,17 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface EFSFileSystem {
   FileSystemId: string;
@@ -25,7 +24,8 @@ export default function EFSPage() {
   const [fileSystems, setFileSystems] = useState<EFSFileSystem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [createModal, setCreateModal] = useState(false);
 
   const fetchFileSystems = async () => {
@@ -44,7 +44,9 @@ export default function EFSPage() {
   };
 
   useEffect(() => {
-    fetchFileSystems();
+    queueMicrotask(() => {
+      fetchFileSystems();
+    });
   }, []);
 
   const createFileSystem = async () => {
@@ -71,10 +73,13 @@ export default function EFSPage() {
           serviceName="EFS — Elastic File System"
           serviceIcon={SERVICE_ICONS["/efs"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/efs/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/efs/create")}
+          >
             Create file system
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" header="Error">

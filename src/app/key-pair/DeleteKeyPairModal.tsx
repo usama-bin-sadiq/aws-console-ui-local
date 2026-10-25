@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "@cloudscape-design/components/modal";
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
@@ -37,7 +37,10 @@ export default function DeleteKeyPairModal({
 
   // Reset the confirmation input every time the dialog opens or target changes
   useEffect(() => {
-    if (visible) setTypedName("");
+    if (visible)
+      queueMicrotask(() => {
+        setTypedName("");
+      });
   }, [visible, keyName]);
 
   // Exact, case-sensitive match — same behaviour as the AWS Console

@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -67,8 +67,12 @@ export default function Route53CreatePage() {
   };
 
   useEffect(() => {
-    fetchZones();
-    fetchVpcs();
+    queueMicrotask(() => {
+      fetchZones();
+    });
+    queueMicrotask(() => {
+      fetchVpcs();
+    });
   }, []);
 
   const createHostedZone = async () => {
@@ -223,7 +227,10 @@ export default function Route53CreatePage() {
                   label: vpcId || "Select VPC",
                   value: vpcId,
                 }}
-                options={vpcs.map((v) => ({ label: `${v.VpcId} (${v.CidrBlock || "—"})`, value: v.VpcId }))}
+                options={vpcs.map((v) => ({
+                  label: `${v.VpcId} (${v.CidrBlock || "—"})`,
+                  value: v.VpcId,
+                }))}
                 onChange={(e) => setVpcId(e.detail.selectedOption.value as string)}
               />
             </FormField>
@@ -238,10 +245,7 @@ export default function Route53CreatePage() {
             footer={
               <SpaceBetween direction="horizontal" size="xs">
                 <Button onClick={() => setDeleteModal(null)}>Cancel</Button>
-                <Button
-                  variant="primary"
-                  onClick={() => deleteHostedZone(deleteModal.zoneId)}
-                >
+                <Button variant="primary" onClick={() => deleteHostedZone(deleteModal.zoneId)}>
                   Delete
                 </Button>
               </SpaceBetween>

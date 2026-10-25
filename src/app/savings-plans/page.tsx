@@ -78,7 +78,9 @@ export default function SavingsPlansPage() {
   }, []);
 
   useEffect(() => {
-    void fetchItems();
+    queueMicrotask(() => {
+      void fetchItems();
+    });
   }, [fetchItems]);
 
   return (

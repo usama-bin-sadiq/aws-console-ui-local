@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Tabs from "@cloudscape-design/components/tabs";
@@ -182,7 +182,10 @@ export default function LambdaLayerDetailPage({ params }: { params: { layerName:
   }, [layerName]);
 
   useEffect(() => {
-    if (layerName) fetchDetails();
+    if (layerName)
+      queueMicrotask(() => {
+        fetchDetails();
+      });
   }, [layerName, fetchDetails]);
 
   useEffect(() => {

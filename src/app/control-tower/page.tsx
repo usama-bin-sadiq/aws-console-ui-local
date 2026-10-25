@@ -73,7 +73,9 @@ export default function ControlTowerPage() {
   }, []);
 
   useEffect(() => {
-    void fetchItems();
+    queueMicrotask(() => {
+      void fetchItems();
+    });
   }, [fetchItems]);
 
   return (

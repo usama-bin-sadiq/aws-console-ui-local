@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AdapterResourceTable } from "@/components/service-layout/AdapterResourceTable";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 
@@ -26,7 +26,9 @@ export default function PinpointPage() {
     }
   }, []);
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   return (

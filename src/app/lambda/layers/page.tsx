@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -152,7 +152,9 @@ export default function LambdaLayersPage() {
   }, []);
 
   useEffect(() => {
-    fetchLayers();
+    queueMicrotask(() => {
+      fetchLayers();
+    });
   }, [fetchLayers]);
 
   const createLayer = async () => {

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -53,7 +52,9 @@ export default function EKSClusterDetailPage({
       const res = await apiFetch("/api/eks");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const found = (data.clusters || []).find((c: any) => c.clusterName === clusterName || c.clusterArn === clusterName);
+      const found = (data.clusters || []).find(
+        (c: any) => c.clusterName === clusterName || c.clusterArn === clusterName,
+      );
       if (!found) throw new Error(`Cluster "${clusterName}" not found`);
       setCluster(found);
     } catch (err: unknown) {
@@ -64,7 +65,9 @@ export default function EKSClusterDetailPage({
   }, [clusterName]);
 
   useEffect(() => {
-    fetchCluster();
+    queueMicrotask(() => {
+      fetchCluster();
+    });
   }, [fetchCluster]);
 
   if (loading) {
@@ -72,9 +75,7 @@ export default function EKSClusterDetailPage({
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
           <Header variant="h2">Cluster {clusterName || "Loading..."}</Header>
-          <Box textAlign="center">
-            Loading cluster details...
-          </Box>
+          <Box textAlign="center">Loading cluster details...</Box>
         </SpaceBetween>
       </div>
     );
@@ -121,41 +122,61 @@ export default function EKSClusterDetailPage({
 
         <Container header={<Header variant="h2">Details</Header>}>
           <SpaceBetween size="l">
-            <Box padding="m" >
+            <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Cluster Name</Box>
+                <Box variant="small" color="text-label">
+                  Cluster Name
+                </Box>
                 <Box>{cluster.clusterName}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">ARN</Box>
+                <Box variant="small" color="text-label">
+                  ARN
+                </Box>
                 <Box>{cluster.clusterArn}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Status</Box>
-                <StatusIndicator type={cluster.status === "ACTIVE" ? "success" : "warning"}>{cluster.status}</StatusIndicator>
+                <Box variant="small" color="text-label">
+                  Status
+                </Box>
+                <StatusIndicator type={cluster.status === "ACTIVE" ? "success" : "warning"}>
+                  {cluster.status}
+                </StatusIndicator>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Kubernetes Version</Box>
+                <Box variant="small" color="text-label">
+                  Kubernetes Version
+                </Box>
                 <Box>{cluster.version}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Endpoint</Box>
+                <Box variant="small" color="text-label">
+                  Endpoint
+                </Box>
                 <Box>{cluster.endpoint}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Creation Time</Box>
+                <Box variant="small" color="text-label">
+                  Creation Time
+                </Box>
                 <Box>{cluster.createdAt}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">VPC ID</Box>
+                <Box variant="small" color="text-label">
+                  VPC ID
+                </Box>
                 <Box>{cluster.resourcesVpcConfig.vpcId}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Subnets</Box>
+                <Box variant="small" color="text-label">
+                  Subnets
+                </Box>
                 <Box>{cluster.resourcesVpcConfig.subnetIds.join(", ")}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Security Groups</Box>
+                <Box variant="small" color="text-label">
+                  Security Groups
+                </Box>
                 <Box>{cluster.resourcesVpcConfig.securityGroupIds.join(", ")}</Box>
               </SpaceBetween>
             </Box>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ALL_SERVICES } from "@/constants/navigation";
 import { SERVICE_REGISTRY } from "@/constants/service-compatibility";
@@ -40,11 +40,29 @@ export function useGlobalSearch(
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
+  const navigateToService = useCallback(
+    (result: SearchResult): void => {
+      const updated = [result.text, ...recentSearches.filter((s) => s !== result.text)].slice(
+        0,
+        10,
+      );
+      setRecentSearches(updated);
+      localStorage.setItem("aws_recent_searches", JSON.stringify(updated));
+
+      router.push(result.href);
+      setShowDropdown(false);
+      setSearchValue("");
+    },
+    [recentSearches, router],
+  );
+
   useEffect(() => {
     const recent = localStorage.getItem("aws_recent_searches");
     if (recent) {
       try {
-        setRecentSearches(JSON.parse(recent));
+        queueMicrotask(() => {
+          setRecentSearches(JSON.parse(recent));
+        });
       } catch {
         // Ignore parse errors
       }
@@ -86,14 +104,26 @@ export function useGlobalSearch(
         }
       });
 
-      setSearchResults(results.slice(0, 20));
+      queueMicrotask(() => {
+        setSearchResults(results.slice(0, 20));
+      });
       if (manageDropdown) {
-        setShowDropdown(true);
-        setSelectedIndex(0);
+        queueMicrotask(() => {
+          setShowDropdown(true);
+        });
+        queueMicrotask(() => {
+          setSelectedIndex(0);
+        });
       }
     } else {
-      if (manageDropdown) setShowDropdown(false);
-      setSearchResults([]);
+      if (manageDropdown) {
+        queueMicrotask(() => {
+          setShowDropdown(false);
+        });
+      }
+      queueMicrotask(() => {
+        setSearchResults([]);
+      });
     }
   }, [searchValue, mode, healthStatus, healthServices, manageDropdown]);
 
@@ -125,17 +155,7 @@ export function useGlobalSearch(
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showDropdown, selectedIndex, searchResults, manageDropdown]);
-
-  function navigateToService(result: SearchResult): void {
-    const updated = [result.text, ...recentSearches.filter((s) => s !== result.text)].slice(0, 10);
-    setRecentSearches(updated);
-    localStorage.setItem("aws_recent_searches", JSON.stringify(updated));
-
-    router.push(result.href);
-    setShowDropdown(false);
-    setSearchValue("");
-  }
+  }, [showDropdown, selectedIndex, searchResults, manageDropdown, navigateToService]);
 
   return {
     searchValue,

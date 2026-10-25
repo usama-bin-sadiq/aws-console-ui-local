@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -60,7 +59,9 @@ export default function ElastiCacheDetailPage({
   }, [clusterId]);
 
   useEffect(() => {
-    fetchCluster();
+    queueMicrotask(() => {
+      fetchCluster();
+    });
   }, [fetchCluster]);
 
   if (loading) {
@@ -68,9 +69,7 @@ export default function ElastiCacheDetailPage({
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
           <Header variant="h2">Cluster {clusterId || "Loading..."}</Header>
-          <Box textAlign="center">
-            Loading cluster details...
-          </Box>
+          <Box textAlign="center">Loading cluster details...</Box>
         </SpaceBetween>
       </div>
     );
@@ -117,37 +116,57 @@ export default function ElastiCacheDetailPage({
 
         <Container header={<Header variant="h2">Details</Header>}>
           <SpaceBetween size="l">
-            <Box padding="m" >
+            <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Cluster ID</Box>
+                <Box variant="small" color="text-label">
+                  Cluster ID
+                </Box>
                 <Box>{cluster.CacheClusterId}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Engine</Box>
+                <Box variant="small" color="text-label">
+                  Engine
+                </Box>
                 <Box>{cluster.Engine}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Engine Version</Box>
+                <Box variant="small" color="text-label">
+                  Engine Version
+                </Box>
                 <Box>{cluster.EngineVersion}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Node Type</Box>
+                <Box variant="small" color="text-label">
+                  Node Type
+                </Box>
                 <Box>{cluster.CacheNodeType}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Number of Nodes</Box>
+                <Box variant="small" color="text-label">
+                  Number of Nodes
+                </Box>
                 <Box>{cluster.NumCacheNodes}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Availability Zone</Box>
+                <Box variant="small" color="text-label">
+                  Availability Zone
+                </Box>
                 <Box>{cluster.AvailabilityZone || "—"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">State</Box>
-                <StatusIndicator type={cluster.CacheClusterStatus === "available" ? "success" : "warning"}>{cluster.CacheClusterStatus}</StatusIndicator>
+                <Box variant="small" color="text-label">
+                  State
+                </Box>
+                <StatusIndicator
+                  type={cluster.CacheClusterStatus === "available" ? "success" : "warning"}
+                >
+                  {cluster.CacheClusterStatus}
+                </StatusIndicator>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Creation Time</Box>
+                <Box variant="small" color="text-label">
+                  Creation Time
+                </Box>
                 <Box>{cluster.CreationTime || "—"}</Box>
               </SpaceBetween>
             </Box>

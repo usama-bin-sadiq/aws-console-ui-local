@@ -7,7 +7,6 @@ import {
   StartBuildCommand,
   StopBuildCommand,
   BatchGetBuildsCommand,
-  BatchGetBuildBatchesCommand,
   ListBuildsForProjectCommand,
 } from "@aws-sdk/client-codebuild";
 import { CodeBuildClient } from "@aws-sdk/client-codebuild";

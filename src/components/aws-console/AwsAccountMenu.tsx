@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { useRouter } from "next/navigation";
 import { AwsConsoleOverlay, type OverlayAnchor } from "@/components/aws-console/AwsConsoleOverlay";
 

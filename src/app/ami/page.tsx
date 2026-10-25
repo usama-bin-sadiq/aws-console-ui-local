@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -28,8 +28,8 @@ import {
 } from "@/types/ami";
 import { amiDelete, amiGet, useQueryParam } from "./ami-api";
 import { CreateSnapshotModal, DeregisterImageModal } from "./image-modals";
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -109,7 +109,9 @@ export default function AMIListPage() {
   }, []);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   // Success messages auto-dismiss; errors persist until dismissed.
@@ -120,7 +122,10 @@ export default function AMIListPage() {
   }, [success]);
 
   useEffect(() => {
-    if (deregisteredParam) setSuccess(`Image ${deregisteredParam} deregistered.`);
+    if (deregisteredParam)
+      queueMicrotask(() => {
+        setSuccess(`Image ${deregisteredParam} deregistered.`);
+      });
   }, [deregisteredParam]);
 
   // ── Deregister (typed confirmation queue) ─────────────────────────────────

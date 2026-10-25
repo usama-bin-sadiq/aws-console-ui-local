@@ -52,7 +52,9 @@ export default function TextractPage() {
   }, []);
 
   useEffect(() => {
-    void fetchItems();
+    queueMicrotask(() => {
+      void fetchItems();
+    });
   }, [fetchItems]);
 
   return (

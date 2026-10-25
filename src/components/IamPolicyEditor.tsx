@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import FormField from "@cloudscape-design/components/form-field";
 import SpaceBetween from "@cloudscape-design/components/space-between";

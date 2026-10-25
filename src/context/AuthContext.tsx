@@ -66,7 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void checkAuthState();
+    queueMicrotask(() => {
+      void checkAuthState();
+    });
   }, [checkAuthState]);
 
   const signIn = useCallback(
@@ -132,22 +134,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const getRegion = useCallback(() => REGION, []);
 
-  const value = useMemo(() => ({
-    user,
-    loading,
-    signIn,
-    signOut,
-    isRootUser: user?.username === ROOT_USERNAME,
-    isSuperAdmin: user?.isSuperAdmin === true,
-    hasPermission,
-    getRegion,
-  }), [user, loading, signIn, signOut, hasPermission, getRegion]);
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      signIn,
+      signOut,
+      isRootUser: user?.username === ROOT_USERNAME,
+      isSuperAdmin: user?.isSuperAdmin === true,
+      hasPermission,
+      getRegion,
+    }),
+    [user, loading, signIn, signOut, hasPermission, getRegion],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

@@ -8,8 +8,6 @@ import {
   UpdateFindingsFeedbackCommand,
   ArchiveFindingsCommand,
   UnarchiveFindingsCommand,
-  GetFindingsCommand,
-  UpdateDetectorCommand,
 } from "@aws-sdk/client-guardduty";
 import { GuardDutyClient } from "@aws-sdk/client-guardduty";
 import { getUserClientFromRequest } from "@/lib/aws-clients";

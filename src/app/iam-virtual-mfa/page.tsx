@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import Modal from "@cloudscape-design/components/modal";
@@ -11,9 +11,9 @@ import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface VirtualMFADevice {
   SerialNumber: string;
@@ -25,7 +25,8 @@ export default function IAMVirtualMFAPage() {
   const [mfaDevices, setMfaDevices] = useState<VirtualMFADevice[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [createModal, setCreateModal] = useState(false);
+  const router = useRouter();
+  const [createModal, setCreateModal] = useState(false);
   const [deviceName, setDeviceName] = useState("");
 
   const fetchDevices = async () => {
@@ -39,7 +40,9 @@ export default function IAMVirtualMFAPage() {
   };
 
   useEffect(() => {
-    fetchDevices();
+    queueMicrotask(() => {
+      fetchDevices();
+    });
   }, []);
 
   const createDevice = async () => {
@@ -67,10 +70,13 @@ export default function IAMVirtualMFAPage() {
           serviceName="IAM Virtual MFA Devices"
           serviceIcon={SERVICE_ICONS["/iam-virtual-mfa"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/iam-virtual-mfa/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/iam-virtual-mfa/create")}
+          >
             Create MFA device
-        </button>
-
+          </button>
         />
         <Container
           header={

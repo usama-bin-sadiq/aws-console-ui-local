@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AwsConsoleOverlay, type OverlayAnchor } from "@/components/aws-console/AwsConsoleOverlay";
 import { AwsServiceIcon } from "@/components/aws-console/AwsServiceIcon";
@@ -67,7 +67,10 @@ export function AwsServicesOverlay({
 
   // Reset to the first available category each time the panel opens.
   useEffect(() => {
-    if (open) setSelected(firstCategory);
+    if (open)
+      queueMicrotask(() => {
+        setSelected(firstCategory);
+      });
   }, [open, firstCategory]);
 
   const active = categories.find((category) => category.text === selected) ?? null;

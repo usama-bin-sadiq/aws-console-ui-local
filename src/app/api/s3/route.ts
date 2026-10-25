@@ -197,7 +197,7 @@ export async function POST(request: Request) {
         body.fileName = fileObj.name;
       }
     } else {
-      body = await request.json().catch(() => ({} as any));
+      body = await request.json().catch(() => ({}) as any);
     }
 
     const action = actionParam || body.action || "";

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -26,11 +25,7 @@ interface KMSKey {
   Description?: string;
 }
 
-export default function KMSKeyDetailPage({
-  params,
-}: {
-  params: Promise<{ keyId: string }>;
-}) {
+export default function KMSKeyDetailPage({ params }: { params: Promise<{ keyId: string }> }) {
   const router = useRouter();
   const [key, setKey] = useState<KMSKey | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +53,9 @@ export default function KMSKeyDetailPage({
   }, [keyId]);
 
   useEffect(() => {
-    fetchKey();
+    queueMicrotask(() => {
+      fetchKey();
+    });
   }, [fetchKey]);
 
   if (loading) {
@@ -66,9 +63,7 @@ export default function KMSKeyDetailPage({
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
           <Header variant="h2">KMS Key {keyId || "Loading..."}</Header>
-          <Box textAlign="center">
-            Loading key details...
-          </Box>
+          <Box textAlign="center">Loading key details...</Box>
         </SpaceBetween>
       </div>
     );
@@ -115,37 +110,55 @@ export default function KMSKeyDetailPage({
 
         <Container header={<Header variant="h2">Details</Header>}>
           <SpaceBetween size="l">
-            <Box padding="m" >
+            <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Key ID</Box>
+                <Box variant="small" color="text-label">
+                  Key ID
+                </Box>
                 <Box>{key.KeyId}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Alias</Box>
+                <Box variant="small" color="text-label">
+                  Alias
+                </Box>
                 <Box>{key.KeyAlias || "—"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">State</Box>
-                <StatusIndicator type={key.KeyState === "Enabled" ? "success" : "warning"}>{key.KeyState}</StatusIndicator>
+                <Box variant="small" color="text-label">
+                  State
+                </Box>
+                <StatusIndicator type={key.KeyState === "Enabled" ? "success" : "warning"}>
+                  {key.KeyState}
+                </StatusIndicator>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Key Spec</Box>
+                <Box variant="small" color="text-label">
+                  Key Spec
+                </Box>
                 <Box>{key.KeySpec}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Key Usage</Box>
+                <Box variant="small" color="text-label">
+                  Key Usage
+                </Box>
                 <Box>{key.KeyUsage}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Origin</Box>
+                <Box variant="small" color="text-label">
+                  Origin
+                </Box>
                 <Box>{key.Origin}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Description</Box>
+                <Box variant="small" color="text-label">
+                  Description
+                </Box>
                 <Box>{key.Description || "—"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Creation Date</Box>
+                <Box variant="small" color="text-label">
+                  Creation Date
+                </Box>
                 <Box>{key.CreationDate || "—"}</Box>
               </SpaceBetween>
             </Box>

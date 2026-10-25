@@ -9,7 +9,6 @@ import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Header from "@cloudscape-design/components/header";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
 import { SERVICE_ICONS } from "@/constants/service-icons";
 import { apiFetch } from "@/lib/api-client";
@@ -21,14 +20,12 @@ interface Topic {
   Subscriptions?: Array<{ Protocol?: string; Endpoint?: string }>;
 }
 
-export default function SNSDetailPage({
-  params,
-}: {
-  params: Promise<{ topicArn: string }>;
-}) {
+export default function SNSDetailPage({ params }: { params: Promise<{ topicArn: string }> }) {
   const router = useRouter();
   const [topic, setTopic] = useState<Topic | null>(null);
-  const [subscriptions, setSubscriptions] = useState<Array<{ Protocol?: string; Endpoint?: string }>>([]);
+  const [subscriptions, setSubscriptions] = useState<
+    Array<{ Protocol?: string; Endpoint?: string }>
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [topicArn, setTopicArn] = useState<string>("");
@@ -57,7 +54,9 @@ export default function SNSDetailPage({
   }, [topicArn]);
 
   useEffect(() => {
-    fetchTopic();
+    queueMicrotask(() => {
+      fetchTopic();
+    });
   }, [fetchTopic]);
 
   if (loading) {
@@ -65,9 +64,7 @@ export default function SNSDetailPage({
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
           <Header variant="h2">Topic {topicArn || "Loading..."}</Header>
-          <Box textAlign="center">
-            Loading topic details...
-          </Box>
+          <Box textAlign="center">Loading topic details...</Box>
         </SpaceBetween>
       </div>
     );
@@ -114,24 +111,33 @@ export default function SNSDetailPage({
 
         <Container header={<Header variant="h2">Details</Header>}>
           <SpaceBetween size="l">
-            <Box padding="m" >
+            <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Topic ARN</Box>
+                <Box variant="small" color="text-label">
+                  Topic ARN
+                </Box>
                 <Box>{topic.TopicArn}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Display Name</Box>
+                <Box variant="small" color="text-label">
+                  Display Name
+                </Box>
                 <Box>{topic.DisplayName || "—"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Subscriptions</Box>
+                <Box variant="small" color="text-label">
+                  Subscriptions
+                </Box>
                 <Box>{topic.Subscriptions?.length || 0}</Box>
               </SpaceBetween>
             </Box>
           </SpaceBetween>
         </Container>
 
-        <Container header={<Header variant="h2">Subscriptions ({subscriptions.length})</Header>}>
+        <Container
+          className="aws-table-card"
+          header={<Header variant="h2">Subscriptions ({subscriptions.length})</Header>}
+        >
           <SpaceBetween size="m">
             <Table
               items={subscriptions}

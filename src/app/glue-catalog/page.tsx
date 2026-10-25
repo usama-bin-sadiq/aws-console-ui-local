@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Tabs from "@cloudscape-design/components/tabs";
 import Button from "@cloudscape-design/components/button";
@@ -13,9 +13,9 @@ import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface GlueDatabase {
   Name: string;
@@ -46,7 +46,8 @@ export default function GlueCatalogPage() {
   const [jobs, setJobs] = useState<GlueJob[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState("");
+  const router = useRouter();
+  const [error, setError] = useState("");
 
   const [createDbModal, setCreateDbModal] = useState(false);
   const [dbName, setDbName] = useState("");
@@ -92,7 +93,9 @@ export default function GlueCatalogPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    queueMicrotask(() => {
+      fetchData();
+    });
   }, []);
 
   const createDatabase = async () => {
@@ -198,10 +201,13 @@ export default function GlueCatalogPage() {
           serviceName="AWS Glue Data Catalog"
           serviceIcon={SERVICE_ICONS["/glue-catalog"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/glue-catalog/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/glue-catalog/create")}
+          >
             Create database
-        </button>
-
+          </button>
         />
 
         {error && (

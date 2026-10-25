@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Button from "@cloudscape-design/components/button";
@@ -124,9 +124,16 @@ export default function JobQueueDetailPage() {
 
   useEffect(() => {
     const notice = takeBatchNotice();
-    if (notice) setSuccess(notice);
-    load();
-    void loadActiveJobs();
+    if (notice)
+      queueMicrotask(() => {
+        setSuccess(notice);
+      });
+    queueMicrotask(() => {
+      load();
+    });
+    queueMicrotask(() => {
+      void loadActiveJobs();
+    });
   }, [load, loadActiveJobs]);
 
   useEffect(() => {

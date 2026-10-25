@@ -9,7 +9,6 @@ import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Header from "@cloudscape-design/components/header";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
 import { SERVICE_ICONS } from "@/constants/service-icons";
 import { apiFetch } from "@/lib/api-client";
@@ -68,7 +67,9 @@ export default function Route53ZoneDetailPage({
   const fetchRecords = useCallback(async () => {
     if (!zoneId) return;
     try {
-      const res = await apiFetch(`/api/route53?action=listRecords&hostedZoneId=${encodeURIComponent(zoneId)}`);
+      const res = await apiFetch(
+        `/api/route53?action=listRecords&hostedZoneId=${encodeURIComponent(zoneId)}`,
+      );
       if (!res.ok) throw new Error("Failed to fetch records");
       const data = await res.json();
       setRecords(data.ResourceRecordSets || []);
@@ -78,12 +79,16 @@ export default function Route53ZoneDetailPage({
   }, [zoneId]);
 
   useEffect(() => {
-    fetchZone();
+    queueMicrotask(() => {
+      fetchZone();
+    });
   }, [fetchZone]);
 
   useEffect(() => {
     if (zone) {
-      fetchRecords();
+      queueMicrotask(() => {
+        fetchRecords();
+      });
     }
   }, [zone, fetchRecords]);
 
@@ -95,9 +100,7 @@ export default function Route53ZoneDetailPage({
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
           <Header variant="h2">Hosted Zone {zoneId || "Loading..."}</Header>
-          <Box textAlign="center">
-            Loading hosted zone details...
-          </Box>
+          <Box textAlign="center">Loading hosted zone details...</Box>
         </SpaceBetween>
       </div>
     );
@@ -144,32 +147,45 @@ export default function Route53ZoneDetailPage({
 
         <Container header={<Header variant="h2">Details</Header>}>
           <SpaceBetween size="l">
-            <Box padding="m" >
+            <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Hosted Zone ID</Box>
+                <Box variant="small" color="text-label">
+                  Hosted Zone ID
+                </Box>
                 <Box>{zone.Id}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Domain Name</Box>
+                <Box variant="small" color="text-label">
+                  Domain Name
+                </Box>
                 <Box>{zone.Name}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Type</Box>
+                <Box variant="small" color="text-label">
+                  Type
+                </Box>
                 <Box>{isPrivate ? "Private" : "Public"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Record Count</Box>
+                <Box variant="small" color="text-label">
+                  Record Count
+                </Box>
                 <Box>{zone.ResourceRecordSetCount || 0}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Comment</Box>
+                <Box variant="small" color="text-label">
+                  Comment
+                </Box>
                 <Box>{zone.Comment || "—"}</Box>
               </SpaceBetween>
             </Box>
           </SpaceBetween>
         </Container>
 
-        <Container header={<Header variant="h2">Record Sets ({records.length})</Header>}>
+        <Container
+          className="aws-table-card"
+          header={<Header variant="h2">Record Sets ({records.length})</Header>}
+        >
           <SpaceBetween size="m">
             <Table
               items={records}
@@ -177,7 +193,12 @@ export default function Route53ZoneDetailPage({
                 { id: "name", header: "Name", cell: (item: any) => item.Name, isRowHeader: true },
                 { id: "type", header: "Type", cell: (item: any) => item.Type },
                 { id: "ttl", header: "TTL", cell: (item: any) => item.TTL || "—" },
-                { id: "value", header: "Value", cell: (item: any) => item.ResourceRecords?.[0]?.Value || item.AliasTarget?.DNSName || "—" },
+                {
+                  id: "value",
+                  header: "Value",
+                  cell: (item: any) =>
+                    item.ResourceRecords?.[0]?.Value || item.AliasTarget?.DNSName || "—",
+                },
               ]}
               empty={<Box textAlign="center">No record sets found.</Box>}
             />

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
-import Box from "@cloudscape-design/components/box";
 import Alert from "@cloudscape-design/components/alert";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
@@ -43,10 +42,12 @@ export default function CreateVPCPage() {
         body: JSON.stringify({
           CidrBlock: form.cidrBlock,
           InstanceTenancy: form.tenancy,
-          tags: form.tags ? form.tags.split(",").map((t: string) => {
-            const [key, value] = t.split("=");
-            return { Key: key.trim(), Value: value.trim() };
-          }) : [],
+          tags: form.tags
+            ? form.tags.split(",").map((t: string) => {
+                const [key, value] = t.split("=");
+                return { Key: key.trim(), Value: value.trim() };
+              })
+            : [],
         }),
       });
       if (!res.ok) throw new Error("Failed to create VPC");

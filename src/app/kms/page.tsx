@@ -21,7 +21,11 @@ export default function KMSPage() {
         serviceName="AWS KMS"
         serviceIcon={SERVICE_ICONS["/kms"]?.small}
         primaryAction={
-          <button type="button" className="aws-service-page__create" onClick={() => router.push("/kms/create")}>
+          <button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/kms/create")}
+          >
             Create key
           </button>
         }

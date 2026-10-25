@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
+import Image from "next/image";
 import { getServiceIcon } from "@/constants/service-icons";
 
 export interface AwsServiceIconProps {
@@ -33,12 +34,15 @@ export function AwsServiceIcon({ href, size = "small", className }: AwsServiceIc
   }
 
   return (
-    <img
+    <Image
       className={classes}
       src={icon}
       alt=""
       aria-hidden="true"
+      width={size === "small" ? 32 : 48}
+      height={size === "small" ? 32 : 48}
       loading="lazy"
+      unoptimized
       onError={() => setFailed(true)}
     />
   );

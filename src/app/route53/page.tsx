@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
@@ -13,7 +13,6 @@ import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import { apiFetch } from "@/lib/api-client";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
-import { AWACS_DESIGN_TOKENS } from "@/constants/design-tokens";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
 import { SERVICE_ICONS } from "@/constants/service-icons";
@@ -132,7 +131,9 @@ export default function Page() {
   };
 
   useEffect(() => {
-    fetchData();
+    queueMicrotask(() => {
+      fetchData();
+    });
   }, []);
 
   return (
@@ -263,26 +264,25 @@ export default function Page() {
         </Container>
       </SpaceBetween>
 
-        {deleteModal && (
-          <Modal
-            visible
-            onDismiss={() => setDeleteModal(null)}
-            header="Delete hosted zone"
-            footer={
-              <SpaceBetween direction="horizontal" size="xs">
-                <Button onClick={() => setDeleteModal(null)}>Cancel</Button>
-                <Button variant="primary" onClick={() => deleteHostedZone(deleteModal.zoneId)}>
-                  Delete
-                </Button>
-              </SpaceBetween>
-            }
-          >
-            <Box variant="p">
-              Are you sure you want to delete the hosted zone{" "}
-              <strong>{deleteModal.zoneName}</strong>?
-            </Box>
-          </Modal>
-        )}
-      </ServiceLayout>
+      {deleteModal && (
+        <Modal
+          visible
+          onDismiss={() => setDeleteModal(null)}
+          header="Delete hosted zone"
+          footer={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={() => setDeleteModal(null)}>Cancel</Button>
+              <Button variant="primary" onClick={() => deleteHostedZone(deleteModal.zoneId)}>
+                Delete
+              </Button>
+            </SpaceBetween>
+          }
+        >
+          <Box variant="p">
+            Are you sure you want to delete the hosted zone <strong>{deleteModal.zoneName}</strong>?
+          </Box>
+        </Modal>
+      )}
+    </ServiceLayout>
   );
 }

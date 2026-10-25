@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import Select, { SelectProps } from "@cloudscape-design/components/select";
 import TextFilter from "@cloudscape-design/components/text-filter";
 
@@ -41,7 +41,9 @@ export default function InfiniteScrollSelect({
   );
 
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
+    queueMicrotask(() => {
+      setVisibleCount(PAGE_SIZE);
+    });
   }, [filteringText]);
 
   const handleLoadItems = useCallback(() => {

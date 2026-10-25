@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -48,7 +47,9 @@ export default function ECSClusterDetailPage({
       const res = await apiFetch("/api/ecs");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const found = (data.clusters || []).find((c: any) => c.clusterName === clusterName || c.clusterArn === clusterName);
+      const found = (data.clusters || []).find(
+        (c: any) => c.clusterName === clusterName || c.clusterArn === clusterName,
+      );
       if (!found) throw new Error(`Cluster "${clusterName}" not found`);
       setCluster(found);
     } catch (err: unknown) {
@@ -59,7 +60,9 @@ export default function ECSClusterDetailPage({
   }, [clusterName]);
 
   useEffect(() => {
-    fetchCluster();
+    queueMicrotask(() => {
+      fetchCluster();
+    });
   }, [fetchCluster]);
 
   if (loading) {
@@ -67,9 +70,7 @@ export default function ECSClusterDetailPage({
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
           <Header variant="h2">Cluster {clusterName || "Loading..."}</Header>
-          <Box textAlign="center">
-            Loading cluster details...
-          </Box>
+          <Box textAlign="center">Loading cluster details...</Box>
         </SpaceBetween>
       </div>
     );
@@ -116,33 +117,49 @@ export default function ECSClusterDetailPage({
 
         <Container header={<Header variant="h2">Details</Header>}>
           <SpaceBetween size="l">
-            <Box padding="m" >
+            <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Cluster Name</Box>
+                <Box variant="small" color="text-label">
+                  Cluster Name
+                </Box>
                 <Box>{cluster.clusterName}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">ARN</Box>
+                <Box variant="small" color="text-label">
+                  ARN
+                </Box>
                 <Box>{cluster.clusterArn}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Status</Box>
-                <StatusIndicator type={cluster.status === "ACTIVE" ? "success" : "warning"}>{cluster.status}</StatusIndicator>
+                <Box variant="small" color="text-label">
+                  Status
+                </Box>
+                <StatusIndicator type={cluster.status === "ACTIVE" ? "success" : "warning"}>
+                  {cluster.status}
+                </StatusIndicator>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Container Instances</Box>
+                <Box variant="small" color="text-label">
+                  Container Instances
+                </Box>
                 <Box>{cluster.registeredContainerInstancesCount}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Running Tasks</Box>
+                <Box variant="small" color="text-label">
+                  Running Tasks
+                </Box>
                 <Box>{cluster.runningTasksCount}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Pending Tasks</Box>
+                <Box variant="small" color="text-label">
+                  Pending Tasks
+                </Box>
                 <Box>{cluster.pendingTasksCount}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Active Services</Box>
+                <Box variant="small" color="text-label">
+                  Active Services
+                </Box>
                 <Box>{cluster.activeServicesCount}</Box>
               </SpaceBetween>
             </Box>

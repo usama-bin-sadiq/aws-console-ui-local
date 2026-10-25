@@ -48,7 +48,9 @@ export default function DataExchangePage() {
   }, []);
 
   useEffect(() => {
-    void fetchItems();
+    queueMicrotask(() => {
+      void fetchItems();
+    });
   }, [fetchItems]);
 
   return (

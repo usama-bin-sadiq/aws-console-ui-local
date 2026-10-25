@@ -4,18 +4,14 @@ import { apiFetch } from "@/lib/api-client";
 // All edits use @aws-sdk/client-ec2 commands via /api/vpc endpoints.
 // Cloudscape components only; no inline CSS outside design tokens.
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
-import FormField from "@cloudscape-design/components/form-field";
-import Input from "@cloudscape-design/components/input";
 import Checkbox from "@cloudscape-design/components/checkbox";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Link from "@cloudscape-design/components/link";
@@ -78,7 +74,9 @@ export default function VpcPage() {
   }
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => {
+      load();
+    });
   }, []);
 
   async function handleDelete() {
@@ -134,31 +132,35 @@ export default function VpcPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-      <AwsServiceHeader
-        serviceName="VPC"
-        serviceIcon={SERVICE_ICONS["/vpc"]?.small}
-        counter={vpcs.length}
-        primaryAction={
-          <button type="button" className="aws-service-page__create" onClick={() => router.push("/vpc/create")}>
-            Create VPC
-          </button>
-        }
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={load} iconName="refresh" formAction="none">
-              Refresh
-            </Button>
-            <Button
-              disabled={selected.length === 0}
-              loading={deleting}
-              onClick={handleDelete}
-              formAction="none"
+        <AwsServiceHeader
+          serviceName="VPC"
+          serviceIcon={SERVICE_ICONS["/vpc"]?.small}
+          counter={vpcs.length}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/vpc/create")}
             >
-              Delete
-            </Button>
-          </SpaceBetween>
-        }
-      />
+              Create VPC
+            </button>
+          }
+          actions={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={load} iconName="refresh" formAction="none">
+                Refresh
+              </Button>
+              <Button
+                disabled={selected.length === 0}
+                loading={deleting}
+                onClick={handleDelete}
+                formAction="none"
+              >
+                Delete
+              </Button>
+            </SpaceBetween>
+          }
+        />
 
         <Box variant="small" color="text-body-secondary">
           Manage your Virtual Private Cloud resources. Navigate to{" "}

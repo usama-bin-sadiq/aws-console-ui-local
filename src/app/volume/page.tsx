@@ -1,13 +1,11 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
-import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
@@ -19,15 +17,16 @@ import Pagination from "@cloudscape-design/components/pagination";
 import TruncatedText from "@/components/TruncatedText";
 import { EC2Volume } from "@/types/ec2";
 import { EC2_VOLUME_TYPES } from "@/constants/ec2-constants";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 export default function VolumePage() {
   const [volumes, setVolumes] = useState<EC2Volume[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<EC2Volume[]>([]);
   const [filteringText, setFilteringText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -77,8 +76,12 @@ export default function VolumePage() {
   }, []);
 
   useEffect(() => {
-    fetchVolumes();
-    fetchRunningInstances();
+    queueMicrotask(() => {
+      fetchVolumes();
+    });
+    queueMicrotask(() => {
+      fetchRunningInstances();
+    });
   }, [fetchVolumes, fetchRunningInstances]);
 
   const handleCreate = useCallback(async () => {

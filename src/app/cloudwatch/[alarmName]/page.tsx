@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -62,7 +61,9 @@ export default function CloudWatchAlarmDetailPage({
   }, [alarmName]);
 
   useEffect(() => {
-    fetchAlarm();
+    queueMicrotask(() => {
+      fetchAlarm();
+    });
   }, [fetchAlarm]);
 
   if (loading) {
@@ -70,9 +71,7 @@ export default function CloudWatchAlarmDetailPage({
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
           <Header variant="h2">Alarm {alarmName || "Loading..."}</Header>
-          <Box textAlign="center">
-            Loading alarm details...
-          </Box>
+          <Box textAlign="center">Loading alarm details...</Box>
         </SpaceBetween>
       </div>
     );
@@ -119,47 +118,75 @@ export default function CloudWatchAlarmDetailPage({
 
         <Container header={<Header variant="h2">Details</Header>}>
           <SpaceBetween size="l">
-            <Box padding="m" >
+            <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Alarm Name</Box>
+                <Box variant="small" color="text-label">
+                  Alarm Name
+                </Box>
                 <Box>{alarm.AlarmName}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">ARN</Box>
+                <Box variant="small" color="text-label">
+                  ARN
+                </Box>
                 <Box>{alarm.AlarmArn}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Description</Box>
+                <Box variant="small" color="text-label">
+                  Description
+                </Box>
                 <Box>{alarm.AlarmDescription || "—"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">State</Box>
-                <StatusIndicator type={alarm.StateValue === "OK" ? "success" : alarm.StateValue === "INSUFFICIENT_DATA" ? "warning" : "error"}>
+                <Box variant="small" color="text-label">
+                  State
+                </Box>
+                <StatusIndicator
+                  type={
+                    alarm.StateValue === "OK"
+                      ? "success"
+                      : alarm.StateValue === "INSUFFICIENT_DATA"
+                        ? "warning"
+                        : "error"
+                  }
+                >
                   {alarm.StateValue}
                 </StatusIndicator>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Reason</Box>
+                <Box variant="small" color="text-label">
+                  Reason
+                </Box>
                 <Box>{alarm.StateReason || "—"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Metric Name</Box>
+                <Box variant="small" color="text-label">
+                  Metric Name
+                </Box>
                 <Box>{alarm.MetricName || "—"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Namespace</Box>
+                <Box variant="small" color="text-label">
+                  Namespace
+                </Box>
                 <Box>{alarm.Namespace || "—"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Period</Box>
+                <Box variant="small" color="text-label">
+                  Period
+                </Box>
                 <Box>{alarm.Period ? alarm.Period + " seconds" : "—"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Statistic</Box>
+                <Box variant="small" color="text-label">
+                  Statistic
+                </Box>
                 <Box>{alarm.Statistic || "—"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Threshold</Box>
+                <Box variant="small" color="text-label">
+                  Threshold
+                </Box>
                 <Box>{alarm.Threshold || "—"}</Box>
               </SpaceBetween>
             </Box>

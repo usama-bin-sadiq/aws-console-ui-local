@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Table from "@cloudscape-design/components/table";
-import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
@@ -32,10 +31,6 @@ export default function LambdaFunctionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchFunctions();
-  }, []);
-
   const fetchFunctions = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -51,13 +46,23 @@ export default function LambdaFunctionsPage() {
     }
   }, []);
 
+  useEffect(() => {
+    queueMicrotask(() => {
+      fetchFunctions();
+    });
+  }, [fetchFunctions]);
+
   if (loading) {
     return (
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
           <Header variant="h2">Lambda Functions</Header>
           <Box textAlign="center">
-            <Box nativeAttributes={{ style: { fontSize: "18px", color: "#545b64", marginBottom: "12px" } }}>
+            <Box
+              nativeAttributes={{
+                style: { fontSize: "18px", color: "#545b64", marginBottom: "12px" },
+              }}
+            >
               Loading functions...
             </Box>
           </Box>
@@ -95,17 +100,33 @@ export default function LambdaFunctionsPage() {
           }
         />
 
-        <Container>
+        <Container className="aws-table-card">
           <Header variant="h2">Lambda Functions</Header>
           <SpaceBetween size="m">
             <Table
               items={functions}
-              columnDefinitions={[
-                { id: "FunctionName", header: "Function Name", cell: (item: any) => item.FunctionName, isRowHeader: true },
-                { id: "Runtime", header: "Runtime", cell: (item: any) => item.Runtime },
-                { id: "Status", cell: (item: any) => <StatusIndicator type={item.LastUpdateStatus === "Successful" ? "success" : "warning"}>{String(item.LastUpdateStatus || "—")}</StatusIndicator> },
-                { id: "LastModified", cell: (item: any) => item.LastModified || "—" },
-              ] as any[]}
+              columnDefinitions={
+                [
+                  {
+                    id: "FunctionName",
+                    header: "Function Name",
+                    cell: (item: any) => item.FunctionName,
+                    isRowHeader: true,
+                  },
+                  { id: "Runtime", header: "Runtime", cell: (item: any) => item.Runtime },
+                  {
+                    id: "Status",
+                    cell: (item: any) => (
+                      <StatusIndicator
+                        type={item.LastUpdateStatus === "Successful" ? "success" : "warning"}
+                      >
+                        {String(item.LastUpdateStatus || "—")}
+                      </StatusIndicator>
+                    ),
+                  },
+                  { id: "LastModified", cell: (item: any) => item.LastModified || "—" },
+                ] as any[]
+              }
               empty={<Box textAlign="center">No functions found.</Box>}
             />
           </SpaceBetween>

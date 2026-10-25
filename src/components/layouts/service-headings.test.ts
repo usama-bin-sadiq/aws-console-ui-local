@@ -113,10 +113,9 @@ describe("service page headings", () => {
       );
       const page = join(APP_DIR, slug, "page.tsx");
       const pageCode = code(readFileSync(page, "utf8"));
-      expect(
-        pageCode,
-        `${slug} page should render an h1 heading`,
-      ).toMatch(/variant="h1"|AwsServiceHeader/);
+      expect(pageCode, `${slug} page should render an h1 heading`).toMatch(
+        /variant="h1"|AwsServiceHeader/,
+      );
     }
   });
 

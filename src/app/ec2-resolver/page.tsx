@@ -1,12 +1,11 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Header from "@cloudscape-design/components/header";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
@@ -78,7 +77,9 @@ export default function Route53ResolverPage() {
   };
 
   useEffect(() => {
-    fetchEndpoints();
+    queueMicrotask(() => {
+      fetchEndpoints();
+    });
   }, []);
 
   // Subnets come from the EC2 emulator, not from Route 53: they are the only
@@ -182,8 +183,7 @@ export default function Route53ResolverPage() {
           counter={endpoints?.length ?? 0}
           primaryAction=<button type="button" className="aws-service-page__create" disabled>
             Create resolver
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" header="Error">

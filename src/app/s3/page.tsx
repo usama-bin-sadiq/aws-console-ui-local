@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Alert from "@cloudscape-design/components/alert";
 import Button from "@cloudscape-design/components/button";
@@ -9,8 +9,6 @@ import Box from "@cloudscape-design/components/box";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import type { TableProps } from "@cloudscape-design/components/table";
 import { ResourceTable, type ActionDefinition } from "@/features/resource-table";
-import { StatusBadge } from "@/components/ui/StatusBadge";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { CopyableText } from "@/components/ui/CopyableText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 import { apiFetch } from "@/lib/api-client";
@@ -118,7 +116,9 @@ export default function S3BucketsPage() {
   }, []);
 
   useEffect(() => {
-    fetchBuckets();
+    queueMicrotask(() => {
+      fetchBuckets();
+    });
   }, [fetchBuckets]);
 
   // ── Bucket Actions ──────────────────────────────────────────────────────
@@ -357,6 +357,6 @@ export default function S3BucketsPage() {
           )}
         </Box>
       </Modal>
-      </div>
-    );
-  }
+    </div>
+  );
+}

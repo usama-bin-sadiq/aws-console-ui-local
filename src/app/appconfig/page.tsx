@@ -1,21 +1,20 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 // Application shape per @aws-sdk/client-appconfig Application:
 // { Id?, Name?, Description? } — the SDK type has no CreationTime field.
@@ -42,7 +41,8 @@ export default function AppConfigPage() {
   const [applications, setApplications] = useState<AppConfigApplication[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState("");
+  const router = useRouter();
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [message, setMessage] = useState("");
 
@@ -100,7 +100,9 @@ export default function AppConfigPage() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    queueMicrotask(() => {
+      loadData();
+    });
   }, [loadData]);
 
   async function handleCreate() {

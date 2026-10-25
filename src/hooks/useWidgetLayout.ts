@@ -40,7 +40,9 @@ export function useWidgetLayout(userId: string = "default") {
   }, [userId]);
 
   useEffect(() => {
-    loadWidgets();
+    queueMicrotask(() => {
+      loadWidgets();
+    });
   }, [loadWidgets]);
 
   const updateWidget = useCallback(

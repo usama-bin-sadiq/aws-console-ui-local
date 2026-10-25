@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -48,7 +48,9 @@ export default function BackupPage() {
   }, []);
 
   useEffect(() => {
-    fetchVaults();
+    queueMicrotask(() => {
+      fetchVaults();
+    });
   }, [fetchVaults]);
 
   const createVault = async () => {
@@ -154,11 +156,7 @@ export default function BackupPage() {
           footer={
             <SpaceBetween direction="horizontal" size="xs">
               <Button onClick={() => setCreateModal(false)}>Cancel</Button>
-              <Button
-                variant="primary"
-                onClick={createVault}
-                disabled={!newVaultName.trim()}
-              >
+              <Button variant="primary" onClick={createVault} disabled={!newVaultName.trim()}>
                 Create vault
               </Button>
             </SpaceBetween>

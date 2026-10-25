@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -10,7 +10,6 @@ import Modal from "@cloudscape-design/components/modal";
 import Input from "@cloudscape-design/components/input";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
 import Alert from "@cloudscape-design/components/alert";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
@@ -91,7 +90,9 @@ export default function SQSPage() {
   };
 
   useEffect(() => {
-    fetchQueues();
+    queueMicrotask(() => {
+      fetchQueues();
+    });
   }, []);
 
   const createQueue = async () => {

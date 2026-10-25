@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import Widget from "./Widget";
 import Box from "@cloudscape-design/components/box";
 import Link from "@cloudscape-design/components/link";

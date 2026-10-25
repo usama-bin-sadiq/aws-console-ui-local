@@ -1,21 +1,20 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Select from "@cloudscape-design/components/select";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface GraphQLApi {
   apiId: string;
@@ -35,7 +34,8 @@ export default function AppSyncPage() {
   const [apis, setApis] = useState<GraphQLApi[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState("");
+  const router = useRouter();
+  const [error, setError] = useState("");
   const [createModal, setCreateModal] = useState(false);
   const [apiName, setApiName] = useState("");
   const [authType, setAuthType] = useState({ label: "API Key", value: "API_KEY" });
@@ -58,7 +58,9 @@ export default function AppSyncPage() {
   };
 
   useEffect(() => {
-    fetchApis();
+    queueMicrotask(() => {
+      fetchApis();
+    });
   }, []);
 
   const createApi = async () => {
@@ -111,10 +113,13 @@ export default function AppSyncPage() {
           serviceName="API Gateway / AppSync"
           serviceIcon={SERVICE_ICONS["/appsync"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/appsync/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/appsync/create")}
+          >
             Create API
-        </button>
-
+          </button>
         />
 
         {error && (

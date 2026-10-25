@@ -1,6 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -12,9 +12,9 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Tabs from "@cloudscape-design/components/tabs";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface UserPool {
   Id: string;
@@ -39,7 +39,8 @@ export default function CognitoPage() {
   const [pools, setPools] = useState<UserPool[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("pools");
 
   // Create pool modal
@@ -81,7 +82,10 @@ export default function CognitoPage() {
   };
 
   useEffect(() => {
-    if (activeTab === "pools") fetchPools();
+    if (activeTab === "pools")
+      queueMicrotask(() => {
+        fetchPools();
+      });
   }, [activeTab]);
 
   const createPool = async () => {
@@ -173,10 +177,13 @@ export default function CognitoPage() {
           serviceName="Amazon Cognito"
           serviceIcon={SERVICE_ICONS["/cognito"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/cognito/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/cognito/create")}
+          >
             Create user pool
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" header="Error">

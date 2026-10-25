@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useState } from "react";
+import { useState } from "react";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Form from "@cloudscape-design/components/form";
 import FormField from "@cloudscape-design/components/form-field";

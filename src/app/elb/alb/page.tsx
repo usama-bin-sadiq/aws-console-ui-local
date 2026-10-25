@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 import { ServiceStatusOverview } from "@/components/service-layout/ServiceStatusOverview";
 

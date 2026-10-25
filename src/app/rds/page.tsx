@@ -2,13 +2,11 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import TextFilter from "@cloudscape-design/components/text-filter";
 import Pagination from "@cloudscape-design/components/pagination";
@@ -32,15 +30,9 @@ const COLUMN_DEFINITIONS: TableProps.ColumnDefinition<RDSInstance>[] = [
     header: "DB Identifier",
     cell: (item) => (
       <TruncatedText>
-        {String(
-          <Button
-            variant="link"
-            onClick={() => (window.location.href = `/rds/${item.DBInstanceIdentifier}`)}
-            formAction="none"
-          >
-            {item.DBInstanceIdentifier || "—"}
-          </Button>,
-        )}
+        <Button variant="link" href={`/rds/${item.DBInstanceIdentifier}`} formAction="none">
+          {item.DBInstanceIdentifier || "—"}
+        </Button>
       </TruncatedText>
     ),
     sortingField: "DBInstanceIdentifier",
@@ -159,7 +151,9 @@ export default function RDSPage() {
   }, []);
 
   useEffect(() => {
-    fetchInstances();
+    queueMicrotask(() => {
+      fetchInstances();
+    });
   }, [fetchInstances]);
 
   const executeInstanceAction = useCallback(
@@ -393,16 +387,20 @@ export default function RDSPage() {
   return (
     <div style={{ padding: 0 }}>
       <SpaceBetween size="l">
-      <AwsServiceHeader
-        serviceName="Amazon RDS"
-        serviceIcon={SERVICE_ICONS["/rds"]?.small}
-        counter={instances.length}
-        primaryAction={
-          <button type="button" className="aws-service-page__create" onClick={() => router.push("/rds/create")}>
-            Create database
-          </button>
-        }
-      />
+        <AwsServiceHeader
+          serviceName="Amazon RDS"
+          serviceIcon={SERVICE_ICONS["/rds"]?.small}
+          counter={instances.length}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/rds/create")}
+            >
+              Create database
+            </button>
+          }
+        />
 
         {error && (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

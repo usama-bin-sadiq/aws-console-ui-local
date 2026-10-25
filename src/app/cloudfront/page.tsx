@@ -1,20 +1,19 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface CloudFrontDistribution {
   Id: string;
@@ -29,7 +28,8 @@ export default function CloudFrontPage() {
   const [distributions, setDistributions] = useState<CloudFrontDistribution[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [createModal, setCreateModal] = useState(false);
   const [invalidationModal, setInvalidationModal] = useState(false);
   const [selectedDistributionId, setSelectedDistributionId] = useState<string>("");
@@ -53,7 +53,9 @@ export default function CloudFrontPage() {
   };
 
   useEffect(() => {
-    fetchDistributions();
+    queueMicrotask(() => {
+      fetchDistributions();
+    });
   }, []);
 
   const createDistribution = async () => {
@@ -107,14 +109,17 @@ export default function CloudFrontPage() {
       <SpaceBetween size="l" direction="vertical">
         <SpaceBetween direction="horizontal" size="m" alignItems="center">
           <AwsServiceHeader
-          serviceName="CloudFront"
-          serviceIcon={SERVICE_ICONS["/cloudfront"]?.small}
-          counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/cloudfront/create")}>
-            Create distribution
-        </button>
-
-        />
+            serviceName="CloudFront"
+            serviceIcon={SERVICE_ICONS["/cloudfront"]?.small}
+            counter={0}
+            primaryAction=<button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/cloudfront/create")}
+            >
+              Create distribution
+            </button>
+          />
           <SpaceBetween direction="horizontal" size="xs">
             <Button variant="primary" onClick={() => setCreateModal(true)}>
               Create distribution

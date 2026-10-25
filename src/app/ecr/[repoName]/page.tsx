@@ -2,14 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Header from "@cloudscape-design/components/header";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
 import { SERVICE_ICONS } from "@/constants/service-icons";
 import { apiFetch } from "@/lib/api-client";
@@ -23,11 +21,7 @@ interface Repository {
   imageScanOnPush: boolean;
 }
 
-export default function ECRRepoDetailPage({
-  params,
-}: {
-  params: Promise<{ repoName: string }>;
-}) {
+export default function ECRRepoDetailPage({ params }: { params: Promise<{ repoName: string }> }) {
   const router = useRouter();
   const [repo, setRepo] = useState<Repository | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,7 +51,9 @@ export default function ECRRepoDetailPage({
   }, [repoName]);
 
   useEffect(() => {
-    fetchRepo();
+    queueMicrotask(() => {
+      fetchRepo();
+    });
   }, [fetchRepo]);
 
   if (loading) {
@@ -66,7 +62,11 @@ export default function ECRRepoDetailPage({
         <SpaceBetween size="l">
           <Header variant="h2">Repository {repoName || "Loading..."}</Header>
           <Box textAlign="center">
-            <Box nativeAttributes={{ style: { fontSize: "18px", color: "#545b64", marginBottom: "12px" } }}>
+            <Box
+              nativeAttributes={{
+                style: { fontSize: "18px", color: "#545b64", marginBottom: "12px" },
+              }}
+            >
               Loading repository details...
             </Box>
           </Box>
@@ -118,23 +118,33 @@ export default function ECRRepoDetailPage({
           <SpaceBetween size="l">
             <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Repository Name</Box>
+                <Box variant="small" color="text-label">
+                  Repository Name
+                </Box>
                 <Box>{repo.repositoryName}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">ARN</Box>
+                <Box variant="small" color="text-label">
+                  ARN
+                </Box>
                 <Box>{repo.repositoryUri}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Creation Time</Box>
+                <Box variant="small" color="text-label">
+                  Creation Time
+                </Box>
                 <Box>{repo.createdAt}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Image Tag Mutability</Box>
+                <Box variant="small" color="text-label">
+                  Image Tag Mutability
+                </Box>
                 <Box>{repo.imageTagMutability}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Image Scanning on Push</Box>
+                <Box variant="small" color="text-label">
+                  Image Scanning on Push
+                </Box>
                 <Box>{repo.imageScanOnPush ? "Enabled" : "Disabled"}</Box>
               </SpaceBetween>
             </Box>

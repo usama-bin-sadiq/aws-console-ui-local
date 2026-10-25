@@ -21,8 +21,7 @@
  * the shim has to own that chrome to match the canvases.
  */
 
-import * as React from "react";
-import Icon from "@cloudscape-design/components/icon";
+import React from "react";
 import s from "../design/design.module.css";
 
 type AnyItem = any;

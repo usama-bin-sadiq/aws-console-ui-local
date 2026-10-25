@@ -81,7 +81,9 @@ export default function LambdaOverviewPage() {
   }, []);
 
   useEffect(() => {
-    fetchFunctions();
+    queueMicrotask(() => {
+      fetchFunctions();
+    });
   }, [fetchFunctions]);
 
   const runtimes = new Set(functions.map((fn) => fn.Runtime).filter(Boolean));
@@ -103,7 +105,11 @@ export default function LambdaOverviewPage() {
         serviceIcon={SERVICE_ICONS["/lambda"]?.small}
         counter={functions.length}
         primaryAction={
-          <button type="button" className="aws-service-page__create" onClick={() => router.push("/lambda/create")}>
+          <button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/lambda/create")}
+          >
             Create function
           </button>
         }
@@ -115,11 +121,11 @@ export default function LambdaOverviewPage() {
           </SpaceBetween>
         }
       />
-        <Box variant="p">
-          Lambda runs functions in response to events, on demand, and scales automatically. This
-          console is backed by the LocalEmu adapter, so the functions, layers and metrics below come
-          from the local emulator rather than an AWS account.
-        </Box>
+      <Box variant="p">
+        Lambda runs functions in response to events, on demand, and scales automatically. This
+        console is backed by the LocalEmu adapter, so the functions, layers and metrics below come
+        from the local emulator rather than an AWS account.
+      </Box>
 
       <Container header={<Header variant="h2">At a glance</Header>}>
         <Grid gridDefinition={glanceGrid}>

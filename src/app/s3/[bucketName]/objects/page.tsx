@@ -24,7 +24,6 @@ import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import BreadcrumbGroup from "@cloudscape-design/components/breadcrumb-group";
-import Link from "@cloudscape-design/components/link";
 import Modal from "@cloudscape-design/components/modal";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
@@ -101,7 +100,10 @@ export default function S3BucketObjectsPage() {
   }, [bucketName]);
 
   useEffect(() => {
-    if (bucketName) fetchObjects();
+    if (bucketName)
+      queueMicrotask(() => {
+        fetchObjects();
+      });
   }, [bucketName, fetchObjects]);
 
   const deleteObject = useCallback(

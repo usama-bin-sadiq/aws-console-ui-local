@@ -434,8 +434,12 @@ export function TypedActionModal({
 
   useEffect(() => {
     if (visible) {
-      setTypedValue("");
-      setReason("");
+      queueMicrotask(() => {
+        setTypedValue("");
+      });
+      queueMicrotask(() => {
+        setReason("");
+      });
     }
   }, [visible, resourceName]);
 

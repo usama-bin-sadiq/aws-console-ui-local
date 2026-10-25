@@ -9,7 +9,7 @@
  * [x] References adapter SDK (no hardcoded AWS endpoints)
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { CodeView } from "@cloudscape-design/code-view";
 import Header from "@cloudscape-design/components/header";
@@ -28,7 +28,6 @@ import Textarea from "@cloudscape-design/components/textarea";
 import Select from "@cloudscape-design/components/select";
 import FormField from "@cloudscape-design/components/form-field";
 import Checkbox from "@cloudscape-design/components/checkbox";
-import RadioGroup from "@cloudscape-design/components/radio-group";
 import Input from "@cloudscape-design/components/input";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 import TruncatedText from "@/components/TruncatedText";
@@ -324,7 +323,10 @@ export default function S3BucketDetailPage() {
   }, [acl]);
 
   useEffect(() => {
-    if (bucketName) fetchDetails();
+    if (bucketName)
+      queueMicrotask(() => {
+        fetchDetails();
+      });
   }, [bucketName, fetchDetails]);
 
   const overviewContent = (

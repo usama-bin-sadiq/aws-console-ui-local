@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
-import Box from "@cloudscape-design/components/box";
 import Alert from "@cloudscape-design/components/alert";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
@@ -113,7 +112,9 @@ export default function CloudWatchAlarmCreatePage() {
                   { label: "AWS/ECS", value: "AWS/ECS" },
                   { label: "AWS/ApplicationELB", value: "AWS/ApplicationELB" },
                 ]}
-                onChange={(e) => setForm({ ...form, namespace: e.detail.selectedOption.value || "" })}
+                onChange={(e) =>
+                  setForm({ ...form, namespace: e.detail.selectedOption.value || "" })
+                }
               />
             </FormField>
             <FormField label="Metric Name">
@@ -133,7 +134,9 @@ export default function CloudWatchAlarmCreatePage() {
                   { label: "Maximum", value: "Maximum" },
                   { label: "SampleCount", value: "SampleCount" },
                 ]}
-                onChange={(e) => setForm({ ...form, statistic: e.detail.selectedOption.value || "" })}
+                onChange={(e) =>
+                  setForm({ ...form, statistic: e.detail.selectedOption.value || "" })
+                }
               />
             </FormField>
             <FormField label="Period (seconds)">
@@ -162,11 +165,16 @@ export default function CloudWatchAlarmCreatePage() {
                 selectedOption={{ label: form.comparisonOperator, value: form.comparisonOperator }}
                 options={[
                   { label: "GreaterThanThreshold", value: "GreaterThanThreshold" },
-                  { label: "GreaterThanOrEqualToThreshold", value: "GreaterThanOrEqualToThreshold" },
+                  {
+                    label: "GreaterThanOrEqualToThreshold",
+                    value: "GreaterThanOrEqualToThreshold",
+                  },
                   { label: "LessThanThreshold", value: "LessThanThreshold" },
                   { label: "LessThanOrEqualToThreshold", value: "LessThanOrEqualToThreshold" },
                 ]}
-                onChange={(e) => setForm({ ...form, comparisonOperator: e.detail.selectedOption.value || "" })}
+                onChange={(e) =>
+                  setForm({ ...form, comparisonOperator: e.detail.selectedOption.value || "" })
+                }
               />
             </FormField>
           </SpaceBetween>

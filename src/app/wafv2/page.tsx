@@ -1,20 +1,18 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
-import Tabs from "@cloudscape-design/components/tabs";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface WAFv2WebACL {
   Id: string;
@@ -35,7 +33,8 @@ export default function WAFv2Page() {
   const [rules, setRules] = useState<WAFv2Rule[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [rulesLoading, setRulesLoading] = useState(false);
+  const router = useRouter();
+  const [rulesLoading, setRulesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createModal, setCreateModal] = useState(false);
   const [aclName, setAclName] = useState("");
@@ -79,7 +78,9 @@ export default function WAFv2Page() {
   };
 
   useEffect(() => {
-    fetchWebAcls();
+    queueMicrotask(() => {
+      fetchWebAcls();
+    });
   }, []);
 
   const createWebAcl = async () => {
@@ -108,10 +109,13 @@ export default function WAFv2Page() {
           serviceName="WAF v2 — Web Application Firewall"
           serviceIcon={SERVICE_ICONS["/wafv2"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/wafv2/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/wafv2/create")}
+          >
             Create web ACL
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" header="Error">

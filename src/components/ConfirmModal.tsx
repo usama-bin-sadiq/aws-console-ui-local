@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Modal from "@cloudscape-design/components/modal";
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
@@ -48,7 +48,9 @@ export default function ConfirmModal({
   // Reset the input whenever the modal opens or the target resource changes
   useEffect(() => {
     if (visible) {
-      setInputValue("");
+      queueMicrotask(() => {
+        setInputValue("");
+      });
     }
   }, [visible, resourceName]);
 

@@ -266,7 +266,9 @@ export function useResourceCounts(): UseResourceCountsResult {
   }, []);
 
   useEffect(() => {
-    fetchCounts();
+    queueMicrotask(() => {
+      fetchCounts();
+    });
     const interval = setInterval(fetchCounts, 60000);
     return () => clearInterval(interval);
   }, [fetchCounts]);

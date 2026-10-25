@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Wizard from "@cloudscape-design/components/wizard";
@@ -120,8 +120,12 @@ export default function AMICopyPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setRegionsLoading(true);
-    setRegionsError(null);
+    queueMicrotask(() => {
+      setRegionsLoading(true);
+    });
+    queueMicrotask(() => {
+      setRegionsError(null);
+    });
     amiGet({ action: "listRegions" })
       .then((data) => {
         if (!cancelled) setRegions(data.regions ?? []);
@@ -144,8 +148,12 @@ export default function AMICopyPage() {
   useEffect(() => {
     if (!regionValue) return;
     let cancelled = false;
-    setImagesLoading(true);
-    setImagesError(null);
+    queueMicrotask(() => {
+      setImagesLoading(true);
+    });
+    queueMicrotask(() => {
+      setImagesError(null);
+    });
     amiGet({ action: "describeImages", region: regionValue, owners: ownerValue })
       .then((data) => {
         if (!cancelled) {
@@ -169,8 +177,12 @@ export default function AMICopyPage() {
   useEffect(() => {
     if (!encrypted || kmsKeys.length > 0) return;
     let cancelled = false;
-    setKmsLoading(true);
-    setKmsError(null);
+    queueMicrotask(() => {
+      setKmsLoading(true);
+    });
+    queueMicrotask(() => {
+      setKmsError(null);
+    });
     amiGet({ action: "listKmsKeys" })
       .then((data) => {
         if (!cancelled) setKmsKeys(data.keys ?? []);
@@ -192,8 +204,12 @@ export default function AMICopyPage() {
     if (!prefillImageId || selectedImages.length > 0) return;
     const match = images.find((image) => image.ImageId === prefillImageId);
     if (match) {
-      setSelectedImages([match]);
-      setNewName((prev) => prev || `${match.Name ?? match.ImageId}-copy`);
+      queueMicrotask(() => {
+        setSelectedImages([match]);
+      });
+      queueMicrotask(() => {
+        setNewName((prev) => prev || `${match.Name ?? match.ImageId}-copy`);
+      });
     }
   }, [prefillImageId, images, selectedImages.length]);
 

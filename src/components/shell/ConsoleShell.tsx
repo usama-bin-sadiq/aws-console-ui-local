@@ -138,7 +138,10 @@ export function ConsoleShell({
 
   // Leaving the narrow breakpoint must not leave the rail stuck open.
   useEffect(() => {
-    if (!isNarrow) setNavOpen(false);
+    if (!isNarrow)
+      queueMicrotask(() => {
+        setNavOpen(false);
+      });
   }, [isNarrow]);
 
   // Pulled out of `search` so render never reads a member off the prop object;

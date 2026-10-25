@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
@@ -21,8 +21,8 @@ import LaunchTemplateDeleteModal from "./LaunchTemplateDeleteModal";
 import TruncatedText from "@/components/TruncatedText";
 import { CrossServiceLinks, CrossServiceLink } from "@/components/CrossServiceLinks";
 import { LaunchTemplate, DescribeLaunchTemplatesResponse } from "@/types/launch-template";
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -104,7 +104,9 @@ export default function LaunchTemplateListPage() {
   }, []);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => {
+      load();
+    });
   }, [load]);
 
   useEffect(() => {
@@ -249,16 +251,20 @@ export default function LaunchTemplateListPage() {
           serviceName="Refresh openDelete(selectedItems)} > Delete router"
           serviceIcon={SERVICE_ICONS["/launch-template"]?.small}
           counter={items?.length ?? 0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/launch-template/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/launch-template/create")}
+          >
             Create template
-        </button>
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={load} iconName="refresh" formAction="none">
-              Refresh
-            </Button>
-          </SpaceBetween>
-        }
+          </button>
+          actions={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={load} iconName="refresh" formAction="none">
+                Refresh
+              </Button>
+            </SpaceBetween>
+          }
         />
 
         <CrossServiceLinks links={RELATED_LINKS} />

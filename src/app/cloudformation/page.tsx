@@ -22,10 +22,9 @@ import { apiFetch } from "@/lib/api-client";
  * [x] Accessibility: aria-label on buttons, th headers on tables, associated labels
  */
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
-import Container from "@cloudscape-design/components/container";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
@@ -141,7 +140,9 @@ export default function CloudFormationPage() {
   }, []);
 
   useEffect(() => {
-    fetchStacks();
+    queueMicrotask(() => {
+      fetchStacks();
+    });
   }, [fetchStacks]);
 
   const deleteStack = useCallback(
@@ -237,7 +238,11 @@ export default function CloudFormationPage() {
           serviceIcon={SERVICE_ICONS["/cloudformation"]?.small}
           counter={stacks.length}
           primaryAction={
-            <button type="button" className="aws-service-page__create" onClick={() => router.push("/cloudformation/create")}>
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/cloudformation/create")}
+            >
               Create stack
             </button>
           }

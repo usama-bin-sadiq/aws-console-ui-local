@@ -7,7 +7,7 @@
  * latest version and saving creates a new, incremented version.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";

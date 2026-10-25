@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -12,9 +12,9 @@ import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface AutoScalingGroup {
   AutoScalingGroupName: string;
@@ -53,7 +53,8 @@ export default function AutoScalingPage() {
   const [groups, setGroups] = useState<AutoScalingGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState("");
+  const router = useRouter();
+  const [error, setError] = useState("");
 
   const [createModal, setCreateModal] = useState(false);
   const [groupName, setGroupName] = useState("");
@@ -109,7 +110,9 @@ export default function AutoScalingPage() {
   };
 
   useEffect(() => {
-    fetchGroups();
+    queueMicrotask(() => {
+      fetchGroups();
+    });
   }, []);
 
   const createGroup = async () => {
@@ -340,10 +343,13 @@ export default function AutoScalingPage() {
           serviceName="Auto Scaling Groups"
           serviceIcon={SERVICE_ICONS["/auto-scaling"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/auto-scaling/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/auto-scaling/create")}
+          >
             Create scaling group
-        </button>
-
+          </button>
         />
 
         {error && (

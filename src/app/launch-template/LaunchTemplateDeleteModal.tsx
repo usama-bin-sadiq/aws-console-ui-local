@@ -7,7 +7,7 @@
  * version (deleting the template removes every version).
  */
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "@cloudscape-design/components/modal";
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
@@ -44,7 +44,9 @@ export default function LaunchTemplateDeleteModal({
   // Reset the input whenever the modal opens or the target template changes
   useEffect(() => {
     if (visible) {
-      setInputValue("");
+      queueMicrotask(() => {
+        setInputValue("");
+      });
     }
   }, [visible, templateName]);
 

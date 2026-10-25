@@ -3,7 +3,7 @@ import Header from "@cloudscape-design/components/header";
  * IAMUserTable — IAM user list.
  */
 
-import React, { useState } from "react";
+import React from "react";
 import Table from "@cloudscape-design/components/table";
 import Pagination from "@cloudscape-design/components/pagination";
 import SpaceBetween from "@cloudscape-design/components/space-between";

@@ -1,6 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
@@ -192,7 +192,9 @@ export default function ECRPage() {
   };
 
   useEffect(() => {
-    fetchRepositories();
+    queueMicrotask(() => {
+      fetchRepositories();
+    });
   }, []);
 
   return (

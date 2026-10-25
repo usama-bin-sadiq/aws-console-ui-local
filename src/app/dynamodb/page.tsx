@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@cloudscape-design/components/button";
 import Modal from "@cloudscape-design/components/modal";
@@ -13,7 +13,6 @@ import Alert from "@cloudscape-design/components/alert";
 import type { TableProps } from "@cloudscape-design/components/table";
 import { ResourceTable, type ActionDefinition } from "@/features/resource-table";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { CopyableText } from "@/components/ui/CopyableText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
 import { SERVICE_ICONS } from "@/constants/service-icons";
@@ -161,7 +160,9 @@ export default function DynamoDBPage() {
   }, []);
 
   useEffect(() => {
-    fetchTables();
+    queueMicrotask(() => {
+      fetchTables();
+    });
   }, [fetchTables]);
 
   // ── Create Table ───────────────────────────────────────────────────────
@@ -263,16 +264,20 @@ export default function DynamoDBPage() {
           </Alert>
         )}
 
-      <AwsServiceHeader
-        serviceName="Amazon DynamoDB"
-        serviceIcon={SERVICE_ICONS["/dynamodb"]?.small}
-        counter={tables.length}
-        primaryAction={
-          <button type="button" className="aws-service-page__create" onClick={() => router.push("/dynamodb/create")}>
-            Create table
-          </button>
-        }
-      />
+        <AwsServiceHeader
+          serviceName="Amazon DynamoDB"
+          serviceIcon={SERVICE_ICONS["/dynamodb"]?.small}
+          counter={tables.length}
+          primaryAction={
+            <button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/dynamodb/create")}
+            >
+              Create table
+            </button>
+          }
+        />
 
         <ResourceTable
           config={{

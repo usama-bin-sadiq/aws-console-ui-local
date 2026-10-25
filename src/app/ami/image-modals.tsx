@@ -5,7 +5,7 @@
  * create-snapshot-from-image modal. Used by both the list and detail pages.
  */
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "@cloudscape-design/components/modal";
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
@@ -41,7 +41,10 @@ export function DeregisterImageModal({
 
   // Reset the typed confirmation whenever the modal opens or the target changes.
   useEffect(() => {
-    if (visible) setInputValue("");
+    if (visible)
+      queueMicrotask(() => {
+        setInputValue("");
+      });
   }, [visible, imageId]);
 
   const isConfirmed = inputValue === imageId;
@@ -133,9 +136,15 @@ export function CreateSnapshotModal({
   // Prefill a sensible default whenever the modal opens for an image.
   useEffect(() => {
     if (visible) {
-      setDescription(`Snapshot created from AMI ${imageId}`);
-      setDescriptionError(undefined);
-      setError(null);
+      queueMicrotask(() => {
+        setDescription(`Snapshot created from AMI ${imageId}`);
+      });
+      queueMicrotask(() => {
+        setDescriptionError(undefined);
+      });
+      queueMicrotask(() => {
+        setError(null);
+      });
     }
   }, [visible, imageId]);
 

@@ -83,9 +83,11 @@ export function useAwsApi<T = any>(options: UseAwsApiOptions): UseAwsApiResult<T
 
   useEffect(() => {
     if (autoFetch) {
-      fetchData();
+      queueMicrotask(() => {
+        fetchData();
+      });
     }
-  }, [autoFetch]); // Only run on mount when autoFetch is true
+  }, [autoFetch, fetchData]);
 
   return {
     data,

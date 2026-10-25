@@ -1,20 +1,19 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface EKSCluster {
   name: string;
@@ -39,7 +38,8 @@ export default function EKSPPage() {
   const [nodegroups, setNodegroups] = useState<NodegroupSummary[]>([]);
   const [loadingClusters, setLoadingClusters] = useState(true);
 
-  const router = useRouter();  const [loadingNodegroups, setLoadingNodegroups] = useState(false);
+  const router = useRouter();
+  const [loadingNodegroups, setLoadingNodegroups] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<string>("");
 
@@ -50,7 +50,7 @@ export default function EKSPPage() {
   const [nodegroupDesired, setNodegroupDesired] = useState("2");
   const [nodegroupNameError, setNodegroupNameError] = useState<string | null>(null);
 
-  const fetchClusters = async () => {
+  const fetchClusters = useCallback(async () => {
     setLoadingClusters(true);
     setError(null);
     try {
@@ -63,9 +63,9 @@ export default function EKSPPage() {
     } finally {
       setLoadingClusters(false);
     }
-  };
+  }, []);
 
-  const fetchNodegroups = async () => {
+  const fetchNodegroups = useCallback(async () => {
     if (!selectedCluster) return;
     setLoadingNodegroups(true);
     try {
@@ -96,7 +96,7 @@ export default function EKSPPage() {
     } finally {
       setLoadingNodegroups(false);
     }
-  };
+  }, [selectedCluster]);
 
   const createNodegroup = async () => {
     if (!nodegroupName.trim() || !selectedCluster) {
@@ -147,9 +147,16 @@ export default function EKSPPage() {
   };
 
   useEffect(() => {
-    fetchClusters();
-    fetchNodegroups();
-  }, []);
+    queueMicrotask(() => {
+      fetchClusters();
+    });
+  }, [fetchClusters]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      fetchNodegroups();
+    });
+  }, [fetchNodegroups]);
 
   return (
     <div style={{ padding: 0 }}>
@@ -158,10 +165,13 @@ export default function EKSPPage() {
           serviceName="Amazon EKS — Kubernetes Clusters"
           serviceIcon={SERVICE_ICONS["/eks"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/eks/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/eks/create")}
+          >
             Create cluster
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" onDismiss={() => setError(null)} header="Error">

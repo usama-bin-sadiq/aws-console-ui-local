@@ -1,4 +1,3 @@
-import React from "react";
 import Alert from "@cloudscape-design/components/alert";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";

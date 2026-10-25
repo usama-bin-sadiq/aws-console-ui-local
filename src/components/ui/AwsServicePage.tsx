@@ -3,7 +3,11 @@
 import React from "react";
 import { BreadcrumbGroup } from "@cloudscape-design/components";
 import SpaceBetween from "@cloudscape-design/components/space-between";
-import { ResourceTable, type ResourceTableConfig, type ActionDefinition } from "@/features/resource-table";
+import {
+  ResourceTable,
+  type ResourceTableConfig,
+  type ActionDefinition,
+} from "@/features/resource-table";
 import { CrossServiceLinks } from "@/components/CrossServiceLinks";
 import { AwsServiceHeader } from "./AwsServiceHeader";
 

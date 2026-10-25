@@ -3,7 +3,6 @@
  * Applies endpoint rewrite and auth injection when adapter is active.
  */
 
-import { ADAPTER_CONFIG } from "@/config/adapter-config";
 import { resolveEndpoint } from "./localstack-adapter/endpoint-resolver";
 import { injectAuth } from "./localstack-adapter/auth-injector";
 

@@ -4,12 +4,11 @@ import { apiFetch } from "@/lib/api-client";
 // Uses @aws-sdk/client-ec2 commands (DescribeSubnets, CreateSubnet, DeleteSubnet, ModifySubnetAttribute)
 // Cloudscape components only; verification comments added.
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
@@ -18,9 +17,9 @@ import Select from "@cloudscape-design/components/select";
 import Checkbox from "@cloudscape-design/components/checkbox";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import CapabilityLink from "@/components/CapabilityLink";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface Subnet {
   SubnetId: string;
@@ -34,7 +33,8 @@ export default function SubnetPage() {
   const [subnets, setSubnets] = useState<Subnet[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Subnet[]>([]);
   const [deleting, setDeleting] = useState(false);
 
@@ -79,8 +79,12 @@ export default function SubnetPage() {
   }
 
   useEffect(() => {
-    load();
-    loadVpcs();
+    queueMicrotask(() => {
+      load();
+    });
+    queueMicrotask(() => {
+      loadVpcs();
+    });
   }, []);
 
   async function handleCreate() {

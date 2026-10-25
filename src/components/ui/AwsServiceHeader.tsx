@@ -36,6 +36,8 @@ export function AwsServiceHeader({
   const [isNarrow, setIsNarrow] = useState(false);
 
   useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+
     const mq = window.matchMedia("(max-width: 760px)");
     const sync = () => setIsNarrow(mq.matches);
     sync();

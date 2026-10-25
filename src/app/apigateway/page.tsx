@@ -2,12 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Alert from "@cloudscape-design/components/alert";
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
-import Header from "@cloudscape-design/components/header";
 import Input from "@cloudscape-design/components/input";
 import Modal from "@cloudscape-design/components/modal";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -52,7 +50,9 @@ export default function ApiGatewayPage() {
   }, []);
 
   useEffect(() => {
-    void fetchApis();
+    queueMicrotask(() => {
+      void fetchApis();
+    });
   }, [fetchApis]);
 
   const createApi = async () => {

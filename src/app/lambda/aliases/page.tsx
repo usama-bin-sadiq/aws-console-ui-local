@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -146,7 +146,9 @@ export default function LambdaAliasesPage() {
   }, []);
 
   useEffect(() => {
-    fetchAliases();
+    queueMicrotask(() => {
+      fetchAliases();
+    });
   }, [fetchAliases]);
 
   const openCreate = useCallback(async () => {
@@ -283,11 +285,7 @@ export default function LambdaAliasesPage() {
         serviceIcon={SERVICE_ICONS["/lambda"]?.small}
         counter={aliases.length}
         primaryAction={
-          <button
-            type="button"
-            className="aws-service-page__create"
-            onClick={openCreate}
-          >
+          <button type="button" className="aws-service-page__create" onClick={openCreate}>
             Create alias
           </button>
         }

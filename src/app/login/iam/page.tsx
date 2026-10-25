@@ -1,8 +1,9 @@
 "use client";
 
-import { FormField, Input, Button, SpaceBetween, Box } from "@cloudscape-design/components";
+import { Button, Box } from "@cloudscape-design/components";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -140,8 +141,12 @@ export default function IamLoginPage() {
     try {
       const saved = localStorage.getItem(REMEMBER_KEY);
       if (saved) {
-        setAccount(saved);
-        setRemember(true);
+        queueMicrotask(() => {
+          setAccount(saved);
+        });
+        queueMicrotask(() => {
+          setRemember(true);
+        });
       }
     } catch {
       // localStorage unavailable — ignore
@@ -213,7 +218,7 @@ export default function IamLoginPage() {
     <Box padding="l" className="aws-page">
       <style>{CSS}</style>
       <main className="aws-card">
-        <img src="/aws-logo.svg" alt="AWS" width={40} height={24} className="aws-logo" />
+        <Image src="/aws-logo.svg" alt="AWS" width={40} height={24} className="aws-logo" />
         <h1 className="aws-h1">IAM user sign in</h1>
 
         {mfa ? (

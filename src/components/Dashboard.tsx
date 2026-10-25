@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ResourceIcon } from "@/components/ui/ResourceIcon";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
@@ -19,7 +19,6 @@ import {
   SERVICE_REGISTRY,
   toAdapterMode,
 } from "@/constants/service-compatibility";
-import { SERVICE_ICONS } from "@/constants/service-icons";
 import { useSettingsStore } from "@/stores/settings";
 
 interface Service {
@@ -221,7 +220,6 @@ export default function Dashboard() {
   const { favorites: persistedFavorites, addFavorite, removeFavorite } = useSettingsStore();
   const [legacyFavorites, setLegacyFavorites] = useState<string[]>([]);
   const [recentlyVisited, setRecentlyVisited] = useState<Service[]>([]);
-  const [serviceCounts, setServiceCounts] = useState<{ full: number; partial: number; notSupported: number }>({ full: 0, partial: 0, notSupported: 0 });
   const favorites = Array.from(
     new Set([...persistedFavorites.map((favorite) => favorite.serviceHref), ...legacyFavorites]),
   );
@@ -232,7 +230,9 @@ export default function Dashboard() {
       try {
         const parsed = JSON.parse(savedFavorites);
         if (Array.isArray(parsed)) {
-          setLegacyFavorites(parsed.filter((href): href is string => typeof href === "string"));
+          queueMicrotask(() => {
+            setLegacyFavorites(parsed.filter((href): href is string => typeof href === "string"));
+          });
         }
       } catch {
         // Ignore errors
@@ -248,11 +248,13 @@ export default function Dashboard() {
               .map((item) => (typeof item === "string" ? item : item?.href))
               .filter((href): href is string => typeof href === "string")
           : [];
-        setRecentlyVisited(
-          recentHrefs
-            .map((href) => ALL_SERVICES.find((service) => service.href === href))
-            .filter((service): service is Service => Boolean(service)),
-        );
+        queueMicrotask(() => {
+          setRecentlyVisited(
+            recentHrefs
+              .map((href) => ALL_SERVICES.find((service) => service.href === href))
+              .filter((service): service is Service => Boolean(service)),
+          );
+        });
       } catch {
         // Ignore errors
       }
@@ -308,8 +310,8 @@ export default function Dashboard() {
         activeMode === "localstack"
           ? entry.adapterStatusLocalStack
           : activeMode === "ministack"
-          ? entry.adapterStatusMinStack
-          : AdapterStatus.FULL;
+            ? entry.adapterStatusMinStack
+            : AdapterStatus.FULL;
       if (status === AdapterStatus.FULL) acc.full++;
       else if (status === AdapterStatus.PARTIAL) acc.partial++;
       else acc.notSupported++;
@@ -317,7 +319,6 @@ export default function Dashboard() {
     },
     { full: 0, partial: 0, notSupported: 0 },
   );
-  setServiceCounts(counts);
 
   const availableServices = ALL_SERVICES.filter((service) => {
     const compatibility = findServiceCompatibility(service.href);
@@ -393,28 +394,28 @@ export default function Dashboard() {
         <Grid gridDefinition={[{ colspan: 4 }, { colspan: 4 }, { colspan: 4 }]}>
           <SpaceBetween size="s">
             <Header variant="h3">Full Support</Header>
-            <Box variant="p">{serviceCounts.full}</Box>
+            <Box variant="p">{counts.full}</Box>
             <Box variant="small" color="text-body-secondary">
               Services with full adapter support
             </Box>
           </SpaceBetween>
           <SpaceBetween size="s">
             <Header variant="h3">Partial Support</Header>
-            <Box variant="p">{serviceCounts.partial}</Box>
+            <Box variant="p">{counts.partial}</Box>
             <Box variant="small" color="text-body-secondary">
               Services with partial adapter support
             </Box>
           </SpaceBetween>
           <SpaceBetween size="s">
             <Header variant="h3">Not Supported</Header>
-            <Box variant="p">{serviceCounts.notSupported}</Box>
+            <Box variant="p">{counts.notSupported}</Box>
             <Box variant="small" color="text-body-secondary">
               Services without adapter support
             </Box>
           </SpaceBetween>
           <SpaceBetween size="s">
             <Header variant="h3">Total Services</Header>
-            <Box variant="p">{serviceCounts.full + serviceCounts.partial + serviceCounts.notSupported}</Box>
+            <Box variant="p">{counts.full + counts.partial + counts.notSupported}</Box>
             <Box variant="small" color="text-body-secondary">
               Services in the registry
             </Box>

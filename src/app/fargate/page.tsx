@@ -26,8 +26,6 @@ import {
   toAdapterMode,
 } from "@/constants/service-compatibility";
 import type { EmulatorHealthStatus, ServiceAvailability } from "@/constants/service-compatibility";
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
 
 /**
  * Fargate overview page.
@@ -532,7 +530,9 @@ export default function FargatePage() {
   }, []);
 
   useEffect(() => {
-    void fetchHealth();
+    queueMicrotask(() => {
+      void fetchHealth();
+    });
   }, [fetchHealth]);
 
   const pushOnFollow =

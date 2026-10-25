@@ -3,17 +3,15 @@ import { apiFetch } from "@/lib/api-client";
 import { useEffect, useState, useCallback } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
-import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Select from "@cloudscape-design/components/select";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface ElasticIp {
   AllocationId: string;
@@ -27,7 +25,8 @@ export default function ElasticIpPage() {
   const [addresses, setAddresses] = useState<ElasticIp[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [allocating, setAllocating] = useState(false);
   const [selected, setSelected] = useState<ElasticIp[]>([]);
 
@@ -72,8 +71,12 @@ export default function ElasticIpPage() {
   }, []);
 
   useEffect(() => {
-    load();
-    loadInstances();
+    queueMicrotask(() => {
+      load();
+    });
+    queueMicrotask(() => {
+      loadInstances();
+    });
   }, [load, loadInstances]);
 
   async function handleAllocate() {

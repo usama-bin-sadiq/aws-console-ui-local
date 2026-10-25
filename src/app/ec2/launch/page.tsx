@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Wizard from "@cloudscape-design/components/wizard";
 import Header from "@cloudscape-design/components/header";
@@ -14,14 +14,8 @@ import Select from "@cloudscape-design/components/select";
 import Button from "@cloudscape-design/components/button";
 import Alert from "@cloudscape-design/components/alert";
 import ColumnLayout from "@cloudscape-design/components/column-layout";
-import RadioGroup from "@cloudscape-design/components/radio-group";
-import Tabs from "@cloudscape-design/components/tabs";
 import Table from "@cloudscape-design/components/table";
 import TextFilter from "@cloudscape-design/components/text-filter";
-import Pagination from "@cloudscape-design/components/pagination";
-import CollectionPreferences from "@cloudscape-design/components/collection-preferences";
-import Image from "next/image";
-import { SERVICE_ICONS } from "@/constants/service-icons";
 import {
   EC2AMIImage,
   EC2InstanceTypeInfo,

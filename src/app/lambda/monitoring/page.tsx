@@ -95,7 +95,9 @@ export default function LambdaMonitoringPage() {
   }, []);
 
   useEffect(() => {
-    fetchMonitoring();
+    queueMicrotask(() => {
+      fetchMonitoring();
+    });
   }, [fetchMonitoring]);
 
   const metricColumns: TableProps.ColumnDefinition<LambdaMetric>[] = [

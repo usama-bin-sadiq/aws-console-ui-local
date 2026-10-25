@@ -5,14 +5,13 @@ import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Select from "@cloudscape-design/components/select";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface NatGateway {
   NatGatewayId: string;
@@ -26,7 +25,8 @@ export default function NatGatewayPage() {
   const [natGateways, setNatGateways] = useState<NatGateway[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [subnetId, setSubnetId] = useState("");
   const [allocationId, setAllocationId] = useState("");
@@ -84,9 +84,15 @@ export default function NatGatewayPage() {
   }
 
   useEffect(() => {
-    load();
-    loadSubnets();
-    loadElasticIps();
+    queueMicrotask(() => {
+      load();
+    });
+    queueMicrotask(() => {
+      loadSubnets();
+    });
+    queueMicrotask(() => {
+      loadElasticIps();
+    });
   }, []);
 
   async function handleCreate() {
@@ -138,16 +144,20 @@ export default function NatGatewayPage() {
           serviceName="Refresh Delete setShowCreate(true)}> Create NAT Ga"
           serviceIcon={SERVICE_ICONS["/nat-gateway"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/nat-gateway/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/nat-gateway/create")}
+          >
             Create gateway
-        </button>
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={load} iconName="refresh" formAction="none">
-              Refresh
-            </Button>
-          </SpaceBetween>
-        }
+          </button>
+          actions={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={load} iconName="refresh" formAction="none">
+                Refresh
+              </Button>
+            </SpaceBetween>
+          }
         />
 
         {error && (

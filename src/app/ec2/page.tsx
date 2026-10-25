@@ -11,7 +11,6 @@ import { CopyableText } from "@/components/ui/CopyableText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 import { apiFetch } from "@/lib/api-client";
 import { EC2Instance } from "@/types/ec2";
-import TextFilter from "@cloudscape-design/components/text-filter";
 import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
 import { SERVICE_ICONS } from "@/constants/service-icons";
 
@@ -143,7 +142,9 @@ export default function EC2Page() {
   }, []);
 
   useEffect(() => {
-    fetchInstances();
+    queueMicrotask(() => {
+      fetchInstances();
+    });
   }, [fetchInstances]);
 
   // ── Actions ─────────────────────────────────────────────────────────────

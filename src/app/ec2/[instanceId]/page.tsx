@@ -20,11 +20,8 @@ import RadioGroup from "@cloudscape-design/components/radio-group";
 import FormField from "@cloudscape-design/components/form-field";
 import Select from "@cloudscape-design/components/select";
 import Input from "@cloudscape-design/components/input";
-import Checkbox from "@cloudscape-design/components/checkbox";
-import Image from "next/image";
 import { EC2Instance } from "@/types/ec2";
 import CapabilityLink from "@/components/CapabilityLink";
-import { SERVICE_ICONS } from "@/constants/service-icons";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
 import { apiFetch } from "@/lib/api-client";
 
@@ -368,7 +365,7 @@ export default function EC2InstanceDetailsPage({
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to change instance type");
     }
-  }, [instanceId, instance?.InstanceType, stateName, fetchInstance]);
+  }, [instanceId, instance, stateName, fetchInstance]);
 
   const handleToggleTerminationProtection = useCallback(async () => {
     if (!instanceId || !instance) return;
@@ -387,7 +384,7 @@ export default function EC2InstanceDetailsPage({
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to toggle termination protection");
     }
-  }, [instanceId, instance?.DisableApiTermination, fetchInstance]);
+  }, [instanceId, instance, fetchInstance]);
 
   const handleModifyUserData = useCallback(async () => {
     if (!instanceId || stateName !== "stopped" || !instance) return;
@@ -407,7 +404,7 @@ export default function EC2InstanceDetailsPage({
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to modify user data");
     }
-  }, [instanceId, stateName, fetchInstance]);
+  }, [instanceId, instance, stateName, fetchInstance]);
 
   const handleAllocateAddress = useCallback(async () => {
     try {
@@ -592,16 +589,28 @@ export default function EC2InstanceDetailsPage({
   );
 
   useEffect(() => {
-    fetchInstance();
+    queueMicrotask(() => {
+      fetchInstance();
+    });
   }, [fetchInstance]);
 
   useEffect(() => {
     if (instance) {
-      fetchSgRules();
-      fetchVolumes();
-      fetchNetworkInterfaces();
-      fetchAmiDetails();
-      fetchElasticIps();
+      queueMicrotask(() => {
+        fetchSgRules();
+      });
+      queueMicrotask(() => {
+        fetchVolumes();
+      });
+      queueMicrotask(() => {
+        fetchNetworkInterfaces();
+      });
+      queueMicrotask(() => {
+        fetchAmiDetails();
+      });
+      queueMicrotask(() => {
+        fetchElasticIps();
+      });
     }
   }, [
     instance,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CodeView } from "@cloudscape-design/code-view";
 import Table, { TableProps } from "@cloudscape-design/components/table";
@@ -25,8 +25,8 @@ import TruncatedText from "@/components/TruncatedText";
 import { KeyPair, KeyPairType, KeyPairFormat, KeyPairApiResponse } from "@/types/key-pair";
 import { apiFetch } from "@/lib/api-client";
 import DeleteKeyPairModal from "./DeleteKeyPairModal";
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 // ─── Constants & helpers ─────────────────────────────────────────────────────
 
@@ -146,7 +146,9 @@ export default function KeyPairPage() {
       const pending = sessionStorage.getItem(FLASH_STORAGE_KEY);
       if (pending) {
         sessionStorage.removeItem(FLASH_STORAGE_KEY);
-        showSuccess(pending);
+        queueMicrotask(() => {
+          showSuccess(pending);
+        });
       }
     } catch {
       // sessionStorage unavailable — nothing to show
@@ -168,7 +170,9 @@ export default function KeyPairPage() {
   }, []);
 
   useEffect(() => {
-    fetchKeyPairs();
+    queueMicrotask(() => {
+      fetchKeyPairs();
+    });
   }, [fetchKeyPairs]);
 
   // ── Create key pair ─────────────────────────────────────────────────────────

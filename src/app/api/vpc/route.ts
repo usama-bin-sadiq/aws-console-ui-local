@@ -66,7 +66,9 @@ export async function PUT(request: Request) {
     if (body.enableDnsSupport !== undefined)
       params.EnableDnsSupport = { Value: body.enableDnsSupport };
     await ec2Client.send(
-      new ModifyVpcAttributeCommand(params as unknown as import("@aws-sdk/client-ec2").ModifyVpcAttributeCommandInput),
+      new ModifyVpcAttributeCommand(
+        params as unknown as import("@aws-sdk/client-ec2").ModifyVpcAttributeCommandInput,
+      ),
     );
     return NextResponse.json({ success: true, action: "modify-vpc-attribute", params });
   } catch (error: unknown) {

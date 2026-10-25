@@ -187,7 +187,12 @@
   background: transparent;
   color: #0f141a;
   padding: 0 8px 0 34px;
-  font: 13px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  font:
+    13px "Amazon Ember",
+    "Open Sans",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
 }
 .search input::placeholder {
   color: #6b7785;
@@ -200,7 +205,12 @@
   flex: none;
 }
 .search kbd {
-  font: 11px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  font:
+    11px "Amazon Ember",
+    "Open Sans",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   color: #6b7785;
   border: 1px solid #ccd6dd;
   border-radius: 2px;
@@ -448,7 +458,12 @@
   background: transparent;
   border: 0;
   color: var(--text);
-  font: 400 13px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  font:
+    400 13px "Amazon Ember",
+    "Open Sans",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   text-align: left;
   cursor: pointer;
   text-decoration: none;
@@ -576,7 +591,12 @@
   border-radius: 2px;
   background: var(--surface);
   color: var(--text);
-  font: 600 13px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  font:
+    600 13px "Amazon Ember",
+    "Open Sans",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   cursor: pointer;
 }
 
@@ -737,7 +757,12 @@
   border-radius: 3px;
   background: var(--surface);
   color: var(--text);
-  font: 500 13px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  font:
+    500 13px "Amazon Ember",
+    "Open Sans",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   cursor: pointer;
 }
 .aws-service-page__create:hover {
@@ -774,7 +799,12 @@
   border-radius: 3px;
   background: transparent;
   color: var(--text);
-  font: 500 13px "Amazon Ember", "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  font:
+    500 13px "Amazon Ember",
+    "Open Sans",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   cursor: pointer;
 }
 .aws-service-page__action:hover {

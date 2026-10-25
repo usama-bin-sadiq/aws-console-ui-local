@@ -7,7 +7,6 @@ import {
   GetWebACLCommand,
   UpdateWebACLCommand,
   ListIPSetsCommand,
-  GetIPSetCommand,
 } from "@aws-sdk/client-wafv2";
 import { WAFV2Client } from "@aws-sdk/client-wafv2";
 import { getUserClientFromRequest } from "@/lib/aws-clients";

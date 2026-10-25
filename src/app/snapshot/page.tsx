@@ -1,12 +1,11 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
@@ -14,9 +13,9 @@ import Input from "@cloudscape-design/components/input";
 import Select from "@cloudscape-design/components/select";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import TruncatedText from "@/components/TruncatedText";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface Snapshot {
   SnapshotId: string;
@@ -31,7 +30,8 @@ export default function SnapshotPage() {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState("");
+  const router = useRouter();
+  const [error, setError] = useState("");
   const [createModal, setCreateModal] = useState(false);
   const [volumeId, setVolumeId] = useState("");
   const [description, setDescription] = useState("");
@@ -71,8 +71,12 @@ export default function SnapshotPage() {
   }, []);
 
   useEffect(() => {
-    fetchSnapshots();
-    fetchVolumes();
+    queueMicrotask(() => {
+      fetchSnapshots();
+    });
+    queueMicrotask(() => {
+      fetchVolumes();
+    });
   }, [fetchSnapshots, fetchVolumes]);
 
   const createSnapshot = async () => {
@@ -141,16 +145,20 @@ export default function SnapshotPage() {
           serviceName="Refresh Delete setCreateModal(true)}> Create snaps"
           serviceIcon={SERVICE_ICONS["/snapshot"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/snapshot/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/snapshot/create")}
+          >
             Create snapshot
-        </button>
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={fetchSnapshots} iconName="refresh" formAction="none">
-              Refresh
-            </Button>
-          </SpaceBetween>
-        }
+          </button>
+          actions={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={fetchSnapshots} iconName="refresh" formAction="none">
+                Refresh
+              </Button>
+            </SpaceBetween>
+          }
         />
 
         {error && (

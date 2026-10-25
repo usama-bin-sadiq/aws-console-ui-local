@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -34,9 +34,9 @@ import Header from "@cloudscape-design/components/header";
 import { apiFetch } from "@/lib/api-client";
 import { CrossServiceLinks, CrossServiceLink } from "@/components/CrossServiceLinks";
 import TagEditor, { Tag } from "@/components/TagEditor";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -142,7 +142,8 @@ export default function EC2SpotInstancePage() {
   const [items, setItems] = useState<SpotRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<SpotRequest[]>([]);
   const [filteringText, setFilteringText] = useState("");
@@ -250,7 +251,9 @@ export default function EC2SpotInstancePage() {
   }, []);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => {
+      load();
+    });
   }, [load]);
 
   useEffect(() => {
@@ -914,14 +917,17 @@ export default function EC2SpotInstancePage() {
       <Box padding="m">
         <SpaceBetween size="l">
           <AwsServiceHeader
-          serviceName="Request Spot instances"
-          serviceIcon={SERVICE_ICONS["/ec2-spot-instance"]?.small}
-          counter={items?.length ?? 0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/ec2-spot-instance/create")}>
-            Create spot request
-        </button>
-
-        />
+            serviceName="Request Spot instances"
+            serviceIcon={SERVICE_ICONS["/ec2-spot-instance"]?.small}
+            counter={items?.length ?? 0}
+            primaryAction=<button
+              type="button"
+              className="aws-service-page__create"
+              onClick={() => router.push("/ec2-spot-instance/create")}
+            >
+              Create spot request
+            </button>
+          />
           {error && (
             <Alert type="error" dismissible onDismiss={() => setError(null)}>
               {error}

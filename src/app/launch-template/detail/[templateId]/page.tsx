@@ -5,7 +5,7 @@
  * launch template details page.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Tabs from "@cloudscape-design/components/tabs";
@@ -189,7 +189,10 @@ export default function LaunchTemplateDetailPage({
   }, [templateId]);
 
   useEffect(() => {
-    if (templateId) void fetchDetails();
+    if (templateId)
+      queueMicrotask(() => {
+        void fetchDetails();
+      });
   }, [templateId, fetchDetails]);
 
   // ── Version actions ───────────────────────────────────────────────────────

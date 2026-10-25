@@ -2,11 +2,10 @@
 
 import { apiFetch } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table, { TableProps } from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
-import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
@@ -24,7 +23,6 @@ import {
   CloudWatchMetric,
   CloudWatchLogGroup,
   CloudWatchLogStream,
-  CloudWatchInsightsQuery,
 } from "@/types/cloudwatch";
 import TruncatedText from "@/components/TruncatedText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
@@ -107,12 +105,16 @@ export default function CloudWatchPage() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    queueMicrotask(() => {
+      fetchData();
+    });
   }, [fetchData]);
 
   useEffect(() => {
     if (selectedLogGroup) {
-      fetchLogStreams(selectedLogGroup);
+      queueMicrotask(() => {
+        fetchLogStreams(selectedLogGroup);
+      });
     }
   }, [selectedLogGroup, fetchLogStreams]);
 

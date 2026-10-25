@@ -74,7 +74,9 @@ export default function DynamoDBTableDetailPage() {
   }, [tableName]);
 
   useEffect(() => {
-    fetchTableInfo();
+    queueMicrotask(() => {
+      fetchTableInfo();
+    });
   }, [fetchTableInfo]);
 
   const fetchItems = useCallback(async () => {
@@ -97,7 +99,9 @@ export default function DynamoDBTableDetailPage() {
   }, [tableName]);
 
   useEffect(() => {
-    fetchItems();
+    queueMicrotask(() => {
+      fetchItems();
+    });
   }, [fetchItems]);
 
   const filteredItems = React.useMemo(() => {

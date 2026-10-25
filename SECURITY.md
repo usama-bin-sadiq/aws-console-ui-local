@@ -31,6 +31,7 @@ We take the security of this emulator console seriously. If you believe you've f
 ### Disclosure Policy
 
 We follow coordinated disclosure:
+
 - We'll work with you to understand and fix the issue.
 - We ask that you not disclose the vulnerability publicly until we've had reasonable time to address it.
 - We'll notify you before publishing any fix or advisory.

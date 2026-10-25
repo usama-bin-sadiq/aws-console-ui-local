@@ -59,7 +59,9 @@ export function AwsConsoleOverlay({
   const [mounted, setMounted] = useState(false);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    queueMicrotask(() => setMounted(true));
+  }, []);
 
   // Remember the trigger so focus can be restored on close.
   useEffect(() => {

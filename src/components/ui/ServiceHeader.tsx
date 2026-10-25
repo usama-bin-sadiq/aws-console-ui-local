@@ -1,5 +1,4 @@
 import { Header, SpaceBetween, Icon } from "@cloudscape-design/components";
-import { StatusBadge } from "./StatusBadge";
 
 type ServiceHeaderProps = {
   serviceName: string;

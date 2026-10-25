@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import Modal from "@cloudscape-design/components/modal";
@@ -13,9 +13,9 @@ import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface InstanceProfile {
   InstanceProfileId: string;
@@ -34,7 +34,8 @@ export default function IAMInstanceProfilePage() {
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [createModal, setCreateModal] = useState(false);
+  const router = useRouter();
+  const [createModal, setCreateModal] = useState(false);
   const [profileName, setProfileName] = useState("");
   const [selectedProfile, setSelectedProfile] = useState<InstanceProfile | null>(null);
   const [selectedRole, setSelectedRole] = useState<RoleOption | null>(null);
@@ -73,7 +74,9 @@ export default function IAMInstanceProfilePage() {
   };
 
   useEffect(() => {
-    void fetchProfiles();
+    queueMicrotask(() => {
+      void fetchProfiles();
+    });
   }, []);
 
   const createProfile = async (): Promise<void> => {
@@ -137,10 +140,13 @@ export default function IAMInstanceProfilePage() {
           serviceName="IAM Instance Profiles"
           serviceIcon={SERVICE_ICONS["/iam-instance-profile"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/iam-instance-profile/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/iam-instance-profile/create")}
+          >
             Create profile
-        </button>
-
+          </button>
         />
         {error ? (
           <Alert type="error" dismissible onDismiss={() => setError(null)}>

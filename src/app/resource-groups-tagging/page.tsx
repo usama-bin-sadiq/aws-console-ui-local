@@ -1,15 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface TaggedResource {
   ResourceARN: string;
@@ -20,7 +19,8 @@ export default function ResourceGroupsTaggingPage() {
   const [resources, setResources] = useState<TaggedResource[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [message, setMessage] = useState<string | null>(null);
+  const router = useRouter();
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/resource-groups-tagging")
@@ -40,10 +40,13 @@ export default function ResourceGroupsTaggingPage() {
           serviceName="Resource Groups Tagging"
           serviceIcon={SERVICE_ICONS["/resource-groups-tagging"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/resource-groups-tagging/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/resource-groups-tagging/create")}
+          >
             Create tag
-        </button>
-
+          </button>
         />
 
         {message && (

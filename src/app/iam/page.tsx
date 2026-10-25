@@ -1,11 +1,10 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
-import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
 import Modal from "@cloudscape-design/components/modal";
 import Input from "@cloudscape-design/components/input";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -267,7 +266,9 @@ export default function IAMPage() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    queueMicrotask(() => {
+      fetchData();
+    });
   }, [fetchData]);
 
   // ── Detail Fetching ────────────────────────────────────────
@@ -1015,514 +1016,510 @@ export default function IAMPage() {
         <Alert type="error" dismissible onDismiss={() => setError(null)}>
           {error}
         </Alert>
-        )}
-        {actionError && (
-          <Alert type="error" dismissible onDismiss={() => setActionError(null)}>
-            {actionError}
-          </Alert>
-        )}
+      )}
+      {actionError && (
+        <Alert type="error" dismissible onDismiss={() => setActionError(null)}>
+          {actionError}
+        </Alert>
+      )}
 
-        <Tabs
-          tabs={[
-            {
-              label: `Users (${data.users.length})`,
-              id: "users",
-              content: (
-                <SpaceBetween size="m">
-                  <ResourceTable
-                    config={{
-                      serviceKey: "iam-users",
-                      resourceName: "Users",
-                      columnDefinitions: USER_COLUMN_DEFINITIONS,
-                      defaultVisibleColumns: USER_DEFAULT_VISIBLE_COLUMNS,
-                      trackBy: "UserName",
-                      createLabel: "Create user",
-                      filterPlaceholder: "Filter users",
-                    }}
-                    items={data.users as unknown as Record<string, unknown>[]}
-                    loading={loading}
-                    selectedItems={selectedUsers}
-                    onSelectionChange={(items) => {
-                      setSelectedUsers(items);
-                      if (items.length > 0) fetchUserDetail(items[0].UserName as string);
-                      else {
-                        setSelectedUser(null);
-                        setUserDetail(null);
-                      }
-                    }}
-                    onRefresh={fetchData}
-                    onCreateClick={() => setCreateUserModal(true)}
-                    actions={userActions}
-                  />
+      <Tabs
+        tabs={[
+          {
+            label: `Users (${data.users.length})`,
+            id: "users",
+            content: (
+              <SpaceBetween size="m">
+                <ResourceTable
+                  config={{
+                    serviceKey: "iam-users",
+                    resourceName: "Users",
+                    columnDefinitions: USER_COLUMN_DEFINITIONS,
+                    defaultVisibleColumns: USER_DEFAULT_VISIBLE_COLUMNS,
+                    trackBy: "UserName",
+                    createLabel: "Create user",
+                    filterPlaceholder: "Filter users",
+                  }}
+                  items={data.users as unknown as Record<string, unknown>[]}
+                  loading={loading}
+                  selectedItems={selectedUsers}
+                  onSelectionChange={(items) => {
+                    setSelectedUsers(items);
+                    if (items.length > 0) fetchUserDetail(items[0].UserName as string);
+                    else {
+                      setSelectedUser(null);
+                      setUserDetail(null);
+                    }
+                  }}
+                  onRefresh={fetchData}
+                  onCreateClick={() => setCreateUserModal(true)}
+                  actions={userActions}
+                />
 
-                  {selectedUser && userDetail && (
-                    <Container
-                      header={
-                        <Header
-                          variant="h2"
-                          actions={
-                            <SpaceBetween direction="horizontal" size="xs">
-                              <Button onClick={() => openAttachPolicy("user", userDetail.UserName)}>
-                                Attach Policy
-                              </Button>
-                              <Button
-                                onClick={() =>
-                                  setDeleteConfirm({ type: "user", name: userDetail.UserName })
-                                }
-                                formAction="none"
-                              >
-                                Delete User
-                              </Button>
-                            </SpaceBetween>
-                          }
-                        >
-                          User: {userDetail.UserName}
-                        </Header>
-                      }
-                    >
-                      {userDetailLoading ? (
-                        <Box>Loading...</Box>
-                      ) : (
-                        <SpaceBetween size="m">
-                          <Box>
-                            <SpaceBetween size="xs">
-                              <strong>User Name:</strong> {userDetail.UserName}
-                              <strong>User ID:</strong> {userDetail.UserId || "—"}
-                              <strong>ARN:</strong> {userDetail.Arn || "—"}
-                              <strong>Path:</strong> {userDetail.Path || "/"}
-                              <strong>Created:</strong> {userDetail.CreateDate || "—"}
-                            </SpaceBetween>
-                          </Box>
-                          <Tabs
-                            activeTabId={userDetailTab}
-                            onChange={({ detail }) => setUserDetailTab(detail.activeTabId)}
-                            tabs={[
-                              {
-                                label: "Permissions",
-                                id: "permissions",
-                                content: userDetailTabContent(),
-                              },
-                              { label: "Groups", id: "groups", content: userDetailTabContent() },
-                              {
-                                label: "Security Credentials",
-                                id: "security",
-                                content: userDetailTabContent(),
-                              },
-                              { label: "Tags", id: "tags", content: userDetailTabContent() },
-                            ]}
-                          />
-                        </SpaceBetween>
-                      )}
-                    </Container>
-                  )}
-                </SpaceBetween>
-              ),
-            },
-            {
-              label: `Roles (${data.roles.length})`,
-              id: "roles",
-              content: (
-                <SpaceBetween size="m">
-                  <ResourceTable
-                    config={{
-                      serviceKey: "iam-roles",
-                      resourceName: "Roles",
-                      columnDefinitions: ROLE_COLUMN_DEFINITIONS,
-                      defaultVisibleColumns: ROLE_DEFAULT_VISIBLE_COLUMNS,
-                      trackBy: "RoleName",
-                      createLabel: "Create role",
-                      filterPlaceholder: "Filter roles",
-                    }}
-                    items={data.roles as unknown as Record<string, unknown>[]}
-                    loading={loading}
-                    selectedItems={selectedRoles}
-                    onSelectionChange={(items) => {
-                      setSelectedRoles(items);
-                      if (items.length > 0) fetchRoleDetail(items[0].RoleName as string);
-                      else {
-                        setSelectedRole(null);
-                        setRoleDetail(null);
-                      }
-                    }}
-                    onRefresh={fetchData}
-                    onCreateClick={() => setCreateRoleModal(true)}
-                    actions={roleActions}
-                  />
+                {selectedUser && userDetail && (
+                  <Container
+                    header={
+                      <Header
+                        variant="h2"
+                        actions={
+                          <SpaceBetween direction="horizontal" size="xs">
+                            <Button onClick={() => openAttachPolicy("user", userDetail.UserName)}>
+                              Attach Policy
+                            </Button>
+                            <Button
+                              onClick={() =>
+                                setDeleteConfirm({ type: "user", name: userDetail.UserName })
+                              }
+                              formAction="none"
+                            >
+                              Delete User
+                            </Button>
+                          </SpaceBetween>
+                        }
+                      >
+                        User: {userDetail.UserName}
+                      </Header>
+                    }
+                  >
+                    {userDetailLoading ? (
+                      <Box>Loading...</Box>
+                    ) : (
+                      <SpaceBetween size="m">
+                        <Box>
+                          <SpaceBetween size="xs">
+                            <strong>User Name:</strong> {userDetail.UserName}
+                            <strong>User ID:</strong> {userDetail.UserId || "—"}
+                            <strong>ARN:</strong> {userDetail.Arn || "—"}
+                            <strong>Path:</strong> {userDetail.Path || "/"}
+                            <strong>Created:</strong> {userDetail.CreateDate || "—"}
+                          </SpaceBetween>
+                        </Box>
+                        <Tabs
+                          activeTabId={userDetailTab}
+                          onChange={({ detail }) => setUserDetailTab(detail.activeTabId)}
+                          tabs={[
+                            {
+                              label: "Permissions",
+                              id: "permissions",
+                              content: userDetailTabContent(),
+                            },
+                            { label: "Groups", id: "groups", content: userDetailTabContent() },
+                            {
+                              label: "Security Credentials",
+                              id: "security",
+                              content: userDetailTabContent(),
+                            },
+                            { label: "Tags", id: "tags", content: userDetailTabContent() },
+                          ]}
+                        />
+                      </SpaceBetween>
+                    )}
+                  </Container>
+                )}
+              </SpaceBetween>
+            ),
+          },
+          {
+            label: `Roles (${data.roles.length})`,
+            id: "roles",
+            content: (
+              <SpaceBetween size="m">
+                <ResourceTable
+                  config={{
+                    serviceKey: "iam-roles",
+                    resourceName: "Roles",
+                    columnDefinitions: ROLE_COLUMN_DEFINITIONS,
+                    defaultVisibleColumns: ROLE_DEFAULT_VISIBLE_COLUMNS,
+                    trackBy: "RoleName",
+                    createLabel: "Create role",
+                    filterPlaceholder: "Filter roles",
+                  }}
+                  items={data.roles as unknown as Record<string, unknown>[]}
+                  loading={loading}
+                  selectedItems={selectedRoles}
+                  onSelectionChange={(items) => {
+                    setSelectedRoles(items);
+                    if (items.length > 0) fetchRoleDetail(items[0].RoleName as string);
+                    else {
+                      setSelectedRole(null);
+                      setRoleDetail(null);
+                    }
+                  }}
+                  onRefresh={fetchData}
+                  onCreateClick={() => setCreateRoleModal(true)}
+                  actions={roleActions}
+                />
 
-                  {selectedRole && roleDetail && (
-                    <Container
-                      header={
-                        <Header
-                          variant="h2"
-                          actions={
-                            <SpaceBetween direction="horizontal" size="xs">
-                              <Button onClick={() => openAttachPolicy("role", roleDetail.RoleName)}>
-                                Attach Policy
-                              </Button>
-                              <Button
-                                onClick={() =>
-                                  setDeleteConfirm({ type: "role", name: roleDetail.RoleName })
-                                }
-                                formAction="none"
-                              >
-                                Delete Role
-                              </Button>
-                            </SpaceBetween>
-                          }
-                        >
-                          Role: {roleDetail.RoleName}
-                        </Header>
-                      }
-                    >
-                      {roleDetailLoading ? (
-                        <Box>Loading...</Box>
-                      ) : (
-                        <SpaceBetween size="m">
-                          <Box>
-                            <SpaceBetween size="xs">
-                              <strong>Role Name:</strong> {roleDetail.RoleName}
-                              <strong>Role ID:</strong> {roleDetail.RoleId || "—"}
-                              <strong>ARN:</strong> {roleDetail.Arn || "—"}
-                              <strong>Path:</strong> {roleDetail.Path || "/"}
-                              <strong>Created:</strong> {roleDetail.CreateDate || "—"}
-                              <strong>Description:</strong> {roleDetail.Description || "—"}
-                            </SpaceBetween>
-                          </Box>
-                          <Tabs
-                            activeTabId={roleDetailTab}
-                            onChange={({ detail }) => setRoleDetailTab(detail.activeTabId)}
-                            tabs={[
-                              {
-                                label: "Trust Relationships",
-                                id: "trust",
-                                content: roleDetailTabContent(),
-                              },
-                              {
-                                label: "Permissions",
-                                id: "permissions",
-                                content: roleDetailTabContent(),
-                              },
-                              { label: "Tags", id: "tags", content: roleDetailTabContent() },
-                            ]}
-                          />
-                        </SpaceBetween>
-                      )}
-                    </Container>
-                  )}
-                </SpaceBetween>
-              ),
-            },
-            {
-              label: `Policies (${data.policies.length})`,
-              id: "policies",
-              content: (
-                <SpaceBetween size="m">
-                  <ResourceTable
-                    config={{
-                      serviceKey: "iam-policies",
-                      resourceName: "Policies",
-                      columnDefinitions: POLICY_COLUMN_DEFINITIONS,
-                      defaultVisibleColumns: POLICY_DEFAULT_VISIBLE_COLUMNS,
-                      trackBy: "Arn",
-                      createLabel: "Create policy",
-                      filterPlaceholder: "Filter policies",
-                    }}
-                    items={data.policies as unknown as Record<string, unknown>[]}
-                    loading={loading}
-                    selectedItems={selectedPolicies}
-                    onSelectionChange={(items) => {
-                      setSelectedPolicies(items);
-                      if (items.length > 0)
-                        fetchPolicyDetail(items[0].Arn as string, items[0].PolicyName as string);
-                      else {
-                        setSelectedPolicy(null);
-                        setPolicyDetail(null);
-                      }
-                    }}
-                    onRefresh={fetchData}
-                    onCreateClick={() => setCreatePolicyModal(true)}
-                    actions={policyActions}
-                  />
+                {selectedRole && roleDetail && (
+                  <Container
+                    header={
+                      <Header
+                        variant="h2"
+                        actions={
+                          <SpaceBetween direction="horizontal" size="xs">
+                            <Button onClick={() => openAttachPolicy("role", roleDetail.RoleName)}>
+                              Attach Policy
+                            </Button>
+                            <Button
+                              onClick={() =>
+                                setDeleteConfirm({ type: "role", name: roleDetail.RoleName })
+                              }
+                              formAction="none"
+                            >
+                              Delete Role
+                            </Button>
+                          </SpaceBetween>
+                        }
+                      >
+                        Role: {roleDetail.RoleName}
+                      </Header>
+                    }
+                  >
+                    {roleDetailLoading ? (
+                      <Box>Loading...</Box>
+                    ) : (
+                      <SpaceBetween size="m">
+                        <Box>
+                          <SpaceBetween size="xs">
+                            <strong>Role Name:</strong> {roleDetail.RoleName}
+                            <strong>Role ID:</strong> {roleDetail.RoleId || "—"}
+                            <strong>ARN:</strong> {roleDetail.Arn || "—"}
+                            <strong>Path:</strong> {roleDetail.Path || "/"}
+                            <strong>Created:</strong> {roleDetail.CreateDate || "—"}
+                            <strong>Description:</strong> {roleDetail.Description || "—"}
+                          </SpaceBetween>
+                        </Box>
+                        <Tabs
+                          activeTabId={roleDetailTab}
+                          onChange={({ detail }) => setRoleDetailTab(detail.activeTabId)}
+                          tabs={[
+                            {
+                              label: "Trust Relationships",
+                              id: "trust",
+                              content: roleDetailTabContent(),
+                            },
+                            {
+                              label: "Permissions",
+                              id: "permissions",
+                              content: roleDetailTabContent(),
+                            },
+                            { label: "Tags", id: "tags", content: roleDetailTabContent() },
+                          ]}
+                        />
+                      </SpaceBetween>
+                    )}
+                  </Container>
+                )}
+              </SpaceBetween>
+            ),
+          },
+          {
+            label: `Policies (${data.policies.length})`,
+            id: "policies",
+            content: (
+              <SpaceBetween size="m">
+                <ResourceTable
+                  config={{
+                    serviceKey: "iam-policies",
+                    resourceName: "Policies",
+                    columnDefinitions: POLICY_COLUMN_DEFINITIONS,
+                    defaultVisibleColumns: POLICY_DEFAULT_VISIBLE_COLUMNS,
+                    trackBy: "Arn",
+                    createLabel: "Create policy",
+                    filterPlaceholder: "Filter policies",
+                  }}
+                  items={data.policies as unknown as Record<string, unknown>[]}
+                  loading={loading}
+                  selectedItems={selectedPolicies}
+                  onSelectionChange={(items) => {
+                    setSelectedPolicies(items);
+                    if (items.length > 0)
+                      fetchPolicyDetail(items[0].Arn as string, items[0].PolicyName as string);
+                    else {
+                      setSelectedPolicy(null);
+                      setPolicyDetail(null);
+                    }
+                  }}
+                  onRefresh={fetchData}
+                  onCreateClick={() => setCreatePolicyModal(true)}
+                  actions={policyActions}
+                />
 
-                  {selectedPolicy && policyDetail && (
-                    <Container
-                      header={<Header variant="h2">Policy: {policyDetail.PolicyName}</Header>}
-                    >
-                      {policyDetailLoading ? (
-                        <Box>Loading...</Box>
-                      ) : (
-                        <SpaceBetween size="m">
-                          <Box>
-                            <SpaceBetween size="xs">
-                              <strong>Policy Name:</strong> {policyDetail.PolicyName || "—"}
-                              <strong>ARN:</strong> {policyDetail.Arn || "—"}
-                              <strong>Policy ID:</strong> {policyDetail.PolicyId || "—"}
-                              <strong>Path:</strong> {policyDetail.Path || "/"}
-                              <strong>Created:</strong> {policyDetail.CreateDate || "—"}
-                              <strong>Attachment Count:</strong> {policyDetail.AttachmentCount ?? 0}
-                            </SpaceBetween>
-                          </Box>
-                          <Tabs
-                            activeTabId={policyDetailTab}
-                            onChange={({ detail }) => setPolicyDetailTab(detail.activeTabId)}
-                            tabs={[
-                              {
-                                label: "Permissions",
-                                id: "permissions",
-                                content: policyDetailTabContent(),
-                              },
-                              { label: "JSON", id: "json", content: policyDetailTabContent() },
-                              {
-                                label: "Attached Entities",
-                                id: "attached",
-                                content: policyDetailTabContent(),
-                              },
-                            ]}
-                          />
-                        </SpaceBetween>
-                      )}
-                    </Container>
-                  )}
-                </SpaceBetween>
-              ),
-            },
-            {
-              label: `Groups (${data.groups.length})`,
-              id: "groups",
-              content: (
-                <SpaceBetween size="m">
-                  <ResourceTable
-                    config={{
-                      serviceKey: "iam-groups",
-                      resourceName: "Groups",
-                      columnDefinitions: GROUP_COLUMN_DEFINITIONS,
-                      defaultVisibleColumns: GROUP_DEFAULT_VISIBLE_COLUMNS,
-                      trackBy: "GroupName",
-                      createLabel: "Create group",
-                      filterPlaceholder: "Filter groups",
-                    }}
-                    items={data.groups as unknown as Record<string, unknown>[]}
-                    loading={loading}
-                    selectedItems={selectedGroups}
-                    onSelectionChange={(items) => {
-                      setSelectedGroups(items);
-                      if (items.length > 0) fetchGroupDetail(items[0].GroupName as string);
-                      else {
-                        setSelectedGroup(null);
-                        setGroupDetail(null);
-                      }
-                    }}
-                    onRefresh={fetchData}
-                    onCreateClick={() => setCreateGroupModal(true)}
-                    actions={groupActions}
-                  />
+                {selectedPolicy && policyDetail && (
+                  <Container
+                    header={<Header variant="h2">Policy: {policyDetail.PolicyName}</Header>}
+                  >
+                    {policyDetailLoading ? (
+                      <Box>Loading...</Box>
+                    ) : (
+                      <SpaceBetween size="m">
+                        <Box>
+                          <SpaceBetween size="xs">
+                            <strong>Policy Name:</strong> {policyDetail.PolicyName || "—"}
+                            <strong>ARN:</strong> {policyDetail.Arn || "—"}
+                            <strong>Policy ID:</strong> {policyDetail.PolicyId || "—"}
+                            <strong>Path:</strong> {policyDetail.Path || "/"}
+                            <strong>Created:</strong> {policyDetail.CreateDate || "—"}
+                            <strong>Attachment Count:</strong> {policyDetail.AttachmentCount ?? 0}
+                          </SpaceBetween>
+                        </Box>
+                        <Tabs
+                          activeTabId={policyDetailTab}
+                          onChange={({ detail }) => setPolicyDetailTab(detail.activeTabId)}
+                          tabs={[
+                            {
+                              label: "Permissions",
+                              id: "permissions",
+                              content: policyDetailTabContent(),
+                            },
+                            { label: "JSON", id: "json", content: policyDetailTabContent() },
+                            {
+                              label: "Attached Entities",
+                              id: "attached",
+                              content: policyDetailTabContent(),
+                            },
+                          ]}
+                        />
+                      </SpaceBetween>
+                    )}
+                  </Container>
+                )}
+              </SpaceBetween>
+            ),
+          },
+          {
+            label: `Groups (${data.groups.length})`,
+            id: "groups",
+            content: (
+              <SpaceBetween size="m">
+                <ResourceTable
+                  config={{
+                    serviceKey: "iam-groups",
+                    resourceName: "Groups",
+                    columnDefinitions: GROUP_COLUMN_DEFINITIONS,
+                    defaultVisibleColumns: GROUP_DEFAULT_VISIBLE_COLUMNS,
+                    trackBy: "GroupName",
+                    createLabel: "Create group",
+                    filterPlaceholder: "Filter groups",
+                  }}
+                  items={data.groups as unknown as Record<string, unknown>[]}
+                  loading={loading}
+                  selectedItems={selectedGroups}
+                  onSelectionChange={(items) => {
+                    setSelectedGroups(items);
+                    if (items.length > 0) fetchGroupDetail(items[0].GroupName as string);
+                    else {
+                      setSelectedGroup(null);
+                      setGroupDetail(null);
+                    }
+                  }}
+                  onRefresh={fetchData}
+                  onCreateClick={() => setCreateGroupModal(true)}
+                  actions={groupActions}
+                />
 
-                  {selectedGroup && groupDetail && (
-                    <Container
-                      header={
-                        <Header
-                          variant="h2"
-                          actions={
-                            <SpaceBetween direction="horizontal" size="xs">
-                              <Button
-                                onClick={() => openAttachPolicy("group", groupDetail.GroupName)}
-                              >
-                                Attach Policy
-                              </Button>
-                              <Button
-                                onClick={() =>
-                                  setDeleteConfirm({ type: "group", name: groupDetail.GroupName })
-                                }
-                                formAction="none"
-                              >
-                                Delete Group
-                              </Button>
-                            </SpaceBetween>
-                          }
-                        >
-                          Group: {groupDetail.GroupName}
-                        </Header>
-                      }
-                    >
-                      {groupDetailLoading ? (
-                        <Box>Loading...</Box>
-                      ) : (
-                        <SpaceBetween size="m">
-                          <Box>
-                            <SpaceBetween size="xs">
-                              <strong>Group Name:</strong> {groupDetail.GroupName}
-                              <strong>Group ID:</strong> {groupDetail.GroupId || "—"}
-                              <strong>ARN:</strong> {groupDetail.Arn || "—"}
-                              <strong>Path:</strong> {groupDetail.Path || "/"}
-                              <strong>Created:</strong> {groupDetail.CreateDate || "—"}
-                            </SpaceBetween>
-                          </Box>
-                          <Tabs
-                            activeTabId={groupDetailTab}
-                            onChange={({ detail }) => setGroupDetailTab(detail.activeTabId)}
-                            tabs={[
-                              { label: "Users", id: "users", content: groupDetailTabContent() },
-                              {
-                                label: "Permissions",
-                                id: "permissions",
-                                content: groupDetailTabContent(),
-                              },
-                            ]}
-                          />
-                        </SpaceBetween>
-                      )}
-                    </Container>
-                  )}
-                </SpaceBetween>
-              ),
-            },
-          ]}
+                {selectedGroup && groupDetail && (
+                  <Container
+                    header={
+                      <Header
+                        variant="h2"
+                        actions={
+                          <SpaceBetween direction="horizontal" size="xs">
+                            <Button
+                              onClick={() => openAttachPolicy("group", groupDetail.GroupName)}
+                            >
+                              Attach Policy
+                            </Button>
+                            <Button
+                              onClick={() =>
+                                setDeleteConfirm({ type: "group", name: groupDetail.GroupName })
+                              }
+                              formAction="none"
+                            >
+                              Delete Group
+                            </Button>
+                          </SpaceBetween>
+                        }
+                      >
+                        Group: {groupDetail.GroupName}
+                      </Header>
+                    }
+                  >
+                    {groupDetailLoading ? (
+                      <Box>Loading...</Box>
+                    ) : (
+                      <SpaceBetween size="m">
+                        <Box>
+                          <SpaceBetween size="xs">
+                            <strong>Group Name:</strong> {groupDetail.GroupName}
+                            <strong>Group ID:</strong> {groupDetail.GroupId || "—"}
+                            <strong>ARN:</strong> {groupDetail.Arn || "—"}
+                            <strong>Path:</strong> {groupDetail.Path || "/"}
+                            <strong>Created:</strong> {groupDetail.CreateDate || "—"}
+                          </SpaceBetween>
+                        </Box>
+                        <Tabs
+                          activeTabId={groupDetailTab}
+                          onChange={({ detail }) => setGroupDetailTab(detail.activeTabId)}
+                          tabs={[
+                            { label: "Users", id: "users", content: groupDetailTabContent() },
+                            {
+                              label: "Permissions",
+                              id: "permissions",
+                              content: groupDetailTabContent(),
+                            },
+                          ]}
+                        />
+                      </SpaceBetween>
+                    )}
+                  </Container>
+                )}
+              </SpaceBetween>
+            ),
+          },
+        ]}
+      />
+
+      {/* Create User Modal */}
+      <Modal
+        visible={createUserModal}
+        onDismiss={() => setCreateUserModal(false)}
+        header="Create IAM User"
+        footer={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={() => setCreateUserModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={createUser}>
+              Create
+            </Button>
+          </SpaceBetween>
+        }
+      >
+        <FormField label="User Name">
+          <Input value={newUserName} onChange={(e) => setNewUserName(e.detail.value || "")} />
+        </FormField>
+      </Modal>
+
+      {/* Create Role Modal */}
+      <Modal
+        visible={createRoleModal}
+        onDismiss={() => setCreateRoleModal(false)}
+        header="Create IAM Role"
+        footer={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={() => setCreateRoleModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={createRole}>
+              Create
+            </Button>
+          </SpaceBetween>
+        }
+      >
+        <FormField label="Role Name">
+          <Input value={newRoleName} onChange={(e) => setNewRoleName(e.detail.value || "")} />
+        </FormField>
+        <IamPolicyEditor label="Trust Policy" value={policyDoc} onChange={setPolicyDoc} />
+      </Modal>
+
+      {/* Create Policy Modal */}
+      <Modal
+        visible={createPolicyModal}
+        onDismiss={() => setCreatePolicyModal(false)}
+        header="Create IAM Policy"
+        footer={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={() => setCreatePolicyModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={createPolicy} disabled={!newPolicyName.trim()}>
+              Create
+            </Button>
+          </SpaceBetween>
+        }
+      >
+        <FormField label="Policy Name">
+          <Input value={newPolicyName} onChange={(e) => setNewPolicyName(e.detail.value || "")} />
+        </FormField>
+        <IamPolicyEditor label="Policy Document (JSON)" value={policyDoc} onChange={setPolicyDoc} />
+      </Modal>
+
+      {/* Create Group Modal */}
+      <Modal
+        visible={createGroupModal}
+        onDismiss={() => setCreateGroupModal(false)}
+        header="Create IAM Group"
+        footer={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={() => setCreateGroupModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={createGroup}>
+              Create
+            </Button>
+          </SpaceBetween>
+        }
+      >
+        <FormField label="Group Name">
+          <Input value={newGroupName} onChange={(e) => setNewGroupName(e.detail.value || "")} />
+        </FormField>
+      </Modal>
+
+      {/* Attach Policy Modal */}
+      <Modal
+        visible={attachPolicyModal}
+        onDismiss={() => setAttachPolicyModal(false)}
+        header="Attach Policy"
+        footer={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={() => setAttachPolicyModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={attachPolicy}>
+              Attach
+            </Button>
+          </SpaceBetween>
+        }
+      >
+        <FormField label="Policy ARN">
+          <Select
+            selectedOption={policyArn ? { label: policyArn, value: policyArn } : null}
+            options={policyOptions}
+            onChange={({ detail }) => setPolicyArn(detail.selectedOption?.value || "")}
+            placeholder="Select a policy"
+          />
+        </FormField>
+      </Modal>
+
+      {/* Add User to Group Modal */}
+      <Modal
+        visible={addUserToGroupModal}
+        onDismiss={() => setAddUserToGroupModal(false)}
+        header="Add User to Group"
+        footer={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button onClick={() => setAddUserToGroupModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={addUserToGroup}>
+              Add
+            </Button>
+          </SpaceBetween>
+        }
+      >
+        <FormField label="Select User">
+          <Select
+            selectedOption={
+              addUserToGroupSelect
+                ? { label: addUserToGroupSelect, value: addUserToGroupSelect }
+                : null
+            }
+            options={data.users.map((u: any) => ({ label: u.UserName, value: u.UserName }))}
+            onChange={({ detail }) => setAddUserToGroupSelect(detail.selectedOption?.value || "")}
+            placeholder="Select a user"
+          />
+        </FormField>
+      </Modal>
+
+      {/* Delete Confirmation Modals */}
+      {deleteConfirm && (
+        <ConfirmModal
+          visible={true}
+          resourceName={deleteConfirm.name}
+          resourceType={deleteConfirm.type}
+          onConfirm={executeDelete}
+          onDismiss={() => setDeleteConfirm(null)}
         />
-
-        {/* Create User Modal */}
-        <Modal
-          visible={createUserModal}
-          onDismiss={() => setCreateUserModal(false)}
-          header="Create IAM User"
-          footer={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreateUserModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createUser}>
-                Create
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          <FormField label="User Name">
-            <Input value={newUserName} onChange={(e) => setNewUserName(e.detail.value || "")} />
-          </FormField>
-        </Modal>
-
-        {/* Create Role Modal */}
-        <Modal
-          visible={createRoleModal}
-          onDismiss={() => setCreateRoleModal(false)}
-          header="Create IAM Role"
-          footer={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreateRoleModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createRole}>
-                Create
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          <FormField label="Role Name">
-            <Input value={newRoleName} onChange={(e) => setNewRoleName(e.detail.value || "")} />
-          </FormField>
-          <IamPolicyEditor label="Trust Policy" value={policyDoc} onChange={setPolicyDoc} />
-        </Modal>
-
-        {/* Create Policy Modal */}
-        <Modal
-          visible={createPolicyModal}
-          onDismiss={() => setCreatePolicyModal(false)}
-          header="Create IAM Policy"
-          footer={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreatePolicyModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createPolicy} disabled={!newPolicyName.trim()}>
-                Create
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          <FormField label="Policy Name">
-            <Input value={newPolicyName} onChange={(e) => setNewPolicyName(e.detail.value || "")} />
-          </FormField>
-          <IamPolicyEditor
-            label="Policy Document (JSON)"
-            value={policyDoc}
-            onChange={setPolicyDoc}
-          />
-        </Modal>
-
-        {/* Create Group Modal */}
-        <Modal
-          visible={createGroupModal}
-          onDismiss={() => setCreateGroupModal(false)}
-          header="Create IAM Group"
-          footer={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setCreateGroupModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createGroup}>
-                Create
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          <FormField label="Group Name">
-            <Input value={newGroupName} onChange={(e) => setNewGroupName(e.detail.value || "")} />
-          </FormField>
-        </Modal>
-
-        {/* Attach Policy Modal */}
-        <Modal
-          visible={attachPolicyModal}
-          onDismiss={() => setAttachPolicyModal(false)}
-          header="Attach Policy"
-          footer={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setAttachPolicyModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={attachPolicy}>
-                Attach
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          <FormField label="Policy ARN">
-            <Select
-              selectedOption={policyArn ? { label: policyArn, value: policyArn } : null}
-              options={policyOptions}
-              onChange={({ detail }) => setPolicyArn(detail.selectedOption?.value || "")}
-              placeholder="Select a policy"
-            />
-          </FormField>
-        </Modal>
-
-        {/* Add User to Group Modal */}
-        <Modal
-          visible={addUserToGroupModal}
-          onDismiss={() => setAddUserToGroupModal(false)}
-          header="Add User to Group"
-          footer={
-            <SpaceBetween direction="horizontal" size="xs">
-              <Button onClick={() => setAddUserToGroupModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={addUserToGroup}>
-                Add
-              </Button>
-            </SpaceBetween>
-          }
-        >
-          <FormField label="Select User">
-            <Select
-              selectedOption={
-                addUserToGroupSelect
-                  ? { label: addUserToGroupSelect, value: addUserToGroupSelect }
-                  : null
-              }
-              options={data.users.map((u: any) => ({ label: u.UserName, value: u.UserName }))}
-              onChange={({ detail }) => setAddUserToGroupSelect(detail.selectedOption?.value || "")}
-              placeholder="Select a user"
-            />
-          </FormField>
-        </Modal>
-
-        {/* Delete Confirmation Modals */}
-        {deleteConfirm && (
-          <ConfirmModal
-            visible={true}
-            resourceName={deleteConfirm.name}
-            resourceType={deleteConfirm.type}
-            onConfirm={executeDelete}
-            onDismiss={() => setDeleteConfirm(null)}
-          />
-        )}
+      )}
       <CrossServiceLinks links={CROSS_SERVICE_LINKS["/iam"] || []} />
     </div>
   );

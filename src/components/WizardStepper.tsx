@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import {
-  Button,
-  FormField,
-  Input,
-  Select,
-  Alert,
-  SpaceBetween,
-  Box,
-} from "@cloudscape-design/components";
+import { Button, Alert, SpaceBetween, Box } from "@cloudscape-design/components";
 
 interface WizardStep {
   id: string;
@@ -63,25 +55,22 @@ export function WizardStepper({ steps, initialData = {}, onComplete, onCancel }:
     } else {
       setCurrentStepIndex((i) => i + 1);
     }
-  }, [currentStep, isLastStep, formData, onComplete]);
+  }, [currentStep, isLastStep, formData, onComplete, validateStep]);
 
   const handleBack = useCallback(() => {
     setCurrentStepIndex((i) => i - 1);
   }, []);
 
-  const handleChange = useCallback(
-    (key: string, value: unknown) => {
-      setFormData((prev) => ({ ...prev, [key]: value }));
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-    },
-    [],
-  );
+  const handleChange = useCallback((key: string, value: unknown) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
 
-  const progress = ((currentStepIndex) / (steps.length - 1)) * 100;
+  const progress = (currentStepIndex / (steps.length - 1)) * 100;
 
   return (
     <SpaceBetween size="l" direction="vertical">
@@ -137,7 +126,17 @@ export function WizardStepper({ steps, initialData = {}, onComplete, onCancel }:
 
       {/* Inline validation error */}
       {errors[currentStep.id] && (
-        <Alert type="error" dismissible onDismiss={() => setErrors((p) => { const n = { ...p }; delete n[currentStep.id]; return n; })}>
+        <Alert
+          type="error"
+          dismissible
+          onDismiss={() =>
+            setErrors((p) => {
+              const n = { ...p };
+              delete n[currentStep.id];
+              return n;
+            })
+          }
+        >
           {errors[currentStep.id]}
         </Alert>
       )}

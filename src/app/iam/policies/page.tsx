@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Header from "@cloudscape-design/components/header";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -12,7 +12,6 @@ import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
-import Tabs from "@cloudscape-design/components/tabs";
 import IamPolicyEditor from "@/components/IamPolicyEditor";
 import Alert from "@cloudscape-design/components/alert";
 
@@ -70,7 +69,9 @@ export default function IAMPoliciesPage() {
   }, []);
 
   useEffect(() => {
-    fetchPolicies();
+    queueMicrotask(() => {
+      fetchPolicies();
+    });
   }, [fetchPolicies]);
 
   const createPolicy = async () => {
@@ -218,7 +219,9 @@ export default function IAMPoliciesPage() {
             <FormField label="Policy Name">
               <Input
                 value={policyName}
-                onChange={(e: { detail?: { value?: string } }) => setPolicyName((e.detail?.value || ""))}
+                onChange={(e: { detail?: { value?: string } }) =>
+                  setPolicyName(e.detail?.value || "")
+                }
               />
             </FormField>
             <IamPolicyEditor

@@ -1,6 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useState } from "react";
+import { useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -10,14 +10,15 @@ import Alert from "@cloudscape-design/components/alert";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 export default function ECSServicePage() {
   const [clusterInput, setClusterInput] = useState("");
 
-  const router = useRouter();  const [cluster, setCluster] = useState<string | null>(null);
+  const router = useRouter();
+  const [cluster, setCluster] = useState<string | null>(null);
   const [serviceArns, setServiceArns] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,10 +51,13 @@ export default function ECSServicePage() {
           serviceName="ECS — Services"
           serviceIcon={SERVICE_ICONS["/ecs-service"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/ecs-service/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/ecs-service/create")}
+          >
             Create service
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" header="Error">

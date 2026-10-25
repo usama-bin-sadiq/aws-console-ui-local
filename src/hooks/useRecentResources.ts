@@ -18,7 +18,9 @@ export function useRecentResources() {
     const saved = localStorage.getItem("aws_recent_resources");
     if (saved) {
       try {
-        setRecentResources(JSON.parse(saved));
+        queueMicrotask(() => {
+          setRecentResources(JSON.parse(saved));
+        });
       } catch (e) {
         console.error("Failed to parse recent resources", e);
       }

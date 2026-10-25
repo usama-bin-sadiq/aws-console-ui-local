@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from "react";
 import { ServiceLayout } from "@/components/service-layout/ServiceLayout";
 import { ResourceTable } from "@/features/resource-table";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { CopyableText } from "@/components/ui/CopyableText";
 import { apiFetch } from "@/lib/api-client";
 import type { TableProps } from "@cloudscape-design/components/table";
 
@@ -80,7 +79,9 @@ export default function ServiceQuotasPage() {
   }, []);
 
   useEffect(() => {
-    void fetchItems();
+    queueMicrotask(() => {
+      void fetchItems();
+    });
   }, [fetchItems]);
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -68,7 +68,9 @@ export default function SSMParameterStorePage() {
   }, []);
 
   useEffect(() => {
-    fetchParameters();
+    queueMicrotask(() => {
+      fetchParameters();
+    });
   }, [fetchParameters]);
 
   const createParameter = async () => {
@@ -117,7 +119,13 @@ export default function SSMParameterStorePage() {
               type="button"
               className="aws-service-page__create"
               onClick={() => {
-                setNewParam({ name: "", type: "String", value: "", description: "", tier: "Standard" });
+                setNewParam({
+                  name: "",
+                  type: "String",
+                  value: "",
+                  description: "",
+                  tier: "Standard",
+                });
                 setCreateModal(true);
               }}
             >
@@ -216,7 +224,12 @@ export default function SSMParameterStorePage() {
             <Select
               selectedOption={{ label: newParam.type, value: newParam.type }}
               options={PARAMETER_TYPES.map((t) => ({ label: t, value: t }))}
-              onChange={(e) => setNewParam({ ...newParam, type: e.detail.selectedOption.value as "String" | "StringList" | "SecureString" })}
+              onChange={(e) =>
+                setNewParam({
+                  ...newParam,
+                  type: e.detail.selectedOption.value as "String" | "StringList" | "SecureString",
+                })
+              }
             />
           </FormField>
           <FormField label="Value">

@@ -3,7 +3,8 @@
  * Matches AWS console homepage: service cards, health indicators, adapter status, resource counts.
  */
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import Header from "@cloudscape-design/components/header";
 import Input from "@cloudscape-design/components/input";
 import Cards, { CardsProps } from "@cloudscape-design/components/cards";
@@ -208,7 +209,14 @@ export default function Dashboard() {
                     header: "Service",
                     content: (item: any) =>
                       item.icon ? (
-                        <img src={item.icon} alt="" style={{ width: 24, height: 24 }} />
+                        <Image
+                          src={item.icon}
+                          alt=""
+                          width={24}
+                          height={24}
+                          unoptimized
+                          style={{ width: 24, height: 24 }}
+                        />
                       ) : null,
                   },
                   {

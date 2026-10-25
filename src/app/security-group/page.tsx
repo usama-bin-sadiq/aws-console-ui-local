@@ -1,6 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -14,9 +14,9 @@ import Tabs from "@cloudscape-design/components/tabs";
 import Select from "@cloudscape-design/components/select";
 import Header from "@cloudscape-design/components/header";
 import TruncatedText from "@/components/TruncatedText";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface SecurityGroupRule {
   IpProtocol?: string;
@@ -39,7 +39,8 @@ export default function SecurityGroupPage() {
   const [groups, setGroups] = useState<SecurityGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("");
@@ -85,8 +86,12 @@ export default function SecurityGroupPage() {
   }
 
   useEffect(() => {
-    load();
-    loadVpcs();
+    queueMicrotask(() => {
+      load();
+    });
+    queueMicrotask(() => {
+      loadVpcs();
+    });
   }, []);
 
   async function handleCreate() {
@@ -209,16 +214,20 @@ export default function SecurityGroupPage() {
           serviceName="Refresh Delete setShowCreate(true)}> Create Securi"
           serviceIcon={SERVICE_ICONS["/security-group"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/security-group/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/security-group/create")}
+          >
             Create security group
-        </button>
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={load} iconName="refresh" formAction="none">
-              Refresh
-            </Button>
-          </SpaceBetween>
-        }
+          </button>
+          actions={
+            <SpaceBetween direction="horizontal" size="xs">
+              <Button onClick={load} iconName="refresh" formAction="none">
+                Refresh
+              </Button>
+            </SpaceBetween>
+          }
         />
 
         {error && (

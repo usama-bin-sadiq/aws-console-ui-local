@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
-import Box from "@cloudscape-design/components/box";
 import Alert from "@cloudscape-design/components/alert";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
@@ -85,15 +84,24 @@ export default function CreateECSClusterPage() {
             </FormField>
             <FormField label="Capacity Providers">
               <Select
-                selectedOption={{ label: form.capacityProviders.join(", ") || "Select", value: form.capacityProviders.join(",") }}
+                selectedOption={{
+                  label: form.capacityProviders.join(", ") || "Select",
+                  value: form.capacityProviders.join(","),
+                }}
                 options={[
                   { label: "FARGATE", value: "FARGATE" },
                   { label: "FARGATE_SPOT", value: "FARGATE_SPOT" },
                   { label: "EC2", value: "EC2" },
                   { label: "EXTERNAL", value: "EXTERNAL" },
                 ]}
-                onChange={(e) => setForm({ ...form, capacityProviders: e.detail.selectedOption.value ? [e.detail.selectedOption.value] : [] })}
-                
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    capacityProviders: e.detail.selectedOption.value
+                      ? [e.detail.selectedOption.value]
+                      : [],
+                  })
+                }
               />
             </FormField>
           </SpaceBetween>

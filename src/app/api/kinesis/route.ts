@@ -5,7 +5,6 @@ import {
   DeleteStreamCommand,
   PutRecordCommand,
   DescribeStreamCommand,
-  UpdateShardCountCommand,
   IncreaseStreamRetentionPeriodCommand,
 } from "@aws-sdk/client-kinesis";
 import { KinesisClient } from "@aws-sdk/client-kinesis";

@@ -5,11 +5,7 @@
 
 import { AuthCredentials } from "@/types/adapter";
 import { ADAPTER_CONFIG } from "@/config/adapter-config";
-import {
-  ADAPTER_DEFAULT_ACCESS_KEY,
-  ADAPTER_DEFAULT_SECRET_KEY,
-  ADAPTER_DEFAULT_REGION,
-} from "@/constants/adapter-constants";
+import { ADAPTER_DEFAULT_REGION } from "@/constants/adapter-constants";
 
 export function injectAuth(adapterMode?: "localstack" | "ministack" | "real"): AuthCredentials {
   const mode = adapterMode || ADAPTER_CONFIG.adapterMode;

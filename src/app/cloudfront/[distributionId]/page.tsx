@@ -49,7 +49,9 @@ export default function CloudFrontDistributionDetailPage({
       const res = await apiFetch("/api/cloudfront");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const found = (data.DistributionList?.Items || data.Distributions || []).find((d: any) => d.Id === distributionId);
+      const found = (data.DistributionList?.Items || data.Distributions || []).find(
+        (d: any) => d.Id === distributionId,
+      );
       if (!found) throw new Error(`Distribution "${distributionId}" not found`);
       setDistribution(found);
     } catch (err: unknown) {
@@ -60,7 +62,9 @@ export default function CloudFrontDistributionDetailPage({
   }, [distributionId]);
 
   useEffect(() => {
-    fetchDistribution();
+    queueMicrotask(() => {
+      fetchDistribution();
+    });
   }, [fetchDistribution]);
 
   if (loading) {
@@ -68,9 +72,7 @@ export default function CloudFrontDistributionDetailPage({
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
           <Header variant="h2">Distribution {distributionId || "Loading..."}</Header>
-          <Box textAlign="center">
-            Loading distribution details...
-          </Box>
+          <Box textAlign="center">Loading distribution details...</Box>
         </SpaceBetween>
       </div>
     );
@@ -117,32 +119,44 @@ export default function CloudFrontDistributionDetailPage({
 
         <Container header={<Header variant="h2">Details</Header>}>
           <SpaceBetween size="l">
-            <Box padding="m" >
+            <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Distribution ID</Box>
+                <Box variant="small" color="text-label">
+                  Distribution ID
+                </Box>
                 <Box>{distribution.Id}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Domain Name</Box>
+                <Box variant="small" color="text-label">
+                  Domain Name
+                </Box>
                 <Box>{distribution.DomainName}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">State</Box>
-                <StatusIndicator type={distribution.Status === "Deployed" ? "success" : "warning"}>{distribution.Status}</StatusIndicator>
+                <Box variant="small" color="text-label">
+                  State
+                </Box>
+                <StatusIndicator type={distribution.Status === "Deployed" ? "success" : "warning"}>
+                  {distribution.Status}
+                </StatusIndicator>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Enabled</Box>
+                <Box variant="small" color="text-label">
+                  Enabled
+                </Box>
                 <Box>{distribution.Enabled ? "Yes" : "No"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Price Class</Box>
+                <Box variant="small" color="text-label">
+                  Price Class
+                </Box>
                 <Box>{distribution.PriceClass}</Box>
               </SpaceBetween>
             </Box>
           </SpaceBetween>
         </Container>
 
-        <Container header={<Header variant="h2">Origins</Header>}>
+        <Container className="aws-table-card" header={<Header variant="h2">Origins</Header>}>
           <SpaceBetween size="m">
             <Table
               items={distribution.Origins?.Items || []}

@@ -2,14 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Header from "@cloudscape-design/components/header";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
 import { SERVICE_ICONS } from "@/constants/service-icons";
 import { apiFetch } from "@/lib/api-client";
@@ -23,11 +21,7 @@ interface Secret {
   RotationEnabled?: boolean;
 }
 
-export default function SecretDetailPage({
-  params,
-}: {
-  params: Promise<{ secretName: string }>;
-}) {
+export default function SecretDetailPage({ params }: { params: Promise<{ secretName: string }> }) {
   const router = useRouter();
   const [secret, setSecret] = useState<Secret | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +69,9 @@ export default function SecretDetailPage({
   }, [secretName]);
 
   useEffect(() => {
-    fetchSecret();
+    queueMicrotask(() => {
+      fetchSecret();
+    });
   }, [fetchSecret]);
 
   if (loading) {
@@ -84,7 +80,11 @@ export default function SecretDetailPage({
         <SpaceBetween size="l">
           <Header variant="h2">Secret {secretName || "Loading..."}</Header>
           <Box textAlign="center">
-            <Box nativeAttributes={{ style: { fontSize: "18px", color: "#545b64", marginBottom: "12px" } }}>
+            <Box
+              nativeAttributes={{
+                style: { fontSize: "18px", color: "#545b64", marginBottom: "12px" },
+              }}
+            >
               Loading secret details...
             </Box>
           </Box>
@@ -136,23 +136,33 @@ export default function SecretDetailPage({
           <SpaceBetween size="l">
             <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Name</Box>
+                <Box variant="small" color="text-label">
+                  Name
+                </Box>
                 <Box>{secret.Name}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">ARN</Box>
+                <Box variant="small" color="text-label">
+                  ARN
+                </Box>
                 <Box>{secret.ARN}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Description</Box>
+                <Box variant="small" color="text-label">
+                  Description
+                </Box>
                 <Box>{secret.Description || "—"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Rotation Enabled</Box>
+                <Box variant="small" color="text-label">
+                  Rotation Enabled
+                </Box>
                 <Box>{secret.RotationEnabled ? "Yes" : "No"}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Last Changed Date</Box>
+                <Box variant="small" color="text-label">
+                  Last Changed Date
+                </Box>
                 <Box>{secret.LastChangedDate || "—"}</Box>
               </SpaceBetween>
             </Box>
@@ -162,7 +172,9 @@ export default function SecretDetailPage({
         <Container header={<Header variant="h2">Secret Value</Header>}>
           <SpaceBetween size="m">
             <SpaceBetween direction="vertical" size="xs">
-              <Box variant="small" color="text-label">Secret Value</Box>
+              <Box variant="small" color="text-label">
+                Secret Value
+              </Box>
               {showValue ? (
                 <Box padding="s">
                   <Box variant="small">{secretValue}</Box>

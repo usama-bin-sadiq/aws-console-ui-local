@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
-import Box from "@cloudscape-design/components/box";
 import Alert from "@cloudscape-design/components/alert";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
@@ -104,7 +103,9 @@ export default function CreateNotebookPage() {
                   { label: "ml.m5.large", value: "ml.m5.large" },
                   { label: "ml.m5.xlarge", value: "ml.m5.xlarge" },
                 ]}
-                onChange={(e) => setForm({ ...form, instanceType: e.detail.selectedOption.value || "" })}
+                onChange={(e) =>
+                  setForm({ ...form, instanceType: e.detail.selectedOption.value || "" })
+                }
               />
             </FormField>
             <FormField label="Role ARN">

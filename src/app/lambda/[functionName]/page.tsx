@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Tabs from "@cloudscape-design/components/tabs";
@@ -317,7 +317,10 @@ export default function LambdaFunctionDetailPage({ params }: { params: { functio
   }, [functionName]);
 
   useEffect(() => {
-    if (functionName) fetchDetails();
+    if (functionName)
+      queueMicrotask(() => {
+        fetchDetails();
+      });
   }, [functionName, fetchDetails]);
 
   // Row-action events for the triggers table

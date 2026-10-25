@@ -15,7 +15,6 @@ import {
 } from "@/constants/navigation";
 import { getServiceNavigation } from "@/constants/service-navigation";
 import {
-  AdapterMode,
   AdapterStatus,
   EmulatorHealthStatus,
   findServiceCompatibility,
@@ -44,11 +43,7 @@ import { useAuth } from "@/context/AuthContext";
 // the stylesheet switches on are the same two numbers; see
 // src/components/layouts/shell-responsive.ts.
 import "@/components/layouts/shell-responsive.module.css";
-import {
-  SHELL_COMPACT_MAX_WIDTH,
-  SHELL_PHONE_MAX_WIDTH,
-  isShellPhoneWidth,
-} from "@/components/layouts/shell-responsive";
+import { SHELL_COMPACT_MAX_WIDTH, isShellPhoneWidth } from "@/components/layouts/shell-responsive";
 import type { Terminal } from "xterm";
 import type { FitAddon } from "@xterm/addon-fit";
 
@@ -195,7 +190,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   // Any route change or Escape closes the open header panel.
   useEffect(() => {
-    closeOverlay();
+    queueMicrotask(() => {
+      closeOverlay();
+    });
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -251,7 +248,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   // Mount tracking for hydration fix
   useEffect(() => {
-    setMounted(true);
+    queueMicrotask(() => {
+      setMounted(true);
+    });
     void Promise.resolve(useSettingsStore.persist.rehydrate()).then(() => {
       try {
         const legacy = JSON.parse(localStorage.getItem("aws_favorites") || "[]");
@@ -488,7 +487,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedTerminalState = localStorage.getItem("terminal_open");
     if (savedTerminalState === "true") {
-      setTerminalOpen(true);
+      queueMicrotask(() => {
+        setTerminalOpen(true);
+      });
     }
   }, []);
 

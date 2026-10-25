@@ -151,7 +151,9 @@ export function LambdaFunctionCreateForm({ onCancel }: LambdaFunctionCreateFormP
   }, [roleOption]);
 
   React.useEffect(() => {
-    loadRoles();
+    queueMicrotask(() => {
+      loadRoles();
+    });
   }, [loadRoles]);
 
   const validateForm = useCallback((): boolean => {

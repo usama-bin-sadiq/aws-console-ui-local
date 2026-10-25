@@ -93,7 +93,9 @@ export default function S3MetricsPage() {
   }, []);
 
   useEffect(() => {
-    fetchMetrics();
+    queueMicrotask(() => {
+      fetchMetrics();
+    });
   }, [fetchMetrics]);
 
   const publishedNames = new Set(metrics.map((metric) => metric.MetricName));

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Header,
@@ -64,7 +64,9 @@ export default function SettingsPage() {
 
   // Fetch health on mount
   useEffect(() => {
-    fetchHealth();
+    queueMicrotask(() => {
+      fetchHealth();
+    });
   }, [provider]);
 
   const handleProviderChange = (newProvider: "localstack" | "ministack" | "localemu") => {

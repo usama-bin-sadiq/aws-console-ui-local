@@ -153,14 +153,18 @@ function ResourceTableInner<T extends object>({
 
   useEffect(() => {
     const saved = loadPrefs(serviceKey, allColumnIds);
-    setInternalPageSize(saved.pageSize);
-    setInternalVisibleColumns(
-      saved.visibleColumns.length > 0 ? saved.visibleColumns : allColumnIds,
-    );
-    setPrefsLoaded(true);
-    // allColumnIds is derived from columnDefinitions; serviceKey never changes
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [serviceKey]);
+    queueMicrotask(() => {
+      setInternalPageSize(saved.pageSize);
+    });
+    queueMicrotask(() => {
+      setInternalVisibleColumns(
+        saved.visibleColumns.length > 0 ? saved.visibleColumns : allColumnIds,
+      );
+    });
+    queueMicrotask(() => {
+      setPrefsLoaded(true);
+    });
+  }, [serviceKey, allColumnIds]);
 
   const isPrefsControlled = externalPreferences !== undefined;
 
@@ -215,7 +219,9 @@ function ResourceTableInner<T extends object>({
   // ── Internal pagination state ──────────────────────────────────────────────
   // Reset to page 1 on filter change
   useEffect(() => {
-    setInternalCurrentPage(1);
+    queueMicrotask(() => {
+      setInternalCurrentPage(1);
+    });
   }, [filterText]);
 
   // ── Client-side filtering ──────────────────────────────────────────────────

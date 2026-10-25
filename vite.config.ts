@@ -2,8 +2,7 @@ import { defineConfig } from "vite-plus";
 
 export default defineConfig({
   staged: {
-    "*": "vp check --fix",
-    "**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": "vp run lint",
+    "**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": "pnpm exec eslint",
   },
   test: {
     // Vitest v4 compatibility: preserve mock call history.

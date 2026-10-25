@@ -1,6 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -11,9 +11,9 @@ import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Textarea from "@cloudscape-design/components/textarea";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface Pipeline {
   name: string;
@@ -32,7 +32,8 @@ export default function CodePipelinePage() {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
   const [createModal, setCreateModal] = useState(false);
   const [pipelineConfig, setPipelineConfig] = useState(
@@ -71,7 +72,9 @@ export default function CodePipelinePage() {
   };
 
   useEffect(() => {
-    fetchPipelines();
+    queueMicrotask(() => {
+      fetchPipelines();
+    });
   }, []);
 
   const createPipeline = async () => {
@@ -130,10 +133,13 @@ export default function CodePipelinePage() {
           serviceName="CodePipeline"
           serviceIcon={SERVICE_ICONS["/codepipeline"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/codepipeline/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/codepipeline/create")}
+          >
             Create pipeline
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" header="Error">

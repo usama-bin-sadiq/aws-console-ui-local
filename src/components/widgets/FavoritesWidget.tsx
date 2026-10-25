@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Widget from "./Widget";
 import Cards from "@cloudscape-design/components/cards";
@@ -8,9 +8,7 @@ import Box from "@cloudscape-design/components/box";
 import Link from "@cloudscape-design/components/link";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Button from "@cloudscape-design/components/button";
-import Header from "@cloudscape-design/components/header";
 import { Favorite } from "@/lib/db";
-import { SERVICE_ICONS } from "@/constants/service-icons";
 import { ResourceIcon } from "@/components/ui/ResourceIcon";
 
 export default function FavoritesWidget({

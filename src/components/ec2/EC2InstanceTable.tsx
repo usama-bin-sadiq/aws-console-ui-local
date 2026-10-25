@@ -5,7 +5,6 @@ import Header from "@cloudscape-design/components/header";
 
 import React, { useState } from "react";
 import Table, { TableProps } from "@cloudscape-design/components/table";
-import PropertyFilter from "@cloudscape-design/components/property-filter";
 import Pagination from "@cloudscape-design/components/pagination";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Input from "@cloudscape-design/components/input";

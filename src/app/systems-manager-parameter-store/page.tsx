@@ -1,20 +1,19 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Select from "@cloudscape-design/components/select";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface SSMParameter {
   Name: string;
@@ -32,7 +31,8 @@ export default function SSMParameterStorePage() {
   const [parameters, setParameters] = useState<SSMParameter[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
   const [createModal, setCreateModal] = useState(false);
   const [paramName, setParamName] = useState("");
@@ -55,7 +55,9 @@ export default function SSMParameterStorePage() {
   };
 
   useEffect(() => {
-    fetchParameters();
+    queueMicrotask(() => {
+      fetchParameters();
+    });
   }, []);
 
   const putParameter = async () => {
@@ -91,10 +93,13 @@ export default function SSMParameterStorePage() {
           serviceName="Systems Manager — Parameter Store"
           serviceIcon={SERVICE_ICONS["/systems-manager-parameter-store"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/systems-manager-parameter-store/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/systems-manager-parameter-store/create")}
+          >
             Create parameter
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" header="Error">

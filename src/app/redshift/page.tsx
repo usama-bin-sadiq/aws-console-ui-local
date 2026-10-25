@@ -1,20 +1,19 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Modal from "@cloudscape-design/components/modal";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface RedshiftCluster {
   ClusterIdentifier: string;
@@ -27,7 +26,8 @@ export default function RedshiftPage() {
   const [clusters, setClusters] = useState<RedshiftCluster[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState("");
+  const router = useRouter();
+  const [error, setError] = useState("");
   const [createModal, setCreateModal] = useState(false);
   const [identifier, setIdentifier] = useState("");
   const [nodeType, setNodeType] = useState("dc2.large");
@@ -50,7 +50,9 @@ export default function RedshiftPage() {
   };
 
   useEffect(() => {
-    fetchClusters();
+    queueMicrotask(() => {
+      fetchClusters();
+    });
   }, []);
 
   const createCluster = async () => {
@@ -103,10 +105,13 @@ export default function RedshiftPage() {
           serviceName="Amazon Redshift"
           serviceIcon={SERVICE_ICONS["/redshift"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/redshift/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/redshift/create")}
+          >
             Create cluster
-        </button>
-
+          </button>
         />
 
         {error && (

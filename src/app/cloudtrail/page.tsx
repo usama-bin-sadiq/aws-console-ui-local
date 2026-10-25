@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -16,9 +16,9 @@ import Tabs from "@cloudscape-design/components/tabs";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Header from "@cloudscape-design/components/header";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface Trail {
   Name: string;
@@ -42,7 +42,8 @@ export default function CloudTrailPage() {
   const [trails, setTrails] = useState<Trail[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState("");
+  const router = useRouter();
+  const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("trails");
   const [createModal, setCreateModal] = useState(false);
   const [trailName, setTrailName] = useState("");
@@ -90,12 +91,16 @@ export default function CloudTrailPage() {
   };
 
   useEffect(() => {
-    fetchTrails();
+    queueMicrotask(() => {
+      fetchTrails();
+    });
   }, []);
 
   useEffect(() => {
     if (activeTab === "events") {
-      fetchEvents();
+      queueMicrotask(() => {
+        fetchEvents();
+      });
     }
   }, [activeTab]);
 
@@ -185,10 +190,13 @@ export default function CloudTrailPage() {
           serviceName="AWS CloudTrail"
           serviceIcon={SERVICE_ICONS["/cloudtrail"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/cloudtrail/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/cloudtrail/create")}
+          >
             Create trail
-        </button>
-
+          </button>
         />
 
         {error && (

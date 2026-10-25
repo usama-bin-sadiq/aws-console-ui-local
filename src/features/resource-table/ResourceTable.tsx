@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useCallback, useState, useEffect } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import Table from "@cloudscape-design/components/table";
 import type { TableProps } from "@cloudscape-design/components/table";
 import TextFilter from "@cloudscape-design/components/text-filter";
@@ -53,7 +53,9 @@ export function ResourceTable<T extends Record<string, unknown> = Record<string,
 
   // Reset to page 1 on filter change
   useEffect(() => {
-    setCurrentPage(1);
+    queueMicrotask(() => {
+      setCurrentPage(1);
+    });
   }, [filterText]);
 
   // ── Client-side filtering ───────────────────────────────────

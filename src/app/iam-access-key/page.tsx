@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useState } from "react";
+import { useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import Input from "@cloudscape-design/components/input";
@@ -11,9 +11,9 @@ import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
 import Alert from "@cloudscape-design/components/alert";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface AccessKey {
   AccessKeyId: string;
@@ -25,7 +25,8 @@ interface AccessKey {
 export default function IAMAccessKeyPage() {
   const [userName, setUserName] = useState("");
 
-  const router = useRouter();  const [loadedUser, setLoadedUser] = useState("");
+  const router = useRouter();
+  const [loadedUser, setLoadedUser] = useState("");
   const [accessKeys, setAccessKeys] = useState<AccessKey[]>([]);
   const [loading, setLoading] = useState(false);
   const [newKeyInfo, setNewKeyInfo] = useState<{
@@ -88,10 +89,13 @@ export default function IAMAccessKeyPage() {
           serviceName="IAM Access Keys"
           serviceIcon={SERVICE_ICONS["/iam-access-key"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/iam-access-key/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/iam-access-key/create")}
+          >
             Create access key
-        </button>
-
+          </button>
         />
 
         <Container header={<Header variant="h2">Load Access Keys by User</Header>}>

@@ -66,9 +66,11 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     await applicationAutoscalingClient.send(
       new DeregisterScalableTargetCommand({
-        ServiceNamespace: (searchParams.get("namespace") || "ecs") as import("@aws-sdk/client-application-auto-scaling").ServiceNamespace,
+        ServiceNamespace: (searchParams.get("namespace") ||
+          "ecs") as import("@aws-sdk/client-application-auto-scaling").ServiceNamespace,
         ResourceId: searchParams.get("resourceId")!,
-        ScalableDimension: (searchParams.get("dimension") || "ecs:service:DesiredCount") as import("@aws-sdk/client-application-auto-scaling").ScalableDimension,
+        ScalableDimension: (searchParams.get("dimension") ||
+          "ecs:service:DesiredCount") as import("@aws-sdk/client-application-auto-scaling").ScalableDimension,
       }),
     );
     return NextResponse.json({ success: true });

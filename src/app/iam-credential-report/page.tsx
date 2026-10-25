@@ -1,20 +1,21 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useState } from "react";
+import { useState } from "react";
 import Container from "@cloudscape-design/components/container";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
 import Button from "@cloudscape-design/components/button";
 import Alert from "@cloudscape-design/components/alert";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 export default function IAMCredentialReportPage() {
   const [loading, setLoading] = useState(false);
 
-  const router = useRouter();  const [report, setReport] = useState<string | null>(null);
+  const router = useRouter();
+  const [report, setReport] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const generateReport = async () => {
@@ -39,10 +40,13 @@ export default function IAMCredentialReportPage() {
           serviceName="IAM Credential Report"
           serviceIcon={SERVICE_ICONS["/iam-credential-report"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/iam-credential-report/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/iam-credential-report/create")}
+          >
             Create report
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" header="Error">

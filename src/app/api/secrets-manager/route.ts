@@ -4,7 +4,6 @@ import {
   CreateSecretCommand,
   DeleteSecretCommand,
   GetSecretValueCommand,
-  DescribeSecretCommand,
   PutSecretValueCommand,
   RotateSecretCommand,
 } from "@aws-sdk/client-secrets-manager";

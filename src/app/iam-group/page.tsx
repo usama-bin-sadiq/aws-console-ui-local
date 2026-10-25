@@ -1,7 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import Modal from "@cloudscape-design/components/modal";
@@ -12,12 +12,10 @@ import Container from "@cloudscape-design/components/container";
 import FormField from "@cloudscape-design/components/form-field";
 import Tabs from "@cloudscape-design/components/tabs";
 import Select from "@cloudscape-design/components/select";
-import PropertyFilter from "@cloudscape-design/components/property-filter";
-import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface IamGroupDetail {
   GroupName: string;
@@ -44,7 +42,8 @@ export default function IAMGroupPage() {
   const [groups, setGroups] = useState<IamGroupDetail[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [createModal, setCreateModal] = useState(false);
+  const router = useRouter();
+  const [createModal, setCreateModal] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [groupDetail, setGroupDetail] = useState<IamGroupDetail | null>(null);
@@ -68,7 +67,9 @@ export default function IAMGroupPage() {
   }, []);
 
   useEffect(() => {
-    fetchGroups();
+    queueMicrotask(() => {
+      fetchGroups();
+    });
   }, [fetchGroups]);
 
   const fetchGroupDetail = useCallback(async (name: string) => {
@@ -114,8 +115,12 @@ export default function IAMGroupPage() {
   }, []);
 
   useEffect(() => {
-    fetchPolicies();
-    fetchUsers();
+    queueMicrotask(() => {
+      fetchPolicies();
+    });
+    queueMicrotask(() => {
+      fetchUsers();
+    });
   }, [fetchPolicies, fetchUsers]);
 
   const createGroup = async () => {
@@ -194,10 +199,13 @@ export default function IAMGroupPage() {
           serviceName="IAM Groups"
           serviceIcon={SERVICE_ICONS["/iam-group"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/iam-group/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/iam-group/create")}
+          >
             Create group
-        </button>
-
+          </button>
         />
         <Tabs
           tabs={[
@@ -368,7 +376,7 @@ export default function IAMGroupPage() {
             <Input
               value={groupName}
               onChange={(e: { detail?: { value?: string } }) => {
-                setGroupName((e.detail?.value || ""));
+                setGroupName(e.detail?.value || "");
                 setGroupNameError(null);
               }}
             />

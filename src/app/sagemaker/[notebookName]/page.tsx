@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
@@ -50,7 +49,10 @@ export default function SageMakerNotebookDetailPage({
       const res = await apiFetch("/api/sagemaker");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const found = (data.notebookInstances || []).find((n: any) => n.NotebookInstanceName === notebookName || n.NotebookInstanceArn === notebookName);
+      const found = (data.notebookInstances || []).find(
+        (n: any) =>
+          n.NotebookInstanceName === notebookName || n.NotebookInstanceArn === notebookName,
+      );
       if (!found) throw new Error(`Notebook "${notebookName}" not found`);
       setNotebook(found);
     } catch (err: unknown) {
@@ -61,7 +63,9 @@ export default function SageMakerNotebookDetailPage({
   }, [notebookName]);
 
   useEffect(() => {
-    fetchNotebook();
+    queueMicrotask(() => {
+      fetchNotebook();
+    });
   }, [fetchNotebook]);
 
   if (loading) {
@@ -69,9 +73,7 @@ export default function SageMakerNotebookDetailPage({
       <div style={{ padding: 0 }}>
         <SpaceBetween size="l">
           <Header variant="h2">Notebook {notebookName || "Loading..."}</Header>
-          <Box textAlign="center">
-            Loading notebook details...
-          </Box>
+          <Box textAlign="center">Loading notebook details...</Box>
         </SpaceBetween>
       </div>
     );
@@ -118,41 +120,63 @@ export default function SageMakerNotebookDetailPage({
 
         <Container header={<Header variant="h2">Details</Header>}>
           <SpaceBetween size="l">
-            <Box padding="m" >
+            <Box padding="m">
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Notebook Name</Box>
+                <Box variant="small" color="text-label">
+                  Notebook Name
+                </Box>
                 <Box>{notebook.NotebookInstanceName}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">ARN</Box>
+                <Box variant="small" color="text-label">
+                  ARN
+                </Box>
                 <Box>{notebook.NotebookInstanceArn}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Status</Box>
-                <StatusIndicator type={notebook.NotebookInstanceStatus === "InService" ? "success" : "warning"}>{notebook.NotebookInstanceStatus}</StatusIndicator>
+                <Box variant="small" color="text-label">
+                  Status
+                </Box>
+                <StatusIndicator
+                  type={notebook.NotebookInstanceStatus === "InService" ? "success" : "warning"}
+                >
+                  {notebook.NotebookInstanceStatus}
+                </StatusIndicator>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Instance Type</Box>
+                <Box variant="small" color="text-label">
+                  Instance Type
+                </Box>
                 <Box>{notebook.InstanceType}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Subnet ID</Box>
+                <Box variant="small" color="text-label">
+                  Subnet ID
+                </Box>
                 <Box>{notebook.SubnetId}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Security Groups</Box>
+                <Box variant="small" color="text-label">
+                  Security Groups
+                </Box>
                 <Box>{notebook.SecurityGroups.join(", ")}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Role ARN</Box>
+                <Box variant="small" color="text-label">
+                  Role ARN
+                </Box>
                 <Box>{notebook.RoleArn}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Creation Time</Box>
+                <Box variant="small" color="text-label">
+                  Creation Time
+                </Box>
                 <Box>{notebook.CreationTime}</Box>
               </SpaceBetween>
               <SpaceBetween direction="vertical" size="s">
-                <Box variant="small" color="text-label">Last Modified</Box>
+                <Box variant="small" color="text-label">
+                  Last Modified
+                </Box>
                 <Box>{notebook.LastModifiedTime}</Box>
               </SpaceBetween>
             </Box>

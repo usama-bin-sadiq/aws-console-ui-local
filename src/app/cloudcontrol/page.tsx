@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import { useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -9,9 +9,9 @@ import Alert from "@cloudscape-design/components/alert";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface CloudControlResource {
   Identifier: string;
@@ -21,7 +21,8 @@ interface CloudControlResource {
 export default function CloudControlPage() {
   const [typeName, setTypeName] = useState("AWS::S3::Bucket");
 
-  const router = useRouter();  const [resources, setResources] = useState<CloudControlResource[]>([]);
+  const router = useRouter();
+  const [resources, setResources] = useState<CloudControlResource[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,10 +48,13 @@ export default function CloudControlPage() {
           serviceName="Cloud Control API"
           serviceIcon={SERVICE_ICONS["/cloudcontrol"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/cloudcontrol/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/cloudcontrol/create")}
+          >
             Create resource
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" header="Error">

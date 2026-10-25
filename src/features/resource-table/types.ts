@@ -1,5 +1,4 @@
 import type { TableProps } from "@cloudscape-design/components/table";
-import type { CollectionPreferencesProps } from "@cloudscape-design/components/collection-preferences";
 
 /**
  * Action definition for table header buttons

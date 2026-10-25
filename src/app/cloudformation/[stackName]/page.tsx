@@ -14,7 +14,7 @@
  * [x] Uses Cloudscape components only: Tabs, Table, Header, StatusIndicator, Container, SpaceBetween, Box, Alert, Link, Button
  */
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
 import Container from "@cloudscape-design/components/container";
@@ -104,7 +104,9 @@ export default function StackDetailPage() {
   }, [stackName]);
 
   useEffect(() => {
-    fetchDetail();
+    queueMicrotask(() => {
+      fetchDetail();
+    });
   }, [fetchDetail]);
 
   const eventColumns: TableProps.ColumnDefinition<StackEvent>[] = [

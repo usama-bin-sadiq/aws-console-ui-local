@@ -23,7 +23,9 @@ export function AdapterStatus({
   const [provider, setProvider] = useState("checking");
 
   useEffect(() => {
-    setCurrentStatus("checking");
+    queueMicrotask(() => {
+      setCurrentStatus("checking");
+    });
     fetch("/api/health")
       .then((res) => res.json())
       .then((data) => {

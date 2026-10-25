@@ -28,7 +28,7 @@ import Icon from "@cloudscape-design/components/icon";
  * inspects the caller's data -- it only hands it back to a renderer the caller
  * supplied.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see above
+
 type AnyItem = any;
 import type { ButtonDropdownProps } from "@cloudscape-design/components/button-dropdown";
 
@@ -1615,7 +1615,6 @@ export function ExpandableSection({
  * faithful port would mean touching every usage to satisfy a generic the
  * design does not need. The renderers only read properties the caller owns.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any -- see above */
 
 /*
  * Style constants for the second shim batch.

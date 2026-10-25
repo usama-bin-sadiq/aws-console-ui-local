@@ -1,19 +1,18 @@
 "use client";
 
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
 import Box from "@cloudscape-design/components/box";
-import Container from "@cloudscape-design/components/container";
 import Alert from "@cloudscape-design/components/alert";
 import Tabs from "@cloudscape-design/components/tabs";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import Header from "@cloudscape-design/components/header";
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface Detector {
   DetectorId: string;
@@ -47,7 +46,8 @@ export default function GuardDutyPage() {
   const [findings, setFindings] = useState<Finding[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [findingsLoading, setFindingsLoading] = useState(false);
+  const router = useRouter();
+  const [findingsLoading, setFindingsLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [enabling, setEnabling] = useState(false);
@@ -96,8 +96,12 @@ export default function GuardDutyPage() {
   };
 
   useEffect(() => {
-    fetchDetectors();
-    fetchFindings();
+    queueMicrotask(() => {
+      fetchDetectors();
+    });
+    queueMicrotask(() => {
+      fetchFindings();
+    });
   }, []);
 
   const enableGuardDuty = async () => {
@@ -152,11 +156,7 @@ export default function GuardDutyPage() {
           serviceIcon={SERVICE_ICONS["/guardduty"]?.small}
           counter={detectors.length}
           primaryAction={
-            <button
-              type="button"
-              className="aws-service-page__create"
-              onClick={enableGuardDuty}
-            >
+            <button type="button" className="aws-service-page__create" onClick={enableGuardDuty}>
               Create detector
             </button>
           }
@@ -195,7 +195,13 @@ export default function GuardDutyPage() {
                         const severity = item.Severity || 0;
                         const label = severity > 7 ? "High" : severity > 4 ? "Medium" : "Low";
                         const type = severity > 7 ? "error" : severity > 4 ? "warning" : "info";
-                        return <StatusIndicator type={type as "success" | "warning" | "error" | "info" | "in-progress"}>{label}</StatusIndicator>;
+                        return (
+                          <StatusIndicator
+                            type={type as "success" | "warning" | "error" | "info" | "in-progress"}
+                          >
+                            {label}
+                          </StatusIndicator>
+                        );
                       },
                     },
                     { header: "Resource Type", cell: (item) => item.Resource?.Type || "—" },

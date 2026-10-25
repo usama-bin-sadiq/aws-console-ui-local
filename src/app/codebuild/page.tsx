@@ -1,6 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import ButtonDropdown from "@cloudscape-design/components/button-dropdown";
@@ -14,9 +14,9 @@ import Input from "@cloudscape-design/components/input";
 import Tabs from "@cloudscape-design/components/tabs";
 import Textarea from "@cloudscape-design/components/textarea";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface CodeBuildProject {
   name: string;
@@ -39,7 +39,8 @@ export default function CodeBuildPage() {
   const [projects, setProjects] = useState<CodeBuildProject[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
   const [createModal, setCreateModal] = useState(false);
   const [projectName, setProjectName] = useState("");
@@ -67,7 +68,9 @@ export default function CodeBuildPage() {
   };
 
   useEffect(() => {
-    fetchProjects();
+    queueMicrotask(() => {
+      fetchProjects();
+    });
   }, []);
 
   const createProject = async () => {
@@ -171,10 +174,13 @@ export default function CodeBuildPage() {
           serviceName="CodeBuild"
           serviceIcon={SERVICE_ICONS["/codebuild"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/codebuild/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/codebuild/create")}
+          >
             Create project
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" header="Error">

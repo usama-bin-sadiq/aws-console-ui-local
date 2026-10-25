@@ -1,6 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useState } from "react";
+import { useState } from "react";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
 import SpaceBetween from "@cloudscape-design/components/space-between";
@@ -10,9 +10,9 @@ import Alert from "@cloudscape-design/components/alert";
 import FormField from "@cloudscape-design/components/form-field";
 import Input from "@cloudscape-design/components/input";
 import Header from "@cloudscape-design/components/header";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface S3Object {
   Key: string;
@@ -34,7 +34,8 @@ interface S3Item {
 export default function S3FilesPage() {
   const [bucketInput, setBucketInput] = useState("");
 
-  const router = useRouter();  const [bucket, setBucket] = useState<string | null>(null);
+  const router = useRouter();
+  const [bucket, setBucket] = useState<string | null>(null);
   const [prefix, setPrefix] = useState("");
   const [objects, setObjects] = useState<S3Object[]>([]);
   const [prefixes, setPrefixes] = useState<S3Prefix[]>([]);
@@ -87,10 +88,13 @@ export default function S3FilesPage() {
           serviceName="S3 — Object Browser"
           serviceIcon={SERVICE_ICONS["/s3-files"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/s3-files/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/s3-files/create")}
+          >
             Create file
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" header="Error">

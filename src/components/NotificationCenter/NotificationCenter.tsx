@@ -3,7 +3,7 @@
  * Notification center with adapter status, service health, cost alerts,
  * security notifications, announcements, and cross-service search results.
  */
-import React, { useMemo } from "react";
+import React from "react";
 import Flashbar from "@cloudscape-design/components/flashbar";
 import StatusIndicator from "@cloudscape-design/components/status-indicator";
 import { AWACS_DESIGN_TOKENS } from "@/constants/design-tokens";
@@ -69,12 +69,9 @@ export function NotificationCenter({
     dismissible: false,
   };
 
-  const items = useMemo(() => {
-    const list: NotificationItem[] = [...notifications];
-    if (showAdapterStatus) list.unshift(adapterNotification);
-    if (showServiceHealth) list.unshift(healthNotification);
-    return list;
-  }, [notifications, adapterStatus, showAdapterStatus, showServiceHealth]);
+  const items: NotificationItem[] = [...notifications];
+  if (showAdapterStatus) items.unshift(adapterNotification);
+  if (showServiceHealth) items.unshift(healthNotification);
 
   return (
     <div style={{ width: "100%" }}>

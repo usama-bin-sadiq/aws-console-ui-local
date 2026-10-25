@@ -64,7 +64,9 @@ export function useServiceCompatibility(): UseServiceCompatibilityResult {
   }, [fetchData]);
 
   useEffect(() => {
-    fetchData();
+    queueMicrotask(() => {
+      fetchData();
+    });
   }, [fetchData]);
 
   return {

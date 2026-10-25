@@ -1,6 +1,6 @@
 "use client";
 import { apiFetch } from "@/lib/api-client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { CodeView } from "@cloudscape-design/code-view";
 import Table from "@cloudscape-design/components/table";
 import Button from "@cloudscape-design/components/button";
@@ -18,9 +18,9 @@ import Tabs from "@cloudscape-design/components/tabs";
 import Header from "@cloudscape-design/components/header";
 import TruncatedText from "@/components/TruncatedText";
 import { CrossServiceLinks, CROSS_SERVICE_LINKS } from "@/components/CrossServiceLinks";
-import { useRouter } from 'next/navigation';
-import { AwsServiceHeader } from '@/components/ui/AwsServiceHeader';
-import { SERVICE_ICONS } from '@/constants/service-icons';
+import { useRouter } from "next/navigation";
+import { AwsServiceHeader } from "@/components/ui/AwsServiceHeader";
+import { SERVICE_ICONS } from "@/constants/service-icons";
 
 interface StateMachine {
   stateMachineArn?: string;
@@ -79,7 +79,8 @@ export default function StepFunctionsPage() {
   const [selectedMachine, setSelectedMachine] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter();  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [createModal, setCreateModal] = useState(false);
   const [startModal, setStartModal] = useState(false);
   const [smName, setSmName] = useState("");
@@ -115,7 +116,9 @@ export default function StepFunctionsPage() {
   };
 
   useEffect(() => {
-    fetchMachines();
+    queueMicrotask(() => {
+      fetchMachines();
+    });
   }, []);
 
   const fetchExecutions = async (arn: string) => {
@@ -304,10 +307,13 @@ export default function StepFunctionsPage() {
           serviceName="Step Functions"
           serviceIcon={SERVICE_ICONS["/step-functions"]?.small}
           counter={0}
-          primaryAction=<button type="button" className="aws-service-page__create" onClick={() => router.push("/step-functions/create")}>
+          primaryAction=<button
+            type="button"
+            className="aws-service-page__create"
+            onClick={() => router.push("/step-functions/create")}
+          >
             Create state machine
-        </button>
-
+          </button>
         />
         {error && (
           <Alert type="error" onDismiss={() => setError(null)} header="Error">

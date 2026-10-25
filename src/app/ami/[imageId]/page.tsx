@@ -233,7 +233,10 @@ export default function AMIImageDetailPage() {
 
   // Deep link (?tab=…) selects the initial tab.
   useEffect(() => {
-    if (tabParam && VALID_TABS.includes(tabParam)) setActiveTab(tabParam);
+    if (tabParam && VALID_TABS.includes(tabParam))
+      queueMicrotask(() => {
+        setActiveTab(tabParam);
+      });
   }, [tabParam]);
 
   // ── Data loading ─────────────────────────────────────────────────────────
@@ -292,13 +295,18 @@ export default function AMIImageDetailPage() {
   }, [imageId]);
 
   useEffect(() => {
-    if (imageId) void fetchImage();
+    if (imageId)
+      queueMicrotask(() => {
+        void fetchImage();
+      });
   }, [imageId, fetchImage]);
 
   // Lazy-load snapshots the first time the Usage tab is opened.
   useEffect(() => {
     if (activeTab === "usage" && !snapshotsLoaded && !snapshotsLoading && !snapshotsError) {
-      void loadSnapshots();
+      queueMicrotask(() => {
+        void loadSnapshots();
+      });
     }
   }, [activeTab, snapshotsLoaded, snapshotsLoading, snapshotsError, loadSnapshots]);
 
@@ -326,7 +334,9 @@ export default function AMIImageDetailPage() {
 
   // Server-side permissions changed (initial load or after save) → reset draft.
   useEffect(() => {
-    resetPermDrafts();
+    queueMicrotask(() => {
+      resetPermDrafts();
+    });
   }, [resetPermDrafts]);
 
   const permsDirty =

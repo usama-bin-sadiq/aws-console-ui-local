@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Header,
   Container,
@@ -50,26 +50,7 @@ export default function HealthPage() {
     "all",
   );
 
-  const fetchHealth = async () => {
-    try {
-      const res = await fetch("/api/health");
-      const data = await res.json();
-      setHealth(data);
-      processServiceHealth(data);
-    } catch (err) {
-      setHealth({
-        status: "unreachable",
-        provider: "unknown",
-        endpoint: "",
-        error: err instanceof Error ? err.message : "Failed to fetch",
-      });
-      setServiceHealth([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const processServiceHealth = (data: HealthData) => {
+  const processServiceHealth = useCallback((data: HealthData) => {
     const activeMode = toAdapterMode(data.provider);
     const healthStatus = data.status;
     const healthServices = data.services || {};
@@ -134,15 +115,36 @@ export default function HealthPage() {
     });
 
     setServiceHealth(services);
-  };
+  }, []);
+
+  const fetchHealth = useCallback(async () => {
+    try {
+      const res = await fetch("/api/health");
+      const data = await res.json();
+      setHealth(data);
+      processServiceHealth(data);
+    } catch (err) {
+      setHealth({
+        status: "unreachable",
+        provider: "unknown",
+        endpoint: "",
+        error: err instanceof Error ? err.message : "Failed to fetch",
+      });
+      setServiceHealth([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [processServiceHealth]);
 
   useEffect(() => {
-    fetchHealth();
+    queueMicrotask(() => {
+      fetchHealth();
+    });
     if (autoRefresh) {
       const interval = setInterval(fetchHealth, 30000);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh]);
+  }, [autoRefresh, fetchHealth]);
 
   const filteredServices = serviceHealth.filter((s) => {
     if (filter === "all") return true;

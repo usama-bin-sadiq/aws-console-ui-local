@@ -11,16 +11,16 @@
     "localstack",
     "ministack"
   ],
+  "homepage": "https://github.com/your-org/aws-console#readme",
+  "bugs": {
+    "url": "https://github.com/your-org/aws-console/issues"
+  },
   "license": "MIT",
   "author": "AWS Console Contributors",
   "repository": {
     "type": "git",
     "url": "https://github.com/your-org/aws-console.git"
   },
-  "bugs": {
-    "url": "https://github.com/your-org/aws-console/issues"
-  },
-  "homepage": "https://github.com/your-org/aws-console#readme",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
