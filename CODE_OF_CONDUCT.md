@@ -32,16 +32,6 @@ Project maintainers have the right and responsibility to remove, edit, or reject
 
 This Code of Conduct applies both within project spaces and in public spaces when an individual is representing the project or its community. Examples of representing a project or community include using an official project e-mail address, posting via an official social media account, or acting as an appointed representative at an online or offline event. Representation of a project may be further defined and elaborated by project maintainers.
 
-## Enforcement
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at [mailto:security@your-org.com](mailto:security@your-org.com). All complaints will be reviewed and investigated promptly and fairly.
-
-All project maintainers are obligated to respect the personal and safety of the reporter and witnesses of any incident.
-
-## Attribution
-
-This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributorcommunity.com/code-of-conduct), version 2.1, available at [https://www.contributorcommunity.com/code-of-conduct](https://www.contributorcommunity.com/code-of-conduct).
-
 Homepage: [https://www.contributorcommunity.com](https://www.contributorcommunity.com)
 
 ## License
