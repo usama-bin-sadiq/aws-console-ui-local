@@ -7,6 +7,7 @@ on:
     branches: [main]
 
 permissions:
+  actions: write
   contents: read
   pull-requests: write
 
@@ -84,6 +85,12 @@ jobs:
           path: test-results/
           retention-days: 7
 
+      - name: Cancel related workflows on failure
+        if: failure()
+        uses: ./.github/actions/cancel-related-workflows
+        with:
+          token: ${{ github.token }}
+
   e2e-responsive:
     name: E2E Responsive Tests
     runs-on: ubuntu-latest
@@ -119,6 +126,14 @@ jobs:
           name: e2e-responsive-results
           path: test-results/
           retention-days: 7
+
+      - name: Cancel related workflows on failure
+        if: failure()
+        uses: ./.github/actions/cancel-related-workflows
+        with:
+          token: ${{ github.token }}
+
+    needs: e2e-localstack
 
   visual-regression:
     name: Visual Regression Tests
@@ -157,3 +172,11 @@ jobs:
           name: vrt-results
           path: test-results/
           retention-days: 7
+
+      - name: Cancel related workflows on failure
+        if: failure()
+        uses: ./.github/actions/cancel-related-workflows
+        with:
+          token: ${{ github.token }}
+
+    needs: e2e-responsive

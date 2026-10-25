@@ -1,0 +1,36 @@
+name: Cancel related workflows
+description: Cancel other active workflow runs for the same commit
+inputs:
+  token:
+    description: GitHub token with Actions write permission
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/github-script@v9
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const runsByStatus = await Promise.all(
+            ["in_progress", "queued"].map((status) =>
+              github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                status,
+                per_page: 100,
+              }),
+            ),
+          );
+          const runs = runsByStatus.flat();
+          const relatedRuns = runs.filter(
+            (run) => run.id !== context.runId && run.head_sha === context.sha,
+          );
+
+          for (const run of relatedRuns) {
+            core.info(`Cancelling ${run.name} run ${run.id}`);
+            await github.rest.actions.cancelWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: run.id,
+            });
+          }

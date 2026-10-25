@@ -6,6 +6,7 @@ on:
       - "v*"
 
 permissions:
+  actions: write
   contents: write
   id-token: write
 
@@ -54,3 +55,9 @@ jobs:
           pnpm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Cancel related workflows on failure
+        if: failure()
+        uses: ./.github/actions/cancel-related-workflows
+        with:
+          token: ${{ github.token }}
