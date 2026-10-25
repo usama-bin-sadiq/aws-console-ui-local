@@ -200,20 +200,26 @@ jobs:
 
     needs: security-scan
 
-  e2e-localstack:
-    name: E2E Tests (LocalStack)
+  e2e-localemu:
+    name: E2E Tests (LocalEmu)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
-      localstack:
-        image: localstack/localstack:latest
+      localemu:
+        image: localemu/localemu:latest
         ports:
           - 4566:4566
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+        options: --user root
         env:
-          SERVICES: ec2,s3,lambda,dynamodb,iam,rds,cloudformation,cloudwatch,apigateway,eventbridge,secretsmanager,ssm,cognito
-          DEFAULT_REGION: us-east-1
-          DEBUG: 1
-          LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+          PERSISTENCE: 1
+          DEBUG: 0
+          GATEWAY_LISTEN: 0.0.0.0:4566
+          DASHBOARD_API_OPEN: 1
+          AWS_ACCESS_KEY_ID: AKIAIOSFODNN7EXAMPLE
+          AWS_SECRET_ACCESS_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+          AWS_DEFAULT_REGION: us-east-1
     needs: docs-lint
     steps:
       - name: Checkout code
@@ -233,26 +239,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Wait for LocalStack
+      - name: Wait for LocalEmu
         run: |
           for i in $(seq 1 30); do
-            if curl -s http://localhost:4566/_localstack/health | grep -q '"status": "running"'; then
-              echo "LocalStack is ready"
+            if curl --fail --silent http://localhost:4566/_localemu/health >/dev/null; then
+              echo "LocalEmu is ready"
               exit 0
             fi
             sleep 2
           done
-          echo "LocalStack did not become ready in time" >&2
+          echo "LocalEmu did not become ready in time" >&2
           exit 1
 
       - name: Start application
         run: |
-          export ACTIVE_BACKEND=localstack
-          export LOCALSTACK_HOSTNAME=localhost
-          export LOCALSTACK_EDGE_PORT=4566
-          export LOCALSTACK_ENDPOINT=http://localhost:4566
-          export AWS_ACCESS_KEY_ID=test
-          export AWS_SECRET_ACCESS_KEY=test
+          export ACTIVE_BACKEND=localemu
+          export LOCALEMU_HOSTNAME=localhost
+          export LOCALEMU_EDGE_PORT=4566
+          export LOCALEMU_ENDPOINT=http://localhost:4566
+          export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+          export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
           export AWS_DEFAULT_REGION=us-east-1
           pnpm dev &
           sleep 15
@@ -267,7 +273,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: e2e-results-localstack
+          name: e2e-results-localemu
           path: test-results/
           retention-days: 7
 
@@ -305,7 +311,7 @@ jobs:
     name: E2E Responsive Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: e2e-localstack
+    needs: e2e-localemu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
