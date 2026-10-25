@@ -19,9 +19,23 @@ jobs:
     name: E2E Tests (LocalStack)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      localstack:
+        image: localstack/localstack:latest
+        ports:
+          - 4566:4566
+        env:
+          SERVICES: ec2,s3,lambda,dynamodb,iam,rds,cloudformation,cloudwatch,apigateway,eventbridge,secretsmanager,ssm,cognito
+          DEFAULT_REGION: us-east-1
+          DEBUG: 1
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,32 +43,20 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Start LocalStack
-        uses: localstack/action@latest
-        with:
-          startup-timeout: 120
-        env:
-          SERVICES: ec2,s3,lambda,dynamodb,iam,rds,cloudformation,cloudwatch,apigateway,eventbridge,secretsmanager,ssm,cognito
-          DEFAULT_REGION: us-east-1
-          DEBUG: 1
 
       - name: Wait for LocalStack
         run: |
           for i in $(seq 1 30); do
             if curl -s http://localhost:4566/_localstack/health | grep -q '"status": "running"'; then
               echo "LocalStack is ready"
-              break
+              exit 0
             fi
             sleep 2
           done
+          echo "LocalStack did not become ready in time" >&2
+          exit 1
 
       - name: Start application
         run: |
@@ -90,16 +92,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "pnpm"
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -126,16 +128,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "pnpm"
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
