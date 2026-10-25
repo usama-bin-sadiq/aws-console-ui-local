@@ -25,12 +25,12 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 12.15.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: "22"
+          node-version: "24"
           cache: "pnpm"
 
       - name: Install dependencies
@@ -53,12 +53,12 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 12.15.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: "22"
+          node-version: "24"
           cache: "pnpm"
 
       - name: Install dependencies
@@ -85,12 +85,12 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 12.15.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: "22"
+          node-version: "24"
           cache: "pnpm"
 
       - name: Install dependencies
@@ -112,12 +112,12 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 12.15.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: "22"
+          node-version: "24"
           cache: "pnpm"
 
       - name: Install dependencies
@@ -143,12 +143,12 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 12.15.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: "22"
+          node-version: "24"
           cache: "pnpm"
 
       - name: Install dependencies
@@ -172,12 +172,12 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 12.15.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.1.0
         with:
-          node-version: "22"
+          node-version: "24"
           cache: "pnpm"
 
       - name: Install dependencies

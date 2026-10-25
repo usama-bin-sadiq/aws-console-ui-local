@@ -1,10 +1,12 @@
 allowBuilds:
-  '@parcel/watcher': true
+  "@parcel/watcher": true
   better-sqlite3: true
   esbuild: true
   unrs-resolver: true
 # pnpm workspace settings
 # Moved from package.json "pnpm" field (pnpm v11+ no longer reads it)
+packages: []
+
 overrides:
   vite@*: npm:@voidzero-dev/vite-plus-core@1.1.0
   vitest@*: "5.0.3"
