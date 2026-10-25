@@ -202,7 +202,7 @@ jobs:
 
   e2e-localemu:
     name: E2E Tests (LocalEmu)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     services:
       localemu:
@@ -263,11 +263,11 @@ jobs:
           pnpm dev &
           sleep 15
 
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
       - name: Run E2E tests
-        uses: microsoft/playwright-github-action@v1
-        with:
-          config: playwright.config.ts
-          reporter: html,json
+        run: pnpm test:e2e
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -309,7 +309,7 @@ jobs:
 
   e2e-responsive:
     name: E2E Responsive Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     needs: e2e-localemu
     steps:
@@ -330,11 +330,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Run responsive E2E tests
-        uses: microsoft/playwright-github-action@v1
-        with:
-          config: playwright.responsive.config.ts
-          reporter: html
+        run: pnpm test:e2e:responsive
 
       - name: Upload responsive test results
         uses: actions/upload-artifact@v4
@@ -352,7 +352,7 @@ jobs:
 
   visual-regression:
     name: Visual Regression Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     needs: e2e-responsive
     steps:
@@ -376,10 +376,11 @@ jobs:
       - name: Update VRT baselines
         run: pnpm test:vrt:baseline
 
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Run VRT
-        uses: microsoft/playwright-github-action@v1
-        with:
-          config: playwright.vrt.config.ts
+        run: pnpm test:vrt
 
       - name: Upload VRT results
         uses: actions/upload-artifact@v4
