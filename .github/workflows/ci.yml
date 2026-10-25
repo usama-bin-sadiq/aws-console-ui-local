@@ -213,6 +213,7 @@ jobs:
           SERVICES: ec2,s3,lambda,dynamodb,iam,rds,cloudformation,cloudwatch,apigateway,eventbridge,secretsmanager,ssm,cognito
           DEFAULT_REGION: us-east-1
           DEBUG: 1
+          LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
     needs: docs-lint
     steps:
       - name: Checkout code
@@ -272,9 +273,33 @@ jobs:
 
       - name: Cancel related workflows on failure
         if: failure()
-        uses: ./.github/actions/cancel-related-workflows
+        uses: actions/github-script@v9
         with:
-          token: ${{ github.token }}
+          github-token: ${{ github.token }}
+          script: |
+            const runsByStatus = await Promise.all(
+              ["in_progress", "queued"].map((status) =>
+                github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  status,
+                  per_page: 100,
+                }),
+              ),
+            );
+            const runs = runsByStatus.flat();
+            const relatedRuns = runs.filter(
+              (run) => run.id !== context.runId && run.head_sha === context.sha,
+            );
+
+            for (const run of relatedRuns) {
+              core.info(`Cancelling ${run.name} run ${run.id}`);
+              await github.rest.actions.cancelWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: run.id,
+              });
+            }
 
   e2e-responsive:
     name: E2E Responsive Tests
