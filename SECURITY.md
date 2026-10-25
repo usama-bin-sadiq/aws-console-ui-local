@@ -13,7 +13,7 @@ We take the security of this emulator console seriously. If you believe you've f
 ### How to Report
 
 1. **Do not** open a public GitHub issue for security vulnerabilities.
-2. Email us at **security@your-org.com** (or use GitHub's [private vulnerability reporting](https://github.com/your-org/aws-console/security/advisories/new)).
+2. Use GitHub's [private vulnerability reporting](https://github.com/usama-bin-sadiq/aws-console-ui-local/security/advisories/new).
 3. Include as much detail as possible:
    - Description of the vulnerability
    - Steps to reproduce

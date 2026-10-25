@@ -2,10 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
 [![Cloudscape](https://img.shields.io/badge/Cloudscape-3.0-orange.svg)](https://cloudscape.design/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
 An open-source, **Cloudscape-based** web console for AWS-compatible services running in **LocalStack** or **MiniStack**. It provides an AWS-inspired management-console experience for local development and testing; it is not a literal pixel-for-pixel production AWS console.
 
@@ -113,11 +113,11 @@ docker compose -f docker-compose.both.yml up -d
 
 | ADR                                                  | Decision                            | Status      |
 | ---------------------------------------------------- | ----------------------------------- | ----------- |
-| [ADR-001](docs/adr/ADR-001-cloudscape-ui.md)         | Cloudscape Design System for UI     | ✅ Accepted |
-| [ADR-002](docs/adr/ADR-002-adapter-pattern.md)       | Adapter Pattern for Multi-Backend   | ✅ Accepted |
-| [ADR-003](docs/adr/ADR-003-capability-navigation.md) | Capability-Aware Navigation         | ✅ Accepted |
-| [ADR-004](docs/adr/ADR-004-sqlite-auth.md)           | SQLite for Local Auth (with bcrypt) | ✅ Accepted |
-| [ADR-005](docs/adr/ADR-005-nextjs-react19.md)        | Next.js App Router + React 19       | ✅ Accepted |
+| ADR-001 | Cloudscape Design System for UI     | ✅ Accepted |
+| ADR-002 | Adapter Pattern for Multi-Backend   | ✅ Accepted |
+| ADR-003 | Capability-Aware Navigation         | ✅ Accepted |
+| ADR-004 | SQLite for Local Auth (with bcrypt) | ✅ Accepted |
+| ADR-005 | Next.js App Router + React 19       | ✅ Accepted |
 
 ---
 
@@ -201,7 +201,7 @@ aws-console/
 | Step Functions | ✅ Full                      | ⚠️ Partial           |
 | ...            | ...                          | ...                  |
 
-> See [service-compatibility.ts](src/constants/service-compatibility.ts) for the full registry and [emulator-runtime-evidence.md](docs/emulator-runtime-evidence.md) for the latest verified runtime matrix. A service being present in the UI does not imply that the active emulator license or data plane supports it.
+> See [service-compatibility.ts](src/constants/service-compatibility.ts) for the full registry. A service being present in the UI does not imply that the active emulator license or data plane supports it.
 
 ---
 
@@ -320,7 +320,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ## 📞 Support
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/your-org/aws-console/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/your-org/aws-console/discussions)
-- 📖 **Documentation**: [/docs](docs/)
-- 💬 **Community**: [Discord](https://discord.gg/your-invite)
+- 🐛 **Bug Reports and Feature Requests**: [GitHub Issues](https://github.com/usama-bin-sadiq/aws-console-ui-local/issues)

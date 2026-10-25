@@ -150,8 +150,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run npm audit
-        run: npm audit --audit-level=high
+      - name: Run pnpm audit
+        run: pnpm audit --audit-level=high
 
       - name: Secret scan
         uses: trufflesecurity/trufflehog@main
@@ -190,7 +190,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Check documentation links
-        run: npx markdown-link-check README.md docs/architecture.md docs/adr/*.md
+        run: npx markdown-link-check README.md CHANGELOG.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md
 
       - name: Cancel related workflows on failure
         if: failure()

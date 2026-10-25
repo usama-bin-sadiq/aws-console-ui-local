@@ -154,7 +154,7 @@ test(auth): add rate limiting integration tests
 
 ## 🐛 Reporting Bugs
 
-1. Check existing [issues](https://github.com/your-org/aws-console/issues) first
+1. Check existing [issues](https://github.com/usama-bin-sadiq/aws-console-ui-local/issues) first
 2. Use the **Bug Report** issue template
 3. Include:
    - LocalStack/MiniStack version
